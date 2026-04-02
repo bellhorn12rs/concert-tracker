@@ -1999,14 +1999,12 @@ async function updateArtistGenre(artistName, newGenre) {
                   }}
                   value={currentGenre}
                   onChange={async (e) => {
-                    const val = e.target.value;
-                    // Instant UI Update
-                    setManualGenres(prev => ({ ...prev, [artist]: val }));
-                    // Save to Supabase
-                    if (typeof updateArtistGenre === 'function') {
-                      await updateArtistGenre(artist, val);
-                    }
-                  }}
+  const val = e.target.value;
+  // Local UI Update
+  setManualGenres(prev => ({ ...prev, [artist]: val }));
+  // Database Update
+  await updateArtistGenre(artist, val);
+}}
                 >
                   {Object.keys(GENRE_COLORS).map(g => (
                     <option key={g} value={g}>{g}</option>
