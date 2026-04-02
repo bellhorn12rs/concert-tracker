@@ -1334,14 +1334,14 @@ async function updateArtistGenre(artistName, newGenre) {
   const { data, error } = await supabase
     .from('concerts')
     .update({ genre: newGenre })
-    // CHANGE 'artist' BELOW TO THE ACTUAL COLUMN NAME IN SUPABASE
-    .eq('artist', artistName) 
+    // We use .contains because 'bands' is an array [ "Blink 182", "etc" ]
+    .contains('bands', [artistName]) 
     .select();
 
   if (error) {
     console.error("❌ Supabase Error:", error.message);
   } else {
-    console.log(`✅ Success! Updated rows:`, data?.length || 0);
+    console.log(`✅ Success! Updated ${data?.length || 0} rows for ${artistName}`);
   }
 }
   async function fetchConcerts() {
