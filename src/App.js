@@ -1295,6 +1295,26 @@ export default function App() {
   const [editTarget, setEditTarget] = useState(null);
   const [shareCard, setShareCard] = useState(null); 
 
+  // --- DASHBOARD GENRE LOGIC ---
+const genreStats = React.useMemo(() => {
+  if (!concerts || concerts.length === 0) return [];
+  const counts = {};
+  
+  concerts.forEach(c => {
+    // Check the manualGenres state for the artist, default to "Other"
+    const artistName = Array.isArray(c.bands) ? c.bands[0] : c.artist;
+    const g = manualGenres[artistName] || "Other";
+    counts[g] = (counts[g] || 0) + 1;
+  });
+
+  return Object.entries(counts)
+    .map(([name, count]) => ({ 
+      name, 
+      count, 
+      color: GENRE_COLORS[name] || "#444" 
+    }))
+    .sort((a, b) => b.count - a.count);
+}, [concerts, manualGenres]);
   // --- AUTOMATIC ADMIN LOGIN ---
   useEffect(() => {
     const login = async () => {
@@ -1688,6 +1708,8 @@ async function updateArtistGenre(artistName, newGenre) {
         </Card>
       ))}
     </div>
+
+    <SonicDNA stats={genreStats} />
 
     {/* ── ROW 1: Artist podium + Archive Completion (balanced) ── */}
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
@@ -2112,6 +2134,45 @@ async function updateArtistGenre(artistName, newGenre) {
           <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} />
         )}
 
+      </div>
+    </div>
+  );
+}
+// --- SONIC DNA COMPONENT ---
+function SonicDNA({ stats }) {
+  if (!stats || stats.length === 0) return null;
+  const maxCount = stats[0].count;
+
+  return (
+    <div style={{ 
+      background: 'rgba(255,255,255,0.02)', 
+      border: '1px solid rgba(255,255,255,0.08)', 
+      borderRadius: '12px', 
+      padding: '24px',
+      marginBottom: '24px'
+    }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', marginBottom: '15px', letterSpacing: '1px' }}>
+        SONIC DNA // GENRE DISTRIBUTION
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {stats.map((g) => (
+          <div key={g.name}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '10px', fontFamily: "'Space Mono'" }}>
+              <span style={{ color: g.color }}>{g.name.toUpperCase()}</span>
+              <span style={{ color: '#888' }}>{g.count} SETS</span>
+            </div>
+            <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px' }}>
+              <div style={{ 
+                width: `${(g.count / maxCount) * 100}%`, 
+                height: '100%', 
+                background: g.color, 
+                boxShadow: `0 0 10px ${g.color}66`, 
+                transition: 'width 1s ease',
+                borderRadius: '2px'
+              }} />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
