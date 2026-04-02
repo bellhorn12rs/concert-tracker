@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell
 } from 'recharts';
- 
+
 // ─── THEME ────────────────────────────────────────────────────────────────────
 const C = {
   bg:        '#0a0a0f',
@@ -27,7 +27,7 @@ const C = {
   gold:      '#ffcc00',
   purple:    '#9966ff',
 };
- 
+
 // ─── GLOBAL STYLES ────────────────────────────────────────────────────────────
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
@@ -56,14 +56,14 @@ const GLOBAL_CSS = `
   .setlist-btn { transition: all 0.15s; }
   .setlist-btn:hover { transform: scale(1.2); }
 `;
- 
+
 if (!document.getElementById('app-global-css')) {
   const tag = document.createElement('style');
   tag.id = 'app-global-css';
   tag.textContent = GLOBAL_CSS;
   document.head.appendChild(tag);
 }
- 
+
 // ─── YOU WERE THERE FACTS ─────────────────────────────────────────────────────
 const YOU_WERE_THERE = [
   {
@@ -165,14 +165,14 @@ const YOU_WERE_THERE = [
     match: () => false,
   },
 ];
- 
- 
+
+
 // ─── HALL OF FAME ARTISTS ─────────────────────────────────────────────────────
 // These get the full timeline treatment in the Hall of Fame tab
 const HALL_OF_FAME_MIN = 7; // seen 7+ times
- 
- 
- 
+
+
+
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 const fmtDate = (d) => {
   if (!d) return '—';
@@ -180,7 +180,7 @@ const fmtDate = (d) => {
 };
 const getYear = (d) => d ? parseInt(d.slice(0, 4)) : null;
 const SETLIST_START = '2015-10-09';
- 
+
 // ─── SHARED ATOMS ─────────────────────────────────────────────────────────────
 const Badge = ({ children, color = C.teal, bg = C.tealFaint }) => (
   <span style={{
@@ -190,7 +190,7 @@ const Badge = ({ children, color = C.teal, bg = C.tealFaint }) => (
     padding: '2px 6px', borderRadius: 3,
   }}>{children}</span>
 );
- 
+
 const NEON_BORDERS = [
   { border: C.teal,   glow: 'rgba(0,229,204,0.18)' },
   { border: C.cyan,   glow: 'rgba(0,207,255,0.18)' },
@@ -200,7 +200,7 @@ const NEON_BORDERS = [
   { border: '#ff6699',glow: 'rgba(255,102,153,0.18)' },
 ];
 let _cardIdx = 0;
- 
+
 const Card = ({ children, style = {}, glow = false, neon = false }) => {
   const nb = neon ? NEON_BORDERS[_cardIdx++ % NEON_BORDERS.length] : null;
   return (
@@ -217,7 +217,7 @@ const Card = ({ children, style = {}, glow = false, neon = false }) => {
     }}>{children}</div>
   );
 };
- 
+
 const CardTitle = ({ children, style = {} }) => (
   <div style={{
     fontFamily: "'Space Mono', monospace", fontSize: 9, letterSpacing: '0.25em',
@@ -226,7 +226,7 @@ const CardTitle = ({ children, style = {} }) => (
     ...style,
   }}>{children}</div>
 );
- 
+
 const HBar = ({ name, count, max, color = C.teal }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
     <div style={{ fontSize: '0.72rem', color: C.gray, width: 120, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={name}>{name}</div>
@@ -236,7 +236,7 @@ const HBar = ({ name, count, max, color = C.teal }) => (
     <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color, width: 22, textAlign: 'right', flexShrink: 0 }}>{count}</div>
   </div>
 );
- 
+
 const Btn = ({ children, onClick, variant = 'primary', style = {}, disabled = false }) => {
   const base = {
     fontFamily: "'Space Mono', monospace", fontSize: 10, letterSpacing: '0.12em',
@@ -256,14 +256,14 @@ const Btn = ({ children, onClick, variant = 'primary', style = {}, disabled = fa
     </button>
   );
 };
- 
+
 // ─── INPUT STYLE ──────────────────────────────────────────────────────────────
 const inputSt = {
   background: C.bgCard, border: `1px solid ${C.border}`,
   borderRadius: 4, padding: '7px 10px', color: C.white,
   fontSize: '0.85rem', outline: 'none',
 };
- 
+
 // ─── EDIT MODAL ───────────────────────────────────────────────────────────────
 function EditModal({ concert, onClose, onSave, onDelete }) {
   const [form, setForm] = useState({
@@ -280,17 +280,17 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
- 
+
   const handleSave = async () => {
     setSaving(true);
     await onSave(concert?.id, { ...form, bands: form.bands.split(',').map(b => b.trim()).filter(Boolean) });
     setSaving(false);
   };
- 
+
   const fld = { marginBottom: 14 };
   const lbl = { display: 'block', fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 };
   const inp = { ...inputSt, width: '100%' };
- 
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(4px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
@@ -301,7 +301,7 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: C.gray, fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
         </div>
- 
+
         <div style={fld}><label style={lbl}>Date</label><input style={inp} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
         <div style={fld}><label style={lbl}>Artists (comma separated)</label><input style={inp} value={form.bands} onChange={e => set('bands', e.target.value)} placeholder="Arcade Fire, LCD Soundsystem" /></div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
@@ -309,19 +309,19 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
           <div><label style={lbl}>City</label><input style={inp} value={form.city} onChange={e => set('city', e.target.value)} placeholder="Austin" /></div>
         </div>
         <div style={fld}><label style={lbl}>State</label><input style={{ ...inp, width: 80 }} value={form.state} onChange={e => set('state', e.target.value)} placeholder="TX" maxLength={2} /></div>
- 
+
         <div style={{ ...fld, display: 'flex', alignItems: 'center', gap: 10 }}>
           <input type="checkbox" id="is_fest" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} style={{ accentColor: C.teal, width: 16, height: 16 }} />
           <label htmlFor="is_fest" style={{ ...lbl, marginBottom: 0, cursor: 'pointer' }}>Festival Day</label>
         </div>
- 
+
         {form.is_festival && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
             <div><label style={lbl}>Festival Name</label><input style={inp} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} placeholder="Bonnaroo" /></div>
             <div><label style={lbl}>Day Label</label><input style={inp} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} placeholder="Bonnaroo Friday" /></div>
           </div>
         )}
- 
+
         <div style={{ ...fld, display: 'flex', alignItems: 'center', gap: 10 }}>
           <input type="checkbox" id="has_sl" checked={form.has_setlist} onChange={e => set('has_setlist', e.target.checked)}
             disabled={form.date && form.date < SETLIST_START}
@@ -330,7 +330,7 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
             Got physical setlist 📋 {form.date && form.date < SETLIST_START ? '(pre-2015, not tracked)' : ''}
           </label>
         </div>
- 
+
         <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', marginTop: 20 }}>
           <div style={{ display: 'flex', gap: 8 }}>
             {concert?.id && !confirming && <Btn variant="danger" onClick={() => setConfirming(true)}>Delete</Btn>}
@@ -348,19 +348,19 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
     </div>
   );
 }
- 
+
 // ─── FESTIVAL SCHEDULE CARD ───────────────────────────────────────────────────
-function FestivalScheduleCard({ event }) {
+function FestivalScheduleCard({ event, compact = false }) {
   const bands = event.bands || [];
   const STAGE_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green];
- 
+
   // auto-flow columns based on band count
   const numCols = bands.length <= 2 ? bands.length : bands.length <= 5 ? 3 : bands.length <= 9 ? 4 : 5;
   const columns = Array.from({ length: Math.min(numCols, bands.length) }, () => []);
   bands.forEach((b, i) => columns[i % columns.length].push(b));
- 
+
   return (
-    <div className="day-card-hover" style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, marginBottom: 12, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
+    <div className="day-card-hover" style={{ background: compact ? C.bgCardAlt : C.bgCard, border: `1px solid ${compact ? C.border : C.border}`, borderRadius: 6, marginBottom: compact ? 8 : 12, overflow: 'hidden', boxShadow: compact ? '0 1px 4px rgba(0,0,0,0.3)' : '0 2px 12px rgba(0,0,0,0.5)' }}>
       <div style={{ background: `linear-gradient(135deg, ${C.bgCardAlt}, ${C.bg})`, borderBottom: `1px solid ${C.border}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', letterSpacing: '0.1em', color: C.white }}>{fmtDate(event.date)}</div>
         <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, fontStyle: 'italic', flex: 1 }}>{[event.venue, event.city, event.state].filter(Boolean).join(', ')}</div>
@@ -384,7 +384,7 @@ function FestivalScheduleCard({ event }) {
     </div>
   );
 }
- 
+
 // ─── DAY CARD (standalone) ────────────────────────────────────────────────────
 function DayCard({ event }) {
   const bands = event.bands || [];
@@ -403,7 +403,7 @@ function DayCard({ event }) {
     </div>
   );
 }
- 
+
 // ─── ON THIS DAY ──────────────────────────────────────────────────────────────
 function OnThisDay({ concerts }) {
   const today = new Date();
@@ -430,7 +430,7 @@ function OnThisDay({ concerts }) {
     </div>
   );
 }
- 
+
 // ─── MANAGE TAB ───────────────────────────────────────────────────────────────
 function ManageTab({ concerts, onEdit, onAdd }) {
   const [search, setSearch] = useState('');
@@ -483,21 +483,21 @@ function ManageTab({ concerts, onEdit, onAdd }) {
     </div>
   );
 }
- 
- 
+
+
 // ─── YOU WERE THERE WIDGET ────────────────────────────────────────────────────
 function YouWereThere({ concerts }) {
   const [idx, setIdx] = useState(() => Math.floor(Math.random() * YOU_WERE_THERE.length));
   const [fading, setFading] = useState(false);
- 
+
   const fact = YOU_WERE_THERE[idx];
- 
+
   // Try to match a real concert from user's data, fall back to showing the static fact
   const matchedConcert = useMemo(() => {
     if (!fact.match) return null;
     return concerts.find(c => fact.match(c)) || null;
   }, [fact, concerts]);
- 
+
   const next = () => {
     setFading(true);
     setTimeout(() => {
@@ -505,7 +505,7 @@ function YouWereThere({ concerts }) {
       setFading(false);
     }, 250);
   };
- 
+
   return (
     <div style={{
       background: `linear-gradient(135deg, ${C.bgCard} 0%, ${C.bgCardAlt} 100%)`,
@@ -549,12 +549,12 @@ function YouWereThere({ concerts }) {
     </div>
   );
 }
- 
+
 // ─── RANDOM SHOW ─────────────────────────────────────────────────────────────
 function RandomShow({ concerts }) {
   const [show, setShow] = useState(null);
   const [spinning, setSpinning] = useState(false);
- 
+
   const spin = () => {
     setSpinning(true);
     let count = 0;
@@ -567,11 +567,11 @@ function RandomShow({ concerts }) {
       }
     }, 80);
   };
- 
+
   useEffect(() => { if (concerts.length) spin(); }, [concerts.length]);
- 
+
   if (!show) return null;
- 
+
   return (
     <div style={{ background: C.bgCard, border: `1px solid ${C.purple}55`, borderRadius: 8, padding: '16px 20px', marginBottom: 20, boxShadow: `0 0 16px rgba(153,102,255,0.08)` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -603,11 +603,11 @@ function RandomShow({ concerts }) {
     </div>
   );
 }
- 
+
 // ─── HALL OF FAME ─────────────────────────────────────────────────────────────
 function HallOfFame({ sets, onShare }) {
   const [selected, setSelected] = useState(null);
- 
+
   const artists = useMemo(() => {
     const m = {};
     sets.forEach(s => {
@@ -618,56 +618,33 @@ function HallOfFame({ sets, onShare }) {
       .filter(a => a.shows.length >= HALL_OF_FAME_MIN)
       .sort((a, b) => b.shows.length - a.shows.length);
   }, [sets]);
- 
+
   const selectedData = selected ? artists.find(a => a.artist === selected) : null;
- 
+
   const MEDAL = ['🥇', '🥈', '🥉'];
- 
+
+  const topRef = useRef(null);
+
+  const handleSelect = (artist, isSelected) => {
+    setSelected(isSelected ? null : artist);
+    if (!isSelected) setTimeout(() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30);
+  };
+
   return (
-    <div style={{ padding: '24px 0' }} className="fade-in">
+    <div ref={topRef} style={{ padding: '24px 0' }} className="fade-in">
       <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.gray, marginBottom: 16, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
         Artists seen {HALL_OF_FAME_MIN}+ times — click any to see full history
       </div>
- 
-      {/* Artist grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 28 }}>
-        {artists.map((a, i) => {
-          const isSelected = selected === a.artist;
-          const festCount = a.shows.filter(s => s.is_festival).length;
-          const pct = Math.round((festCount / a.shows.length) * 100);
-          return (
-            <div key={a.artist} onClick={() => setSelected(isSelected ? null : a.artist)}
-              style={{
-                background: isSelected ? `${C.teal}18` : C.bgCard,
-                border: `1px solid ${isSelected ? C.teal : C.border}`,
-                borderRadius: 8, padding: '12px 14px', cursor: 'pointer',
-                transition: 'all 0.18s',
-                boxShadow: isSelected ? `0 0 16px ${C.tealGlow}` : 'none',
-              }}>
-              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: isSelected ? C.teal : C.tealDim, marginBottom: 4 }}>
-                {MEDAL[i] || '🎤'} #{i + 1}
-              </div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: C.white, marginBottom: 6, lineHeight: 1.2 }}>{a.artist}</div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: isSelected ? C.teal : C.gray, lineHeight: 1 }}>{a.shows.length}×</div>
-              {/* mini fest bar */}
-              <div style={{ marginTop: 6, height: 3, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${pct}%`, background: C.teal, borderRadius: 2 }} />
-              </div>
-              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.grayDim, marginTop: 3 }}>{festCount}F · {a.shows.length - festCount}S</div>
-              {onShare && <button onClick={e => { e.stopPropagation(); onShare(a.artist, a.shows); }} style={{ marginTop: 6, fontFamily: "'Space Mono', monospace", fontSize: 7, letterSpacing: '0.08em', textTransform: 'uppercase', background: 'transparent', border: `1px solid ${C.teal}44`, color: C.tealDim, borderRadius: 2, padding: '2px 7px', cursor: 'pointer', width: '100%' }}>Share ↗</button>}
-            </div>
-          );
-        })}
-      </div>
- 
-      {/* Timeline for selected artist */}
+
+      {/* Timeline for selected artist — shown ABOVE the grid */}
       {selectedData && (
-        <div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.teal}55`, borderRadius: 8, padding: '18px 20px', boxShadow: `0 0 20px ${C.tealGlow}` }}>
+        <div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.teal}55`, borderRadius: 8, padding: '18px 20px', marginBottom: 24, boxShadow: `0 0 20px ${C.tealGlow}` }}>
+<div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.teal}55`, borderRadius: 8, padding: '18px 20px', boxShadow: `0 0 20px ${C.tealGlow}` }}>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', letterSpacing: '0.08em', color: C.teal, marginBottom: 4 }}>{selectedData.artist}</div>
           <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
             {selectedData.shows.length} sets · first: {fmtDate(selectedData.shows[selectedData.shows.length - 1]?.date)} · last: {fmtDate(selectedData.shows[0]?.date)}
           </div>
- 
+
           {/* Full show list as vertical timeline */}
           <div style={{ position: 'relative', paddingLeft: 20 }}>
             {/* timeline spine */}
@@ -690,7 +667,7 @@ function HallOfFame({ sets, onShare }) {
     </div>
   );
 }
- 
+
 // ─── SHAREABLE ARTIST CARD ────────────────────────────────────────────────────
 function ShareCard({ artist, shows, onClose }) {
   const festCount = shows.filter(s => s.is_festival).length;
@@ -698,7 +675,7 @@ function ShareCard({ artist, shows, onClose }) {
   const years = [...new Set(shows.map(s => getYear(s.date)).filter(Boolean))].sort();
   const firstDate = fmtDate(shows[shows.length - 1]?.date);
   const lastDate = fmtDate(shows[0]?.date);
- 
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
       onClick={e => e.target === e.currentTarget && onClose()}>
@@ -714,14 +691,14 @@ function ShareCard({ artist, shows, onClose }) {
           {/* glow orb */}
           <div style={{ position: 'absolute', top: -60, right: -60, width: 200, height: 200, background: `radial-gradient(circle, ${C.tealGlow}, transparent)`, pointerEvents: 'none' }} />
           <div style={{ position: 'absolute', bottom: -40, left: -40, width: 150, height: 150, background: `radial-gradient(circle, rgba(153,102,255,0.08), transparent)`, pointerEvents: 'none' }} />
- 
+
           <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.25em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 8, position: 'relative', zIndex: 1 }}>
             🎸 Eric's Concert History
           </div>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(1.8rem, 6vw, 2.6rem)', letterSpacing: '0.06em', color: C.white, lineHeight: 1, marginBottom: 16, position: 'relative', zIndex: 1 }}>
             {artist}
           </div>
- 
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16, position: 'relative', zIndex: 1 }}>
             {[
               [shows.length, 'Times Seen'],
@@ -735,7 +712,7 @@ function ShareCard({ artist, shows, onClose }) {
               </div>
             ))}
           </div>
- 
+
           <div style={{ position: 'relative', zIndex: 1, marginBottom: 12 }}>
             <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Show History</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
@@ -744,12 +721,12 @@ function ShareCard({ artist, shows, onClose }) {
               ))}
             </div>
           </div>
- 
+
           <div style={{ position: 'relative', zIndex: 1, fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.grayDim, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             First: {firstDate} · Last: {lastDate}
           </div>
         </div>
- 
+
         <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'center' }}>
           <button onClick={() => {
             // Copy stats to clipboard as text
@@ -766,88 +743,135 @@ function ShareCard({ artist, shows, onClose }) {
     </div>
   );
 }
- 
- 
- 
+
+
+
 // ─── LOCATION HEATMAP ─────────────────────────────────────────────────────────
 // US state centroids (approximate) for dot placement on SVG map
 const STATE_COORDS = {
-  AL:{x:560,y:360}, AK:{x:130,y:430}, AZ:{x:165,y:310}, AR:{x:500,y:330},
-  CA:{x:95,y:270},  CO:{x:255,y:255}, CT:{x:720,y:175}, DE:{x:700,y:215},
-  FL:{x:590,y:420}, GA:{x:580,y:360}, HI:{x:220,y:450}, ID:{x:175,y:175},
-  IL:{x:530,y:230}, IN:{x:550,y:235}, IA:{x:475,y:205}, KS:{x:415,y:270},
-  KY:{x:560,y:280}, LA:{x:495,y:390}, ME:{x:760,y:120}, MD:{x:690,y:220},
-  MA:{x:740,y:165}, MI:{x:560,y:185}, MN:{x:460,y:155}, MS:{x:530,y:370},
-  MO:{x:490,y:265}, MT:{x:220,y:145}, NE:{x:400,y:225}, NV:{x:140,y:240},
-  NH:{x:740,y:150}, NJ:{x:710,y:205}, NM:{x:240,y:320}, NY:{x:695,y:175},
-  NC:{x:645,y:295}, ND:{x:390,y:145}, OH:{x:590,y:225}, OK:{x:420,y:310},
-  OR:{x:115,y:175}, PA:{x:670,y:200}, RI:{x:745,y:175}, SC:{x:635,y:325},
-  SD:{x:390,y:185}, TN:{x:555,y:305}, TX:{x:390,y:370}, UT:{x:195,y:245},
-  VT:{x:725,y:145}, VA:{x:660,y:255}, WA:{x:130,y:135}, WV:{x:625,y:245},
-  WI:{x:510,y:180}, WY:{x:245,y:200},
-  ON:{x:640,y:135}, // Ontario
+  AK:{x:120,y:430}, AL:{x:540,y:348}, AR:{x:482,y:308}, AZ:{x:178,y:308},
+  CA:{x:90,y:258},  CO:{x:268,y:248}, CT:{x:706,y:188}, DC:{x:660,y:238},
+  DE:{x:678,y:218}, FL:{x:572,y:408}, GA:{x:572,y:348}, HI:{x:210,y:445},
+  IA:{x:460,y:205}, ID:{x:178,y:148}, IL:{x:510,y:222}, IN:{x:538,y:220},
+  KS:{x:390,y:252}, KY:{x:552,y:268}, LA:{x:488,y:375}, MA:{x:720,y:170},
+  MD:{x:660,y:228}, ME:{x:742,y:128}, MI:{x:540,y:168}, MN:{x:448,y:138},
+  MO:{x:478,y:258}, MS:{x:510,y:345}, MT:{x:228,y:120}, NC:{x:620,y:288},
+  ND:{x:390,y:118}, NE:{x:388,y:210}, NH:{x:728,y:148}, NJ:{x:690,y:205},
+  NM:{x:240,y:318}, NV:{x:145,y:232}, NY:{x:672,y:172}, OH:{x:568,y:208},
+  OK:{x:400,y:298}, ON:{x:618,y:140}, OR:{x:100,y:165}, PA:{x:648,y:200},
+  RI:{x:718,y:183}, SC:{x:612,y:320}, SD:{x:388,y:158}, TN:{x:548,y:300},
+  TX:{x:395,y:360}, UT:{x:198,y:232}, VA:{x:638,y:252}, VT:{x:710,y:142},
+  WA:{x:108,y:108}, WI:{x:495,y:168}, WV:{x:604,y:238}, WY:{x:248,y:178},
 };
- 
+
 function LocationHeatmap({ concerts }) {
   const [hovered, setHovered] = useState(null);
- 
+
   const stateCounts = useMemo(() => {
     const m = {};
     concerts.forEach(c => { if (c.state) m[c.state] = (m[c.state] || 0) + 1; });
     return m;
   }, [concerts]);
- 
+
   const maxCount = Math.max(...Object.values(stateCounts), 1);
-  const entries = Object.entries(stateCounts).filter(([st]) => STATE_COORDS[st]);
- 
+  const allStates = Object.keys(STATE_COORDS);
+
   const getColor = (count) => {
+    if (!count) return null;
     const pct = count / maxCount;
     if (pct > 0.7) return C.teal;
     if (pct > 0.35) return C.cyan;
     if (pct > 0.1) return C.purple;
     return C.grayDim;
   };
- 
+
   const getR = (count) => {
+    if (!count) return 0;
     const pct = count / maxCount;
-    return Math.max(5, pct * 28);
+    return Math.max(6, pct * 32);
   };
- 
+
   return (
     <div style={{ position: 'relative' }}>
       <svg viewBox="0 0 800 500" style={{ width: '100%', height: 'auto', display: 'block' }}>
-        {/* Background map outline - simplified US border suggestion */}
-        <rect x="80" y="110" width="680" height="340" rx="4" fill="none" stroke={C.border} strokeWidth="1" opacity="0.3" />
- 
-        {/* Dots for each state */}
-        {entries.map(([state, count]) => {
+        <defs>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        {/* ── US Map outline (simplified path approximation) ── */}
+        {/* Continental outline suggestion — a series of region boxes */}
+        {/* West */}
+        <rect x="70" y="95" width="220" height="300" rx="2" fill="none" stroke={C.grayDim} strokeWidth="0.5" opacity="0.2"/>
+        {/* Mountain/Plains */}
+        <rect x="288" y="95" width="210" height="280" rx="2" fill="none" stroke={C.grayDim} strokeWidth="0.5" opacity="0.2"/>
+        {/* Midwest/East */}
+        <rect x="496" y="95" width="270" height="240" rx="2" fill="none" stroke={C.grayDim} strokeWidth="0.5" opacity="0.2"/>
+        {/* Southeast */}
+        <rect x="496" y="333" width="140" height="100" rx="2" fill="none" stroke={C.grayDim} strokeWidth="0.5" opacity="0.2"/>
+        {/* Texas bulge */}
+        <rect x="330" y="295" width="130" height="130" rx="2" fill="none" stroke={C.grayDim} strokeWidth="0.5" opacity="0.2"/>
+
+        {/* Overall US bounding box (faint) */}
+        <rect x="70" y="95" width="696" height="338" rx="4" fill="none" stroke={C.border} strokeWidth="1" opacity="0.35"/>
+
+        {/* AK box */}
+        <rect x="75" y="400" width="100" height="70" rx="2" fill="none" stroke={C.border} strokeWidth="0.5" opacity="0.3"/>
+        <text x="125" y="392" textAnchor="middle" style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, fill: C.grayDim, opacity: 0.5 }}>AK</text>
+
+        {/* HI box */}
+        <rect x="185" y="418" width="70" height="40" rx="2" fill="none" stroke={C.border} strokeWidth="0.5" opacity="0.3"/>
+        <text x="220" y="412" textAnchor="middle" style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, fill: C.grayDim, opacity: 0.5 }}>HI</text>
+
+        {/* ── State dots: all states (visited = colored, unvisited = faint) ── */}
+        {allStates.map(state => {
           const pos = STATE_COORDS[state];
-          const r = getR(count);
+          const count = stateCounts[state] || 0;
+          const visited = count > 0;
           const color = getColor(count);
+          const r = visited ? getR(count) : 4;
           const isHov = hovered === state;
+
+          if (!visited) {
+            // unvisited: tiny dim dot, no label
+            return (
+              <g key={state} onMouseEnter={() => setHovered(state)} onMouseLeave={() => setHovered(null)} style={{ cursor: 'default' }}>
+                <circle cx={pos.x} cy={pos.y} r={3} fill={C.grayDim} opacity={0.18} />
+                {isHov && (
+                  <g>
+                    <rect x={pos.x - 30} y={pos.y - 24} width={60} height={18} rx={3} fill={C.bgCard} stroke={C.grayDim} strokeWidth={0.5} />
+                    <text x={pos.x} y={pos.y - 13} textAnchor="middle" style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, fill: C.gray }}>{state}: 0</text>
+                  </g>
+                )}
+              </g>
+            );
+          }
+
           return (
             <g key={state} onMouseEnter={() => setHovered(state)} onMouseLeave={() => setHovered(null)} style={{ cursor: 'pointer' }}>
-              {/* glow ring */}
-              <circle cx={pos.x} cy={pos.y} r={r + 4} fill={color} opacity={isHov ? 0.2 : 0.06} />
+              {/* outer glow */}
+              <circle cx={pos.x} cy={pos.y} r={r + 5} fill={color} opacity={isHov ? 0.18 : 0.07} />
               {/* main dot */}
-              <circle cx={pos.x} cy={pos.y} r={r} fill={color} opacity={isHov ? 1 : 0.75}
-                style={{ filter: isHov ? `drop-shadow(0 0 6px ${color})` : 'none', transition: 'all 0.15s' }} />
-              {/* state label */}
+              <circle cx={pos.x} cy={pos.y} r={r} fill={color} opacity={isHov ? 1 : 0.82}
+                style={{ filter: isHov ? `drop-shadow(0 0 8px ${color})` : 'none', transition: 'all 0.15s' }} />
+              {/* state abbr */}
               <text x={pos.x} y={pos.y + (r > 10 ? 4 : 3)} textAnchor="middle"
-                style={{ fontFamily: "'Space Mono', monospace", fontSize: r > 14 ? 8 : 6, fill: C.bg, fontWeight: 700, pointerEvents: 'none' }}>
+                style={{ fontFamily: "'Space Mono', monospace", fontSize: r > 14 ? 8 : 6, fill: C.bg, fontWeight: 700, pointerEvents: 'none', userSelect: 'none' }}>
                 {state}
               </text>
-              {/* hover tooltip */}
+              {/* tooltip */}
               {isHov && (
                 <g>
-                  <rect x={pos.x - 36} y={pos.y - r - 32} width={72} height={24} rx={4} fill={C.bgCard} stroke={color} strokeWidth={1} />
+                  <rect x={pos.x - 40} y={pos.y - r - 34} width={80} height={26} rx={4} fill={C.bgCard} stroke={color} strokeWidth={1} />
                   <text x={pos.x} y={pos.y - r - 22} textAnchor="middle"
-                    style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, fill: color }}>
-                    {state}: {count}
+                    style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, fill: color, fontWeight: 700 }}>
+                    {state}: {count} {count === 1 ? 'show' : 'shows'}
                   </text>
-                  <text x={pos.x} y={pos.y - r - 12} textAnchor="middle"
+                  <text x={pos.x} y={pos.y - r - 11} textAnchor="middle"
                     style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, fill: C.gray }}>
-                    {count === 1 ? 'show' : 'shows'}
+                    {Math.round((count / maxCount) * 100)}% of your max
                   </text>
                 </g>
               )}
@@ -855,12 +879,12 @@ function LocationHeatmap({ concerts }) {
           );
         })}
       </svg>
- 
+
       {/* Legend */}
-      <div style={{ display: 'flex', gap: 14, marginTop: 4, flexWrap: 'wrap' }}>
-        {[[C.teal, '70%+ of max'], [C.cyan, '35–70%'], [C.purple, '10–35%'], [C.grayDim, 'Under 10%']].map(([color, label]) => (
+      <div style={{ display: 'flex', gap: 16, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        {[[C.teal, 'Heavy (70%+)'], [C.cyan, 'Mid (35–70%)'], [C.purple, 'Light (10–35%)'], [C.grayDim, 'Few visits'], ['#333', 'Never visited']].map(([color, label]) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+            <div style={{ width: color === '#333' ? 6 : 8, height: color === '#333' ? 6 : 8, borderRadius: '50%', background: color, opacity: color === '#333' ? 0.3 : 1 }} />
             <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
           </div>
         ))}
@@ -868,7 +892,7 @@ function LocationHeatmap({ concerts }) {
     </div>
   );
 }
- 
+
 // ─── TOP FESTIVALS BIG STAT BLOCKS ────────────────────────────────────────────
 function TopFestBlocks({ festBreakdown }) {
   const top3 = festBreakdown.slice(0, 3);
@@ -895,7 +919,7 @@ function TopFestBlocks({ festBreakdown }) {
     </div>
   );
 }
- 
+
 // ─── DONUT CHART ──────────────────────────────────────────────────────────────
 function DonutChart({ fest, solo }) {
   const total = fest + solo;
@@ -946,7 +970,7 @@ function DonutChart({ fest, solo }) {
     </div>
   );
 }
- 
+
 // ─── BUBBLE CITY CHART ────────────────────────────────────────────────────────
 function CityBubbles({ cityCounts }) {
   const [hov, setHov] = useState(null);
@@ -977,7 +1001,7 @@ function CityBubbles({ cityCounts }) {
     </div>
   );
 }
- 
+
 // ─── DECADE BLOCKS ────────────────────────────────────────────────────────────
 function DecadeBlocks({ sets }) {
   const dec = { '90s': 0, '00s': 0, '10s': 0, '20s': 0 };
@@ -1013,7 +1037,7 @@ function DecadeBlocks({ sets }) {
     </div>
   );
 }
- 
+
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 const TABS = [
   ['dashboard', '⚡ Dashboard'],
@@ -1025,7 +1049,7 @@ const TABS = [
   ['manage',    '⚙️ Manage'],
 ];
 const PER_PAGE = 40;
- 
+
 export default function App() {
   const [concerts, setConcerts]     = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -1039,9 +1063,9 @@ export default function App() {
   const [page, setPage]             = useState(1);
   const [editTarget, setEditTarget] = useState(null);
   const [shareCard, setShareCard] = useState(null); // { artist, shows }
- 
+
   useEffect(() => { fetchConcerts(); }, []);
- 
+
   async function fetchConcerts() {
     try {
       const { data, error } = await supabase.from('concerts').select('*').order('date', { ascending: false });
@@ -1050,7 +1074,7 @@ export default function App() {
     } catch (err) { console.error(err.message); }
     finally { setLoading(false); }
   }
- 
+
   async function handleSave(id, payload) {
     try {
       if (id) {
@@ -1065,7 +1089,7 @@ export default function App() {
       setEditTarget(null);
     } catch (err) { alert('Save failed: ' + err.message); }
   }
- 
+
   async function handleDelete(id) {
     try {
       const { error } = await supabase.from('concerts').delete().eq('id', id);
@@ -1074,7 +1098,7 @@ export default function App() {
       setEditTarget(null);
     } catch (err) { alert('Delete failed: ' + err.message); }
   }
- 
+
   async function toggleSetlist(concert) {
     const newVal = !concert.has_setlist;
     try {
@@ -1083,16 +1107,16 @@ export default function App() {
       setConcerts(p => p.map(c => c.id === concert.id ? { ...c, has_setlist: newVal } : c));
     } catch (err) { console.error(err.message); }
   }
- 
+
   // ── DERIVED ────────────────────────────────────────────────────────────────
   const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
- 
+
   const sets = useMemo(() => {
     const r = [];
     concerts.forEach(c => (c.bands || []).forEach(band => r.push({ ...c, artist: band })));
     return r;
   }, [concerts]);
- 
+
   const stats = useMemo(() => {
     const ac = {}, venues = new Set();
     sets.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
@@ -1105,49 +1129,49 @@ export default function App() {
       setlistCount: concerts.filter(c => c.has_setlist).length,
     };
   }, [concerts, sets]);
- 
+
   const artistCounts = useMemo(() => {
     const m = {};
     sets.forEach(s => { m[s.artist] = (m[s.artist] || 0) + 1; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 14).map(([name, count]) => ({ name, count }));
   }, [sets]);
- 
+
   const timelineData = useMemo(() => {
     const m = {};
     sets.forEach(s => { const y = getYear(s.date); if (y) m[y] = (m[y] || 0) + 1; });
     return Object.entries(m).sort((a, b) => +a[0] - +b[0]).map(([year, count]) => ({ year: String(year).slice(2), count, fullYear: +year }));
   }, [sets]);
- 
+
   const festBreakdown = useMemo(() => {
     const m = {};
     concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { m[c.festival_name] = (m[c.festival_name] || 0) + 1; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]);
   }, [concerts]);
- 
+
   const cityCounts = useMemo(() => {
     const m = {};
     concerts.forEach(c => { if (c.city) m[c.city] = (m[c.city] || 0) + 1; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([name, count]) => ({ name, count }));
   }, [concerts]);
- 
+
   const venueCounts = useMemo(() => {
     const m = {};
     concerts.forEach(c => { if (c.venue) m[c.venue] = (m[c.venue] || 0) + 1; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([name, count]) => ({ name, count }));
   }, [concerts]);
- 
+
   const stateCounts = useMemo(() => {
     const m = {};
     concerts.forEach(c => { if (c.state) m[c.state] = (m[c.state] || 0) + 1; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]);
   }, [concerts]);
- 
+
   const artistFestMap = useMemo(() => {
     const m = {};
     sets.forEach(s => { if (!m[s.artist]) m[s.artist] = { fest: 0, solo: 0 }; if (s.is_festival) m[s.artist].fest++; else m[s.artist].solo++; });
     return m;
   }, [sets]);
- 
+
   const milestones = useMemo(() => {
     const sorted = [...concerts].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
     const first = sorted[0];
@@ -1165,7 +1189,7 @@ export default function App() {
       { icon: '📋', label: 'Setlists', value: stats.setlistCount, sub: 'since Billy Idol ACL 2015' },
     ];
   }, [concerts, sets, timelineData, stateCounts, stats, festBreakdown]);
- 
+
   const passport = useMemo(() => {
     const m = {};
     concerts.filter(c => c.is_festival && c.festival_name).forEach(c => {
@@ -1175,7 +1199,7 @@ export default function App() {
     });
     return Object.values(m).map(f => ({ ...f, years: [...f.years].sort() })).sort((a, b) => b.days - a.days);
   }, [concerts]);
- 
+
   const festGroupings = useMemo(() => {
     const m = {};
     concerts.filter(c => c.is_festival && c.festival_name).forEach(c => {
@@ -1186,7 +1210,7 @@ export default function App() {
     });
     return Object.values(m).sort((a, b) => Object.values(b.years).flat().length - Object.values(a.years).flat().length);
   }, [concerts]);
- 
+
   const applyFilters = (list, isSet = false) => {
     let d = list;
     if (yearFilter !== 'all') d = d.filter(r => getYear(r.date) === +yearFilter);
@@ -1205,7 +1229,7 @@ export default function App() {
     }
     return d;
   };
- 
+
   const filteredSets = useMemo(() => {
     const d = applyFilters(sets, true);
     return [...d].sort((a, b) => {
@@ -1216,20 +1240,20 @@ export default function App() {
       return 0;
     });
   }, [sets, yearFilter, festFilter, search, sortCol, sortDir]);
- 
+
   const artistRows = useMemo(() => {
     if (browseView !== 'artists') return [];
     const m = {};
     applyFilters(sets, true).forEach(s => { if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; m[s.artist].shows.push(s); });
     return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
   }, [sets, yearFilter, festFilter, search, browseView]);
- 
+
   const dayGroups = useMemo(() => applyFilters(concerts).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [concerts, yearFilter, festFilter, search]);
- 
+
   const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const totalPages = Math.ceil(filteredSets.length / PER_PAGE);
   const handleSort = col => { if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortCol(col); setSortDir('asc'); } setPage(1); };
- 
+
   // ── LOADING ────────────────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1239,11 +1263,11 @@ export default function App() {
       </div>
     </div>
   );
- 
+
   // ── RENDER ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ background: C.bg, minHeight: '100vh', paddingBottom: 60 }}>
- 
+
       {shareCard && (
         <ShareCard
           artist={shareCard.artist}
@@ -1251,7 +1275,7 @@ export default function App() {
           onClose={() => setShareCard(null)}
         />
       )}
- 
+
       {editTarget && (
         <EditModal
           concert={editTarget === 'new' ? null : editTarget}
@@ -1260,7 +1284,7 @@ export default function App() {
           onDelete={handleDelete}
         />
       )}
- 
+
       {/* HEADER */}
       <div style={{ background: `linear-gradient(180deg, #050508 0%, ${C.bgCard} 100%)`, borderBottom: `1px solid ${C.teal}33`, padding: '28px 24px 20px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -40, left: '50%', transform: 'translateX(-50%)', width: 400, height: 120, background: `radial-gradient(ellipse, ${C.tealGlow}, transparent)`, pointerEvents: 'none' }} />
@@ -1270,7 +1294,7 @@ export default function App() {
         <div style={{ marginTop: 6, fontFamily: "'Space Mono', monospace", fontSize: '0.78rem', color: C.gray, letterSpacing: '0.1em' }}>Every show. Every set. Every memory.</div>
         <div style={{ width: 80, height: 1, background: `linear-gradient(to right, transparent, ${C.teal}, transparent)`, margin: '12px auto 0' }} />
       </div>
- 
+
       {/* STAT STRIP */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', background: C.bgCard, borderBottom: `1px solid ${C.border}` }}>
         {[
@@ -1286,7 +1310,7 @@ export default function App() {
           </div>
         ))}
       </div>
- 
+
       {/* NAV */}
       <nav style={{ background: C.bgCard, borderBottom: `1px solid ${C.teal}33`, display: 'flex', overflowX: 'auto', position: 'sticky', top: 0, zIndex: 200 }}>
         {TABS.map(([id, label]) => (
@@ -1300,21 +1324,21 @@ export default function App() {
           }} onClick={() => setActiveTab(id)}>{label}</button>
         ))}
       </nav>
- 
+
       {/* CONTENT */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
- 
+
         {/* ── DASHBOARD ── */}
         {activeTab === 'dashboard' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
             <OnThisDay concerts={concerts} />
- 
+
             {/* You Were There + Random Show row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16, marginBottom: 4 }}>
               <YouWereThere concerts={concerts} />
               <RandomShow concerts={concerts} />
             </div>
- 
+
             {/* Milestones */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
               {milestones.map((m, i) => (
@@ -1326,10 +1350,10 @@ export default function App() {
                 </Card>
               ))}
             </div>
- 
+
             {/* ── ROW 1: Artist podium (big) + Sets Per Year (wide bar) ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, marginBottom: 16 }}>
- 
+
               {/* Artist podium — top 5 as ranked stat blocks */}
               <Card neon>
                 <CardTitle>Most Seen Artists</CardTitle>
@@ -1347,7 +1371,7 @@ export default function App() {
                   })}
                 </div>
               </Card>
- 
+
               {/* Sets per year — area-style bar chart */}
               <Card neon>
                 <CardTitle>Sets Per Year</CardTitle>
@@ -1372,13 +1396,13 @@ export default function App() {
                 </ResponsiveContainer>
               </Card>
             </div>
- 
+
             {/* ── ROW 2: Location heatmap (full width) ── */}
             <Card neon style={{ marginBottom: 16 }}>
               <CardTitle>Shows by Location — hover any state for count</CardTitle>
               <LocationHeatmap concerts={concerts} />
             </Card>
- 
+
             {/* ── ROW 3: Donut + Top 3 Fests + Decade blocks ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
               <Card neon>
@@ -1394,7 +1418,7 @@ export default function App() {
                 <DecadeBlocks sets={sets} />
               </Card>
             </div>
- 
+
             {/* ── ROW 4: City bubbles (full width) ── */}
             <Card neon>
               <CardTitle>Cities — Bubble = Show Count</CardTitle>
@@ -1402,7 +1426,7 @@ export default function App() {
             </Card>
           </div>
         )}
- 
+
         {/* ── BY DAY ── */}
         {activeTab === 'byDay' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
@@ -1425,7 +1449,7 @@ export default function App() {
             )}
           </div>
         )}
- 
+
         {/* ── BY FESTIVAL ── */}
         {activeTab === 'byFest' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
@@ -1459,7 +1483,7 @@ export default function App() {
                     <div style={{ position: 'absolute', bottom: 6, right: 6, width: 24, height: 24, borderBottom: `1px solid ${fColor}66`, borderRight: `1px solid ${fColor}66` }} />
                     {/* glow orb */}
                     <div style={{ position: 'absolute', top: -30, left: '50%', transform: 'translateX(-50%)', width: 200, height: 80, background: `radial-gradient(ellipse, ${fColor}22, transparent)`, pointerEvents: 'none' }} />
- 
+
                     <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
                       <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(2rem, 5vw, 3.2rem)', letterSpacing: '0.15em', color: fColor, textShadow: `0 0 20px ${fColor}55`, lineHeight: 1, marginBottom: 8 }}>
                         {fg.name}
@@ -1485,23 +1509,52 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-                  {/* Year sections */}
+                  {/* Year sections — each year is a fully boxed container */}
                   {Object.entries(fg.years).sort((a, b) => +a[0] - +b[0]).map(([yr, evs]) => (
-                    <div key={yr} style={{ marginBottom: 24 }}>
-                      {/* Year badge */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', letterSpacing: '0.12em', color: C.white, background: `${C.teal}22`, border: `1px solid ${C.teal}44`, borderRadius: 4, padding: '2px 12px' }}>
+                    <div key={yr} style={{
+                      marginBottom: 28,
+                      border: `1px solid ${fColor}55`,
+                      borderTop: `4px solid ${fColor}`,
+                      borderRadius: 10,
+                      overflow: 'hidden',
+                      background: `linear-gradient(180deg, ${fColor}0a 0%, ${C.bg} 80px)`,
+                      boxShadow: `0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 ${fColor}22`,
+                    }}>
+                      {/* Year header bar */}
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 14,
+                        padding: '12px 18px',
+                        borderBottom: `1px solid ${fColor}33`,
+                        background: `${fColor}0f`,
+                      }}>
+                        <div style={{
+                          fontFamily: "'Bebas Neue'", fontSize: '1.6rem',
+                          letterSpacing: '0.12em', color: fColor,
+                          textShadow: `0 0 12px ${fColor}55`, lineHeight: 1,
+                        }}>
                           {fg.name} {yr}
                         </div>
-                        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                          {evs.length} day{evs.length !== 1 ? 's' : ''}
+                        <div style={{
+                          fontFamily: "'Space Mono', monospace", fontSize: 8,
+                          color: C.gray, textTransform: 'uppercase', letterSpacing: '0.14em',
+                          background: C.bgCardAlt, border: `1px solid ${C.border}`,
+                          padding: '3px 8px', borderRadius: 3,
+                        }}>
+                          {evs.length} {evs.length === 1 ? 'day' : 'days'}
                         </div>
-                        <div style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${C.teal}33, transparent)` }} />
+                        <div style={{
+                          fontFamily: "'Space Mono', monospace", fontSize: 8,
+                          color: C.gray, textTransform: 'uppercase', letterSpacing: '0.1em',
+                        }}>
+                          {evs[0]?.city ? `${evs[0].city}, ${evs[0].state}` : ''}
+                        </div>
                       </div>
-                      {/* Each day as a full FestivalScheduleCard */}
-                      {evs.map(ev => (
-                        <FestivalScheduleCard key={ev.id} event={ev} />
-                      ))}
+                      {/* Days inside the box */}
+                      <div style={{ padding: '14px 14px 6px' }}>
+                        {evs.map(ev => (
+                          <FestivalScheduleCard key={ev.id} event={ev} compact={true} />
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1509,7 +1562,7 @@ export default function App() {
               })}
           </div>
         )}
- 
+
         {/* ── BROWSE ── */}
         {activeTab === 'browse' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
@@ -1531,7 +1584,7 @@ export default function App() {
               </div>
               <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, marginLeft: 'auto' }}>{browseView === 'shows' ? `${filteredSets.length} sets` : `${artistRows.length} artists`}</span>
             </div>
- 
+
             {browseView === 'shows' && (
               <>
                 <div style={{ overflowX: 'auto', borderRadius: 8, border: `1px solid ${C.border}` }}>
@@ -1577,7 +1630,7 @@ export default function App() {
                 )}
               </>
             )}
- 
+
             {browseView === 'artists' && (
               <div>
                 {artistRows.map(({ artist, shows }) => {
@@ -1611,12 +1664,12 @@ export default function App() {
             )}
           </div>
         )}
- 
+
         {/* ── HALL OF FAME ── */}
         {activeTab === 'hof' && (
           <HallOfFame sets={sets} onShare={(artist, shows) => setShareCard({ artist, shows })} />
         )}
- 
+
         {/* ── PASSPORT ── */}
         {activeTab === 'passport' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
@@ -1640,14 +1693,44 @@ export default function App() {
             </div>
           </div>
         )}
- 
+
         {/* ── MANAGE ── */}
         {activeTab === 'manage' && (
           <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} />
         )}
- 
+
       </div>
     </div>
   );
 }
- 
+
+            {/* Artist grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 28 }}>
+        {artists.map((a, i) => {
+          const isSelected = selected === a.artist;
+          const festCount = a.shows.filter(s => s.is_festival).length;
+          const pct = Math.round((festCount / a.shows.length) * 100);
+          return (
+            <div key={a.artist} onClick={() => handleSelect(a.artist, isSelected)}
+              style={{
+                background: isSelected ? `${C.teal}18` : C.bgCard,
+                border: `1px solid ${isSelected ? C.teal : C.border}`,
+                borderRadius: 8, padding: '12px 14px', cursor: 'pointer',
+                transition: 'all 0.18s',
+                boxShadow: isSelected ? `0 0 16px ${C.tealGlow}` : 'none',
+              }}>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: isSelected ? C.teal : C.tealDim, marginBottom: 4 }}>
+                {MEDAL[i] || '🎤'} #{i + 1}
+              </div>
+              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: C.white, marginBottom: 6, lineHeight: 1.2 }}>{a.artist}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: isSelected ? C.teal : C.gray, lineHeight: 1 }}>{a.shows.length}×</div>
+              {/* mini fest bar */}
+              <div style={{ marginTop: 6, height: 3, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: C.teal, borderRadius: 2 }} />
+              </div>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.grayDim, marginTop: 3 }}>{festCount}F · {a.shows.length - festCount}S</div>
+              {onShare && <button onClick={e => { e.stopPropagation(); onShare(a.artist, a.shows); }} style={{ marginTop: 6, fontFamily: "'Space Mono', monospace", fontSize: 7, letterSpacing: '0.08em', textTransform: 'uppercase', background: 'transparent', border: `1px solid ${C.teal}44`, color: C.tealDim, borderRadius: 2, padding: '2px 7px', cursor: 'pointer', width: '100%' }}>Share ↗</button>}
+            </div>
+          );
+        })}
+      </div>
