@@ -783,14 +783,12 @@ const STATE_COORDS = {
 };
 
 function LocationHeatmap({ concerts }) {
-  // 1. Calculate State Colors
   const stateCounts = useMemo(() => {
     const m = {};
     concerts.forEach(c => { if (c.state) m[c.state] = (m[c.state] || 0) + 1; });
     return m;
   }, [concerts]);
 
-  // 2. Calculate City Bubbles
   const cityData = useMemo(() => {
     const m = {};
     concerts.forEach(c => {
@@ -807,44 +805,40 @@ function LocationHeatmap({ concerts }) {
   const maxCity = Math.max(...cityData.map(d => d.count), 1);
 
   return (
-    <div style={{ position: 'relative', background: '#050508', borderRadius: '12px', padding: '24px', border: `1px solid ${C.border}` }}>
-      <svg viewBox="0 0 960 600" style={{ width: '100%', height: 'auto', display: 'block' }}>
-        {/* PHYSICAL US OUTLINE (The "Map" Look) */}
+    <div style={{ position: 'relative', background: '#050508', borderRadius: '12px', padding: '30px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+      <svg viewBox="0 0 800 500" style={{ width: '100%', height: 'auto', display: 'block' }}>
+        {/* PHYSICAL US GEOGRAPHY BASE */}
         <path 
-          d="M165,100 L795,100 L840,150 L840,400 L700,500 L300,500 L120,400 Z" 
-          fill="#111118" 
+          d="M75,120 L150,110 L250,115 L350,105 L450,110 L550,100 L650,110 L720,130 L750,180 L760,250 L730,320 L680,350 L620,380 L580,440 L540,430 L500,400 L440,420 L380,450 L300,440 L220,380 L180,380 L120,350 L80,300 L70,200 Z" 
+          fill="#0a0a0f" 
           stroke={C.border} 
-          strokeWidth="2" 
-          opacity="0.5"
+          strokeWidth="2"
         />
         
-        {/* SUBTLE STATE GRID LINES */}
-        <line x1="300" y1="100" x2="300" y2="500" stroke={C.border} strokeWidth="0.5" opacity="0.2" />
-        <line x1="550" y1="100" x2="550" y2="500" stroke={C.border} strokeWidth="0.5" opacity="0.2" />
-        <line x1="165" y1="300" x2="840" y2="300" stroke={C.border} strokeWidth="0.5" opacity="0.2" />
-
-        {/* STATE SQUARES (Heatmap Layer) */}
+        {/* THE "CARVED OUT" STATE TILES */}
         {Object.entries(STATE_COORDS).map(([abbr, pos]) => {
           const count = stateCounts[abbr] || 0;
           const isVisited = count > 0;
+          
+          // Logic: High count = Teal, Low count = Purple, None = Dark Blue/Gray
           const stateFill = isVisited 
             ? (count / maxState > 0.6 ? C.teal : C.purple) 
-            : 'transparent';
+            : '#161625';
 
           return (
             <g key={abbr}>
+              {/* State "Stamp" */}
               <rect
-                x={pos.x - 16} y={pos.y - 16} width={32} height={32} rx={6}
+                x={pos.x - 14} y={pos.y - 14} width={28} height={28} rx={4}
                 fill={stateFill}
-                stroke={isVisited ? C.white : C.grayDim}
-                strokeWidth={isVisited ? 1.5 : 0.5}
-                opacity={isVisited ? 1 : 0.2}
-                style={{ filter: isVisited ? `drop-shadow(0 0 8px ${stateFill}66)` : 'none' }}
+                stroke={isVisited ? C.white : '#2a2a3a'}
+                strokeWidth={isVisited ? 1 : 0.5}
+                opacity={isVisited ? 1 : 0.4}
               />
               <text 
-                x={pos.x} y={pos.y + 4} 
+                x={pos.x} y={pos.y + 3} 
                 textAnchor="middle" 
-                style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, fill: isVisited ? C.white : C.grayDim, fontWeight: 700, pointerEvents: 'none' }}
+                style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, fill: isVisited ? C.white : '#444', fontWeight: 700, pointerEvents: 'none' }}
               >
                 {abbr}
               </text>
@@ -852,37 +846,44 @@ function LocationHeatmap({ concerts }) {
           );
         })}
 
-        {/* CITY BUBBLES (Quantity Layer) */}
+        {/* CITY RADAR RINGS (Shows density) */}
         {cityData.map((city, i) => {
-          const radius = Math.sqrt(city.count / maxCity) * 45 + 5;
+          const radius = Math.sqrt(city.count / maxCity) * 50 + 6;
           return (
-            <circle
-              key={`city-${i}`}
-              cx={city.x}
-              cy={city.y}
-              r={radius}
-              fill="transparent"
-              stroke={C.cyan}
-              strokeWidth="2"
-              opacity="0.6"
-              style={{ pointerEvents: 'none', filter: `drop-shadow(0 0 10px ${C.cyan})` }}
-            />
+            <g key={`city-${i}`}>
+              {/* Outer Glow */}
+              <circle
+                cx={city.x} cy={city.y} r={radius}
+                fill="none"
+                stroke={C.cyan}
+                strokeWidth="1.5"
+                opacity="0.4"
+                style={{ filter: `drop-shadow(0 0 10px ${C.cyan})` }}
+              />
+              {/* Inner Core */}
+              <circle
+                cx={city.x} cy={city.y} r={4}
+                fill={C.cyan}
+                opacity="0.8"
+              />
+            </g>
           );
         })}
       </svg>
 
-      <div style={{ display: 'flex', gap: 24, marginTop: 20, justifyContent: 'center' }}>
+      {/* LEGEND */}
+      <div style={{ display: 'flex', gap: 25, marginTop: 20, justifyContent: 'center', borderTop: `1px solid ${C.border}`, paddingTop: '15px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 14, height: 14, background: C.teal, borderRadius: 3 }} />
-          <span style={{ fontSize: 10, color: C.white, fontFamily: "'Space Mono'", letterSpacing: '1px' }}>HEAVY PRESENCE</span>
+          <div style={{ width: 12, height: 12, background: C.teal, borderRadius: 2 }} />
+          <span style={{ fontSize: 9, color: C.gray, fontFamily: "'Space Mono'" }}>TOP STATES</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 14, height: 14, background: C.purple, borderRadius: 3 }} />
-          <span style={{ fontSize: 10, color: C.white, fontFamily: "'Space Mono'", letterSpacing: '1px' }}>VISITED</span>
+          <div style={{ width: 12, height: 12, background: C.purple, borderRadius: 2 }} />
+          <span style={{ fontSize: 9, color: C.gray, fontFamily: "'Space Mono'" }}>VISITED</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 16, height: 16, border: `2px solid ${C.cyan}`, borderRadius: '50%' }} />
-          <span style={{ fontSize: 10, color: C.white, fontFamily: "'Space Mono'", letterSpacing: '1px' }}>SHOW DENSITY</span>
+          <div style={{ width: 16, height: 16, border: `1.5px solid ${C.cyan}`, borderRadius: '50%' }} />
+          <span style={{ fontSize: 9, color: C.gray, fontFamily: "'Space Mono'" }}>CITY DENSITY</span>
         </div>
       </div>
     </div>
