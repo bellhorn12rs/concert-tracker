@@ -1373,167 +1373,132 @@ export default function App() {
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
 
         {/* ── DASHBOARD ── */}
-        {activeTab === 'dashboard' && (
-          <div style={{ padding: '24px 0' }} className="fade-in">
-            <OnThisDay concerts={concerts} />
+{activeTab === 'dashboard' && (
+  <div style={{ padding: '24px 0' }} className="fade-in">
+    <OnThisDay concerts={concerts} />
 
-            {/* You Were There + Random Show row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16, marginBottom: 4 }}>
-              <YouWereThere concerts={concerts} />
-              <RandomShow concerts={concerts} />
-            </div>
-
-            {/* Milestones */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
-              {milestones.map((m, i) => (
-                <Card key={i} glow={i === 0} neon>
-                  <div style={{ fontSize: '1.4rem', marginBottom: 6 }}>{m.icon}</div>
-                  <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 }}>{m.label}</div>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', letterSpacing: '0.06em', color: C.white, lineHeight: 1.2 }}>{m.value}</div>
-                  <div style={{ fontSize: '0.72rem', color: C.gray, marginTop: 3, fontStyle: 'italic' }}>{m.sub}</div>
-                </Card>
-              ))}
-            </div>
-
-            {/* ── ROW 1: Artist podium (big) + Sets Per Year (wide bar) ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, marginBottom: 16 }}>
-
-              {/* Artist podium — top 5 as ranked stat blocks */}
-              <Card neon>
-                <CardTitle>Most Seen Artists</CardTitle>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {artistCounts.slice(0, 5).map(({ name, count }, i) => {
-                    const podColors = [C.gold, C.gray, '#cd7f32', C.tealDim, C.grayDim];
-                    const sizes = ['1.5rem', '1.2rem', '1.1rem', '1rem', '0.95rem'];
-                    return (
-                      <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: i === 0 ? `${C.gold}0f` : C.bgCardAlt, border: `1px solid ${i === 0 ? C.gold + '44' : C.border}`, borderRadius: 5 }}>
-                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: podColors[i], width: 18, flexShrink: 0 }}>#{i + 1}</span>
-                        <span style={{ flex: 1, fontFamily: i === 0 ? "'Bebas Neue'" : "'Inter', sans-serif", fontSize: i === 0 ? '1rem' : '0.82rem', fontWeight: i < 2 ? 700 : 400, color: C.white, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
-                        <span style={{ fontFamily: "'Bebas Neue'", fontSize: sizes[i], color: podColors[i], flexShrink: 0, lineHeight: 1 }}>{count}×</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-{/* SETLIST CAPTURE PROGRESS */}
-<div style={{ background: C.bgCard, padding: 20, borderRadius: 8, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 25 }}>
-  <div style={{ position: 'relative', width: 80, height: 80 }}>
-    {/* SVG Progress Circle */}
-    <svg width="80" height="80" viewBox="0 0 80 80">
-      <circle cx="40" cy="40" r="34" fill="none" stroke={C.border} strokeWidth="6" />
-      <circle 
-        cx="40" cy="40" r="34" fill="none" stroke={C.gold} strokeWidth="6" 
-        strokeDasharray={2 * Math.PI * 34}
-        strokeDashoffset={2 * Math.PI * 34 * (1 - (stats.setlistCount / stats.totalShows))}
-        strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset 1s ease-out', transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
-      />
-    </svg>
-    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.gold }}>
-      {Math.round((stats.setlistCount / stats.totalShows) * 100)}%
+    {/* You Were There + Random Show row */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16, marginBottom: 4 }}>
+      <YouWereThere concerts={concerts} />
+      <RandomShow concerts={concerts} />
     </div>
-  </div>
-  
-  <div>
-    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', lineHeight: 1 }}>Archive Completion</div>
-    <div style={{ fontSize: '0.8rem', color: C.gray, marginTop: 4 }}>
-      You have secured <span style={{ color: C.gold, fontWeight: 'bold' }}>{stats.setlistCount}</span> physical setlists 
-      out of <span style={{ color: '#fff' }}>{stats.totalShows}</span> attended shows.
+
+    {/* Milestones */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
+      {milestones.map((m, i) => (
+        <Card key={i} glow={i === 0} neon>
+          <div style={{ fontSize: '1.4rem', marginBottom: 6 }}>{m.icon}</div>
+          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 }}>{m.label}</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', letterSpacing: '0.06em', color: C.white, lineHeight: 1.2 }}>{m.value}</div>
+          <div style={{ fontSize: '0.72rem', color: C.gray, marginTop: 3, fontStyle: 'italic' }}>{m.sub}</div>
+        </Card>
+      ))}
     </div>
-    <button 
-      onClick={() => setActiveTab('setlist_vault')}
-      style={{ marginTop: 10, background: 'none', border: `1px solid ${C.gold}44`, color: C.gold, fontSize: '0.7rem', padding: '4px 8px', borderRadius: 3, cursor: 'pointer', fontFamily: "'Space Mono'" }}
-    >
-      VIEW COLLECTION →
-    </button>
-  </div>
-</div>
-              {/* Sets per year — area-style bar chart */}
-              <Card neon>
-                <CardTitle>Sets Per Year</CardTitle>
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={timelineData} margin={{ top: 4, right: 4, bottom: 4, left: -20 }}>
-                    <defs>
-                      <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={C.teal} stopOpacity={0.95} />
-                        <stop offset="100%" stopColor={C.teal} stopOpacity={0.15} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                    <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono', monospace", fill: C.gray }} interval={2} />
-                    <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono', monospace", fill: C.gray }} />
-                    <Tooltip
-                      contentStyle={{ fontFamily: "'Space Mono', monospace", fontSize: 11, background: C.bgCard, border: `1px solid ${C.teal}`, color: C.white, borderRadius: 6 }}
-                      formatter={(v) => [`${v} sets`, '']}
-                      labelFormatter={(l) => `'${l}`}
-                    />
-                    <Bar dataKey="count" fill="url(#barGrad)" radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
-            </div>
 
-            {/* ── ROW 3: Donut + Top 3 Fests + Decade blocks ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
-              <Card neon>
-                <CardTitle>Festival vs. Standalone</CardTitle>
-                <DonutChart fest={stats.festDays} solo={stats.totalShows - stats.festDays} />
-              </Card>
-              <Card neon>
-                <CardTitle>Top Festivals — Days Attended</CardTitle>
-                <TopFestBlocks festBreakdown={festBreakdown} />
-              </Card>
-              <Card neon>
-                <CardTitle>By Decade</CardTitle>
-                <DecadeBlocks sets={sets} />
-              </Card>
-            </div>
+    {/* ── ROW 1: Artist podium + Archive Completion (balanced) ── */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
 
-            {/* ── ROW 4: City bubbles (full width) ── */}
-            <Card neon>
-              <CardTitle>Cities — Bubble = Show Count</CardTitle>
-              <CityBubbles cityCounts={cityCounts} />
-            </Card>
+      {/* Artist podium — top 5 */}
+      <Card neon>
+        <CardTitle>Most Seen Artists</CardTitle>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {artistCounts.slice(0, 5).map(({ name, count }, i) => {
+            const podColors = [C.gold, C.gray, '#cd7f32', C.tealDim, C.grayDim];
+            const sizes = ['1.5rem', '1.2rem', '1.1rem', '1rem', '0.95rem'];
+            return (
+              <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: i === 0 ? `${C.gold}0f` : C.bgCardAlt, border: `1px solid ${i === 0 ? C.gold + '44' : C.border}`, borderRadius: 5 }}>
+                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: podColors[i], width: 18, flexShrink: 0 }}>#{i + 1}</span>
+                <span style={{ flex: 1, fontFamily: i === 0 ? "'Bebas Neue'" : "'Inter', sans-serif", fontSize: i === 0 ? '1rem' : '0.82rem', fontWeight: i < 2 ? 700 : 400, color: C.white, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                <span style={{ fontFamily: "'Bebas Neue'", fontSize: sizes[i], color: podColors[i], flexShrink: 0, lineHeight: 1 }}>{count}×</span>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
+      {/* SETLIST CAPTURE PROGRESS (Redesigned as a Card) */}
+      <Card neon>
+        <CardTitle>Archive Completion</CardTitle>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, height: '100%', padding: '0 10px' }}>
+          <div style={{ position: 'relative', width: 90, height: 90, flexShrink: 0 }}>
+            <svg width="90" height="90" viewBox="0 0 90 90">
+              <circle cx="45" cy="45" r="38" fill="none" stroke={C.border} strokeWidth="7" />
+              <circle 
+                cx="45" cy="45" r="38" fill="none" stroke={C.gold} strokeWidth="7" 
+                strokeDasharray={2 * Math.PI * 38}
+                strokeDashoffset={2 * Math.PI * 38 * (1 - (stats.setlistCount / stats.totalShows))}
+                strokeLinecap="round"
+                style={{ transition: 'stroke-dashoffset 1.5s ease-out', transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
+              />
+            </svg>
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: C.gold }}>
+              {Math.round((stats.setlistCount / stats.totalShows) * 100)}%
+            </div>
           </div>
-        )}
-        {/* SETLIST VAULT VIEW */}
-{activeTab === 'setlist_vault' && (
-  <div style={{ padding: '20px' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
-      <div>
-        <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.gold, margin: 0 }}>The Setlist Vault</h2>
-        <div style={{ color: C.gray, fontSize: '0.9rem' }}>{stats.setlistCount} items in the physical archive</div>
-      </div>
-      <button 
-        onClick={() => setActiveTab('dashboard')}
-        style={{ background: 'none', border: `1px solid ${C.grayDim}`, color: C.gray, padding: '8px 15px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'" }}
-      >
-        ← BACK
-      </button>
+          
+          <div>
+            <div style={{ fontSize: '0.85rem', color: C.gray, lineHeight: 1.4 }}>
+              You have secured <span style={{ color: C.gold, fontWeight: 'bold' }}>{stats.setlistCount}</span> physical setlists 
+              out of <span style={{ color: C.white }}>{stats.totalShows}</span> shows attended.
+            </div>
+            <button 
+              onClick={() => setActiveTab('setlist_vault')}
+              style={{ marginTop: 12, background: `${C.gold}15`, border: `1px solid ${C.gold}44`, color: C.gold, fontSize: '0.7rem', padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", textTransform: 'uppercase' }}
+            >
+              VIEW COLLECTION →
+            </button>
+          </div>
+        </div>
+      </Card>
     </div>
 
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
-      {concerts
-        .filter(c => c.has_setlist || (c.has_setlist_names && c.has_setlist_names.trim() !== ''))
-        .sort((a, b) => b.date.localeCompare(a.date))
-        .map(c => (
-          <div 
-            key={c.id} 
-            onClick={() => { setEditTarget(c); }}
-            style={{ background: C.bgCard, border: `1px solid ${C.gold}33`, borderRadius: 8, padding: 15, cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
-          >
-            <div style={{ fontSize: 10, color: C.gold, fontFamily: "'Space Mono'", marginBottom: 8 }}>{fmtDate(c.date)}</div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', marginBottom: 4, lineHeight: 1 }}>
-              {c.has_setlist_names || "Untitled Setlist"}
-            </div>
-            <div style={{ fontSize: 11, color: C.gray }}>{c.venue} • {c.city}</div>
-            <div style={{ position: 'absolute', right: 10, bottom: 10, opacity: 0.2, fontSize: '1.5rem' }}>📋</div>
-          </div>
-        ))}
+    {/* ── ROW 2: Sets Per Year (Full Width) ── */}
+    <Card neon style={{ marginBottom: 16 }}>
+      <CardTitle>Sets Per Year</CardTitle>
+      <ResponsiveContainer width="100%" height={220}>
+        <BarChart data={timelineData} margin={{ top: 4, right: 4, bottom: 4, left: -20 }}>
+          <defs>
+            <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={C.teal} stopOpacity={0.95} />
+              <stop offset="100%" stopColor={C.teal} stopOpacity={0.15} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+          <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono', monospace", fill: C.gray }} interval={2} />
+          <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono', monospace", fill: C.gray }} />
+          <Tooltip
+            contentStyle={{ fontFamily: "'Space Mono', monospace", fontSize: 11, background: C.bgCard, border: `1px solid ${C.teal}`, color: C.white, borderRadius: 6 }}
+            formatter={(v) => [`${v} sets`, '']}
+            labelFormatter={(l) => `'${l}`}
+          />
+          <Bar dataKey="count" fill="url(#barGrad)" radius={[3, 3, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </Card>
+
+    {/* ── ROW 3: Donut + Top 3 Fests + Decade blocks ── */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <Card neon>
+        <CardTitle>Festival vs. Standalone</CardTitle>
+        <DonutChart fest={stats.festDays} solo={stats.totalShows - stats.festDays} />
+      </Card>
+      <Card neon>
+        <CardTitle>Top Festivals — Days Attended</CardTitle>
+        <TopFestBlocks festBreakdown={festBreakdown} />
+      </Card>
+      <Card neon>
+        <CardTitle>By Decade</CardTitle>
+        <DecadeBlocks sets={sets} />
+      </Card>
     </div>
+
+    {/* ── ROW 4: City bubbles (full width) ── */}
+    <Card neon>
+      <CardTitle>Cities — Bubble = Show Count</CardTitle>
+      <CityBubbles cityCounts={cityCounts} />
+    </Card>
   </div>
 )}
-
         {/* ── BY DAY ── */}
         {activeTab === 'byDay' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
