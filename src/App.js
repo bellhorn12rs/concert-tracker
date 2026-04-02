@@ -539,7 +539,7 @@ function YouWereThere({ concerts }) {
 
   const fact = YOU_WERE_THERE[idx];
 
-  // Try to match a real concert from user's data, fall back to showing the static fact
+  // Logic to find a specific concert for the fun facts
   const matchedConcert = useMemo(() => {
     if (!fact.match) return null;
     return concerts.find(c => fact.match(c)) || null;
@@ -554,49 +554,105 @@ function YouWereThere({ concerts }) {
   };
 
   return (
-    <div style={{
-      background: `linear-gradient(135deg, ${C.bgCard} 0%, ${C.bgCardAlt} 100%)`,
-      border: `1px solid ${C.gold}55`,
-      borderRadius: 8, padding: '16px 20px', marginBottom: 20,
-      boxShadow: `0 0 20px rgba(255,204,0,0.08)`,
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: C.gold }}>
-          ⭐ You Were There
-        </div>
-        <button onClick={next} style={{
-          fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase',
-          background: 'transparent', border: `1px solid ${C.grayDim}`, borderRadius: 3,
-          color: C.gray, padding: '3px 8px', cursor: 'pointer', transition: 'all 0.15s',
-        }} onMouseEnter={e => { e.target.style.borderColor = C.gold; e.target.style.color = C.gold; }}
-           onMouseLeave={e => { e.target.style.borderColor = C.grayDim; e.target.style.color = C.gray; }}>
-          Next →
-        </button>
+    <Card neon style={{ minHeight: 180, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
+      
+      {/* BACKGROUND ICON */}
+      <div style={{ 
+        position: 'absolute', 
+        right: 20, 
+        bottom: 20, 
+        fontSize: '5.5rem', 
+        opacity: 0.04, 
+        pointerEvents: 'none',
+        transform: 'rotate(12deg)',
+        zIndex: 0
+      }}>
+        {fact.label === "STAMINA CHECK" ? '🍕' : 
+         fact.label === "LOCAL LEGEND" ? '🌲' : 
+         fact.label === "FREQUENT FLYER" ? '🏛️' : '🎸'}
       </div>
-      <div style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.25s' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-          <div style={{ fontSize: '2rem', flexShrink: 0, lineHeight: 1 }}>{fact.emoji}</div>
-          <div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: '0.06em', color: C.gold, marginBottom: 6, lineHeight: 1.1 }}>{fact.headline}</div>
-            <div style={{ fontSize: '0.82rem', color: C.gray, lineHeight: 1.6 }}>{fact.body}</div>
-            {matchedConcert && (
-              <div style={{ marginTop: 8, fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.tealDim, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                📍 {fmtDate(matchedConcert.date)} · {[matchedConcert.venue, matchedConcert.city].filter(Boolean).join(', ')}
-              </div>
+
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold, letterSpacing: 2 }}>
+            ⭐ {fact.label}
+          </div>
+          <button onClick={next} style={{ background: `${C.teal}15`, border: `1px solid ${C.teal}44`, color: C.teal, fontSize: 9, padding: '4px 10px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'" }}>
+            NEXT →
+          </button>
+        </div>
+
+        {/* THE MAIN TEXT BLOCK */}
+        <div style={{ opacity: fading ? 0 : 1, transition: '0.2s' }}>
+          <div style={{ fontSize: '1.15rem', color: C.white, lineHeight: 1.4, fontWeight: 300, marginBottom: 12, maxWidth: '85%' }}>
+            "{fact.text}"
+          </div>
+          
+          {/* SHOW MATCHED CONCERT OR A GENERAL STAT FALLBACK */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: C.tealDim, fontFamily: "'Space Mono'", fontSize: 10 }}>
+            {matchedConcert ? (
+              <>📍 {fmtDate(matchedConcert.date)} · {matchedConcert.venue.toUpperCase()}</>
+            ) : (
+              <>📊 RECORDED IN YOUR ARCHIVE</>
             )}
           </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8, gap: 4 }}>
-          {YOU_WERE_THERE.map((_, i) => (
-            <div key={i} onClick={() => { setFading(true); setTimeout(() => { setIdx(i); setFading(false); }, 250); }}
-              style={{ width: i === idx ? 16 : 5, height: 5, borderRadius: 3, background: i === idx ? C.gold : C.grayDim, cursor: 'pointer', transition: 'all 0.2s' }} />
-          ))}
-        </div>
       </div>
-    </div>
+
+      {/* THE PAGER DOTS */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 5, position: 'relative', zIndex: 1 }}>
+        {YOU_WERE_THERE.map((_, i) => (
+          <div 
+            key={i} 
+            onClick={() => setIdx(i)}
+            style={{ 
+              width: i === idx ? 15 : 5, 
+              height: 5, 
+              borderRadius: 3, 
+              background: i === idx ? C.gold : C.grayDim, 
+              transition: '0.3s',
+              cursor: 'pointer'
+            }} 
+          />
+        ))}
+      </div>
+    </Card>
   );
 }
+        {/* THE MAIN TEXT BLOCK */}
+        <div style={{ opacity: fading ? 0 : 1, transition: '0.2s', marginBottom: 15 }}>
+          <div style={{ fontSize: '1.1rem', color: C.white, lineHeight: 1.4, fontWeight: 300, marginBottom: 12 }}>
+            "{fact.text}"
+          </div>
+          
+          {matchedConcert && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: C.tealDim, fontFamily: "'Space Mono'", fontSize: 10 }}>
+              📍 {fmtDate(matchedConcert.date)} · {matchedConcert.venue.toUpperCase()}
+            </div>
+          )}
+        </div>
+      </div>
 
+      {/* THE PAGER DOTS */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 5 }}>
+        {YOU_WERE_THERE.map((_, i) => (
+          <div 
+            key={i} 
+            onClick={() => setIdx(i)}
+            style={{ 
+              width: i === idx ? 15 : 5, 
+              height: 5, 
+              borderRadius: 3, 
+              background: i === idx ? C.gold : C.grayDim, 
+              transition: '0.3s',
+              cursor: 'pointer'
+            }} 
+          />
+        ))}
+      </div>
+    </Card>
+  );
+}
 // ─── RANDOM SHOW ─────────────────────────────────────────────────────────────
 function RandomShow({ concerts }) {
   const [show, setShow] = useState(null);
