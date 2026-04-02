@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabaseClient';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell
 } from 'recharts';
- 
+
 // ─── THEME ────────────────────────────────────────────────────────────────────
 const C = {
   bg:        '#0a0a0f',
@@ -27,7 +27,7 @@ const C = {
   gold:      '#ffcc00',
   purple:    '#9966ff',
 };
- 
+
 // ─── GLOBAL STYLES ────────────────────────────────────────────────────────────
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
@@ -56,14 +56,129 @@ const GLOBAL_CSS = `
   .setlist-btn { transition: all 0.15s; }
   .setlist-btn:hover { transform: scale(1.2); }
 `;
- 
+
 if (!document.getElementById('app-global-css')) {
   const tag = document.createElement('style');
   tag.id = 'app-global-css';
   tag.textContent = GLOBAL_CSS;
   document.head.appendChild(tag);
 }
- 
+
+// ─── YOU WERE THERE FACTS ─────────────────────────────────────────────────────
+const YOU_WERE_THERE = [
+  // Historical moments
+  {
+    date: '2006-06-17',
+    emoji: '🎸',
+    headline: 'Radiohead's Greatest Show Ever',
+    body: 'The Bonnaroo 2006 Radiohead set — nearly 3 hours, 29 songs — is widely considered the best performance in Bonnaroo history. Jonny Greenwood called it "the best festival experience I've ever had in America." Thom Yorke later said it was his favourite gig "for years and years." You were there.',
+    match: (c) => c.bands?.includes('Radiohead') && c.festival_name === 'Bonnaroo',
+  },
+  {
+    date: '2004-08-14',
+    emoji: '💧',
+    headline: 'The Mud. The Tears. The Final Phish Show.',
+    body: 'Coventry 2004 was billed as Phish's last shows ever. The grounds flooded, traffic backed up 30 miles, thousands hiked in. Trey wept onstage during "Velvet Sea." You stood in ankle-deep mud and watched what everyone thought was the end. It wasn't — but you were there for the breakdown.',
+    match: (c) => c.festival_name === 'Coventry',
+  },
+  {
+    date: '2006-06-16',
+    emoji: '🪦',
+    headline: 'Tom Petty's Final Bonnaroo',
+    body: 'Tom Petty headlined Bonnaroo 2006 as part of his 40th anniversary celebration. He died on October 2, 2017 — one week after his final show. He played Bonnaroo with a fractured hip, refusing surgery until the tour was done. You caught him at peak Heartbreakers.',
+    match: (c) => c.bands?.includes('Tom Petty') && c.festival_name === 'Bonnaroo',
+  },
+  {
+    date: '2013-06-15',
+    emoji: '🪦',
+    headline: 'Tom Petty at Bonnaroo 2013 — Four Years Before He Died',
+    body: 'One of Tom Petty's last major festival appearances. He died in 2017, one week after finishing what he knew was likely his final tour — completed with a fractured hip. You saw him twice at Bonnaroo. That's a gift.',
+    match: (c) => c.bands?.includes('Tom Petty') && c.date?.startsWith('2013'),
+  },
+  {
+    date: '2017-06-03',
+    emoji: '🕊️',
+    headline: 'The Last Frightened Rabbit Set You'll Ever See',
+    body: 'Frightened Rabbit played FPSF 2017 — one of their final US shows. Scott Hutchison, the frontman whose brutally honest lyrics helped thousands through depression, died by suicide in May 2018. His last tweet was "Be so good to everyone you love." You were in that crowd.',
+    match: (c) => c.bands?.includes('Frightened Rabbit'),
+  },
+  // Personal data facts
+  {
+    emoji: '🎪',
+    headline: 'You've Done Bonnaroo 14 Times',
+    body: 'From 2005 all the way through 2019 (missing only 2017), you hit Bonnaroo 14 times — 55 total days in the field. That's more than a full work week in the mud every year for a decade. The Farm basically knows your name.',
+    match: () => false, // static card
+    static: true,
+  },
+  {
+    emoji: '🐺',
+    headline: 'You've Seen Ween 16 Times',
+    body: 'Ween is your most-seen band with 16 sets — festivals, clubs, Red Rocks, multiple nights in Denver, Austin residencies. You have a relationship with Dean and Gene that most people only dream about.',
+    match: () => false,
+    static: true,
+  },
+  {
+    emoji: '🎙️',
+    headline: 'Guster & Dr. Dog: Tied at 15',
+    body: 'Your second and third most-seen artists — Guster (15 sets) and Dr. Dog (15 sets) — are tied. You even attended the Guster on the Ocean cruise event in Portland, ME in 2018. Three days on the water. That's devotion.',
+    match: () => false,
+    static: true,
+  },
+  {
+    emoji: '⚡',
+    headline: '2017 Was Your Peak Year',
+    body: '47 sets in 2017 — your personal record. That included ACL weekend 1, ACL weekend 2, Willie Nelson 4th of July, Roger Waters, Ween at Red Rocks three nights in a row, and a dozen standalone Austin shows. You were everywhere.',
+    match: () => false,
+    static: true,
+  },
+  {
+    emoji: '💍',
+    headline: 'You Got Married at a Show',
+    body: 'November 10, 2021: Chvrches at ACL Live at the Moody Theater, Austin. That's in your data labeled "(GOT MARRIED)." A concert was the backdrop for one of the biggest nights of your life. That's extremely on brand.',
+    match: (c) => c.bands?.includes('Chvrches') && c.date === '2021-11-10',
+  },
+  {
+    emoji: '🗺️',
+    headline: '17 States and Counting',
+    body: 'Texas leads with 210 shows, Massachusetts second with 68, Tennessee third with 55 (all that Bonnaroo). You've seen live music in 17 states plus Ontario. Your concert map looks like a life well lived.',
+    match: () => false,
+    static: true,
+  },
+  {
+    emoji: '🎶',
+    headline: 'Over 1,000 Individual Sets Witnessed',
+    body: '425 show days translates to over 1,000 individual sets seen live — 1,046 to be exact. That's an average of 2.5 bands per show night, every night, for 25+ years. You've seen more live music than most people see in a lifetime.',
+    match: () => false,
+    static: true,
+  },
+  {
+    emoji: '🌊',
+    headline: 'SXSW Veteran: 29 Days Deep',
+    body: 'You've done SXSW hard — 29 days across multiple years (2006, 2008, 2010, 2011, 2015, 2016, 2017, 2019). That's the kind of schedule that means you've seen bands in parking lots, record stores, and bat bars at 2am. Real SXSW.',
+    match: () => false,
+    static: true,
+  },
+  {
+    emoji: '📋',
+    headline: 'Your Setlist Collection Starts With Billy Idol',
+    body: 'October 9, 2015. ACL Friday. Billy Idol. That's where the physical setlist collection began — and you've been building it ever since. There's something special about a piece of paper someone played off stage.',
+    match: (c) => c.bands?.includes('Billy Idol'),
+  },
+  {
+    emoji: '🔄',
+    headline: 'Arcade Fire: 10 Times, 5 States',
+    body: 'Arcade Fire is your most-traveled-for band. 10 sets: Boston, NYC, Bridgeport CT, Brooklyn, Austin, Dallas, New Orleans. You followed them across the country. "The Suburbs" hit different every time.',
+    match: () => false,
+    static: true,
+  },
+];
+
+// ─── HALL OF FAME ARTISTS ─────────────────────────────────────────────────────
+// These get the full timeline treatment in the Hall of Fame tab
+const HALL_OF_FAME_MIN = 7; // seen 7+ times
+
+
+
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 const fmtDate = (d) => {
   if (!d) return '—';
@@ -71,7 +186,7 @@ const fmtDate = (d) => {
 };
 const getYear = (d) => d ? parseInt(d.slice(0, 4)) : null;
 const SETLIST_START = '2015-10-09';
- 
+
 // ─── SHARED ATOMS ─────────────────────────────────────────────────────────────
 const Badge = ({ children, color = C.teal, bg = C.tealFaint }) => (
   <span style={{
@@ -81,16 +196,34 @@ const Badge = ({ children, color = C.teal, bg = C.tealFaint }) => (
     padding: '2px 6px', borderRadius: 3,
   }}>{children}</span>
 );
- 
-const Card = ({ children, style = {}, glow = false }) => (
-  <div style={{
-    background: C.bgCard, border: `1px solid ${glow ? C.borderLit : C.border}`,
-    borderRadius: 8, padding: 16,
-    boxShadow: glow ? `0 0 20px ${C.tealGlow}` : '0 2px 8px rgba(0,0,0,0.4)',
-    ...style,
-  }}>{children}</div>
-);
- 
+
+const NEON_BORDERS = [
+  { border: C.teal,   glow: 'rgba(0,229,204,0.18)' },
+  { border: C.cyan,   glow: 'rgba(0,207,255,0.18)' },
+  { border: C.purple, glow: 'rgba(153,102,255,0.18)' },
+  { border: C.gold,   glow: 'rgba(255,204,0,0.18)' },
+  { border: C.green,  glow: 'rgba(0,204,136,0.18)' },
+  { border: '#ff6699',glow: 'rgba(255,102,153,0.18)' },
+];
+let _cardIdx = 0;
+
+const Card = ({ children, style = {}, glow = false, neon = false }) => {
+  const nb = neon ? NEON_BORDERS[_cardIdx++ % NEON_BORDERS.length] : null;
+  return (
+    <div style={{
+      background: C.bgCard,
+      border: `1px solid ${glow ? C.teal : neon ? nb.border : C.border}`,
+      borderRadius: 8, padding: 16,
+      boxShadow: glow
+        ? `0 0 20px ${C.tealGlow}`
+        : neon
+          ? `0 0 12px ${nb.glow}, 0 2px 8px rgba(0,0,0,0.4)`
+          : '0 2px 8px rgba(0,0,0,0.4)',
+      ...style,
+    }}>{children}</div>
+  );
+};
+
 const CardTitle = ({ children, style = {} }) => (
   <div style={{
     fontFamily: "'Space Mono', monospace", fontSize: 9, letterSpacing: '0.25em',
@@ -99,7 +232,7 @@ const CardTitle = ({ children, style = {} }) => (
     ...style,
   }}>{children}</div>
 );
- 
+
 const HBar = ({ name, count, max, color = C.teal }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
     <div style={{ fontSize: '0.72rem', color: C.gray, width: 120, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={name}>{name}</div>
@@ -109,7 +242,7 @@ const HBar = ({ name, count, max, color = C.teal }) => (
     <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color, width: 22, textAlign: 'right', flexShrink: 0 }}>{count}</div>
   </div>
 );
- 
+
 const Btn = ({ children, onClick, variant = 'primary', style = {}, disabled = false }) => {
   const base = {
     fontFamily: "'Space Mono', monospace", fontSize: 10, letterSpacing: '0.12em',
@@ -129,14 +262,14 @@ const Btn = ({ children, onClick, variant = 'primary', style = {}, disabled = fa
     </button>
   );
 };
- 
+
 // ─── INPUT STYLE ──────────────────────────────────────────────────────────────
 const inputSt = {
   background: C.bgCard, border: `1px solid ${C.border}`,
   borderRadius: 4, padding: '7px 10px', color: C.white,
   fontSize: '0.85rem', outline: 'none',
 };
- 
+
 // ─── EDIT MODAL ───────────────────────────────────────────────────────────────
 function EditModal({ concert, onClose, onSave, onDelete }) {
   const [form, setForm] = useState({
@@ -153,17 +286,17 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
- 
+
   const handleSave = async () => {
     setSaving(true);
     await onSave(concert?.id, { ...form, bands: form.bands.split(',').map(b => b.trim()).filter(Boolean) });
     setSaving(false);
   };
- 
+
   const fld = { marginBottom: 14 };
   const lbl = { display: 'block', fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 };
   const inp = { ...inputSt, width: '100%' };
- 
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(4px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
@@ -174,7 +307,7 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: C.gray, fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
         </div>
- 
+
         <div style={fld}><label style={lbl}>Date</label><input style={inp} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
         <div style={fld}><label style={lbl}>Artists (comma separated)</label><input style={inp} value={form.bands} onChange={e => set('bands', e.target.value)} placeholder="Arcade Fire, LCD Soundsystem" /></div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
@@ -182,19 +315,19 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
           <div><label style={lbl}>City</label><input style={inp} value={form.city} onChange={e => set('city', e.target.value)} placeholder="Austin" /></div>
         </div>
         <div style={fld}><label style={lbl}>State</label><input style={{ ...inp, width: 80 }} value={form.state} onChange={e => set('state', e.target.value)} placeholder="TX" maxLength={2} /></div>
- 
+
         <div style={{ ...fld, display: 'flex', alignItems: 'center', gap: 10 }}>
           <input type="checkbox" id="is_fest" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} style={{ accentColor: C.teal, width: 16, height: 16 }} />
           <label htmlFor="is_fest" style={{ ...lbl, marginBottom: 0, cursor: 'pointer' }}>Festival Day</label>
         </div>
- 
+
         {form.is_festival && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
             <div><label style={lbl}>Festival Name</label><input style={inp} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} placeholder="Bonnaroo" /></div>
             <div><label style={lbl}>Day Label</label><input style={inp} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} placeholder="Bonnaroo Friday" /></div>
           </div>
         )}
- 
+
         <div style={{ ...fld, display: 'flex', alignItems: 'center', gap: 10 }}>
           <input type="checkbox" id="has_sl" checked={form.has_setlist} onChange={e => set('has_setlist', e.target.checked)}
             disabled={form.date && form.date < SETLIST_START}
@@ -203,7 +336,7 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
             Got physical setlist 📋 {form.date && form.date < SETLIST_START ? '(pre-2015, not tracked)' : ''}
           </label>
         </div>
- 
+
         <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', marginTop: 20 }}>
           <div style={{ display: 'flex', gap: 8 }}>
             {concert?.id && !confirming && <Btn variant="danger" onClick={() => setConfirming(true)}>Delete</Btn>}
@@ -221,88 +354,17 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
     </div>
   );
 }
- 
-// ─── TIMELINE ─────────────────────────────────────────────────────────────────
-function ConcertTimeline({ concerts }) {
-  const [hovered, setHovered] = useState(null);
- 
-  const data = useMemo(() => {
-    const m = {};
-    concerts.forEach(c => {
-      const y = getYear(c.date);
-      if (!y) return;
-      if (!m[y]) m[y] = { year: y, total: 0, fest: 0, shows: [] };
-      m[y].total++;
-      if (c.is_festival) m[y].fest++;
-      m[y].shows.push(c);
-    });
-    return Object.values(m).sort((a, b) => a.year - b.year);
-  }, [concerts]);
- 
-  const maxTotal = Math.max(...data.map(d => d.total), 1);
- 
-  return (
-    <div>
-      <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', minWidth: data.length * 52, height: 180, position: 'relative', padding: '0 8px' }}>
-          {/* baseline */}
-          <div style={{ position: 'absolute', bottom: 40, left: 0, right: 0, height: 1, background: C.border }} />
-          <div style={{ position: 'absolute', bottom: 40, left: 0, right: 0, height: 1, background: `linear-gradient(to right, transparent, ${C.teal}55, transparent)`, filter: 'blur(1px)' }} />
- 
-          {data.map((d) => {
-            const barH = Math.max(4, (d.total / maxTotal) * 120);
-            const festH = Math.max(0, (d.fest / maxTotal) * 120);
-            const isHov = hovered === d.year;
-            return (
-              <div key={d.year} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', cursor: 'pointer' }}
-                onMouseEnter={() => setHovered(d.year)} onMouseLeave={() => setHovered(null)}>
-                {/* tooltip */}
-                {isHov && (
-                  <div style={{ position: 'absolute', bottom: barH + 54, left: '50%', transform: 'translateX(-50%)', background: C.bgCard, border: `1px solid ${C.teal}`, borderRadius: 6, padding: '8px 12px', zIndex: 10, whiteSpace: 'nowrap', boxShadow: `0 0 16px ${C.tealGlow}`, pointerEvents: 'none' }}>
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.teal, letterSpacing: '0.08em' }}>{d.year}</div>
-                    <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.white, marginTop: 2 }}>{d.total} shows · {d.fest} fest days</div>
-                    <div style={{ fontSize: '0.7rem', color: C.gray, marginTop: 4, maxWidth: 180 }}>
-                      {d.shows.slice(0, 3).map(s => (s.bands || []).slice(0, 2).join(', ')).join(' / ')}{d.shows.length > 3 ? '…' : ''}
-                    </div>
-                  </div>
-                )}
-                {/* bar */}
-                <div style={{ width: 26, height: barH, borderRadius: '3px 3px 0 0', overflow: 'hidden', border: `1px solid ${isHov ? C.teal : 'transparent'}`, transition: 'all 0.2s', boxShadow: isHov ? `0 0 12px ${C.tealGlow}` : 'none', position: 'relative' }}>
-                  <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '100%', background: C.grayDim }} />
-                  <div style={{ position: 'absolute', bottom: 0, width: '100%', height: `${(festH / barH) * 100}%`, background: `linear-gradient(to top, ${C.teal}cc, ${C.cyan}77)` }} />
-                </div>
-                {/* dot on baseline */}
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: isHov ? C.teal : C.grayDim, boxShadow: isHov ? `0 0 8px ${C.teal}` : 'none', transition: 'all 0.2s', flexShrink: 0 }} />
-                {/* label */}
-                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: isHov ? C.teal : C.grayDim, marginTop: 4, transform: 'rotate(-45deg)', transformOrigin: 'top left', whiteSpace: 'nowrap', transition: 'color 0.2s' }}>{d.year}</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: 16, marginTop: 6 }}>
-        {[[C.teal, 'Festival'], [C.grayDim, 'Standalone']].map(([color, label]) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <div style={{ width: 10, height: 10, background: color, borderRadius: 2 }} />
-            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
- 
+
 // ─── FESTIVAL SCHEDULE CARD ───────────────────────────────────────────────────
 function FestivalScheduleCard({ event }) {
   const bands = event.bands || [];
-  const STAGE_NAMES = ['Main Stage', 'Which Stage', 'This Tent', 'That Tent', 'Other Stage'];
   const STAGE_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green];
- 
+
   // auto-flow columns based on band count
   const numCols = bands.length <= 2 ? bands.length : bands.length <= 5 ? 3 : bands.length <= 9 ? 4 : 5;
   const columns = Array.from({ length: Math.min(numCols, bands.length) }, () => []);
   bands.forEach((b, i) => columns[i % columns.length].push(b));
- 
+
   return (
     <div className="day-card-hover" style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, marginBottom: 12, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
       <div style={{ background: `linear-gradient(135deg, ${C.bgCardAlt}, ${C.bg})`, borderBottom: `1px solid ${C.border}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -314,11 +376,7 @@ function FestivalScheduleCard({ event }) {
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}>
         {columns.map((stageBands, ci) => (
           <div key={ci} style={{ borderRight: ci < columns.length - 1 ? `1px solid ${C.border}` : 'none' }}>
-            <div style={{ padding: '6px 10px', borderBottom: `2px solid ${STAGE_COLORS[ci % STAGE_COLORS.length]}44`, background: `${STAGE_COLORS[ci % STAGE_COLORS.length]}0a` }}>
-              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: STAGE_COLORS[ci % STAGE_COLORS.length] }}>
-                {STAGE_NAMES[ci] || `Stage ${ci + 1}`}
-              </div>
-            </div>
+            <div style={{ height: 4, background: `${STAGE_COLORS[ci % STAGE_COLORS.length]}66`, borderBottom: `2px solid ${STAGE_COLORS[ci % STAGE_COLORS.length]}` }} />
             <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
               {stageBands.map((band, bi) => (
                 <div key={bi} style={{ background: C.bgCardAlt, borderRadius: 4, padding: '6px 8px', borderLeft: `2px solid ${STAGE_COLORS[ci % STAGE_COLORS.length]}`, fontSize: '0.75rem', color: C.white, lineHeight: 1.3, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
@@ -332,7 +390,7 @@ function FestivalScheduleCard({ event }) {
     </div>
   );
 }
- 
+
 // ─── DAY CARD (standalone) ────────────────────────────────────────────────────
 function DayCard({ event }) {
   const bands = event.bands || [];
@@ -351,7 +409,7 @@ function DayCard({ event }) {
     </div>
   );
 }
- 
+
 // ─── ON THIS DAY ──────────────────────────────────────────────────────────────
 function OnThisDay({ concerts }) {
   const today = new Date();
@@ -378,7 +436,7 @@ function OnThisDay({ concerts }) {
     </div>
   );
 }
- 
+
 // ─── MANAGE TAB ───────────────────────────────────────────────────────────────
 function ManageTab({ concerts, onEdit, onAdd }) {
   const [search, setSearch] = useState('');
@@ -431,18 +489,303 @@ function ManageTab({ concerts, onEdit, onAdd }) {
     </div>
   );
 }
- 
+
+
+// ─── YOU WERE THERE WIDGET ────────────────────────────────────────────────────
+function YouWereThere({ concerts }) {
+  const [idx, setIdx] = useState(() => Math.floor(Math.random() * YOU_WERE_THERE.length));
+  const [fading, setFading] = useState(false);
+
+  const fact = YOU_WERE_THERE[idx];
+
+  // Try to match a real concert from user's data, fall back to showing the static fact
+  const matchedConcert = useMemo(() => {
+    if (!fact.match) return null;
+    return concerts.find(c => fact.match(c)) || null;
+  }, [fact, concerts]);
+
+  const next = () => {
+    setFading(true);
+    setTimeout(() => {
+      setIdx(i => (i + 1) % YOU_WERE_THERE.length);
+      setFading(false);
+    }, 250);
+  };
+
+  return (
+    <div style={{
+      background: `linear-gradient(135deg, ${C.bgCard} 0%, ${C.bgCardAlt} 100%)`,
+      border: `1px solid ${C.gold}55`,
+      borderRadius: 8, padding: '16px 20px', marginBottom: 20,
+      boxShadow: `0 0 20px rgba(255,204,0,0.08)`,
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: C.gold }}>
+          ⭐ You Were There
+        </div>
+        <button onClick={next} style={{
+          fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase',
+          background: 'transparent', border: `1px solid ${C.grayDim}`, borderRadius: 3,
+          color: C.gray, padding: '3px 8px', cursor: 'pointer', transition: 'all 0.15s',
+        }} onMouseEnter={e => { e.target.style.borderColor = C.gold; e.target.style.color = C.gold; }}
+           onMouseLeave={e => { e.target.style.borderColor = C.grayDim; e.target.style.color = C.gray; }}>
+          Next →
+        </button>
+      </div>
+      <div style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.25s' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <div style={{ fontSize: '2rem', flexShrink: 0, lineHeight: 1 }}>{fact.emoji}</div>
+          <div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: '0.06em', color: C.gold, marginBottom: 6, lineHeight: 1.1 }}>{fact.headline}</div>
+            <div style={{ fontSize: '0.82rem', color: C.gray, lineHeight: 1.6 }}>{fact.body}</div>
+            {matchedConcert && (
+              <div style={{ marginTop: 8, fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.tealDim, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                📍 {fmtDate(matchedConcert.date)} · {[matchedConcert.venue, matchedConcert.city].filter(Boolean).join(', ')}
+              </div>
+            )}
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8, gap: 4 }}>
+          {YOU_WERE_THERE.map((_, i) => (
+            <div key={i} onClick={() => { setFading(true); setTimeout(() => { setIdx(i); setFading(false); }, 250); }}
+              style={{ width: i === idx ? 16 : 5, height: 5, borderRadius: 3, background: i === idx ? C.gold : C.grayDim, cursor: 'pointer', transition: 'all 0.2s' }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── RANDOM SHOW ─────────────────────────────────────────────────────────────
+function RandomShow({ concerts }) {
+  const [show, setShow] = useState(null);
+  const [spinning, setSpinning] = useState(false);
+
+  const spin = () => {
+    setSpinning(true);
+    let count = 0;
+    const interval = setInterval(() => {
+      setShow(concerts[Math.floor(Math.random() * concerts.length)]);
+      count++;
+      if (count > 10) {
+        clearInterval(interval);
+        setSpinning(false);
+      }
+    }, 80);
+  };
+
+  useEffect(() => { if (concerts.length) spin(); }, [concerts.length]);
+
+  if (!show) return null;
+
+  return (
+    <div style={{ background: C.bgCard, border: `1px solid ${C.purple}55`, borderRadius: 8, padding: '16px 20px', marginBottom: 20, boxShadow: `0 0 16px rgba(153,102,255,0.08)` }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: C.purple }}>🎲 Random Show</div>
+        <button onClick={spin} style={{
+          fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase',
+          background: C.purple + '22', border: `1px solid ${C.purple}55`, borderRadius: 3,
+          color: C.purple, padding: '4px 10px', cursor: 'pointer', transition: 'all 0.15s',
+        }} onMouseEnter={e => { e.target.style.background = C.purple + '44'; }}
+           onMouseLeave={e => { e.target.style.background = C.purple + '22'; }}>
+          🎲 Spin Again
+        </button>
+      </div>
+      <div style={{ opacity: spinning ? 0.4 : 1, transition: 'opacity 0.1s' }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', letterSpacing: '0.08em', color: C.white, marginBottom: 4 }}>
+          {fmtDate(show.date)}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
+          {(show.bands || []).map((b, i) => (
+            <span key={i} style={{ fontSize: '0.8rem', color: C.white, background: C.bgCardAlt, border: `1px solid ${C.purple}44`, borderRadius: 4, padding: '3px 9px', fontWeight: 500 }}>{b}</span>
+          ))}
+        </div>
+        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {show.venue && <span>📍 {show.venue}</span>}
+          {show.city && <span>{show.city}{show.state ? `, ${show.state}` : ''}</span>}
+          {show.is_festival && show.festival_day && <span style={{ color: C.tealDim }}>🎪 {show.festival_day}</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── HALL OF FAME ─────────────────────────────────────────────────────────────
+function HallOfFame({ sets, onShare }) {
+  const [selected, setSelected] = useState(null);
+
+  const artists = useMemo(() => {
+    const m = {};
+    sets.forEach(s => {
+      if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] };
+      m[s.artist].shows.push(s);
+    });
+    return Object.values(m)
+      .filter(a => a.shows.length >= HALL_OF_FAME_MIN)
+      .sort((a, b) => b.shows.length - a.shows.length);
+  }, [sets]);
+
+  const selectedData = selected ? artists.find(a => a.artist === selected) : null;
+
+  const MEDAL = ['🥇', '🥈', '🥉'];
+
+  return (
+    <div style={{ padding: '24px 0' }} className="fade-in">
+      <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.gray, marginBottom: 16, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        Artists seen {HALL_OF_FAME_MIN}+ times — click any to see full history
+      </div>
+
+      {/* Artist grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 28 }}>
+        {artists.map((a, i) => {
+          const isSelected = selected === a.artist;
+          const festCount = a.shows.filter(s => s.is_festival).length;
+          const pct = Math.round((festCount / a.shows.length) * 100);
+          return (
+            <div key={a.artist} onClick={() => setSelected(isSelected ? null : a.artist)}
+              style={{
+                background: isSelected ? `${C.teal}18` : C.bgCard,
+                border: `1px solid ${isSelected ? C.teal : C.border}`,
+                borderRadius: 8, padding: '12px 14px', cursor: 'pointer',
+                transition: 'all 0.18s',
+                boxShadow: isSelected ? `0 0 16px ${C.tealGlow}` : 'none',
+              }}>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: isSelected ? C.teal : C.tealDim, marginBottom: 4 }}>
+                {MEDAL[i] || '🎤'} #{i + 1}
+              </div>
+              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: C.white, marginBottom: 6, lineHeight: 1.2 }}>{a.artist}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: isSelected ? C.teal : C.gray, lineHeight: 1 }}>{a.shows.length}×</div>
+              {/* mini fest bar */}
+              <div style={{ marginTop: 6, height: 3, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: C.teal, borderRadius: 2 }} />
+              </div>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.grayDim, marginTop: 3 }}>{festCount}F · {a.shows.length - festCount}S</div>
+              {onShare && <button onClick={e => { e.stopPropagation(); onShare(a.artist, a.shows); }} style={{ marginTop: 6, fontFamily: "'Space Mono', monospace", fontSize: 7, letterSpacing: '0.08em', textTransform: 'uppercase', background: 'transparent', border: `1px solid ${C.teal}44`, color: C.tealDim, borderRadius: 2, padding: '2px 7px', cursor: 'pointer', width: '100%' }}>Share ↗</button>}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Timeline for selected artist */}
+      {selectedData && (
+        <div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.teal}55`, borderRadius: 8, padding: '18px 20px', boxShadow: `0 0 20px ${C.tealGlow}` }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', letterSpacing: '0.08em', color: C.teal, marginBottom: 4 }}>{selectedData.artist}</div>
+          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            {selectedData.shows.length} sets · first: {fmtDate(selectedData.shows[selectedData.shows.length - 1]?.date)} · last: {fmtDate(selectedData.shows[0]?.date)}
+          </div>
+
+          {/* Full show list as vertical timeline */}
+          <div style={{ position: 'relative', paddingLeft: 20 }}>
+            {/* timeline spine */}
+            <div style={{ position: 'absolute', left: 5, top: 0, bottom: 0, width: 1, background: `linear-gradient(to bottom, ${C.teal}, ${C.grayDim})` }} />
+            {[...selectedData.shows].reverse().map((s, i) => (
+              <div key={i} style={{ position: 'relative', marginBottom: 10, paddingLeft: 14 }}>
+                {/* dot */}
+                <div style={{ position: 'absolute', left: -7, top: 4, width: 8, height: 8, borderRadius: '50%', background: s.is_festival ? C.teal : C.grayDim, border: `1px solid ${s.is_festival ? C.teal : C.border}`, boxShadow: s.is_festival ? `0 0 6px ${C.teal}` : 'none' }} />
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.tealDim, whiteSpace: 'nowrap' }}>{fmtDate(s.date)}</span>
+                  {s.is_festival && s.festival_day && <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.teal, background: `${C.teal}18`, padding: '1px 5px', borderRadius: 2 }}>{s.festival_day}</span>}
+                  <span style={{ fontSize: '0.75rem', color: C.gray }}>{[s.venue, s.city, s.state].filter(Boolean).join(', ')}</span>
+                  {s.has_setlist && <span style={{ fontSize: 11 }} title="Got setlist">📋</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── SHAREABLE ARTIST CARD ────────────────────────────────────────────────────
+function ShareCard({ artist, shows, onClose }) {
+  const festCount = shows.filter(s => s.is_festival).length;
+  const cities = [...new Set(shows.map(s => s.city).filter(Boolean))];
+  const years = [...new Set(shows.map(s => getYear(s.date)).filter(Boolean))].sort();
+  const firstDate = fmtDate(shows[shows.length - 1]?.date);
+  const lastDate = fmtDate(shows[0]?.date);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="fade-in" style={{ width: '100%', maxWidth: 420 }}>
+        {/* The card itself */}
+        <div id="share-card" style={{
+          background: `linear-gradient(135deg, ${C.bg} 0%, ${C.bgCard} 50%, ${C.bgCardAlt} 100%)`,
+          border: `1px solid ${C.teal}`,
+          borderRadius: 12, padding: '28px 24px',
+          boxShadow: `0 0 40px ${C.tealGlow}`,
+          position: 'relative', overflow: 'hidden',
+        }}>
+          {/* glow orb */}
+          <div style={{ position: 'absolute', top: -60, right: -60, width: 200, height: 200, background: `radial-gradient(circle, ${C.tealGlow}, transparent)`, pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: -40, left: -40, width: 150, height: 150, background: `radial-gradient(circle, rgba(153,102,255,0.08), transparent)`, pointerEvents: 'none' }} />
+
+          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.25em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 8, position: 'relative', zIndex: 1 }}>
+            🎸 Eric's Concert History
+          </div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(1.8rem, 6vw, 2.6rem)', letterSpacing: '0.06em', color: C.white, lineHeight: 1, marginBottom: 16, position: 'relative', zIndex: 1 }}>
+            {artist}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16, position: 'relative', zIndex: 1 }}>
+            {[
+              [shows.length, 'Times Seen'],
+              [festCount, 'Festival Sets'],
+              [shows.length - festCount, 'Standalone'],
+              [cities.length, `${cities.length === 1 ? 'City' : 'Cities'}`],
+            ].map(([val, label]) => (
+              <div key={label} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: '10px 12px', border: `1px solid ${C.border}` }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.teal, lineHeight: 1 }}>{val}</div>
+                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.gray, marginTop: 2 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ position: 'relative', zIndex: 1, marginBottom: 12 }}>
+            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Show History</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+              {years.map(y => (
+                <span key={y} style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, background: `${C.teal}22`, color: C.teal, border: `1px solid ${C.teal}44`, padding: '2px 5px', borderRadius: 3 }}>{y}</span>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ position: 'relative', zIndex: 1, fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.grayDim, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            First: {firstDate} · Last: {lastDate}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'center' }}>
+          <button onClick={() => {
+            // Copy stats to clipboard as text
+            const text = `I've seen ${artist} ${shows.length} times (${festCount} festival, ${shows.length - festCount} standalone) across ${cities.length} cities. First: ${firstDate}. Last: ${lastDate}. #ConcertHistory`;
+            navigator.clipboard?.writeText(text).then(() => alert('Copied to clipboard!'));
+          }} style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', background: C.teal, color: C.bg, border: 'none', borderRadius: 4, padding: '8px 16px', cursor: 'pointer' }}>
+            📋 Copy Stats
+          </button>
+          <button onClick={onClose} style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', background: C.bgCard, color: C.gray, border: `1px solid ${C.border}`, borderRadius: 4, padding: '8px 16px', cursor: 'pointer' }}>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 const TABS = [
   ['dashboard', '⚡ Dashboard'],
   ['byDay',     '📅 By Day'],
   ['byFest',    '🎪 By Festival'],
   ['browse',    '🔍 Browse'],
+  ['hof',       '🏆 Hall of Fame'],
   ['passport',  '🗺️ Passport'],
   ['manage',    '⚙️ Manage'],
 ];
 const PER_PAGE = 40;
- 
+
 export default function App() {
   const [concerts, setConcerts]     = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -455,9 +798,10 @@ export default function App() {
   const [sortDir, setSortDir]       = useState('desc');
   const [page, setPage]             = useState(1);
   const [editTarget, setEditTarget] = useState(null);
- 
+  const [shareCard, setShareCard] = useState(null); // { artist, shows }
+
   useEffect(() => { fetchConcerts(); }, []);
- 
+
   async function fetchConcerts() {
     try {
       const { data, error } = await supabase.from('concerts').select('*').order('date', { ascending: false });
@@ -466,7 +810,7 @@ export default function App() {
     } catch (err) { console.error(err.message); }
     finally { setLoading(false); }
   }
- 
+
   async function handleSave(id, payload) {
     try {
       if (id) {
@@ -481,7 +825,7 @@ export default function App() {
       setEditTarget(null);
     } catch (err) { alert('Save failed: ' + err.message); }
   }
- 
+
   async function handleDelete(id) {
     try {
       const { error } = await supabase.from('concerts').delete().eq('id', id);
@@ -490,7 +834,7 @@ export default function App() {
       setEditTarget(null);
     } catch (err) { alert('Delete failed: ' + err.message); }
   }
- 
+
   async function toggleSetlist(concert) {
     const newVal = !concert.has_setlist;
     try {
@@ -499,16 +843,16 @@ export default function App() {
       setConcerts(p => p.map(c => c.id === concert.id ? { ...c, has_setlist: newVal } : c));
     } catch (err) { console.error(err.message); }
   }
- 
+
   // ── DERIVED ────────────────────────────────────────────────────────────────
   const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
- 
+
   const sets = useMemo(() => {
     const r = [];
     concerts.forEach(c => (c.bands || []).forEach(band => r.push({ ...c, artist: band })));
     return r;
   }, [concerts]);
- 
+
   const stats = useMemo(() => {
     const ac = {}, venues = new Set();
     sets.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
@@ -521,49 +865,49 @@ export default function App() {
       setlistCount: concerts.filter(c => c.has_setlist).length,
     };
   }, [concerts, sets]);
- 
+
   const artistCounts = useMemo(() => {
     const m = {};
     sets.forEach(s => { m[s.artist] = (m[s.artist] || 0) + 1; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 14).map(([name, count]) => ({ name, count }));
   }, [sets]);
- 
+
   const timelineData = useMemo(() => {
     const m = {};
     sets.forEach(s => { const y = getYear(s.date); if (y) m[y] = (m[y] || 0) + 1; });
     return Object.entries(m).sort((a, b) => +a[0] - +b[0]).map(([year, count]) => ({ year: String(year).slice(2), count, fullYear: +year }));
   }, [sets]);
- 
+
   const festBreakdown = useMemo(() => {
     const m = {};
     concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { m[c.festival_name] = (m[c.festival_name] || 0) + 1; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]);
   }, [concerts]);
- 
+
   const cityCounts = useMemo(() => {
     const m = {};
     concerts.forEach(c => { if (c.city) m[c.city] = (m[c.city] || 0) + 1; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([name, count]) => ({ name, count }));
   }, [concerts]);
- 
+
   const venueCounts = useMemo(() => {
     const m = {};
     concerts.forEach(c => { if (c.venue) m[c.venue] = (m[c.venue] || 0) + 1; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([name, count]) => ({ name, count }));
   }, [concerts]);
- 
+
   const stateCounts = useMemo(() => {
     const m = {};
     concerts.forEach(c => { if (c.state) m[c.state] = (m[c.state] || 0) + 1; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]);
   }, [concerts]);
- 
+
   const artistFestMap = useMemo(() => {
     const m = {};
     sets.forEach(s => { if (!m[s.artist]) m[s.artist] = { fest: 0, solo: 0 }; if (s.is_festival) m[s.artist].fest++; else m[s.artist].solo++; });
     return m;
   }, [sets]);
- 
+
   const milestones = useMemo(() => {
     const sorted = [...concerts].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
     const first = sorted[0];
@@ -581,7 +925,7 @@ export default function App() {
       { icon: '📋', label: 'Setlists', value: stats.setlistCount, sub: 'since Billy Idol ACL 2015' },
     ];
   }, [concerts, sets, timelineData, stateCounts, stats, festBreakdown]);
- 
+
   const passport = useMemo(() => {
     const m = {};
     concerts.filter(c => c.is_festival && c.festival_name).forEach(c => {
@@ -591,7 +935,7 @@ export default function App() {
     });
     return Object.values(m).map(f => ({ ...f, years: [...f.years].sort() })).sort((a, b) => b.days - a.days);
   }, [concerts]);
- 
+
   const festGroupings = useMemo(() => {
     const m = {};
     concerts.filter(c => c.is_festival && c.festival_name).forEach(c => {
@@ -602,7 +946,7 @@ export default function App() {
     });
     return Object.values(m).sort((a, b) => Object.values(b.years).flat().length - Object.values(a.years).flat().length);
   }, [concerts]);
- 
+
   const applyFilters = (list, isSet = false) => {
     let d = list;
     if (yearFilter !== 'all') d = d.filter(r => getYear(r.date) === +yearFilter);
@@ -621,7 +965,7 @@ export default function App() {
     }
     return d;
   };
- 
+
   const filteredSets = useMemo(() => {
     const d = applyFilters(sets, true);
     return [...d].sort((a, b) => {
@@ -632,20 +976,20 @@ export default function App() {
       return 0;
     });
   }, [sets, yearFilter, festFilter, search, sortCol, sortDir]);
- 
+
   const artistRows = useMemo(() => {
     if (browseView !== 'artists') return [];
     const m = {};
     applyFilters(sets, true).forEach(s => { if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; m[s.artist].shows.push(s); });
     return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
   }, [sets, yearFilter, festFilter, search, browseView]);
- 
+
   const dayGroups = useMemo(() => applyFilters(concerts).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [concerts, yearFilter, festFilter, search]);
- 
+
   const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const totalPages = Math.ceil(filteredSets.length / PER_PAGE);
   const handleSort = col => { if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortCol(col); setSortDir('asc'); } setPage(1); };
- 
+
   // ── LOADING ────────────────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -655,11 +999,19 @@ export default function App() {
       </div>
     </div>
   );
- 
+
   // ── RENDER ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ background: C.bg, minHeight: '100vh', paddingBottom: 60 }}>
- 
+
+      {shareCard && (
+        <ShareCard
+          artist={shareCard.artist}
+          shows={shareCard.shows}
+          onClose={() => setShareCard(null)}
+        />
+      )}
+
       {editTarget && (
         <EditModal
           concert={editTarget === 'new' ? null : editTarget}
@@ -668,7 +1020,7 @@ export default function App() {
           onDelete={handleDelete}
         />
       )}
- 
+
       {/* HEADER */}
       <div style={{ background: `linear-gradient(180deg, #050508 0%, ${C.bgCard} 100%)`, borderBottom: `1px solid ${C.teal}33`, padding: '28px 24px 20px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -40, left: '50%', transform: 'translateX(-50%)', width: 400, height: 120, background: `radial-gradient(ellipse, ${C.tealGlow}, transparent)`, pointerEvents: 'none' }} />
@@ -678,7 +1030,7 @@ export default function App() {
         <div style={{ marginTop: 6, fontFamily: "'Space Mono', monospace", fontSize: '0.78rem', color: C.gray, letterSpacing: '0.1em' }}>Every show. Every set. Every memory.</div>
         <div style={{ width: 80, height: 1, background: `linear-gradient(to right, transparent, ${C.teal}, transparent)`, margin: '12px auto 0' }} />
       </div>
- 
+
       {/* STAT STRIP */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', background: C.bgCard, borderBottom: `1px solid ${C.border}` }}>
         {[
@@ -694,7 +1046,7 @@ export default function App() {
           </div>
         ))}
       </div>
- 
+
       {/* NAV */}
       <nav style={{ background: C.bgCard, borderBottom: `1px solid ${C.teal}33`, display: 'flex', overflowX: 'auto', position: 'sticky', top: 0, zIndex: 200 }}>
         {TABS.map(([id, label]) => (
@@ -708,19 +1060,25 @@ export default function App() {
           }} onClick={() => setActiveTab(id)}>{label}</button>
         ))}
       </nav>
- 
+
       {/* CONTENT */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
- 
+
         {/* ── DASHBOARD ── */}
         {activeTab === 'dashboard' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
             <OnThisDay concerts={concerts} />
- 
+
+            {/* You Were There + Random Show row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16, marginBottom: 4 }}>
+              <YouWereThere concerts={concerts} />
+              <RandomShow concerts={concerts} />
+            </div>
+
             {/* Milestones */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
               {milestones.map((m, i) => (
-                <Card key={i} glow={i === 0}>
+                <Card key={i} glow={i === 0} neon>
                   <div style={{ fontSize: '1.4rem', marginBottom: 6 }}>{m.icon}</div>
                   <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 }}>{m.label}</div>
                   <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', letterSpacing: '0.06em', color: C.white, lineHeight: 1.2 }}>{m.value}</div>
@@ -728,20 +1086,14 @@ export default function App() {
                 </Card>
               ))}
             </div>
- 
-            {/* Timeline */}
-            <Card style={{ marginBottom: 18 }}>
-              <CardTitle>Concert Timeline — Hover a Year</CardTitle>
-              <ConcertTimeline concerts={concerts} />
-            </Card>
- 
+
             {/* Charts row 1 */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 16 }}>
-              <Card>
+              <Card neon>
                 <CardTitle>Most Seen Artists</CardTitle>
                 {artistCounts.slice(0, 12).map(({ name, count }) => <HBar key={name} name={name} count={count} max={artistCounts[0]?.count || 1} />)}
               </Card>
-              <Card>
+              <Card neon>
                 <CardTitle>Sets Per Year</CardTitle>
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={timelineData} margin={{ top: 4, right: 4, bottom: 4, left: -20 }}>
@@ -757,7 +1109,7 @@ export default function App() {
                 <CardTitle style={{ marginTop: 14 }}>Festival Days by Fest</CardTitle>
                 {festBreakdown.slice(0, 8).map(([name, count]) => <HBar key={name} name={name} count={count} max={festBreakdown[0]?.[1] || 1} color={C.cyan} />)}
               </Card>
-              <Card>
+              <Card neon>
                 <CardTitle>Festival vs. Standalone</CardTitle>
                 {artistCounts.slice(0, 12).map(({ name }) => {
                   const s = artistFestMap[name] || { fest: 0, solo: 0 };
@@ -778,12 +1130,12 @@ export default function App() {
                 })}
               </Card>
             </div>
- 
+
             {/* Charts row 2 */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-              <Card><CardTitle>Top Cities</CardTitle>{cityCounts.map(({ name, count }) => <HBar key={name} name={name} count={count} max={cityCounts[0]?.count || 1} color={C.cyan} />)}</Card>
-              <Card><CardTitle>Top Venues</CardTitle>{venueCounts.map(({ name, count }) => <HBar key={name} name={name} count={count} max={venueCounts[0]?.count || 1} color={C.purple} />)}</Card>
-              <Card>
+              <Card neon><CardTitle>Top Cities</CardTitle>{cityCounts.map(({ name, count }) => <HBar key={name} name={name} count={count} max={cityCounts[0]?.count || 1} color={C.cyan} />)}</Card>
+              <Card neon><CardTitle>Top Venues</CardTitle>{venueCounts.map(({ name, count }) => <HBar key={name} name={name} count={count} max={venueCounts[0]?.count || 1} color={C.purple} />)}</Card>
+              <Card neon>
                 <CardTitle>States Visited</CardTitle>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                   {stateCounts.map(([st, ct]) => (
@@ -806,7 +1158,7 @@ export default function App() {
             </div>
           </div>
         )}
- 
+
         {/* ── BY DAY ── */}
         {activeTab === 'byDay' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
@@ -829,7 +1181,7 @@ export default function App() {
             )}
           </div>
         )}
- 
+
         {/* ── BY FESTIVAL ── */}
         {activeTab === 'byFest' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
@@ -840,40 +1192,38 @@ export default function App() {
             {festGroupings
               .filter(fg => !search || fg.name.toLowerCase().includes(search.toLowerCase()) || Object.values(fg.years).flat().some(ev => (ev.bands || []).some(b => b.toLowerCase().includes(search.toLowerCase()))))
               .map(fg => (
-                <div key={fg.name} style={{ marginBottom: 32 }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', letterSpacing: '0.1em', color: C.teal, textShadow: `0 0 12px ${C.teal}44`, marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${C.teal}33`, display: 'flex', alignItems: 'baseline', gap: 10 }}>
-                    {fg.name}
+                <div key={fg.name} style={{ marginBottom: 40 }}>
+                  {/* Festival title header */}
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', letterSpacing: '0.1em', color: C.teal, textShadow: `0 0 16px ${C.teal}55`, marginBottom: 16, paddingBottom: 8, borderBottom: `2px solid ${C.teal}33`, display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                    🎪 {fg.name}
                     <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.gray, fontWeight: 400 }}>
                       {Object.keys(fg.years).length} yr{Object.keys(fg.years).length !== 1 ? 's' : ''} · {Object.values(fg.years).flat().length} days
                     </span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
-                    {Object.entries(fg.years).sort((a, b) => +a[0] - +b[0]).map(([yr, evs]) => (
-                      <div key={yr} style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>
-                        <div style={{ background: `linear-gradient(135deg, ${C.teal}22, ${C.bgCardAlt})`, padding: '10px 14px', borderBottom: `1px solid ${C.border}` }}>
-                          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', letterSpacing: '0.08em', color: C.white }}>{fg.name} {yr}</div>
-                          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.gray, marginTop: 2 }}>{evs.length} day{evs.length !== 1 ? 's' : ''}</div>
+                  {/* Year sections */}
+                  {Object.entries(fg.years).sort((a, b) => +a[0] - +b[0]).map(([yr, evs]) => (
+                    <div key={yr} style={{ marginBottom: 24 }}>
+                      {/* Year badge */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', letterSpacing: '0.12em', color: C.white, background: `${C.teal}22`, border: `1px solid ${C.teal}44`, borderRadius: 4, padding: '2px 12px' }}>
+                          {fg.name} {yr}
                         </div>
-                        {evs.map(ev => (
-                          <div key={ev.id} style={{ padding: '10px 14px', borderBottom: `1px solid ${C.border}` }}>
-                            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 6 }}>
-                              {ev.festival_day || fmtDate(ev.date)}
-                            </div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                              {(ev.bands || []).map((b, i) => (
-                                <span key={i} style={{ fontSize: '0.7rem', color: C.white, background: C.bgCardAlt, border: `1px solid ${C.teal}33`, borderRadius: 3, padding: '2px 7px' }}>{b}</span>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
+                        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                          {evs.length} day{evs.length !== 1 ? 's' : ''}
+                        </div>
+                        <div style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${C.teal}33, transparent)` }} />
                       </div>
-                    ))}
-                  </div>
+                      {/* Each day as a full FestivalScheduleCard */}
+                      {evs.map(ev => (
+                        <FestivalScheduleCard key={ev.id} event={ev} />
+                      ))}
+                    </div>
+                  ))}
                 </div>
               ))}
           </div>
         )}
- 
+
         {/* ── BROWSE ── */}
         {activeTab === 'browse' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
@@ -895,7 +1245,7 @@ export default function App() {
               </div>
               <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, marginLeft: 'auto' }}>{browseView === 'shows' ? `${filteredSets.length} sets` : `${artistRows.length} artists`}</span>
             </div>
- 
+
             {browseView === 'shows' && (
               <>
                 <div style={{ overflowX: 'auto', borderRadius: 8, border: `1px solid ${C.border}` }}>
@@ -941,7 +1291,7 @@ export default function App() {
                 )}
               </>
             )}
- 
+
             {browseView === 'artists' && (
               <div>
                 {artistRows.map(({ artist, shows }) => {
@@ -950,6 +1300,7 @@ export default function App() {
                   return (
                     <div key={artist} style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, padding: '12px 14px', marginBottom: 6 }}>
                       <div style={{ fontSize: '1rem', fontWeight: 600, color: C.white }}>{artist}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray, marginTop: 4, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
                         <span>Seen <strong style={{ color: C.teal }}>{shows.length}×</strong></span>
                         <span>Fest <strong style={{ color: C.teal }}>{fc}</strong></span>
@@ -957,6 +1308,8 @@ export default function App() {
                         {slCount > 0 && <span>Setlists <strong style={{ color: C.teal }}>{slCount} 📋</strong></span>}
                         <span>First <strong style={{ color: C.teal }}>{fmtDate(shows[shows.length - 1]?.date)}</strong></span>
                         <span>Last <strong style={{ color: C.teal }}>{fmtDate(shows[0]?.date)}</strong></span>
+                      </div>
+                      <button onClick={e => { e.stopPropagation(); setShareCard({ artist, shows }); }} style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.08em', textTransform: 'uppercase', background: `${C.teal}18`, border: `1px solid ${C.teal}44`, color: C.teal, borderRadius: 3, padding: '3px 8px', cursor: 'pointer', flexShrink: 0, marginTop: 4 }}>Share ↗</button>
                       </div>
                       <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                         {shows.map((s, i) => (
@@ -972,7 +1325,12 @@ export default function App() {
             )}
           </div>
         )}
- 
+
+        {/* ── HALL OF FAME ── */}
+        {activeTab === 'hof' && (
+          <HallOfFame sets={sets} onShare={(artist, shows) => setShareCard({ artist, shows })} />
+        )}
+
         {/* ── PASSPORT ── */}
         {activeTab === 'passport' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
@@ -996,14 +1354,13 @@ export default function App() {
             </div>
           </div>
         )}
- 
+
         {/* ── MANAGE ── */}
         {activeTab === 'manage' && (
           <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} />
         )}
- 
+
       </div>
     </div>
   );
 }
- 
