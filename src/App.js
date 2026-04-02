@@ -267,23 +267,33 @@ const inputSt = {
 // ─── EDIT MODAL ───────────────────────────────────────────────────────────────
 function EditModal({ concert, onClose, onSave, onDelete }) {
   const [form, setForm] = useState({
-    date:          concert?.date || '',
-    bands:         (concert?.bands || []).join(', '),
-    venue:         concert?.venue || '',
-    city:          concert?.city || '',
-    state:         concert?.state || '',
-    is_festival:   concert?.is_festival || false,
-    festival_name: concert?.festival_name || '',
-    festival_day:  concert?.festival_day || '',
-    has_setlist:   concert?.has_setlist || false,
+    date:              concert?.date || '',
+    bands:             (concert?.bands || []).join(', '),
+    venue:             concert?.venue || '',
+    city:              concert?.city || '',
+    state:             concert?.state || '',
+    is_festival:       concert?.is_festival || false,
+    festival_name:     concert?.festival_name || '',
+    festival_day:      concert?.festival_day || '',
+    has_setlist:       concert?.has_setlist || false,
+    has_setlist_names: concert?.has_setlist_names || '', 
   });
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSave = async () => {
     setSaving(true);
-    await onSave(concert?.id, { ...form, bands: form.bands.split(',').map(b => b.trim()).filter(Boolean) });
+    const bandList = form.bands.split(',').map(b => b.trim()).filter(Boolean);
+    const hasAnySetlist = !!form.has_setlist_names?.trim();
+
+    await onSave(concert?.id, { 
+      ...form, 
+      bands: bandList,
+      has_setlist: hasAnySetlist,
+      has_setlist_names: form.has_setlist_names 
+    });
     setSaving(false);
   };
 
@@ -295,6 +305,7 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(4px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.teal}`, borderRadius: 10, padding: 24, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: `0 0 40px ${C.tealGlow}` }}>
+        
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', letterSpacing: '0.08em', color: C.teal }}>
             {concert?.id ? 'Edit Show' : 'Add Show'}
@@ -304,6 +315,7 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
 
         <div style={fld}><label style={lbl}>Date</label><input style={inp} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
         <div style={fld}><label style={lbl}>Artists (comma separated)</label><input style={inp} value={form.bands} onChange={e => set('bands', e.target.value)} placeholder="Arcade Fire, LCD Soundsystem" /></div>
+        
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
           <div><label style={lbl}>Venue</label><input style={inp} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="Zilker Park" /></div>
           <div><label style={lbl}>City</label><input style={inp} value={form.city} onChange={e => set('city', e.target.value)} placeholder="Austin" /></div>
@@ -322,13 +334,14 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
           </div>
         )}
 
-        <div style={{ ...fld, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <input type="checkbox" id="has_sl" checked={form.has_setlist} onChange={e => set('has_setlist', e.target.checked)}
-            disabled={form.date && form.date < SETLIST_START}
-            style={{ accentColor: C.teal, width: 16, height: 16 }} />
-          <label htmlFor="has_sl" style={{ ...lbl, marginBottom: 0, cursor: 'pointer', opacity: form.date && form.date < SETLIST_START ? 0.4 : 1 }}>
-            Got physical setlist 📋 {form.date && form.date < SETLIST_START ? '(pre-2015, not tracked)' : ''}
-          </label>
+        <div style={fld}>
+          <label style={lbl}>Setlists Obtained (Band Names, comma separated)</label>
+          <input 
+            style={inp} 
+            value={form.has_setlist_names || ''} 
+            onChange={e => set('has_setlist_names', e.target.value)} 
+            placeholder="e.g. Ween, Guster" 
+          />
         </div>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', marginTop: 20 }}>
@@ -344,6 +357,7 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
             <Btn onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Btn>
           </div>
         </div>
+
       </div>
     </div>
   );
@@ -1541,11 +1555,28 @@ export default function App() {
                           <td style={{ padding: '8px 12px', color: C.gray }}>{s.state || '—'}</td>
                           <td style={{ padding: '8px 12px' }}>{s.is_festival ? <Badge color={C.teal}>Fest</Badge> : <Badge color={C.grayDim} bg="transparent">Solo</Badge>}</td>
                           <td style={{ padding: '8px 12px', fontStyle: 'italic', fontSize: '0.72rem', color: C.tealDim }}>{s.festival_day || '—'}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'center' }} onClick={e => { e.stopPropagation(); if (s.date >= SETLIST_START) toggleSetlist(s); }}>
-                            {s.date >= SETLIST_START
-                              ? <span className="setlist-btn" style={{ fontSize: 16, cursor: 'pointer', opacity: s.has_setlist ? 1 : 0.25 }} title={s.has_setlist ? 'Got it!' : 'Click to mark'}>📋</span>
-                              : <span style={{ color: C.grayDim, fontSize: 10 }}>—</span>}
+                          
+                          {/* 📋 THE UPDATED SETLIST LOGIC 📋 */}
+                          <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                            {(() => {
+                              const names = s.has_setlist_names ? s.has_setlist_names.split(',').map(n => n.trim().toLowerCase()) : [];
+                              const isThisSet = names.includes(s.artist.toLowerCase());
+                              return (
+                                <span 
+                                  style={{ 
+                                    fontSize: 16, 
+                                    opacity: isThisSet ? 1 : 0.1,
+                                    filter: isThisSet ? `drop-shadow(0 0 5px ${C.teal})` : 'none',
+                                    transition: 'all 0.2s'
+                                  }} 
+                                  title={isThisSet ? `Setlist confirmed for ${s.artist}` : 'No setlist recorded'}
+                                >
+                                  📋
+                                </span>
+                              );
+                            })()}
                           </td>
+
                           <td style={{ padding: '8px 12px', color: C.tealDim, fontSize: 12 }}>✎</td>
                         </tr>
                       ))}
