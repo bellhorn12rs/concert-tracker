@@ -50,7 +50,14 @@ const GENRE_COLORS = {
   "Punk": "#a2ff00",          // Lime
   "Other": "#444444"          // Gray
 };
-
+// HELPER: Converts hex (#ff0077) to rgba with transparency (0.1)
+const hexToRgba = (hex, alpha) => {
+  if (!hex || hex === 'transparent') return `rgba(255,255,255,${alpha})`;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
 // genre definitions
 const GENRE_MAP = {
   "Typhoon": "Indie Rock", "The Happy Fits": "Indie Rock", "Krooked Kings": "Indie Rock",
@@ -1182,12 +1189,13 @@ function GenreDNA({ concerts }) {
   );
 }
 
+
 // ─── INTERNAL CARD COMPONENT ──────────────────────────────────────────────
 function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
   const [hovered, setHovered] = React.useState(false);
   const bands = item.bands || [];
   
-  // 1. Determine Genre & Color
+  // 1. Identify the Genre and Color
   const headliner = bands[0] || "";
   const genre = GENRE_MAP[headliner] || "Other";
   const themeColor = GENRE_COLORS[genre] || "#444444";
@@ -1211,36 +1219,24 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
         border: '2px solid #0a0a0c', transition: '0.3s'
       }} />
       
-      {/* THE CARD */}
+      {/* --- THE UPDATED CARD --- */}
       <div style={{ 
         width: '43%', padding: '20px', borderRadius: '12px',
-        background: item.is_festival ? 'rgba(255, 204, 0, 0.03)' : 'rgba(255,255,255,0.02)',
-        // THE NEON BORDER (Genre Based)
-        border: `1px solid ${hovered ? themeColor : 'rgba(255,255,255,0.1)'}`,
-        borderLeft: isLeft ? `6px solid ${themeColor}` : `1px solid ${hovered ? themeColor : 'rgba(255,255,255,0.1)'}`,
-        borderRight: !isLeft ? `6px solid ${themeColor}` : `1px solid ${hovered ? themeColor : 'rgba(255,255,255,0.1)'}`,
+        // STEP 1: Non-neon fill version (5% opacity normally, 15% on hover)
+        background: hovered ? hexToRgba(themeColor, 0.15) : hexToRgba(themeColor, 0.05),
+        border: `1px solid ${hovered ? themeColor : hexToRgba(themeColor, 0.3)}`,
+        
+        borderLeft: isLeft ? `6px solid ${themeColor}` : `1px solid ${hovered ? themeColor : hexToRgba(themeColor, 0.3)}`,
+        borderRight: !isLeft ? `6px solid ${themeColor}` : `1px solid ${hovered ? themeColor : hexToRgba(themeColor, 0.3)}`,
+        
         transform: hovered ? `scale(1.03) translateY(-5px)` : 'scale(1)',
         transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
         boxShadow: hovered ? `0 15px 40px -15px ${themeColor}66` : 'none',
         zIndex: hovered ? 20 : 1
       }}>
+        {/* ... (Keep the rest of your card content the same) ... */}
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, alignItems: 'center' }}>
-          <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#666' }}>{item.date}</span>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            {/* Setlist Checkmark */}
-            {item.has_setlist && <span title="Setlist available" style={{ color: '#ffcc00', fontSize: '12px' }}>✓</span>}
-            {/* Festival Badge */}
-            {item.is_festival && (
-              <span style={{ 
-                background: '#ffcc00', color: '#000', fontSize: '8px', 
-                fontWeight: '900', padding: '2px 6px', borderRadius: '2px', letterSpacing: '1px'
-              }}>FESTIVAL</span>
-            )}
-          </div>
-        </div>
-
-        {/* Bands in White */}
+        {/* Band Names */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: 15 }}>
           {bands.map((band, idx) => (
             <span key={idx} style={{ 
@@ -1254,9 +1250,9 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
           ))}
         </div>
 
-        {/* Venue/City in White (Fixed) */}
+        {/* Bottom Venue Row */}
         <div style={{ 
-          marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)',
+          marginTop: 10, paddingTop: 10, borderTop: `1px solid ${hexToRgba(themeColor, 0.2)}`,
           display: 'flex', justifyContent: 'space-between', alignItems: 'center'
         }}>
           <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#ffffff', opacity: 0.7 }}>
@@ -1859,124 +1855,132 @@ export default function App() {
   </div>
 )}
         {/* ── BROWSE ── */}
-        {activeTab === 'browse' && (
-          <div style={{ padding: '24px 0' }} className="fade-in">
-            <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
-              <input style={{ ...inputSt, flex: 1, minWidth: 160 }} placeholder="Search artist, venue, city, festival..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
-              <select style={inputSt} value={yearFilter} onChange={e => { setYearFilter(e.target.value); setPage(1); }}>
-                <option value="all">All Years</option>
-                {years.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-              <select style={inputSt} value={festFilter} onChange={e => { setFestFilter(e.target.value); setPage(1); }}>
-                <option value="all">All Shows</option>
-                <option value="fest">Festival Only</option>
-                <option value="solo">Standalone Only</option>
-              </select>
-              <div style={{ display: 'flex', border: `1px solid ${C.border}`, borderRadius: 4, overflow: 'hidden' }}>
-                {[['shows', 'By Set'], ['artists', 'By Artist']].map(([v, l]) => (
-                  <button key={v} style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', background: browseView === v ? C.teal : C.bgCard, color: browseView === v ? C.bg : C.gray, border: 'none', padding: '7px 12px', cursor: 'pointer' }} onClick={() => setBrowseView(v)}>{l}</button>
+{activeTab === 'browse' && (
+  <div style={{ padding: '24px 0' }} className="fade-in">
+    {/* --- SEARCH & FILTERS BAR --- */}
+    <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
+      <input style={{ ...inputSt, flex: 1, minWidth: 160 }} placeholder="Search artist, venue, city, festival..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+      <select style={inputSt} value={yearFilter} onChange={e => { setYearFilter(e.target.value); setPage(1); }}>
+        <option value="all">All Years</option>
+        {years.map(y => <option key={y} value={y}>{y}</option>)}
+      </select>
+      <select style={inputSt} value={festFilter} onChange={e => { setFestFilter(e.target.value); setPage(1); }}>
+        <option value="all">All Shows</option>
+        <option value="fest">Festival Only</option>
+        <option value="solo">Standalone Only</option>
+      </select>
+      <div style={{ display: 'flex', border: `1px solid ${C.border}`, borderRadius: 4, overflow: 'hidden' }}>
+        {[['shows', 'By Set'], ['artists', 'By Artist']].map(([v, l]) => (
+          <button key={v} style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', background: browseView === v ? C.teal : C.bgCard, color: browseView === v ? C.bg : C.gray, border: 'none', padding: '7px 12px', cursor: 'pointer' }} onClick={() => setBrowseView(v)}>{l}</button>
+        ))}
+      </div>
+      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, marginLeft: 'auto' }}>
+        {browseView === 'shows' ? `${filteredSets.length} sets` : `${artistRows.length} artists`}
+      </span>
+    </div>
+
+    {/* --- BY SET VIEW (TABLE) --- */}
+    {browseView === 'shows' && (
+      <>
+        <div style={{ overflowX: 'auto', borderRadius: 8, border: `1px solid ${C.border}` }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+            <thead>
+              <tr style={{ background: C.bgCardAlt }}>
+                {[['date','Date'],['artist','Artist'],['venue','Venue'],['city','City'],['state','ST'],['is_festival','Type'],['festival_day','Festival'],['has_setlist','📋']].map(([col, lbl]) => (
+                  <th key={col} style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', padding: '10px 12px', textAlign: 'left', color: C.tealDim, borderBottom: `1px solid ${C.border}`, cursor: 'pointer', whiteSpace: 'nowrap', userSelect: 'none' }} onClick={() => handleSort(col)}>
+                    {lbl}{sortCol === col ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+                  </th>
+                ))}
+                <th style={{ padding: '10px 12px', borderBottom: `1px solid ${C.border}` }} />
+              </tr>
+            </thead>
+            <tbody>
+              {paged.map((s, i) => (
+                <tr key={`${s.id}-${s.artist}`} className="row-hover" style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 1 ? C.bgCardAlt : 'transparent' }} onClick={() => setEditTarget(s)}>
+                  <td style={{ padding: '8px 12px', fontFamily: "'Space Mono', monospace", fontSize: '0.7rem', color: C.gray, whiteSpace: 'nowrap' }}>{fmtDate(s.date)}</td>
+                  <td style={{ padding: '8px 12px', color: C.white, fontWeight: 500 }}>{s.artist}</td>
+                  <td style={{ padding: '8px 12px', color: C.gray }}>{s.venue || '—'}</td>
+                  <td style={{ padding: '8px 12px', color: C.gray }}>{s.city || '—'}</td>
+                  <td style={{ padding: '8px 12px', color: C.gray }}>{s.state || '—'}</td>
+                  <td style={{ padding: '8px 12px' }}>{s.is_festival ? <Badge color={C.teal}>Fest</Badge> : <Badge color={C.grayDim} bg="transparent">Solo</Badge>}</td>
+                  <td style={{ padding: '8px 12px', fontStyle: 'italic', fontSize: '0.72rem', color: C.tealDim }}>{s.festival_day || '—'}</td>
+                  <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                    <span style={{ fontSize: 16, opacity: s.has_setlist ? 1 : 0.1 }}>📋</span>
+                  </td>
+                  <td style={{ padding: '8px 12px', color: C.tealDim, fontSize: 12 }}>✎</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* Pagination logic goes here (keep your existing) */}
+      </>
+    )}
+
+    {/* --- BY ARTIST VIEW (GENRE MANAGER) --- */}
+    {browseView === 'artists' && (
+      <div>
+        {artistRows.map(({ artist, shows }) => {
+          const fc = shows.filter(s => s.is_festival).length;
+          const slCount = shows.filter(s => s.has_setlist).length;
+          
+          // --- GENRE LOGIC ---
+          const currentGenre = GENRE_MAP[artist] || "Other";
+          const gColor = GENRE_COLORS[currentGenre] || "#444";
+
+          return (
+            <div key={artist} style={{ 
+              background: hexToRgba(gColor, 0.05), // Subtle color fill
+              border: `1px solid ${hexToRgba(gColor, 0.2)}`, 
+              borderLeft: `4px solid ${gColor}`,
+              borderRadius: 8, padding: '16px', marginBottom: 12,
+              boxShadow: `0 4px 15px rgba(0,0,0,0.2)`
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: C.white, letterSpacing: '-0.02em' }}>{artist}</div>
+                
+                {/* --- GENRE PICKER (MANUAL OVERRIDE) --- */}
+                <select 
+                  style={{ ...inputSt, padding: '4px 8px', fontSize: 10, background: '#000', borderColor: gColor }}
+                  value={currentGenre}
+                  onChange={(e) => {
+                    // Update Local Map (for instant UI feedback)
+                    GENRE_MAP[artist] = e.target.value;
+                    // Trigger DB Update (if you built step 3's function)
+                    if(typeof updateArtistGenre === 'function') updateArtistGenre(artist, e.target.value);
+                  }}
+                >
+                  {Object.keys(GENRE_COLORS).map(g => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                  <span>Seen <strong style={{ color: gColor }}>{shows.length}×</strong></span>
+                  <span>Fest <strong style={{ color: gColor }}>{fc}</strong></span>
+                  <span>Solo <strong style={{ color: gColor }}>{shows.length - fc}</strong></span>
+                  {slCount > 0 && <span>Setlists <strong style={{ color: gColor }}>{slCount} 📋</strong></span>}
+                </div>
+                <button onClick={e => { e.stopPropagation(); setShareCard({ artist, shows }); }} style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.08em', textTransform: 'uppercase', background: `${gColor}18`, border: `1px solid ${gColor}44`, color: gColor, borderRadius: 3, padding: '3px 8px', cursor: 'pointer' }}>Share ↗</button>
+              </div>
+
+              {/* Show History Tags */}
+              <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {shows.map((s, i) => (
+                  <span key={i} style={{ fontSize: '0.68rem', background: 'rgba(0,0,0,0.3)', border: `1px solid ${s.is_festival ? gColor + '44' : 'rgba(255,255,255,0.05)'}`, borderRadius: 3, padding: '2px 6px', color: '#bbb' }}>
+                    {fmtDate(s.date)}{s.city ? ` · ${s.city}` : ''}{s.has_setlist ? ' 📋' : ''}
+                  </span>
                 ))}
               </div>
-              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, marginLeft: 'auto' }}>{browseView === 'shows' ? `${filteredSets.length} sets` : `${artistRows.length} artists`}</span>
             </div>
-
-            {browseView === 'shows' && (
-              <>
-                <div style={{ overflowX: 'auto', borderRadius: 8, border: `1px solid ${C.border}` }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
-                    <thead>
-                      <tr style={{ background: C.bgCardAlt }}>
-                        {[['date','Date'],['artist','Artist'],['venue','Venue'],['city','City'],['state','ST'],['is_festival','Type'],['festival_day','Festival'],['has_setlist','📋']].map(([col, lbl]) => (
-                          <th key={col} style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', padding: '10px 12px', textAlign: 'left', color: C.tealDim, borderBottom: `1px solid ${C.border}`, cursor: 'pointer', whiteSpace: 'nowrap', userSelect: 'none' }} onClick={() => handleSort(col)}>
-                            {lbl}{sortCol === col ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
-                          </th>
-                        ))}
-                        <th style={{ padding: '10px 12px', borderBottom: `1px solid ${C.border}` }} />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paged.map((s, i) => (
-                        <tr key={`${s.id}-${s.artist}`} className="row-hover" style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 1 ? C.bgCardAlt : 'transparent' }} onClick={() => setEditTarget(s)}>
-                          <td style={{ padding: '8px 12px', fontFamily: "'Space Mono', monospace", fontSize: '0.7rem', color: C.gray, whiteSpace: 'nowrap' }}>{fmtDate(s.date)}</td>
-                          <td style={{ padding: '8px 12px', color: C.white, fontWeight: 500 }}>{s.artist}</td>
-                          <td style={{ padding: '8px 12px', color: C.gray }}>{s.venue || '—'}</td>
-                          <td style={{ padding: '8px 12px', color: C.gray }}>{s.city || '—'}</td>
-                          <td style={{ padding: '8px 12px', color: C.gray }}>{s.state || '—'}</td>
-                          <td style={{ padding: '8px 12px' }}>{s.is_festival ? <Badge color={C.teal}>Fest</Badge> : <Badge color={C.grayDim} bg="transparent">Solo</Badge>}</td>
-                          <td style={{ padding: '8px 12px', fontStyle: 'italic', fontSize: '0.72rem', color: C.tealDim }}>{s.festival_day || '—'}</td>
-                          
-                          {/* 📋 THE UPDATED SETLIST LOGIC 📋 */}
-                          <td style={{ padding: '8px 12px', textAlign: 'center' }}>
-                            {(() => {
-                              const names = s.has_setlist_names ? s.has_setlist_names.split(',').map(n => n.trim().toLowerCase()) : [];
-                              const isThisSet = names.includes(s.artist.toLowerCase());
-                              return (
-                                <span 
-                                  style={{ 
-                                    fontSize: 16, 
-                                    opacity: isThisSet ? 1 : 0.1,
-                                    filter: isThisSet ? `drop-shadow(0 0 5px ${C.teal})` : 'none',
-                                    transition: 'all 0.2s'
-                                  }} 
-                                  title={isThisSet ? `Setlist confirmed for ${s.artist}` : 'No setlist recorded'}
-                                >
-                                  📋
-                                </span>
-                              );
-                            })()}
-                          </td>
-
-                          <td style={{ padding: '8px 12px', color: C.tealDim, fontSize: 12 }}>✎</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {totalPages > 1 && (
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 14 }}>
-                    <Btn variant="secondary" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: '5px 10px' }}>←</Btn>
-                    {Array.from({ length: Math.min(7, totalPages) }, (_, i) => { const p = page <= 4 ? i + 1 : page + i - 3; if (p < 1 || p > totalPages) return null; return <Btn key={p} variant={p === page ? 'primary' : 'secondary'} onClick={() => setPage(p)} style={{ padding: '5px 10px' }}>{p}</Btn>; })}
-                    <Btn variant="secondary" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ padding: '5px 10px' }}>→</Btn>
-                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, alignSelf: 'center' }}>pg {page} / {totalPages}</span>
-                  </div>
-                )}
-              </>
-            )}
-
-            {browseView === 'artists' && (
-              <div>
-                {artistRows.map(({ artist, shows }) => {
-                  const fc = shows.filter(s => s.is_festival).length;
-                  const slCount = shows.filter(s => s.has_setlist).length;
-                  return (
-                    <div key={artist} style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, padding: '12px 14px', marginBottom: 6 }}>
-                      <div style={{ fontSize: '1rem', fontWeight: 600, color: C.white }}>{artist}</div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray, marginTop: 4, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                        <span>Seen <strong style={{ color: C.teal }}>{shows.length}×</strong></span>
-                        <span>Fest <strong style={{ color: C.teal }}>{fc}</strong></span>
-                        <span>Solo <strong style={{ color: C.teal }}>{shows.length - fc}</strong></span>
-                        {slCount > 0 && <span>Setlists <strong style={{ color: C.teal }}>{slCount} 📋</strong></span>}
-                        <span>First <strong style={{ color: C.teal }}>{fmtDate(shows[shows.length - 1]?.date)}</strong></span>
-                        <span>Last <strong style={{ color: C.teal }}>{fmtDate(shows[0]?.date)}</strong></span>
-                      </div>
-                      <button onClick={e => { e.stopPropagation(); setShareCard({ artist, shows }); }} style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.08em', textTransform: 'uppercase', background: `${C.teal}18`, border: `1px solid ${C.teal}44`, color: C.teal, borderRadius: 3, padding: '3px 8px', cursor: 'pointer', flexShrink: 0, marginTop: 4 }}>Share ↗</button>
-                      </div>
-                      <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        {shows.map((s, i) => (
-                          <span key={i} style={{ fontSize: '0.68rem', background: s.is_festival ? `${C.teal}11` : C.bgCardAlt, border: `1px solid ${s.is_festival ? C.teal + '44' : C.border}`, borderRadius: 3, padding: '2px 6px', color: C.gray }}>
-                            {fmtDate(s.date)}{s.city ? ` · ${s.city}` : ''}{s.has_setlist ? ' 📋' : ''}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
+          );
+        })}
+      </div>
+    )}
+  </div>
+)}
         {/* ── HALL OF FAME ── */}
         {activeTab === 'hof' && (
           <HallOfFame 
