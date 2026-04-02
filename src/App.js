@@ -926,108 +926,139 @@ function DecadeBlocks({ sets }) {
   );
 }
 function TimelineTab({ concerts }) {
-  const timelineGroups = useMemo(() => {
-    const groups = {};
-    // Sort concerts chronologically first
-    const sorted = [...concerts].sort((a, b) => b.date.localeCompare(a.date));
+  const timelineData = useMemo(() => {
+    // 1. Sort chronologically
+    const sorted = [...concerts].sort((a, b) => a.date.localeCompare(b.date));
     
-    sorted.forEach(c => {
-      const y = getYear(c.date);
-      if (!y) return;
-      if (!groups[y]) groups[y] = [];
-      groups[y].push(c);
+    // 2. Calculate gaps and clusters
+    return sorted.map((show, i) => {
+      const prevShow = sorted[i - 1];
+      let gapDays = 0;
+      if (prevShow) {
+        const diffTime = Math.abs(new Date(show.date) - new Date(prevShow.date));
+        gapDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      }
+      
+      // Determine "Cluster Strength" (High if shows are within 3 days of each other)
+      const isClustered = gapDays <= 3 && i !== 0;
+      return { ...show, gapDays, isClustered };
     });
-    return Object.entries(groups).sort((a, b) => b[0] - a[0]); // Most recent year at top
   }, [concerts]);
 
   return (
-    <div style={{ padding: '60px 0', position: 'relative', maxWidth: '900px', margin: '0 auto' }} className="fade-in">
-      {/* The "Power Line" Central Spine */}
+    <div style={{ padding: '80px 0', background: C.bg, position: 'relative' }} className="fade-in">
+      {/* The Spine - Dynamic gradient based on total history */}
       <div style={{ 
-        position: 'absolute', left: '50%', top: 0, bottom: 0, 
-        width: '2px', 
-        background: `linear-gradient(to bottom, ${C.teal}, ${C.purple}, ${C.gold}, transparent)`,
-        transform: 'translateX(-50%)', opacity: 0.2 
+        position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2,
+        background: `linear-gradient(to bottom, ${C.teal}, ${C.purple}, ${C.gold}, ${C.red}, transparent)`,
+        transform: 'translateX(-50%)', opacity: 0.2
       }} />
 
-      {timelineGroups.map(([year, shows], yIdx) => (
-        <div key={year} style={{ marginBottom: 100, position: 'relative' }}>
-          
-          {/* Decal Year Marker */}
-          <div style={{ 
-            display: 'flex', justifyContent: 'center', marginBottom: 50, position: 'relative', zIndex: 10 
+      {timelineData.map((s, i) => {
+        const isLeft = i % 2 === 0;
+        const bands = s.bands || [];
+        // Dynamic scaling: smaller text for huge lineups, massive for solo headliners
+        const fontSize = bands.length > 8 ? '0.7rem' : bands.length > 4 ? '0.9rem' : '1.2rem';
+        const cardWidth = bands.length > 5 ? '45%' : '38%';
+        
+        // Dynamic Spacing: if gap is huge, add more margin. If clustered, tighten up.
+        const marginTop = i === 0 ? 0 : s.isClustered ? 10 : Math.min(gapDaysToPx(s.gapDays), 150);
+
+        return (
+          <div key={s.id} style={{ 
+            marginTop,
+            display: 'flex', 
+            justifyContent: isLeft ? 'flex-start' : 'flex-end',
+            alignItems: 'center',
+            width: '100%',
+            position: 'relative',
+            transition: 'all 0.5s ease'
           }}>
-            <div style={{ 
-              background: C.bg, border: `2px solid ${yIdx % 2 === 0 ? C.teal : C.purple}`, 
-              color: C.white, fontFamily: "'Bebas Neue'", fontSize: '3rem', 
-              padding: '4px 30px', borderRadius: '12px',
-              boxShadow: `0 0 30px ${yIdx % 2 === 0 ? C.tealGlow : 'rgba(153,102,255,0.2)'}`,
-              letterSpacing: '4px'
-            }}>
-              {year}
-            </div>
-          </div>
+            {/* Year Label - Only show when year changes */}
+            {(i === 0 || getYear(s.date) !== getYear(timelineData[i-1].date)) && (
+              <div style={{
+                position: 'absolute', left: '50%', transform: 'translate(-50%, -40px)',
+                fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.teal,
+                background: C.bg, padding: '2px 10px', border: `1px solid ${C.teal}44`,
+                borderRadius: 4, zIndex: 10, letterSpacing: 2
+              }}>
+                {getYear(s.date)}
+              </div>
+            )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-            {shows.map((s, sIdx) => {
-              const isLeft = sIdx % 2 === 0;
-              const headliner = Array.isArray(s.bands) ? s.bands[0] : (s.artist || "Multiple Artists");
-              
-              return (
-                <div key={s.id} style={{ 
-                  display: 'flex', 
-                  justifyContent: isLeft ? 'flex-start' : 'flex-end',
-                  alignItems: 'center',
-                  width: '100%',
-                  position: 'relative'
-                }}>
-                  {/* Connector Dot to Spine */}
-                  <div style={{
-                    position: 'absolute', left: '50%', width: '12px', height: '12px',
-                    borderRadius: '50%', background: isLeft ? C.teal : C.purple,
-                    transform: 'translateX(-50%)', zIndex: 5,
-                    boxShadow: `0 0 10px ${isLeft ? C.teal : C.purple}`
-                  }} />
+            {/* Connection Node */}
+            <div style={{
+              position: 'absolute', left: '50%', width: s.isClustered ? 8 : 14, height: s.isClustered ? 8 : 14,
+              borderRadius: '50%', background: s.is_festival ? C.gold : C.teal,
+              transform: 'translateX(-50%)', zIndex: 5,
+              boxShadow: `0 0 ${s.isClustered ? '8px' : '15px'} ${s.is_festival ? C.gold : C.teal}`,
+              border: `2px solid ${C.bg}`
+            }} />
 
-                  {/* The Show Card */}
-                  <Card neon style={{ 
-                    width: '42%', 
-                    position: 'relative',
-                    borderLeft: isLeft ? `4px solid ${C.teal}` : `1px solid ${C.border}`,
-                    borderRight: !isLeft ? `4px solid ${C.purple}` : `1px solid ${C.border}`,
-                    padding: '20px'
+            {/* Horizontal Connector Line */}
+            <div style={{
+              position: 'absolute', left: isLeft ? 'auto' : '42%', right: isLeft ? '42%' : 'auto',
+              width: '8%', height: 1, background: `linear-gradient(to ${isLeft?'left':'right'}, ${C.border}, transparent)`
+            }} />
+
+            {/* THE MEGA CARD */}
+            <Card 
+              glow={s.is_festival} 
+              style={{ 
+                width: cardWidth, 
+                padding: '15px',
+                borderLeft: isLeft ? `3px solid ${s.is_festival ? C.gold : C.teal}` : `1px solid ${C.border}`,
+                borderRight: !isLeft ? `3px solid ${s.is_festival ? C.gold : C.purple}` : `1px solid ${C.border}`,
+                background: s.isClustered ? `${C.bgCardAlt}` : C.bgCard,
+                transform: `perspective(1000px) rotateY(${isLeft ? '2deg' : '-2deg'})`,
+                boxShadow: s.is_festival ? `0 10px 30px -10px ${C.gold}33` : '0 4px 15px rgba(0,0,0,0.5)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray }}>{fmtDate(s.date)}</span>
+                {s.is_festival && <Badge color={C.gold}>{s.festival_name}</Badge>}
+              </div>
+
+              {/* Band Grid - Flexbox with dynamic sizing */}
+              <div style={{ 
+                display: 'flex', flexWrap: 'wrap', gap: '6px', 
+                maxHeight: '200px', overflow: 'hidden' 
+              }}>
+                {bands.map((band, idx) => (
+                  <span key={idx} style={{ 
+                    fontFamily: idx === 0 ? "'Bebas Neue'" : "'Inter'",
+                    fontSize: idx === 0 ? '1.4rem' : fontSize,
+                    color: idx === 0 ? C.white : C.gray,
+                    letterSpacing: idx === 0 ? '1px' : '0',
+                    background: idx === 0 ? 'rgba(255,255,255,0.03)' : 'none',
+                    padding: idx === 0 ? '2px 6px' : '0',
+                    borderRadius: 3,
+                    borderBottom: idx === 0 ? `1px solid ${C.teal}22` : 'none'
                   }}>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: '9px', color: C.gray, marginBottom: '8px', letterSpacing: '1px' }}>
-                      {fmtDate(s.date).toUpperCase()}
-                    </div>
-                    
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.white, lineHeight: 1.1, marginBottom: '8px' }}>
-                      {headliner}
-                    </div>
+                    {band}{idx < bands.length - 1 ? (idx === 0 ? '' : ' • ') : ''}
+                  </span>
+                ))}
+              </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: C.tealDim, fontSize: '0.8rem', fontFamily: "'Space Mono'" }}>
-                      <span>📍 {s.venue}</span>
-                    </div>
-
-                    {s.is_festival && (
-                      <div style={{ marginTop: '12px' }}>
-                        <Badge color={C.purple}>{s.festival_name || 'FESTIVAL'}</Badge>
-                      </div>
-                    )}
-                  </Card>
-                </div>
-              );
-            })}
+              <div style={{ marginTop: 12, paddingTop: 8, borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 10 }}>📍</span>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.tealDim }}>{s.venue?.toUpperCase()}</span>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim }}>{s.city}</span>
+              </div>
+            </Card>
           </div>
-        </div>
-      ))}
-
-      {/* The Journey Begins Marker */}
-      <div style={{ textAlign: 'center', marginTop: '40px', fontFamily: "'Space Mono'", color: C.grayDim, fontSize: '10px', letterSpacing: '3px' }}>
-        // THE JOURNEY BEGAN HERE //
-      </div>
+        );
+      })}
     </div>
   );
+}
+
+// Helper to convert time gaps into physical pixel height
+function gapDaysToPx(days) {
+  if (days <= 1) return 20;  // Same festival/run
+  if (days <= 7) return 40;  // Same week
+  if (days <= 30) return 80; // Same month
+  return 150;               // Long drought
 }
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 const TABS = [
