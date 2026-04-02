@@ -782,107 +782,6 @@ const STATE_COORDS = {
   WA:{x:108,y:108}, WI:{x:495,y:168}, WV:{x:604,y:238}, WY:{x:248,y:178},
 };
 
-function LocationHeatmap({ concerts }) {
-  const stateCounts = useMemo(() => {
-    const m = {};
-    concerts.forEach(c => { if (c.state) m[c.state] = (m[c.state] || 0) + 1; });
-    return m;
-  }, [concerts]);
-
-  const cityData = useMemo(() => {
-    const m = {};
-    concerts.forEach(c => {
-      if (c.city && c.state && STATE_COORDS[c.state]) {
-        const key = `${c.city}, ${c.state}`;
-        if (!m[key]) m[key] = { name: c.city, state: c.state, count: 0, x: STATE_COORDS[c.state].x, y: STATE_COORDS[c.state].y };
-        m[key].count++;
-      }
-    });
-    return Object.values(m);
-  }, [concerts]);
-
-  const maxState = Math.max(...Object.values(stateCounts), 1);
-  const maxCity = Math.max(...cityData.map(d => d.count), 1);
-
-  // REAL US MAP PATH (Simplified for performance but geographically accurate)
-  const US_PATH = "M121,114.3c-0.2,0-0.4,0-0.6,0.1c-1.1,0.3-2.1,0.9-3.1,1.5c-1.8,1.2-3.4,2.7-4.8,4.5c-1.1,1.5-2.1,3.1-2.9,4.8c-0.3,0.7-0.6,1.4-0.9,2.1c-0.3,1.1-0.5,2.1-0.7,3.2c-0.4,2.5-0.5,5-0.2,7.5c0.1,1.1,0.3,2.3,0.6,3.4c0.3,1.3,0.8,2.5,1.4,3.7c1.1,2,2.5,3.8,4.3,5.2c1.7,1.3,3.6,2.2,5.6,2.8c1.3,0.4,2.7,0.7,4.1,0.8c2.4,0.3,4.9,0.3,7.3,0.1c2.1-0.2,4.1-0.5,6.1-1c1.8-0.5,3.6-1.1,5.3-1.9c3.3-1.6,6.2-4,8.4-6.9c1.9-2.5,3.3-5.3,4.1-8.3c0.4-1.6,0.7-3.2,0.8-4.8c0.1-1.4,0.1-2.9,0-4.3c-0.1-2.4-0.6-4.7-1.4-7c-0.8-2.2-2-4.2-3.5-6c-1.7-2.1-3.9-3.8-6.4-5c-2.3-1.1-4.7-1.8-7.3-2.1C126.1,114.1,123.5,114.1,121,114.3z";
-
-  return (
-    <div style={{ position: 'relative', background: '#050508', borderRadius: '12px', padding: '20px', border: `1px solid ${C.border}` }}>
-      <svg viewBox="0 0 800 500" style={{ width: '100%', height: 'auto', display: 'block' }}>
-        {/* ACTUAL US OUTLINE */}
-        <path 
-          d="M80,110 L150,105 L200,108 L280,100 L350,102 L420,95 L500,98 L580,90 L650,100 L710,115 L740,140 L760,180 L765,240 L750,300 L720,350 L680,380 L630,400 L580,450 L530,430 L480,410 L430,430 L380,455 L320,445 L250,420 L180,380 L120,360 L80,320 L70,250 L65,180 Z"
-          fill="#0c0c14"
-          stroke={C.border}
-          strokeWidth="2"
-        />
-
-        {/* STATE INDICATORS (The "Filled" effect) */}
-        {Object.entries(STATE_COORDS).map(([abbr, pos]) => {
-          const count = stateCounts[abbr] || 0;
-          const isVisited = count > 0;
-          const stateFill = isVisited ? (count / maxState > 0.6 ? C.teal : C.purple) : 'transparent';
-
-          return (
-            <g key={abbr}>
-              {/* Only show the glowing square if you've been there */}
-              {isVisited && (
-                <rect
-                  x={pos.x - 12} y={pos.y - 12} width={24} height={24} rx={4}
-                  fill={stateFill}
-                  style={{ filter: `blur(8px)`, opacity: 0.6 }}
-                />
-              )}
-              <text 
-                x={pos.x} y={pos.y + 4} 
-                textAnchor="middle" 
-                style={{ 
-                  fontFamily: "'Space Mono', monospace", 
-                  fontSize: 10, 
-                  fill: isVisited ? C.white : '#222', 
-                  fontWeight: 700, 
-                  pointerEvents: 'none',
-                  textShadow: isVisited ? '0 0 5px rgba(0,0,0,0.8)' : 'none'
-                }}
-              >
-                {abbr}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* CITY BUBBLES (The "Rings") */}
-        {cityData.map((city, i) => {
-          const radius = Math.sqrt(city.count / maxCity) * 40 + 4;
-          return (
-            <circle
-              key={`city-${i}`}
-              cx={city.x} cy={city.y}
-              r={radius}
-              fill="none"
-              stroke={C.cyan}
-              strokeWidth="1.5"
-              opacity="0.5"
-              style={{ filter: `drop-shadow(0 0 8px ${C.cyan})` }}
-            />
-          );
-        })}
-      </svg>
-
-      <div style={{ display: 'flex', gap: 20, marginTop: 15, justifyContent: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 12, height: 12, background: C.teal, borderRadius: 2 }} />
-          <span style={{ fontSize: 9, color: C.gray, fontFamily: "'Space Mono'" }}>HIGH FREQUENCY</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 12, height: 12, background: C.purple, borderRadius: 2 }} />
-          <span style={{ fontSize: 9, color: C.gray, fontFamily: "'Space Mono'" }}>VISITED</span>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── TOP FESTIVALS BIG STAT BLOCKS ────────────────────────────────────────────
 function TopFestBlocks({ festBreakdown }) {
@@ -1387,12 +1286,6 @@ export default function App() {
                 </ResponsiveContainer>
               </Card>
             </div>
-
-            {/* ── ROW 2: Location heatmap (full width) ── */}
-            <Card neon style={{ marginBottom: 16 }}>
-              <CardTitle>Shows by Location — hover any state for count</CardTitle>
-              <LocationHeatmap concerts={concerts} />
-            </Card>
 
             {/* ── ROW 3: Donut + Top 3 Fests + Decade blocks ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
