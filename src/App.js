@@ -1351,8 +1351,7 @@ export default function App() {
                 return (
                 <div key={fg.name} style={{ marginBottom: 0 }}>
                   {/* ── CONCERT POSTER DIVIDER ── */}
-                  <div style={{
-                    position: 'relative', overflow: 'hidden',
+                  <div id={`fest-${fg.name.replace(/\s+/g, '-')}`} style={{position: 'relative', overflow: 'hidden',
                     background: `linear-gradient(135deg, ${C.bg} 0%, ${fColor}18 50%, ${C.bg} 100%)`,
                     borderTop: fgIdx > 0 ? `2px solid ${fColor}` : 'none',
                     borderBottom: `2px solid ${fColor}`,
@@ -1562,12 +1561,15 @@ export default function App() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
               {passport.map(f => (
-                <div key={f.name} className="stamp-card" style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, padding: 14, textAlign: 'center', position: 'relative', boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
-                  <div style={{ position: 'absolute', inset: 5, border: `1px dashed ${C.teal}33`, borderRadius: 5, pointerEvents: 'none' }} />
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', letterSpacing: '0.06em', color: C.white, marginBottom: 5, lineHeight: 1.2, position: 'relative', zIndex: 1 }}>{f.name}</div>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, textShadow: `0 0 10px ${C.teal}55`, margin: '4px 0', position: 'relative', zIndex: 1 }}>{f.days}</div>
-                  <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.18em', textTransform: 'uppercase', color: C.gray, position: 'relative', zIndex: 1 }}>{f.days === 1 ? 'day' : 'days'}</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, justifyContent: 'center', marginTop: 8, position: 'relative', zIndex: 1 }}>
+                <div key={f.name} className="stamp-card" onClick={() => {setActiveTab('byFest');setTimeout(() => {const el = document.getElementById(`fest-${f.name.replace(/\s+/g, '-')}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  }}
+  style={{ 
+    background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, 
+    padding: 14, textAlign: 'center', position: 'relative', 
+    boxShadow: '0 2px 8px rgba(0,0,0,0.4)', cursor: 'pointer' 
+  }}>
                     {f.years.map(y => (
                       <span key={y} style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, background: `${C.teal}22`, color: C.teal, border: `1px solid ${C.teal}44`, padding: '2px 5px', borderRadius: 3 }}>{y}</span>
                     ))}
