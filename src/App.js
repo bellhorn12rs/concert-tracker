@@ -925,14 +925,12 @@ function DecadeBlocks({ sets }) {
     </div>
   );
 }
-// ─── TIMELINE TAB (CRUSH VERSION) ─────────────────────────────────────────────
 function TimelineTab({ concerts, setActiveTab }) {
-  // 1. Process Data into Years and Months
   const yearsData = useMemo(() => {
     if (!concerts || concerts.length === 0) return [];
 
-    // 1. Sort all concerts chronologically (Oldest to Newest for processing)
-    const sorted = [...concerts].sort((a, b) => a.date.localeCompare(b.date));
+    // 1. Sort everything chronologically (Newest at top for the timeline)
+    const sorted = [...concerts].sort((a, b) => b.date.localeCompare(a.date));
     
     const groups = {};
     sorted.forEach(show => {
@@ -941,63 +939,56 @@ function TimelineTab({ concerts, setActiveTab }) {
       groups[yr].push(show);
     });
 
-    const quarterlyTargetMonths = [0, 3, 6, 9]; 
-    const monthNames = ["JANUARY", "APRIL", "JULY", "OCTOBER"];
+    const quarterlyTargetMonths = [9, 6, 3, 0]; // Oct, Jul, Apr, Jan (descending)
+    const monthNames = { 9: "OCTOBER", 6: "JULY", 3: "APRIL", 0: "JANUARY" };
 
-    // 2. Build the timeline flow for each year
     return Object.entries(groups).sort((a, b) => b[0] - a[0]).map(([year, yearShows]) => {
-      const yearFlow = [];
-      
-      // Map shows by month index
-      const monthBuckets = {};
-      yearShows.forEach(s => {
-        const m = new Date(s.date + 'T12:00:00').getMonth();
-        if (!monthBuckets[m]) monthBuckets[m] = [];
-        monthBuckets[m].push(s);
-      });
-
-      // We go through all 12 months to ensure we hit every show
-      for (let m = 0; m <= 11; m++) {
-        // Drop Marker
-        if (quarterlyTargetMonths.includes(m)) {
-          yearFlow.push({ 
-            type: 'MONTH_MARKER', 
-            label: monthNames[quarterlyTargetMonths.indexOf(m)],
-            monthIndex: m 
-          });
-        }
-        
-        // Drop all shows for this month
-        if (monthBuckets[m]) {
-          monthBuckets[m].forEach((show) => {
-            yearFlow.push({ ...show, type: 'SHOW' });
-          });
-        }
-      }
-
-      // 3. Final Pass: Calculate gaps and side-alternation within the year flow
+      const finalFlow = [];
+      let usedMarkers = new Set();
       let showCounter = 0;
-      const finalFlow = yearFlow.map((item, idx) => {
-        if (item.type === 'MONTH_MARKER') return item;
 
-        // It's a show: calculate gap from previous show (if any)
-        const prevShow = yearFlow.slice(0, idx).reverse().find(i => i.type === 'SHOW');
+      // 2. We iterate through the shows of the year (which are already sorted desc)
+      yearShows.forEach((show, idx) => {
+        const showMonth = new Date(show.date + 'T12:00:00').getMonth();
+
+        // 3. Inject Markers: If we haven't placed a marker for a quarter that is >= this show's month
+        quarterlyTargetMonths.forEach(m => {
+          if (showMonth <= m && !usedMarkers.has(m)) {
+            finalFlow.push({ type: 'MONTH_MARKER', label: monthNames[m], id: `marker-${year}-${m}` });
+            usedMarkers.add(m);
+          }
+        });
+
+        // 4. Calculate Gap for spacing
+        const nextShow = yearShows[idx + 1]; // "Next" in the array is actually "Previous" in time
         let gap = 0;
-        if (prevShow) {
-          const d1 = new Date(item.date + 'T12:00:00');
-          const d2 = new Date(prevShow.date + 'T12:00:00');
+        if (nextShow) {
+          const d1 = new Date(show.date + 'T12:00:00');
+          const d2 = new Date(nextShow.date + 'T12:00:00');
           gap = Math.ceil(Math.abs(d1 - d2) / (1000 * 60 * 60 * 24));
         }
 
         showCounter++;
-        return { ...item, gapDays: gap, side: showCounter % 2 === 0 ? 'right' : 'left' };
+        finalFlow.push({ 
+          ...show, 
+          type: 'SHOW', 
+          gapDays: gap, 
+          side: showCounter % 2 === 0 ? 'right' : 'left' 
+        });
+      });
+
+      // 5. Catch-all: If a year was so empty it didn't trigger markers, add them at the bottom
+      quarterlyTargetMonths.forEach(m => {
+        if (!usedMarkers.has(m)) {
+          finalFlow.push({ type: 'MONTH_MARKER', label: monthNames[m], id: `marker-${year}-${m}` });
+          usedMarkers.add(m);
+        }
       });
 
       return [year, finalFlow];
     });
   }, [concerts]);
 
-  // Tab Teleport Logic
   const teleport = (date) => {
     if (typeof setActiveTab === 'function') {
       setActiveTab('byDay');
@@ -1012,7 +1003,6 @@ function TimelineTab({ concerts, setActiveTab }) {
     <div style={{ padding: '80px 0', background: C.bg }} className="fade-in">
       <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative' }}>
         
-        {/* The Central Spine */}
         <div style={{ 
           position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2,
           background: `linear-gradient(to bottom, ${C.teal}, ${C.purple}, ${C.gold}, transparent)`,
@@ -1020,33 +1010,32 @@ function TimelineTab({ concerts, setActiveTab }) {
         }} />
 
         {yearsData.map(([year, flow], yIdx) => (
-          <div key={year} style={{ position: 'relative', marginBottom: 150 }}>
+          <div key={year} style={{ position: 'relative', marginBottom: 100 }}>
             
-            {/* LEFT STICKY YEAR */}
+            {/* STICKY MARGIN YEARS */}
             <div style={{ position: 'absolute', left: '-180px', top: 0, bottom: 0, width: '100px' }}>
               <div style={{ 
                 position: 'sticky', top: '250px', fontFamily: "'Bebas Neue'", fontSize: '6.5rem', 
                 color: 'transparent', WebkitTextStroke: `2px ${yIdx % 2 === 0 ? C.teal : C.purple}`,
                 filter: `drop-shadow(0 0 15px ${yIdx % 2 === 0 ? C.teal : C.purple}44)`,
-                opacity: 0.6, transform: 'rotate(-90deg)', transformOrigin: 'center', userSelect: 'none'
+                opacity: 0.6, transform: 'rotate(-90deg)', transformOrigin: 'center'
               }}>{year}</div>
             </div>
 
-            {/* RIGHT STICKY YEAR */}
             <div style={{ position: 'absolute', right: '-180px', top: 0, bottom: 0, width: '100px' }}>
               <div style={{ 
                 position: 'sticky', top: '250px', fontFamily: "'Bebas Neue'", fontSize: '6.5rem', 
                 color: 'transparent', WebkitTextStroke: `2px ${yIdx % 2 === 0 ? C.teal : C.purple}`,
                 filter: `drop-shadow(0 0 15px ${yIdx % 2 === 0 ? C.teal : C.purple}44)`,
-                opacity: 0.6, transform: 'rotate(90deg)', transformOrigin: 'center', userSelect: 'none'
+                opacity: 0.6, transform: 'rotate(90deg)', transformOrigin: 'center'
               }}>{year}</div>
             </div>
 
             <div style={{ width: '100%', padding: '0 20px' }}>
-              {flow.map((item, i) => {
+              {flow.map((item) => {
                 if (item.type === 'MONTH_MARKER') {
                   return (
-                    <div key={`${year}-${item.label}`} style={{ margin: '80px 0 40px 0', textAlign: 'center', position: 'relative', zIndex: 10 }}>
+                    <div key={item.id} style={{ margin: '60px 0 30px 0', textAlign: 'center', position: 'relative', zIndex: 10 }}>
                       <span style={{
                         fontFamily: "'Space Mono'", fontSize: '14px', color: C.white,
                         background: C.bg, padding: '8px 24px', borderRadius: '4px',
@@ -1057,17 +1046,12 @@ function TimelineTab({ concerts, setActiveTab }) {
                   );
                 }
 
-                // Layout alternating logic based on "SHOW" index only
-                const showIndex = flow.filter((f, idx) => f.type === 'SHOW' && idx <= i).length;
-                const isLeft = showIndex % 2 !== 0;
-                const marginTop = item.gapDays <= 2 ? 15 : Math.min(item.gapDays * 2, 150);
-
                 return (
                   <TimelineCard 
                     key={item.id} 
                     item={item} 
-                    isLeft={isLeft} 
-                    marginTop={marginTop}
+                    isLeft={item.side === 'left'} 
+                    marginTop={item.gapDays <= 2 ? 20 : Math.min(item.gapDays * 2, 150)}
                     onTeleport={() => teleport(item.date)}
                   />
                 );
@@ -1076,74 +1060,6 @@ function TimelineTab({ concerts, setActiveTab }) {
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-// ─── INTERACTIVE CARD COMPONENT ──────────────────────────────────────────────
-function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
-  const [hovered, setHovered] = useState(false);
-  const bands = item.bands || [];
-
-  return (
-    <div 
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onClick={onTeleport}
-      style={{ 
-        marginTop, display: 'flex', justifyContent: isLeft ? 'flex-start' : 'flex-end', 
-        alignItems: 'center', width: '100%', position: 'relative', cursor: 'pointer'
-      }}
-    >
-      {/* Glow Connector Dot */}
-      <div style={{ 
-        position: 'absolute', left: '50%', width: hovered ? 16 : 12, height: hovered ? 16 : 12, 
-        borderRadius: '50%', background: item.is_festival ? C.gold : C.teal, 
-        transform: 'translateX(-50%)', zIndex: 5, 
-        boxShadow: hovered ? `0 0 20px ${item.is_festival ? C.gold : C.teal}` : `0 0 10px ${item.is_festival ? C.gold : C.teal}`,
-        border: `2px solid ${C.bg}`, transition: '0.2s'
-      }} />
-      
-      <Card 
-        glow={hovered || item.is_festival} 
-        style={{ 
-          width: '43%', 
-          borderLeft: isLeft ? `4px solid ${item.is_festival ? C.gold : C.teal}` : `1px solid ${C.border}`,
-          borderRight: !isLeft ? `4px solid ${item.is_festival ? C.gold : C.purple}` : `1px solid ${C.border}`,
-          background: hovered ? C.bgHover : (item.gapDays <= 3 ? C.bgCardAlt : C.bgCard),
-          transform: hovered ? `scale(1.05) rotate(${isLeft ? '1deg' : '-1deg'})` : 'scale(1) rotate(0deg)',
-          transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-          zIndex: hovered ? 20 : 1
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-          <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: hovered ? C.white : C.gray }}>{fmtDate(item.date)}</span>
-          {item.is_festival && <Badge color={C.gold}>FESTIVAL</Badge>}
-        </div>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-          {bands.map((band, idx) => (
-            <span key={idx} style={{ 
-              fontFamily: idx === 0 ? "'Bebas Neue'" : "'Inter'", 
-              fontSize: idx === 0 ? '1.8rem' : '0.95rem',
-              color: idx === 0 ? C.white : (hovered ? C.gray : C.grayDim), 
-              lineHeight: 1, letterSpacing: idx === 0 ? '1px' : '0',
-              opacity: idx !== 0 && !hovered ? 0.6 : 1,
-              transition: '0.2s'
-            }}>
-              {band}{idx < bands.length - 1 ? (idx === 0 ? '' : ' • ') : ''}
-            </span>
-          ))}
-        </div>
-
-        <div style={{ 
-          marginTop: 12, fontSize: 10, color: hovered ? C.teal : C.tealDim, 
-          fontFamily: "'Space Mono'", borderTop: `1px solid ${C.border}`, paddingTop: 8,
-          transition: '0.2s'
-        }}>
-          {item.venue} <span style={{color: C.grayDim}}>//</span> {item.city}
-        </div>
-      </Card>
     </div>
   );
 }
