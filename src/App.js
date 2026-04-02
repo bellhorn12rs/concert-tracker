@@ -1329,16 +1329,18 @@ const genreStats = React.useMemo(() => {
     fetchConcerts(); 
   }, []);
 async function updateArtistGenre(artistName, newGenre) {
-  // This updates every single concert in your DB where this artist appears
-  const { error } = await supabase
+  console.log(`📡 Sending to Supabase: ${artistName} -> ${newGenre}`);
+
+  const { data, error, count } = await supabase
     .from('concerts')
     .update({ genre: newGenre })
-    .eq('artist', artistName); 
+    .eq('artist', artistName) // Make sure 'artist' is the name of your column!
+    .select(); // This asks Supabase to send back what it changed
 
   if (error) {
-    console.error("Error saving genre to DB:", error.message);
+    console.error("❌ Supabase Error:", error.message);
   } else {
-    console.log(`Successfully mapped ${artistName} to ${newGenre}`);
+    console.log(`✅ Success! Updated rows:`, data?.length || 0);
   }
 }
   async function fetchConcerts() {
