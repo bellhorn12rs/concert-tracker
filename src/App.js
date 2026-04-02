@@ -538,26 +538,18 @@ function ArtistInsights({ concerts }) {
   }, [concerts]);
 
   return (
-    <Card neon style={{ minHeight: 200, display: 'flex', flexDirection: 'column', justifyContent: 'center', border: `1px solid ${C.teal}33` }}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.teal, letterSpacing: 2, marginBottom: 20 }}>
+    <Card neon style={{ minHeight: 140, display: 'flex', flexDirection: 'column', justifyContent: 'center', border: `1px solid ${C.teal}33` }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, letterSpacing: 2, marginBottom: 10 }}>
         ⚡ ARCHIVE INSIGHTS
       </div>
-      <div style={{ marginBottom: 15 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.4rem', color: C.white, lineHeight: 1 }}>
-          {stats.peakYear}
-        </div>
-        <div style={{ fontSize: '0.85rem', color: C.gray, marginTop: 4 }}>
-          Your absolute peak year. You caught <span style={{ color: C.teal, fontWeight: 'bold' }}>{stats.peakCount}</span> shows in 12 months.
-        </div>
-      </div>
-      <div style={{ padding: '10px 0', borderTop: `1px solid ${C.border}`, display: 'flex', gap: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim }}>TOTAL SETS</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.white }}>{concerts.length}</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, lineHeight: 1 }}>{stats.peakYear}</div>
+          <div style={{ fontSize: '0.75rem', color: C.gray }}>Peak Year: <span style={{ color: C.teal }}>{stats.peakCount} shows</span></div>
         </div>
-        <div>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim }}>FIRST LOGGED</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.white }}>2015</div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, lineHeight: 1 }}>{concerts.length}</div>
+          <div style={{ fontSize: '0.75rem', color: C.gray }}>Total Sets Since 2015</div>
         </div>
       </div>
     </Card>
@@ -573,17 +565,44 @@ function RandomShow({ concerts }) {
     if (!concerts.length) return;
     setSpinning(true);
     let iterations = 0;
-    const maxIterations = 15;
-    
     const interval = setInterval(() => {
       setShow(concerts[Math.floor(Math.random() * concerts.length)]);
       iterations++;
-      if (iterations >= maxIterations) {
+      if (iterations >= 12) {
         clearInterval(interval);
         setSpinning(false);
       }
-    }, 60 + (iterations * 10)); // Gradually slows down
+    }, 70);
   };
+
+  useEffect(() => { if (concerts.length && !show) spin(); }, [concerts.length]);
+
+  if (!show) return null;
+
+  // Handle both single artist strings and band arrays
+  const artistDisplay = Array.isArray(show.bands) ? show.bands[0] : (show.artist || "Unknown Artist");
+
+  return (
+    <Card neon style={{ minHeight: 140, border: `1px solid ${spinning ? C.grayDim : C.purple + '66'}`, position: 'relative' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.purple, letterSpacing: 2 }}>🎲 RANDOM RECALL</div>
+        <button onClick={spin} disabled={spinning} style={{ background: 'none', border: `1px solid ${C.purple}44`, color: C.purple, fontSize: 7, padding: '2px 8px', borderRadius: 3, cursor: 'pointer', fontFamily: "'Space Mono'" }}>
+          {spinning ? 'SPINNING...' : 'SPIN'}
+        </button>
+      </div>
+
+      <div style={{ opacity: spinning ? 0.3 : 1 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, lineHeight: 1, marginBottom: 4 }}>
+          {artistDisplay}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: "'Space Mono'", fontSize: 9 }}>
+          <span style={{ color: C.white }}>{fmtDate(show.date)}</span>
+          <span style={{ color: C.purple, opacity: 0.7 }}>📍 {show.venue}</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
 
   useEffect(() => { if (concerts.length && !show) spin(); }, [concerts.length]);
 
