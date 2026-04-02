@@ -925,22 +925,28 @@ function DecadeBlocks({ sets }) {
     </div>
   );
 }
+// ─── TIMELINE TAB (CRUSH VERSION) ─────────────────────────────────────────────
 function TimelineTab({ concerts, setActiveTab }) {
-  // ─── DATA PREP ───
-  const processedYears = useMemo(() => {
-    const sorted = [...concerts].sort((a, b) => a.date.localeCompare(b.date));
-    const groups = {};
+  // 1. Process Data into Years and Months
+  const yearsData = useMemo(() => {
+    if (!concerts.length) return [];
     
-    sorted.forEach((show) => {
-      const y = new Date(show.date + 'T12:00:00').getFullYear();
-      if (!groups[y]) groups[y] = [];
-      groups[y].push(show);
+    // Sort everything chronologically first
+    const sorted = [...concerts].sort((a, b) => a.date.localeCompare(b.date));
+    
+    // Group into years
+    const byYear = {};
+    sorted.forEach(show => {
+      const yr = new Date(show.date + 'T12:00:00').getFullYear();
+      if (!byYear[yr]) byYear[yr] = [];
+      byYear[yr].push(show);
     });
 
-    const quarterlyMonths = [0, 3, 6, 9];
+    const quarterlyTargetMonths = [0, 3, 6, 9]; // Jan, Apr, Jul, Oct
     const monthNames = ["JANUARY", "APRIL", "JULY", "OCTOBER"];
 
-    return Object.entries(groups).sort((a, b) => b[0] - a[0]).map(([year, shows]) => {
+    // Build the "Flow" for each year
+    return Object.entries(byYear).sort((a, b) => b[0] - a[0]).map(([year, shows]) => {
       const yearFlow = [];
       const showsByMonth = {};
       
@@ -950,16 +956,25 @@ function TimelineTab({ concerts, setActiveTab }) {
         showsByMonth[m].push(s);
       });
 
+      // Loop through all 12 months to ensure NO SHOW IS LEFT BEHIND
       for (let m = 0; m <= 11; m++) {
-        if (quarterlyMonths.includes(m)) {
-          yearFlow.push({ type: 'MONTH_MARKER', label: monthNames[quarterlyMonths.indexOf(m)] });
+        // Add Marker if it's a Quarterly month
+        if (quarterlyTargetMonths.includes(m)) {
+          yearFlow.push({ 
+            type: 'MONTH_MARKER', 
+            label: monthNames[quarterlyTargetMonths.indexOf(m)] 
+          });
         }
+        
+        // Add all shows for this month
         if (showsByMonth[m]) {
-          showsByMonth[m].forEach((show, idx) => {
-            const prevShow = showsByMonth[m][idx-1] || null;
+          showsByMonth[m].forEach((show) => {
+            // Find gap from previous show in the flow
+            const allPreviousShows = yearFlow.filter(item => item.type === 'SHOW');
+            const lastShow = allPreviousShows[allPreviousShows.length - 1];
             let gap = 0;
-            if (prevShow) {
-              gap = Math.ceil(Math.abs(new Date(show.date) - new Date(prevShow.date)) / (1000*60*60*24));
+            if (lastShow) {
+              gap = Math.ceil(Math.abs(new Date(show.date) - new Date(lastShow.date)) / (1000*60*60*24));
             }
             yearFlow.push({ ...show, type: 'SHOW', gapDays: gap });
           });
@@ -969,7 +984,8 @@ function TimelineTab({ concerts, setActiveTab }) {
     });
   }, [concerts]);
 
-  const teleportToShow = (date) => {
+  // Tab Teleport Logic
+  const teleport = (date) => {
     if (typeof setActiveTab === 'function') {
       setActiveTab('byDay');
       setTimeout(() => {
@@ -979,38 +995,37 @@ function TimelineTab({ concerts, setActiveTab }) {
     }
   };
 
-  if (!processedYears.length) return null;
-
   return (
     <div style={{ padding: '80px 0', background: C.bg }} className="fade-in">
       <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative' }}>
         
-        {/* Spine */}
+        {/* The Central Spine */}
         <div style={{ 
           position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2,
           background: `linear-gradient(to bottom, ${C.teal}, ${C.purple}, ${C.gold}, transparent)`,
           transform: 'translateX(-50%)', opacity: 0.15
         }} />
 
-        {processedYears.map(([year, flow], yIdx) => (
-          <div key={year} style={{ position: 'relative', marginBottom: 120 }}>
+        {yearsData.map(([year, flow], yIdx) => (
+          <div key={year} style={{ position: 'relative', marginBottom: 150 }}>
             
-            {/* STICKY MARGIN YEARS */}
+            {/* LEFT STICKY YEAR */}
             <div style={{ position: 'absolute', left: '-180px', top: 0, bottom: 0, width: '100px' }}>
               <div style={{ 
                 position: 'sticky', top: '250px', fontFamily: "'Bebas Neue'", fontSize: '6.5rem', 
                 color: 'transparent', WebkitTextStroke: `2px ${yIdx % 2 === 0 ? C.teal : C.purple}`,
                 filter: `drop-shadow(0 0 15px ${yIdx % 2 === 0 ? C.teal : C.purple}44)`,
-                opacity: 0.6, transform: 'rotate(-90deg)', transformOrigin: 'center'
+                opacity: 0.6, transform: 'rotate(-90deg)', transformOrigin: 'center', userSelect: 'none'
               }}>{year}</div>
             </div>
 
+            {/* RIGHT STICKY YEAR */}
             <div style={{ position: 'absolute', right: '-180px', top: 0, bottom: 0, width: '100px' }}>
               <div style={{ 
                 position: 'sticky', top: '250px', fontFamily: "'Bebas Neue'", fontSize: '6.5rem', 
                 color: 'transparent', WebkitTextStroke: `2px ${yIdx % 2 === 0 ? C.teal : C.purple}`,
                 filter: `drop-shadow(0 0 15px ${yIdx % 2 === 0 ? C.teal : C.purple}44)`,
-                opacity: 0.6, transform: 'rotate(90deg)', transformOrigin: 'center'
+                opacity: 0.6, transform: 'rotate(90deg)', transformOrigin: 'center', userSelect: 'none'
               }}>{year}</div>
             </div>
 
@@ -1029,7 +1044,9 @@ function TimelineTab({ concerts, setActiveTab }) {
                   );
                 }
 
-                const isLeft = i % 2 === 0;
+                // Layout alternating logic based on "SHOW" index only
+                const showIndex = flow.filter((f, idx) => f.type === 'SHOW' && idx <= i).length;
+                const isLeft = showIndex % 2 !== 0;
                 const marginTop = item.gapDays <= 2 ? 15 : Math.min(item.gapDays * 2, 150);
 
                 return (
@@ -1038,7 +1055,7 @@ function TimelineTab({ concerts, setActiveTab }) {
                     item={item} 
                     isLeft={isLeft} 
                     marginTop={marginTop}
-                    onTeleport={() => teleportToShow(item.date)}
+                    onTeleport={() => teleport(item.date)}
                   />
                 );
               })}
@@ -1050,6 +1067,7 @@ function TimelineTab({ concerts, setActiveTab }) {
   );
 }
 
+// ─── INTERACTIVE CARD COMPONENT ──────────────────────────────────────────────
 function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
   const [hovered, setHovered] = useState(false);
   const bands = item.bands || [];
@@ -1064,6 +1082,7 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
         alignItems: 'center', width: '100%', position: 'relative', cursor: 'pointer'
       }}
     >
+      {/* Glow Connector Dot */}
       <div style={{ 
         position: 'absolute', left: '50%', width: hovered ? 16 : 12, height: hovered ? 16 : 12, 
         borderRadius: '50%', background: item.is_festival ? C.gold : C.teal, 
@@ -1075,7 +1094,7 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
       <Card 
         glow={hovered || item.is_festival} 
         style={{ 
-          width: '42%', 
+          width: '43%', 
           borderLeft: isLeft ? `4px solid ${item.is_festival ? C.gold : C.teal}` : `1px solid ${C.border}`,
           borderRight: !isLeft ? `4px solid ${item.is_festival ? C.gold : C.purple}` : `1px solid ${C.border}`,
           background: hovered ? C.bgHover : (item.gapDays <= 3 ? C.bgCardAlt : C.bgCard),
@@ -1096,8 +1115,8 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
               fontSize: idx === 0 ? '1.8rem' : '0.95rem',
               color: idx === 0 ? C.white : (hovered ? C.gray : C.grayDim), 
               lineHeight: 1, letterSpacing: idx === 0 ? '1px' : '0',
-              transition: '0.2s',
-              opacity: idx !== 0 && !hovered ? 0.6 : 1
+              opacity: idx !== 0 && !hovered ? 0.6 : 1,
+              transition: '0.2s'
             }}>
               {band}{idx < bands.length - 1 ? (idx === 0 ? '' : ' • ') : ''}
             </span>
