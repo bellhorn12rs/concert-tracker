@@ -925,10 +925,114 @@ function DecadeBlocks({ sets }) {
     </div>
   );
 }
+function TimelineTab({ concerts }) {
+  const timelineGroups = useMemo(() => {
+    const groups = {};
+    // Sort concerts chronologically first
+    const sorted = [...concerts].sort((a, b) => b.date.localeCompare(a.date));
+    
+    sorted.forEach(c => {
+      const y = getYear(c.date);
+      if (!y) return;
+      if (!groups[y]) groups[y] = [];
+      groups[y].push(c);
+    });
+    return Object.entries(groups).sort((a, b) => b[0] - a[0]); // Most recent year at top
+  }, [concerts]);
 
+  return (
+    <div style={{ padding: '60px 0', position: 'relative', maxWidth: '900px', margin: '0 auto' }} className="fade-in">
+      {/* The "Power Line" Central Spine */}
+      <div style={{ 
+        position: 'absolute', left: '50%', top: 0, bottom: 0, 
+        width: '2px', 
+        background: `linear-gradient(to bottom, ${C.teal}, ${C.purple}, ${C.gold}, transparent)`,
+        transform: 'translateX(-50%)', opacity: 0.2 
+      }} />
+
+      {timelineGroups.map(([year, shows], yIdx) => (
+        <div key={year} style={{ marginBottom: 100, position: 'relative' }}>
+          
+          {/* Decal Year Marker */}
+          <div style={{ 
+            display: 'flex', justifyContent: 'center', marginBottom: 50, position: 'relative', zIndex: 10 
+          }}>
+            <div style={{ 
+              background: C.bg, border: `2px solid ${yIdx % 2 === 0 ? C.teal : C.purple}`, 
+              color: C.white, fontFamily: "'Bebas Neue'", fontSize: '3rem', 
+              padding: '4px 30px', borderRadius: '12px',
+              boxShadow: `0 0 30px ${yIdx % 2 === 0 ? C.tealGlow : 'rgba(153,102,255,0.2)'}`,
+              letterSpacing: '4px'
+            }}>
+              {year}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+            {shows.map((s, sIdx) => {
+              const isLeft = sIdx % 2 === 0;
+              const headliner = Array.isArray(s.bands) ? s.bands[0] : (s.artist || "Multiple Artists");
+              
+              return (
+                <div key={s.id} style={{ 
+                  display: 'flex', 
+                  justifyContent: isLeft ? 'flex-start' : 'flex-end',
+                  alignItems: 'center',
+                  width: '100%',
+                  position: 'relative'
+                }}>
+                  {/* Connector Dot to Spine */}
+                  <div style={{
+                    position: 'absolute', left: '50%', width: '12px', height: '12px',
+                    borderRadius: '50%', background: isLeft ? C.teal : C.purple,
+                    transform: 'translateX(-50%)', zIndex: 5,
+                    boxShadow: `0 0 10px ${isLeft ? C.teal : C.purple}`
+                  }} />
+
+                  {/* The Show Card */}
+                  <Card neon style={{ 
+                    width: '42%', 
+                    position: 'relative',
+                    borderLeft: isLeft ? `4px solid ${C.teal}` : `1px solid ${C.border}`,
+                    borderRight: !isLeft ? `4px solid ${C.purple}` : `1px solid ${C.border}`,
+                    padding: '20px'
+                  }}>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: '9px', color: C.gray, marginBottom: '8px', letterSpacing: '1px' }}>
+                      {fmtDate(s.date).toUpperCase()}
+                    </div>
+                    
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.white, lineHeight: 1.1, marginBottom: '8px' }}>
+                      {headliner}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: C.tealDim, fontSize: '0.8rem', fontFamily: "'Space Mono'" }}>
+                      <span>📍 {s.venue}</span>
+                    </div>
+
+                    {s.is_festival && (
+                      <div style={{ marginTop: '12px' }}>
+                        <Badge color={C.purple}>{s.festival_name || 'FESTIVAL'}</Badge>
+                      </div>
+                    )}
+                  </Card>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
+      {/* The Journey Begins Marker */}
+      <div style={{ textAlign: 'center', marginTop: '40px', fontFamily: "'Space Mono'", color: C.grayDim, fontSize: '10px', letterSpacing: '3px' }}>
+        // THE JOURNEY BEGAN HERE //
+      </div>
+    </div>
+  );
+}
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 const TABS = [
   ['dashboard', '⚡ Dashboard'],
+  ['timeline',     '⏳ Timeline'],
   ['byDay',     '📅 By Day'],
   ['byFest',    '🎪 By Festival'],
   ['browse',    '🔍 Browse'],
@@ -1413,148 +1517,106 @@ export default function App() {
       </Card>
     </div>
 
-    {/* ── ROW 4: City bubbles (full width) ── */}
+   {/* ── ROW 4: City bubbles (full width) ── */}
     <Card neon>
       <CardTitle>Cities — Bubble = Show Count</CardTitle>
       <CityBubbles cityCounts={cityCounts} />
     </Card>
   </div>
 )}
-        {/* ── BY DAY ── */}
-        {activeTab === 'byDay' && (
-          <div style={{ padding: '24px 0' }} className="fade-in">
-            <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
-              <input style={{ ...inputSt, flex: 1, minWidth: 160 }} placeholder="Search artist, venue, city..." value={search} onChange={e => setSearch(e.target.value)} />
-              <select style={inputSt} value={yearFilter} onChange={e => setYearFilter(e.target.value)}>
-                <option value="all">All Years</option>
-                {years.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-              <select style={inputSt} value={festFilter} onChange={e => setFestFilter(e.target.value)}>
-                <option value="all">All Shows</option>
-                <option value="fest">Festival Only</option>
-                <option value="solo">Standalone Only</option>
-              </select>
-              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, marginLeft: 'auto' }}>{dayGroups.length} days</span>
-            </div>
-            {dayGroups.map(ev => ev.is_festival
-              ? <FestivalScheduleCard key={ev.id} event={ev} />
-              : <DayCard key={ev.id} event={ev} />
-            )}
-          </div>
-        )}
 
-        {/* ── BY FESTIVAL ── */}
-        {activeTab === 'byFest' && (
-          <div style={{ padding: '24px 0' }} className="fade-in">
-            <div style={{ display: 'flex', gap: 9, marginBottom: 16, alignItems: 'center' }}>
-              <input style={{ ...inputSt, flex: 1 }} placeholder="Search festival or artist..." value={search} onChange={e => setSearch(e.target.value)} />
-              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray }}>{festGroupings.length} festivals</span>
-            </div>
-            {festGroupings
-              .filter(fg => !search || fg.name.toLowerCase().includes(search.toLowerCase()) || Object.values(fg.years).flat().some(ev => (ev.bands || []).some(b => b.toLowerCase().includes(search.toLowerCase()))))
-              .map((fg, fgIdx) => {
-                const FEST_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699', '#ff9944'];
-                const fColor = FEST_COLORS[fgIdx % FEST_COLORS.length];
-                const totalDays = Object.values(fg.years).flat().length;
-                const allYears = Object.keys(fg.years).map(Number);
-                return (
-                <div key={fg.name} style={{ marginBottom: 0 }}>
-                  {/* ── CONCERT POSTER DIVIDER ── */}
-                  <div id={`fest-${fg.name.replace(/\s+/g, '-')}`} style={{position: 'relative', overflow: 'hidden',
-                    background: `linear-gradient(135deg, ${C.bg} 0%, ${fColor}18 50%, ${C.bg} 100%)`,
-                    borderTop: fgIdx > 0 ? `2px solid ${fColor}` : 'none',
-                    borderBottom: `2px solid ${fColor}`,
-                    padding: '20px 24px',
-                    marginBottom: 20,
-                    marginTop: fgIdx > 0 ? 40 : 0,
-                  }}>
-                    {/* decorative corner lines */}
-                    <div style={{ position: 'absolute', top: 6, left: 6, width: 24, height: 24, borderTop: `1px solid ${fColor}66`, borderLeft: `1px solid ${fColor}66` }} />
-                    <div style={{ position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderTop: `1px solid ${fColor}66`, borderRight: `1px solid ${fColor}66` }} />
-                    <div style={{ position: 'absolute', bottom: 6, left: 6, width: 24, height: 24, borderBottom: `1px solid ${fColor}66`, borderLeft: `1px solid ${fColor}66` }} />
-                    <div style={{ position: 'absolute', bottom: 6, right: 6, width: 24, height: 24, borderBottom: `1px solid ${fColor}66`, borderRight: `1px solid ${fColor}66` }} />
-                    {/* glow orb */}
-                    <div style={{ position: 'absolute', top: -30, left: '50%', transform: 'translateX(-50%)', width: 200, height: 80, background: `radial-gradient(ellipse, ${fColor}22, transparent)`, pointerEvents: 'none' }} />
+{/* ── TIMELINE TAB ── */}
+{activeTab === 'timeline' && (
+  <TimelineTab concerts={concerts} />
+)}
 
-                    <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
-                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(2rem, 5vw, 3.2rem)', letterSpacing: '0.15em', color: fColor, textShadow: `0 0 20px ${fColor}55`, lineHeight: 1, marginBottom: 8 }}>
-                        {fg.name}
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.white, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
-                          {totalDays} {totalDays === 1 ? 'day' : 'days attended'}
-                        </span>
-                        <span style={{ color: fColor, fontSize: 10 }}>·</span>
-                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.gray, letterSpacing: '0.1em' }}>
-                          {Object.keys(fg.years).length} {Object.keys(fg.years).length === 1 ? 'year' : 'years'}
-                        </span>
-                        <span style={{ color: fColor, fontSize: 10 }}>·</span>
-                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.gray, letterSpacing: '0.1em' }}>
-                          {Math.min(...allYears)}–{Math.max(...allYears)}
-                        </span>
-                      </div>
-                      {/* year tags row */}
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: 4, flexWrap: 'wrap', marginTop: 10 }}>
-                        {Object.keys(fg.years).sort().map(yr => (
-                          <span key={yr} style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, background: `${fColor}22`, color: fColor, border: `1px solid ${fColor}44`, padding: '2px 7px', borderRadius: 3 }}>{yr}</span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  {/* Year sections — each year is a fully boxed container */}
-                  {Object.entries(fg.years).sort((a, b) => +a[0] - +b[0]).map(([yr, evs]) => (
-                    <div key={yr} style={{
-                      marginBottom: 28,
-                      border: `1px solid ${fColor}55`,
-                      borderTop: `4px solid ${fColor}`,
-                      borderRadius: 10,
-                      overflow: 'hidden',
-                      background: `linear-gradient(180deg, ${fColor}0a 0%, ${C.bg} 80px)`,
-                      boxShadow: `0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 ${fColor}22`,
-                    }}>
-                      {/* Year header bar */}
-                      <div style={{
-                        display: 'flex', alignItems: 'center', gap: 14,
-                        padding: '12px 18px',
-                        borderBottom: `1px solid ${fColor}33`,
-                        background: `${fColor}0f`,
-                      }}>
-                        <div style={{
-                          fontFamily: "'Bebas Neue'", fontSize: '1.6rem',
-                          letterSpacing: '0.12em', color: fColor,
-                          textShadow: `0 0 12px ${fColor}55`, lineHeight: 1,
-                        }}>
-                          {fg.name} {yr}
-                        </div>
-                        <div style={{
-                          fontFamily: "'Space Mono', monospace", fontSize: 8,
-                          color: C.gray, textTransform: 'uppercase', letterSpacing: '0.14em',
-                          background: C.bgCardAlt, border: `1px solid ${C.border}`,
-                          padding: '3px 8px', borderRadius: 3,
-                        }}>
-                          {evs.length} {evs.length === 1 ? 'day' : 'days'}
-                        </div>
-                        <div style={{
-                          fontFamily: "'Space Mono', monospace", fontSize: 8,
-                          color: C.gray, textTransform: 'uppercase', letterSpacing: '0.1em',
-                        }}>
-                          {evs[0]?.city ? `${evs[0].city}, ${evs[0].state}` : ''}
-                        </div>
-                      </div>
-                      {/* Days inside the box */}
-                      <div style={{ padding: '14px 14px 6px' }}>
-                        {evs.map(ev => (
-                          <FestivalScheduleCard key={ev.id} event={ev} compact={true} />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+{/* ── BY DAY ── */}
+{activeTab === 'byDay' && (
+  <div style={{ padding: '24px 0' }} className="fade-in">
+    <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
+      <input style={{ ...inputSt, flex: 1, minWidth: 160 }} placeholder="Search artist, venue, city..." value={search} onChange={e => setSearch(e.target.value)} />
+      <select style={inputSt} value={yearFilter} onChange={e => setYearFilter(e.target.value)}>
+        <option value="all">All Years</option>
+        {years.map(y => <option key={y} value={y}>{y}</option>)}
+      </select>
+      <select style={inputSt} value={festFilter} onChange={e => setFestFilter(e.target.value)}>
+        <option value="all">All Shows</option>
+        <option value="fest">Festival Only</option>
+        <option value="solo">Standalone Only</option>
+      </select>
+      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, marginLeft: 'auto' }}>{dayGroups.length} days</span>
+    </div>
+    {dayGroups.map(ev => ev.is_festival
+      ? <FestivalScheduleCard key={ev.id} event={ev} />
+      : <DayCard key={ev.id} event={ev} />
+    )}
+  </div>
+)}
+
+{/* ── BY FESTIVAL ── */}
+{activeTab === 'byFest' && (
+  <div style={{ padding: '24px 0' }} className="fade-in">
+    <div style={{ display: 'flex', gap: 9, marginBottom: 16, alignItems: 'center' }}>
+      <input style={{ ...inputSt, flex: 1 }} placeholder="Search festival or artist..." value={search} onChange={e => setSearch(e.target.value)} />
+      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray }}>{festGroupings.length} festivals</span>
+    </div>
+    {festGroupings
+      .filter(fg => !search || fg.name.toLowerCase().includes(search.toLowerCase()) || Object.values(fg.years).flat().some(ev => (ev.bands || []).some(b => b.toLowerCase().includes(search.toLowerCase()))))
+      .map((fg, fgIdx) => {
+        const FEST_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699', '#ff9944'];
+        const fColor = FEST_COLORS[fgIdx % FEST_COLORS.length];
+        const totalDays = Object.values(fg.years).flat().length;
+        const allYears = Object.keys(fg.years).map(Number);
+        return (
+          <div key={fg.name} style={{ marginBottom: 40 }}>
+            {/* ── CONCERT POSTER DIVIDER ── */}
+            <div id={`fest-${fg.name.replace(/\s+/g, '-')}`} style={{position: 'relative', overflow: 'hidden',
+              background: `linear-gradient(135deg, ${C.bg} 0%, ${fColor}18 50%, ${C.bg} 100%)`,
+              borderTop: `2px solid ${fColor}`,
+              borderBottom: `2px solid ${fColor}`,
+              padding: '20px 24px',
+              marginBottom: 20
+            }}>
+              <div style={{ position: 'absolute', top: 6, left: 6, width: 24, height: 24, borderTop: `1px solid ${fColor}66`, borderLeft: `1px solid ${fColor}66` }} />
+              <div style={{ position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderTop: `1px solid ${fColor}66`, borderRight: `1px solid ${fColor}66` }} />
+              <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(2rem, 5vw, 3.2rem)', letterSpacing: '0.15em', color: fColor, textShadow: `0 0 20px ${fColor}55`, lineHeight: 1, marginBottom: 8 }}>
+                  {fg.name}
                 </div>
-                );
-              })}
-          </div>
-        )}
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.white }}>{totalDays} DAYS</span>
+                  <span style={{ color: fColor }}>·</span>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.gray }}>{Object.keys(fg.years).length} YEARS</span>
+                  <span style={{ color: fColor }}>·</span>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.gray }}>{Math.min(...allYears)}–{Math.max(...allYears)}</span>
+                </div>
+              </div>
+            </div>
 
+            {Object.entries(fg.years).sort((a, b) => +a[0] - +b[0]).map(([yr, evs]) => (
+              <div key={yr} style={{
+                marginBottom: 28,
+                border: `1px solid ${fColor}55`,
+                borderTop: `4px solid ${fColor}`,
+                borderRadius: 10,
+                overflow: 'hidden',
+                background: `linear-gradient(180deg, ${fColor}0a 0%, ${C.bg} 80px)`,
+                boxShadow: `0 4px 24px rgba(0,0,0,0.4)`
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 18px', borderBottom: `1px solid ${fColor}33`, background: `${fColor}0f` }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: fColor, lineHeight: 1 }}>{fg.name} {yr}</div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, background: C.bgCardAlt, padding: '3px 8px', borderRadius: 3 }}>{evs.length} DAYS</div>
+                </div>
+                <div style={{ padding: '14px 14px 6px' }}>
+                  {evs.map(ev => <FestivalScheduleCard key={ev.id} event={ev} compact={true} />)}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })}
+  </div>
+)}
         {/* ── BROWSE ── */}
         {activeTab === 'browse' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
