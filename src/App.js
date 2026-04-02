@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell
+  ResponsiveContainer, Cell, PieChart, Pie
 } from 'recharts';
 
 // ─── THEME ────────────────────────────────────────────────────────────────────
@@ -28,145 +28,184 @@ const C = {
   purple:    '#9966ff',
 };
 
-// ─── GLOBAL STYLES ────────────────────────────────────────────────────────────
-const GLOBAL_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0a0a0f; color: #f0f4f8; font-family: 'Inter', sans-serif; }
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #0a0a0f; }
-  ::-webkit-scrollbar-thumb { background: #445566; border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: #00b5a0; }
-  input, select, textarea, button { font-family: inherit; }
-  @keyframes pulse-teal {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(0,229,204,0.15); }
-    50%       { box-shadow: 0 0 20px 6px rgba(0,229,204,0.12); }
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .fade-in { animation: fadeIn 0.3s ease forwards; }
-  .row-hover:hover { background: #1c1c28 !important; cursor: pointer; }
-  .stamp-card { transition: all 0.2s; }
-  .stamp-card:hover { border-color: #00e5cc !important; transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,229,204,0.15) !important; }
-  .day-card-hover { transition: border-color 0.2s; }
-  .day-card-hover:hover { border-color: #00e5cc44 !important; }
-  .nav-tab-btn:hover { color: #00e5cc !important; }
-  .setlist-btn { transition: all 0.15s; }
-  .setlist-btn:hover { transform: scale(1.2); }
-`;
+const HALL_OF_FAME_MIN = 6;
 
-if (!document.getElementById('app-global-css')) {
-  const tag = document.createElement('style');
-  tag.id = 'app-global-css';
-  tag.textContent = GLOBAL_CSS;
-  document.head.appendChild(tag);
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+const fmtDate = d => {
+  if (!d) return '—';
+  return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+const getYear = d => d ? new Date(d + 'T12:00:00').getFullYear() : null;
+
+// ─── COMPONENTS ───────────────────────────────────────────────────────────────
+
+// 📋 SETLIST SPOTLIGHT WIDGET (The Randomizer)
+function SetlistSpotlight({ concerts, onVault }) {
+  const [index, setIndex] = useState(0);
+  
+  const vault = useMemo(() => 
+    concerts.filter(c => c.has_setlist || (c.has_setlist_names && c.has_setlist_names.trim() !== ''))
+  , [concerts]);
+
+  const slides = useMemo(() => {
+    if (vault.length === 0) return [{ label: "ARCHIVE EMPTY", val: "Start collecting!", sub: "Edit a show to log a setlist" }];
+    
+    // 1. Most Recent
+    const recent = [...vault].sort((a,b) => b.date.localeCompare(a.date))[0];
+    
+    // 2. Top Artist in Vault (Logic to count names in the comma-separated string)
+    const artCounts = {};
+    vault.forEach(c => { 
+      const names = (c.has_setlist_names || "").split(',');
+      names.forEach(n => { 
+        const name = n.trim(); 
+        if(name) artCounts[name] = (artCounts[name] || 0) + 1; 
+      });
+    });
+    const topArt = Object.entries(artCounts).sort((a,b) => b[1] - a[1])[0];
+
+    // 3. Top Venue in Vault
+    const venCounts = {};
+    vault.forEach(c => { venCounts[c.venue] = (venCounts[c.venue] || 0) + 1; });
+    const topVen = Object.entries(venCounts).sort((a,b) => b[1] - a[1])[0];
+
+    // 4. Random Pull
+    const random = vault[Math.floor(Math.random() * vault.length)];
+
+    return [
+      { label: "LATEST ADDITION", val: recent.has_setlist_names?.split(',')[0] || "Verified Setlist", sub: `${fmtDate(recent.date)} @ ${recent.venue}` },
+      { label: "ARCHIVE MVP", val: topArt?.[0] || "Keep digging!", sub: `You have ${topArt?.[1] || 0} setlists from this artist` },
+      { label: "LUCKY VENUE", val: topVen?.[0] || "N/A", sub: `${topVen?.[1] || 0} setlists captured here` },
+      { label: "RANDOM RECALL", val: random.has_setlist_names?.split(',')[0] || "Setlist", sub: `From ${getYear(random.date)} at ${random.venue}` }
+    ];
+  }, [vault]);
+
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    const timer = setInterval(() => setIndex(prev => (prev + 1) % slides.length), 5000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
+  const s = slides[index];
+
+  return (
+    <div style={{ textAlign: 'center', cursor: 'pointer', padding: '10px 0' }} onClick={onVault}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gold, letterSpacing: 2, marginBottom: 12, textTransform: 'uppercase' }}>{s.label}</div>
+      <div className="fade-in" key={index} style={{ minHeight: '60px' }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.white, lineHeight: 1.1, marginBottom: 4 }}>{s.val}</div>
+        <div style={{ fontSize: '0.8rem', color: C.gray, fontStyle: 'italic' }}>{s.sub}</div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 18 }}>
+        {slides.map((_, i) => (
+          <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: i === index ? C.gold : C.grayDim, transition: '0.3s' }} />
+        ))}
+      </div>
+    </div>
+  );
 }
 
-// ─── YOU WERE THERE FACTS ─────────────────────────────────────────────────────
-const YOU_WERE_THERE = [
-  {
-    emoji: '🎸',
-    headline: "Radiohead's Greatest Show Ever",
-    body: "The Bonnaroo 2006 Radiohead set — nearly 3 hours, 29 songs — is widely called the best performance in Bonnaroo history. Jonny Greenwood called it the best festival experience he had ever had in America. Thom Yorke said it was his favourite gig for years. You were there.",
-    match: (c) => c.bands?.includes('Radiohead') && c.festival_name === 'Bonnaroo',
-  },
-  {
-    emoji: '💧',
-    headline: "The Mud. The Tears. The Final Phish Show.",
-    body: "Coventry 2004 was billed as Phish's last shows ever. The grounds flooded, traffic backed up 30 miles, thousands hiked in on foot. Trey wept onstage during Velvet Sea. You stood in ankle-deep mud watching what everyone thought was the end. It wasn't — but you were there.",
-    match: (c) => c.festival_name === 'Coventry',
-  },
-  {
-    emoji: '🪦',
-    headline: "Tom Petty at Bonnaroo 2006",
-    body: "Tom Petty headlined Bonnaroo 2006. He died October 2, 2017 — one week after his final show, which he completed with a fractured hip rather than cancel on his crew and fans. His widow said he was pounding his chest going, I'm on top of the world the day before he died. You caught him at peak Heartbreakers.",
-    match: (c) => c.bands?.includes('Tom Petty') && c.festival_name === 'Bonnaroo' && c.date?.startsWith('2006'),
-  },
-  {
-    emoji: '🪦',
-    headline: "Tom Petty at Bonnaroo 2013",
-    body: "One of Tom Petty's last major festival appearances — four years before he died. He finished his final 2017 tour with a fractured hip, refusing surgery because he felt he owed it to his crew and fans. You saw him twice at Bonnaroo across seven years. That is a gift.",
-    match: (c) => c.bands?.includes('Tom Petty') && c.date?.startsWith('2013'),
-  },
-  {
-    emoji: '🕊️',
-    headline: "The Last Frightened Rabbit Set You'll Ever See",
-    body: "Frightened Rabbit played FPSF 2017 — one of their final US shows. Scott Hutchison, whose brutally honest lyrics about depression helped thousands of fans feel less alone, died by suicide in May 2018. His last tweet read: Be so good to everyone you love. You were in that crowd.",
-    match: (c) => c.bands?.includes('Frightened Rabbit'),
-  },
-  {
-    emoji: '🎪',
-    headline: "You've Done Bonnaroo 14 Times",
-    body: "From 2005 through 2019, missing only 2017, you hit Bonnaroo 14 times — 55 total days in the field. That is more than a full work week in the mud every year for a decade and a half. The Farm basically knows your name.",
-    static: true,
-    match: () => false,
-  },
-  {
-    emoji: '🐺',
-    headline: "You've Seen Ween 16 Times",
-    body: "Ween is your most-seen band with 16 sets — festivals, clubs, Red Rocks, multiple nights in Denver, Austin residencies. You have a relationship with Dean and Gene that most people only dream about.",
-    static: true,
-    match: () => false,
-  },
-  {
-    emoji: '🎙️',
-    headline: "Guster and Dr. Dog: Tied at 15",
-    body: "Your second and third most-seen artists — Guster (15 sets) and Dr. Dog (15 sets) — are exactly tied. You even attended the Guster on the Ocean event in Portland ME in 2018. Three days on the water with one band. That is devotion.",
-    static: true,
-    match: () => false,
-  },
-  {
-    emoji: '⚡',
-    headline: "2017 Was Your Peak Year",
-    body: "47 sets in 2017 — your personal record. ACL weekend 1, ACL weekend 2, Willie Nelson 4th of July, Roger Waters, Ween at Red Rocks three nights running, and a dozen standalone Austin shows. You were everywhere that year.",
-    static: true,
-    match: () => false,
-  },
-  {
-    emoji: '💍',
-    headline: "You Got Married at a Show",
-    body: "November 10, 2021: Chvrches at ACL Live at the Moody Theater, Austin. Your data has it labeled GOT MARRIED. A concert was the backdrop for one of the biggest nights of your life. Extremely on brand.",
-    match: (c) => c.bands?.includes('Chvrches') && c.date === '2021-11-10',
-  },
-  {
-    emoji: '🗺️',
-    headline: "17 States and Counting",
-    body: "Texas leads with 210 shows, Massachusetts with 68, Tennessee with 55 from all that Bonnaroo. You have seen live music in 17 US states plus Ontario. Your concert map looks like a life well traveled.",
-    static: true,
-    match: () => false,
-  },
-  {
-    emoji: '🎶',
-    headline: "Over 1,000 Individual Sets Witnessed",
-    body: "425 show days translates to 1,046 individual sets seen live. That is an average of 2.5 bands every single show night for 25 years straight. You have seen more live music than most people see in a lifetime.",
-    static: true,
-    match: () => false,
-  },
-  {
-    emoji: '🌊',
-    headline: "SXSW Veteran: 29 Days Deep",
-    body: "You have done SXSW seriously — 29 days across 2006, 2008, 2010, 2011, 2015, 2016, 2017, and 2019. That means bands in parking lots, record store stages, and bat bars at 2am. Real SXSW.",
-    static: true,
-    match: () => false,
-  },
-  {
-    emoji: '📋',
-    headline: "Your Setlist Collection Starts With Billy Idol",
-    body: "October 9, 2015. ACL Friday. Billy Idol. That is where the physical setlist collection began and you have been building it ever since. There is something special about a piece of paper someone played off a stage.",
-    match: (c) => c.bands?.includes('Billy Idol'),
-  },
-  {
-    emoji: '🔄',
-    headline: "Arcade Fire: 10 Times, Multiple States",
-    body: "Arcade Fire is your most-traveled-for band. 10 sets across Boston, NYC, Bridgeport, Brooklyn, Austin, Dallas, and New Orleans. You followed them across the country and through three different eras of the band.",
-    static: true,
-    match: () => false,
-  },
-];
+// 🏆 HALL OF FAME COMPONENT (With Yellow Dots)
+function HallOfFame({ sets, onShare }) {
+  const [selected, setSelected] = useState(null);
 
+  const artists = useMemo(() => {
+    const m = {};
+    sets.forEach(s => {
+      if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] };
+      m[s.artist].shows.push(s);
+    });
+    return Object.values(m)
+      .filter(a => a.shows.length >= HALL_OF_FAME_MIN)
+      .sort((a, b) => b.shows.length - a.shows.length);
+  }, [sets]);
 
+  const selectedData = selected ? artists.find(a => a.artist === selected) : null;
+  const MEDAL = ['🥇', '🥈', '🥉'];
+  const topRef = useRef(null);
+
+  const handleSelect = (artist, isSelected) => {
+    if (isSelected) setSelected(null);
+    else {
+      setSelected(artist);
+      setTimeout(() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    }
+  };
+
+  return (
+    <div ref={topRef} style={{ padding: '24px 0' }} className="fade-in">
+      <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.gray, marginBottom: 16, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        Artists seen {HALL_OF_FAME_MIN}+ times — click any to see full history
+      </div>
+
+      {selectedData && (
+        <div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.teal}55`, borderRadius: 8, padding: '18px 20px', marginBottom: 24, boxShadow: `0 0 20px ${C.teal}22` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', letterSpacing: '0.08em', color: C.teal, marginBottom: 4, lineHeight: 1 }}>{selectedData.artist}</div>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                {selectedData.shows.length} sets · first: {fmtDate(selectedData.shows[selectedData.shows.length - 1]?.date)} · last: {fmtDate(selectedData.shows[0]?.date)}
+              </div>
+            </div>
+            <button onClick={() => setSelected(null)} style={{ background: 'none', border: `1px solid ${C.border}`, color: C.gray, fontSize: 10, borderRadius: 4, padding: '4px 8px', cursor: 'pointer' }}>CLOSE</button>
+          </div>
+
+          <div style={{ position: 'relative', paddingLeft: 20 }}>
+            <div style={{ position: 'absolute', left: 5, top: 0, bottom: 0, width: 1, background: `linear-gradient(to bottom, ${C.teal}, ${C.grayDim})` }} />
+            {[...selectedData.shows].reverse().map((s, i) => {
+              const hasSet = s.has_setlist || (s.has_setlist_names && s.has_setlist_names.trim() !== '');
+              return (
+                <div key={i} style={{ position: 'relative', marginBottom: 12, paddingLeft: 14 }}>
+                  <div style={{ 
+                    position: 'absolute', left: -7, top: 4, width: 8, height: 8, borderRadius: '50%', 
+                    background: s.is_festival ? C.teal : (hasSet ? C.gold : C.grayDim), 
+                    border: `1px solid ${s.is_festival ? C.teal : (hasSet ? C.gold : C.border)}`,
+                    boxShadow: s.is_festival ? `0 0 8px ${C.teal}aa` : (hasSet ? `0 0 8px ${C.gold}aa` : 'none'),
+                    zIndex: 2
+                  }} />
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: hasSet ? C.gold : C.tealDim }}>{fmtDate(s.date)}</span>
+                    <span style={{ fontSize: '0.8rem', color: C.white }}>{s.venue}</span>
+                    <span style={{ fontSize: '0.75rem', color: C.grayDim }}>{s.city}, {s.state}</span>
+                    {hasSet && <span style={{ fontSize: 11, filter: 'drop-shadow(0 0 2px gold)' }}>📋</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 28 }}>
+        {artists.map((a, i) => {
+          const isSelected = selected === a.artist;
+          const festCount = a.shows.filter(s => s.is_festival).length;
+          const setlistCount = a.shows.filter(s => s.has_setlist || (s.has_setlist_names && s.has_setlist_names.trim() !== '')).length;
+          const pct = Math.round((festCount / a.shows.length) * 100);
+          return (
+            <div key={a.artist} onClick={() => handleSelect(a.artist, isSelected)} 
+                 style={{ background: isSelected ? `${C.teal}18` : C.bgCard, border: `1px solid ${isSelected ? C.teal : (setlistCount > 0 ? `${C.gold}33` : C.border)}`, borderRadius: 8, padding: '12px 14px', cursor: 'pointer', transition: 'all 0.18s', position: 'relative' }}>
+              {setlistCount > 0 && (
+                <div style={{ position: 'absolute', top: 8, right: 8, width: 6, height: 6, borderRadius: '50%', background: C.gold, boxShadow: `0 0 5px ${C.gold}` }} />
+              )}
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: isSelected ? C.teal : C.tealDim, marginBottom: 4 }}>{MEDAL[i] || '🎤'} #{i + 1}</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 600, color: C.white, marginBottom: 6, lineHeight: 1.2 }}>{a.artist}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: isSelected ? C.teal : C.white, lineHeight: 1 }}>{a.shows.length}×</div>
+              <div style={{ marginTop: 8, height: 3, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: C.teal, borderRadius: 2 }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.grayDim }}>{festCount}F · {a.shows.length - festCount}S</div>
+                {setlistCount > 0 && <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.gold }}>{setlistCount} SETLISTS</div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ... Existing Card, CardTitle, OnThisDay, YouWereThere, etc components follow here ...
 // ─── HALL OF FAME ARTISTS ─────────────────────────────────────────────────────
 // These get the full timeline treatment in the Hall of Fame tab
 const HALL_OF_FAME_MIN = 7; // seen 7+ times
@@ -1416,42 +1455,24 @@ export default function App() {
         </div>
       </Card>
 
-      {/* SETLIST CAPTURE PROGRESS (Redesigned as a Card) */}
+      {/* ── SETLIST SPOTLIGHT WIDGET ── */}
       <Card neon>
-        <CardTitle>Archive Completion</CardTitle>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20, height: '100%', padding: '0 10px' }}>
-          <div style={{ position: 'relative', width: 90, height: 90, flexShrink: 0 }}>
-            <svg width="90" height="90" viewBox="0 0 90 90">
-              <circle cx="45" cy="45" r="38" fill="none" stroke={C.border} strokeWidth="7" />
-              <circle 
-                cx="45" cy="45" r="38" fill="none" stroke={C.gold} strokeWidth="7" 
-                strokeDasharray={2 * Math.PI * 38}
-                strokeDashoffset={2 * Math.PI * 38 * (1 - (stats.setlistCount / stats.totalShows))}
-                strokeLinecap="round"
-                style={{ transition: 'stroke-dashoffset 1.5s ease-out', transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
-              />
-            </svg>
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: C.gold }}>
-              {Math.round((stats.setlistCount / stats.totalShows) * 100)}%
-            </div>
-          </div>
-          
-          <div>
-            <div style={{ fontSize: '0.85rem', color: C.gray, lineHeight: 1.4 }}>
-              You have secured <span style={{ color: C.gold, fontWeight: 'bold' }}>{stats.setlistCount}</span> physical setlists 
-              out of <span style={{ color: C.white }}>{stats.totalShows}</span> shows attended.
-            </div>
-            <button 
-              onClick={() => setActiveTab('setlist_vault')}
-              style={{ marginTop: 12, background: `${C.gold}15`, border: `1px solid ${C.gold}44`, color: C.gold, fontSize: '0.7rem', padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", textTransform: 'uppercase' }}
-            >
-              VIEW COLLECTION →
-            </button>
-          </div>
+        <CardTitle>Setlist Spotlight 📋</CardTitle>
+        <div style={{ 
+          height: '100%', 
+          minHeight: '140px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'center', 
+          padding: '0 10px' 
+        }}>
+          <SetlistSpotlight 
+            concerts={concerts} 
+            onVault={() => setActiveTab('setlist_vault')} 
+          />
         </div>
       </Card>
     </div>
-
     {/* ── ROW 2: Sets Per Year (Full Width) ── */}
     <Card neon style={{ marginBottom: 16 }}>
       <CardTitle>Sets Per Year</CardTitle>
