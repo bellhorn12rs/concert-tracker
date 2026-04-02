@@ -927,143 +927,134 @@ function DecadeBlocks({ sets }) {
 }
 function TimelineTab({ concerts }) {
   const yearsData = useMemo(() => {
-    // 1. Sort chronologically
     const sorted = [...concerts].sort((a, b) => a.date.localeCompare(b.date));
-    
-    // 2. Group by Year
     const groups = {};
-    sorted.forEach((show, i) => {
-      const showDate = new Date(show.date + 'T12:00:00');
-      const y = showDate.getFullYear();
-      if (!groups[y]) groups[y] = [];
-      
-      const prevShow = sorted[i - 1];
-      let gapDays = 0;
-      if (prevShow) {
-        const prevDate = new Date(prevShow.date + 'T12:00:00');
-        gapDays = Math.ceil(Math.abs(showDate - prevDate) / (1000 * 60 * 60 * 24));
-      }
-
-      const month = showDate.getMonth(); // 0-11
-      // Only show months for Jan (0), Apr (3), Jul (6), Oct (9)
-      const isQuarterly = [0, 3, 6, 9].includes(month);
-      const prevMonth = prevShow ? new Date(prevShow.date + 'T12:00:00').getMonth() : -1;
-      const isNewMonth = month !== prevMonth;
-
-      groups[y].push({ 
-        ...show, 
-        gapDays, 
-        showMonthMarker: isQuarterly && isNewMonth,
-        monthLabel: showDate.toLocaleString('en-US', { month: 'short' }).toUpperCase()
-      });
-    });
     
-    return Object.entries(groups).sort((a, b) => b[0] - a[0]); // Decending years
+    // Group existing shows by year
+    sorted.forEach((show) => {
+      const y = new Date(show.date + 'T12:00:00').getFullYear();
+      if (!groups[y]) groups[y] = [];
+      groups[y].push(show);
+    });
+
+    const quarterlyMonths = [0, 3, 6, 9]; // Jan, Apr, Jul, Oct
+    const monthNames = ["JANUARY", "APRIL", "JULY", "OCTOBER"];
+
+    return Object.entries(groups).sort((a, b) => b[0] - a[0]).map(([year, shows]) => {
+      // Create a master list for the year that includes month markers and shows
+      const yearFlow = [];
+      const showsByMonth = {};
+      
+      shows.forEach(s => {
+        const m = new Date(s.date + 'T12:00:00').getMonth();
+        if (!showsByMonth[m]) showsByMonth[m] = [];
+        showsByMonth[m].push(s);
+      });
+
+      // We loop through all 12 months to ensure Jan/Apr/Jul/Oct always appear
+      for (let m = 0; m <= 11; m++) {
+        // If it's one of our target months, drop a marker
+        if (quarterlyMonths.includes(m)) {
+          yearFlow.push({ type: 'MONTH_MARKER', label: monthNames[quarterlyMonths.indexOf(m)] });
+        }
+        // If there are shows in this month, drop them in
+        if (showsByMonth[m]) {
+          showsByMonth[m].forEach((show, idx) => {
+            const prevShow = showsByMonth[m][idx-1] || null;
+            let gap = 0;
+            if (prevShow) {
+              gap = Math.ceil(Math.abs(new Date(show.date) - new Date(prevShow.date)) / (1000*60*60*24));
+            }
+            yearFlow.push({ ...show, type: 'SHOW', gapDays: gap });
+          });
+        }
+      }
+      return [year, yearFlow];
+    });
   }, [concerts]);
 
   return (
-    <div style={{ padding: '60px 0', background: C.bg }} className="fade-in">
-      <div style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative' }}>
+    <div style={{ padding: '80px 0', background: C.bg }} className="fade-in">
+      <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative' }}>
         
-        {/* The Central Spine */}
+        {/* The Spine */}
         <div style={{ 
           position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2,
           background: `linear-gradient(to bottom, ${C.teal}, ${C.purple}, ${C.gold}, transparent)`,
-          transform: 'translateX(-50%)', opacity: 0.2
+          transform: 'translateX(-50%)', opacity: 0.15
         }} />
 
-        {yearsData.map(([year, shows], yIdx) => (
-          <div key={year} style={{ position: 'relative', marginBottom: 100 }}>
+        {yearsData.map(([year, flow], yIdx) => (
+          <div key={year} style={{ position: 'relative', marginBottom: 120 }}>
             
-            {/* STICKY NEON YEAR WRAPPER */}
-            <div style={{ 
-              position: 'absolute', left: '-120px', top: 0, bottom: 0, width: '100px' 
-            }}>
+            {/* LEFT STICKY YEAR (Top of number to the left) */}
+            <div style={{ position: 'absolute', left: '-160px', top: 0, bottom: 0, width: '100px' }}>
               <div style={{ 
-                position: 'sticky', top: '150px', 
-                fontFamily: "'Bebas Neue'", fontSize: '5rem', lineHeight: 1,
-                color: 'transparent',
-                WebkitTextStroke: `2px ${yIdx % 2 === 0 ? C.teal : C.purple}`,
-                filter: `drop-shadow(0 0 10px ${yIdx % 2 === 0 ? C.teal : C.purple}66)`,
-                letterSpacing: '4px', opacity: 0.9, transform: 'rotate(-90deg)',
-                transformOrigin: 'center'
-              }}>
-                {year}
-              </div>
+                position: 'sticky', top: '200px', fontFamily: "'Bebas Neue'", fontSize: '6rem', 
+                color: 'transparent', WebkitTextStroke: `2px ${yIdx % 2 === 0 ? C.teal : C.purple}`,
+                filter: `drop-shadow(0 0 12px ${yIdx % 2 === 0 ? C.teal : C.purple}44)`,
+                opacity: 0.8, transform: 'rotate(-90deg)', transformOrigin: 'center'
+              }}>{year}</div>
             </div>
 
-            {/* SHOWS IN THIS YEAR */}
-            <div style={{ marginLeft: '40px' }}>
-              {shows.map((s, i) => {
+            {/* RIGHT STICKY YEAR (Top of number to the right) */}
+            <div style={{ position: 'absolute', right: '-160px', top: 0, bottom: 0, width: '100px' }}>
+              <div style={{ 
+                position: 'sticky', top: '200px', fontFamily: "'Bebas Neue'", fontSize: '6rem', 
+                color: 'transparent', WebkitTextStroke: `2px ${yIdx % 2 === 0 ? C.teal : C.purple}`,
+                filter: `drop-shadow(0 0 12px ${yIdx % 2 === 0 ? C.teal : C.purple}44)`,
+                opacity: 0.8, transform: 'rotate(90deg)', transformOrigin: 'center'
+              }}>{year}</div>
+            </div>
+
+            {/* THE FLOW */}
+            <div style={{ width: '100%', padding: '0 20px' }}>
+              {flow.map((item, i) => {
+                if (item.type === 'MONTH_MARKER') {
+                  return (
+                    <div key={`${year}-${item.label}`} style={{
+                      margin: '60px 0 30px 0', textAlign: 'center', position: 'relative', zIndex: 10
+                    }}>
+                      <span style={{
+                        fontFamily: "'Space Mono'", fontSize: '13px', color: C.white,
+                        background: C.bg, padding: '6px 16px', borderRadius: '4px',
+                        border: `1px solid ${C.purple}88`, fontWeight: 700,
+                        boxShadow: `0 0 15px ${C.purple}33`, letterSpacing: '4px'
+                      }}>{item.label}</span>
+                    </div>
+                  );
+                }
+
+                // Show Rendering
                 const isLeft = i % 2 === 0;
-                const bands = s.bands || [];
-                const marginTop = i === 0 ? 0 : s.gapDays <= 2 ? 20 : Math.min(s.gapDays * 2.5, 250);
+                const bands = item.bands || [];
+                const marginTop = item.gapDays <= 2 ? 15 : Math.min(item.gapDays * 2, 150);
 
                 return (
-                  <div key={s.id} style={{ marginTop, position: 'relative' }}>
+                  <div key={item.id} style={{ marginTop, display: 'flex', justifyContent: isLeft ? 'flex-start' : 'flex-end', alignItems: 'center', width: '100%', position: 'relative' }}>
+                    <div style={{ position: 'absolute', left: '50%', width: 12, height: 12, borderRadius: '50%', background: item.is_festival ? C.gold : C.teal, transform: 'translateX(-50%)', zIndex: 5, boxShadow: `0 0 12px ${item.is_festival ? C.gold : C.teal}`, border: `2px solid ${C.bg}` }} />
                     
-                    {/* QUARTERLY MONTH MARKER */}
-                    {s.showMonthMarker && (
-                      <div style={{
-                        position: 'absolute', left: '50%', transform: 'translate(-50%, -40px)',
-                        fontFamily: "'Space Mono'", fontSize: '14px', color: C.white,
-                        background: C.bg, padding: '4px 12px', borderRadius: '4px',
-                        border: `2px solid ${C.purple}`, zIndex: 10, fontWeight: 700,
-                        boxShadow: `0 0 15px ${C.purple}44`, letterSpacing: '2px'
-                      }}>
-                        {s.monthLabel}
-                      </div>
-                    )}
-
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: isLeft ? 'flex-start' : 'flex-end',
-                      alignItems: 'center', width: '100%', position: 'relative' 
+                    <Card glow={item.is_festival} style={{ 
+                      width: '42%', borderLeft: isLeft ? `4px solid ${item.is_festival ? C.gold : C.teal}` : `1px solid ${C.border}`,
+                      borderRight: !isLeft ? `4px solid ${item.is_festival ? C.gold : C.purple}` : `1px solid ${C.border}`,
+                      background: item.gapDays <= 3 ? C.bgCardAlt : C.bgCard
                     }}>
-                      
-                      {/* Connection Dot */}
-                      <div style={{
-                        position: 'absolute', left: '50%', width: 12, height: 12,
-                        borderRadius: '50%', background: s.is_festival ? C.gold : C.teal,
-                        transform: 'translateX(-50%)', zIndex: 5,
-                        boxShadow: `0 0 12px ${s.is_festival ? C.gold : C.teal}`,
-                        border: `2px solid ${C.bg}`
-                      }} />
-
-                      {/* THE CARD */}
-                      <Card 
-                        glow={s.is_festival} 
-                        style={{ 
-                          width: '42%', 
-                          borderLeft: isLeft ? `4px solid ${s.is_festival ? C.gold : C.teal}` : `1px solid ${C.border}`,
-                          borderRight: !isLeft ? `4px solid ${s.is_festival ? C.gold : C.purple}` : `1px solid ${C.border}`,
-                          background: s.gapDays <= 3 ? `${C.bgCardAlt}` : C.bgCard,
-                          transform: `rotate(${isLeft ? '0.5deg' : '-0.5deg'})`,
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-                          <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, letterSpacing: 1 }}>{fmtDate(s.date)}</span>
-                          {s.is_festival && <Badge color={C.gold}>FESTIVAL</Badge>}
-                        </div>
-
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                          {bands.map((band, idx) => (
-                            <span key={idx} style={{ 
-                              fontFamily: idx === 0 ? "'Bebas Neue'" : "'Inter'",
-                              fontSize: idx === 0 ? '1.8rem' : '0.95rem',
-                              color: idx === 0 ? C.white : C.gray,
-                              lineHeight: 1, letterSpacing: idx === 0 ? '1px' : '0'
-                            }}>
-                              {band}{idx < bands.length - 1 ? (idx === 0 ? '' : ' • ') : ''}
-                            </span>
-                          ))}
-                        </div>
-
-                        <div style={{ marginTop: 12, fontSize: 10, color: C.tealDim, fontFamily: "'Space Mono'", borderTop: `1px solid ${C.border}`, paddingTop: 8 }}>
-                          {s.venue} <span style={{color: C.grayDim}}>//</span> {s.city}
-                        </div>
-                      </Card>
-                    </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                        <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray }}>{fmtDate(item.date)}</span>
+                        {item.is_festival && <Badge color={C.gold}>FESTIVAL</Badge>}
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {bands.map((band, idx) => (
+                          <span key={idx} style={{ 
+                            fontFamily: idx === 0 ? "'Bebas Neue'" : "'Inter'", fontSize: idx === 0 ? '1.8rem' : '0.95rem',
+                            color: idx === 0 ? C.white : C.gray, lineHeight: 1, letterSpacing: idx === 0 ? '1px' : '0'
+                          }}>{band}{idx < bands.length - 1 ? (idx === 0 ? '' : ' • ') : ''}</span>
+                        ))}
+                      </div>
+                      <div style={{ marginTop: 12, fontSize: 10, color: C.tealDim, fontFamily: "'Space Mono'", borderTop: `1px solid ${C.border}`, paddingTop: 8 }}>
+                        {item.venue} <span style={{color: C.grayDim}}>//</span> {item.city}
+                      </div>
+                    </Card>
                   </div>
                 );
               })}
