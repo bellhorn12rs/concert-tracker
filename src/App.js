@@ -991,22 +991,36 @@ export default function App() {
     finally { setLoading(false); }
   }
 
-  async function handleSave(id, payload) {
+ async function handleSave(id, payload) {
     try {
+      let result;
       if (id) {
-        const { error } = await supabase.from('concerts').update(payload).eq('id', id);
-        if (error) throw error;
-        // Update local state so UI reflects changes immediately
+        // Update existing
+        result = await supabase.from('concerts').update(payload).eq('id', id).select();
+      } else {
+        // Insert new
+        result = await supabase.from('concerts').insert([payload]).select();
+      }
+
+      if (result.error) throw result.error;
+      
+      // Check if anything actually changed in the database
+      if (!result.data || result.data.length === 0) {
+        throw new Error("Database accepted the request but 0 rows were updated. Check your Row Level Security (RLS) policies.");
+      }
+
+      // Success! Update the screen
+      if (id) {
         setConcerts(p => p.map(c => c.id === id ? { ...c, ...payload } : c));
       } else {
-        const { data, error } = await supabase.from('concerts').insert([payload]).select();
-        if (error) throw error;
-        if (data?.[0]) setConcerts(p => [data[0], ...p]);
+        setConcerts(p => [result.data[0], ...p]);
       }
+      
+      alert("✅ SAVED TO DATABASE SUCCESSFULLY");
       setEditTarget(null);
     } catch (err) { 
-      console.error(err);
-      alert('Save failed: ' + err.message + '. Make sure you are authorized!'); 
+      console.error("FULL ERROR:", err);
+      alert('❌ SAVE FAILED: ' + err.message); 
     }
   }
 
