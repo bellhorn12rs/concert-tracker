@@ -530,7 +530,7 @@ function YouWereThere({ concerts }) {
   const [idx, setIdx] = useState(() => Math.floor(Math.random() * YOU_WERE_THERE.length));
   const [fading, setFading] = useState(false);
 
-  const fact = YOU_WERE_THERE[idx];
+  const fact = "YOU_WERE_THERE"[idx];
 
   // Try to match a real concert from user's data, fall back to showing the static fact
   const matchedConcert = useMemo(() => {
