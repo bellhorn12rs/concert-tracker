@@ -524,13 +524,20 @@ function ManageTab({ concerts, onEdit, onAdd }) {
   );
 }
 
-
+// ─── YOU WERE THERE DATA ──────────────────────────────────────────────────────
+const YOU_WERE_THERE = [
+  { label: "STAMINA CHECK", text: "You've survived 182 festival days. That is a lot of spicy pie and port-a-potties.", match: c => c.is_festival },
+  { label: "THE DEBUT", text: "Your journey began on Oct 9, 2015. Life hasn't been quiet since.", match: c => c.date === '2015-10-09' },
+  { label: "FREQUENT FLYER", text: "Revolution Hall is your home away from home. You know exactly where the best standing spot is.", match: c => c.venue === 'Revolution Hall' },
+  { label: "LOCAL LEGEND", text: "Portland, Oregon: Where 90% of your memories (and hearing loss) happened.", match: c => c.city === 'Portland' },
+  { label: "THE GRIND", text: "2017 was a heavy year. You were catching sets like it was a full-time job.", match: c => c.date.includes('2017') },
+];
 // ─── YOU WERE THERE WIDGET ────────────────────────────────────────────────────
 function YouWereThere({ concerts }) {
   const [idx, setIdx] = useState(() => Math.floor(Math.random() * YOU_WERE_THERE.length));
   const [fading, setFading] = useState(false);
 
-  const fact = "YOU_WERE_THERE"[idx];
+  const fact = YOU_WERE_THERE[idx];
 
   // Try to match a real concert from user's data, fall back to showing the static fact
   const matchedConcert = useMemo(() => {
