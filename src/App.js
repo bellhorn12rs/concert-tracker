@@ -1722,36 +1722,3 @@ export default function App() {
   );
 }
 
-            {/* Artist grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 28 }}>
-        {artists.map((a, i) => {
-          const isSelected = selected === a.artist;
-          const festCount = a.shows.filter(s => s.is_festival).length;
-          const pct = Math.round((festCount / a.shows.length) * 100);
-          return (
-            <div key={a.artist} onClick={() => handleSelect(a.artist, isSelected)}
-              style={{
-                background: isSelected ? `${C.teal}18` : C.bgCard,
-                border: `1px solid ${isSelected ? C.teal : C.border}`,
-                borderRadius: 8, padding: '12px 14px', cursor: 'pointer',
-                transition: 'all 0.18s',
-                boxShadow: isSelected ? `0 0 16px ${C.tealGlow}` : 'none',
-              }}>
-              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: isSelected ? C.teal : C.tealDim, marginBottom: 4 }}>
-                {MEDAL[i] || '🎤'} #{i + 1}
-              </div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: C.white, marginBottom: 6, lineHeight: 1.2 }}>{a.artist}</div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: isSelected ? C.teal : C.gray, lineHeight: 1 }}>{a.shows.length}×</div>
-              {/* mini fest bar */}
-              <div style={{ marginTop: 6, height: 3, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${pct}%`, background: C.teal, borderRadius: 2 }} />
-              </div>
-              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.grayDim, marginTop: 3 }}>{festCount}F · {a.shows.length - festCount}S</div>
-              {onShare && <button onClick={e => { e.stopPropagation(); onShare(a.artist, a.shows); }} style={{ marginTop: 6, fontFamily: "'Space Mono', monospace", fontSize: 7, letterSpacing: '0.08em', textTransform: 'uppercase', background: 'transparent', border: `1px solid ${C.teal}44`, color: C.tealDim, borderRadius: 2, padding: '2px 7px', cursor: 'pointer', width: '100%' }}>Share ↗</button>}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
