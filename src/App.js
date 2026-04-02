@@ -1282,20 +1282,32 @@ export default function App() {
       </div>
 
       {/* STAT STRIP */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', background: C.bgCard, borderBottom: `1px solid ${C.border}` }}>
-        {[
-          [stats.totalSets,      'Total Sets',     'individual performances'],
-          [stats.uniqueArtists,  'Unique Artists',  'bands & performers'],
-          [stats.totalShows,     'Show Days',       `${stats.festDays} fest · ${stats.totalShows - stats.festDays} solo`],
-          [stats.setlistCount,   'Setlists',        'physical collection 📋'],
-        ].map(([num, label, sub], i) => (
-          <div key={i} style={{ padding: '16px 12px', textAlign: 'center', borderRight: i < 3 ? `1px solid ${C.border}` : 'none' }}>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', color: C.teal, lineHeight: 1, textShadow: `0 0 12px ${C.teal}44` }}>{typeof num === 'number' ? num.toLocaleString() : num}</div>
-            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: C.gray, marginTop: 4 }}>{label}</div>
-            <div style={{ fontSize: '0.72rem', color: C.grayDim, marginTop: 2, fontStyle: 'italic' }}>{sub}</div>
-          </div>
-        ))}
-      </div>
+<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', background: C.bgCard, borderBottom: `1px solid ${C.border}` }}>
+  {[
+    [stats.totalSets,     'Total Sets',      'individual performances'],
+    [stats.uniqueArtists, 'Unique Artists',  'bands & performers'],
+    [stats.totalShows,    'Show Days',       `${stats.festDays} fest · ${stats.totalShows - stats.festDays} solo`],
+    [stats.setlistCount,  'Setlists',        'physical collection 📋'],
+  ].map(([num, label, sub], i) => (
+    <div 
+      key={label}
+      onClick={() => label === 'Setlists' ? setActiveTab('setlist_vault') : null}
+      style={{ 
+        padding: '20px 10px', 
+        textAlign: 'center', 
+        borderRight: i < 3 ? `1px solid ${C.border}` : 'none',
+        cursor: label === 'Setlists' ? 'pointer' : 'default',
+        transition: 'background 0.2s'
+      }}
+      onMouseEnter={(e) => label === 'Setlists' ? e.currentTarget.style.background = '#ffffff05' : null}
+      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+    >
+      <div style={{ fontSize: '1.8rem', fontFamily: "'Bebas Neue'", color: label === 'Setlists' ? C.gold : '#fff', lineHeight: 1 }}>{num}</div>
+      <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: C.gray, letterSpacing: 1, marginTop: 4 }}>{label}</div>
+      <div style={{ fontSize: '0.6rem', color: C.grayDim, marginTop: 2, fontStyle: 'italic' }}>{sub}</div>
+    </div>
+  ))}
+</div>
 
       {/* NAV */}
       <nav style={{ background: C.bgCard, borderBottom: `1px solid ${C.teal}33`, display: 'flex', overflowX: 'auto', position: 'sticky', top: 0, zIndex: 200 }}>
@@ -1406,6 +1418,43 @@ export default function App() {
             </Card>
           </div>
         )}
+        {/* SETLIST VAULT VIEW */}
+{activeTab === 'setlist_vault' && (
+  <div style={{ padding: '20px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
+      <div>
+        <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.gold, margin: 0 }}>The Setlist Vault</h2>
+        <div style={{ color: C.gray, fontSize: '0.9rem' }}>{stats.setlistCount} items in the physical archive</div>
+      </div>
+      <button 
+        onClick={() => setActiveTab('dashboard')}
+        style={{ background: 'none', border: `1px solid ${C.grayDim}`, color: C.gray, padding: '8px 15px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'" }}
+      >
+        ← BACK
+      </button>
+    </div>
+
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
+      {concerts
+        .filter(c => c.has_setlist || (c.has_setlist_names && c.has_setlist_names.trim() !== ''))
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .map(c => (
+          <div 
+            key={c.id} 
+            onClick={() => { setEditTarget(c); }}
+            style={{ background: C.bgCard, border: `1px solid ${C.gold}33`, borderRadius: 8, padding: 15, cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
+          >
+            <div style={{ fontSize: 10, color: C.gold, fontFamily: "'Space Mono'", marginBottom: 8 }}>{fmtDate(c.date)}</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', marginBottom: 4, lineHeight: 1 }}>
+              {c.has_setlist_names || "Untitled Setlist"}
+            </div>
+            <div style={{ fontSize: 11, color: C.gray }}>{c.venue} • {c.city}</div>
+            <div style={{ position: 'absolute', right: 10, bottom: 10, opacity: 0.2, fontSize: '1.5rem' }}>📋</div>
+          </div>
+        ))}
+    </div>
+  </div>
+)}
 
         {/* ── BY DAY ── */}
         {activeTab === 'byDay' && (
