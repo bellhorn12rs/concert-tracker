@@ -525,7 +525,7 @@ function ManageTab({ concerts, onEdit, onAdd }) {
 }
 
 
-//The New "Artist Insights" Widget
+// ─── ARCHIVE INSIGHTS WIDGET ──────────────────────────────────────────────────
 function ArtistInsights({ concerts }) {
   const stats = useMemo(() => {
     const years = {};
@@ -544,11 +544,11 @@ function ArtistInsights({ concerts }) {
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, lineHeight: 1 }}>{stats.peakYear}</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.white, lineHeight: 1 }}>{stats.peakYear}</div>
           <div style={{ fontSize: '0.75rem', color: C.gray }}>Peak Year: <span style={{ color: C.teal }}>{stats.peakCount} shows</span></div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, lineHeight: 1 }}>{concerts.length}</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.white, lineHeight: 1 }}>{concerts.length}</div>
           <div style={{ fontSize: '0.75rem', color: C.gray }}>Total Sets Since 2015</div>
         </div>
       </div>
@@ -556,7 +556,7 @@ function ArtistInsights({ concerts }) {
   );
 }
 
-// ─── RANDOM SHOW WIDGET ───────────────────────────────────────────────────────
+// ─── RANDOM RECALL WIDGET ─────────────────────────────────────────────────────
 function RandomShow({ concerts }) {
   const [show, setShow] = useState(null);
   const [spinning, setSpinning] = useState(false);
@@ -578,6 +578,29 @@ function RandomShow({ concerts }) {
   useEffect(() => { if (concerts.length && !show) spin(); }, [concerts.length]);
 
   if (!show) return null;
+  const artistName = Array.isArray(show.bands) ? show.bands[0] : (show.artist || "Unknown Artist");
+
+  return (
+    <Card neon style={{ minHeight: 140, border: `1px solid ${spinning ? C.grayDim : C.purple + '66'}`, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.purple, letterSpacing: 2 }}>🎲 RANDOM RECALL</div>
+        <button onClick={spin} disabled={spinning} style={{ background: 'none', border: `1px solid ${C.purple}44`, color: C.purple, fontSize: 7, padding: '2px 8px', borderRadius: 3, cursor: 'pointer', fontFamily: "'Space Mono'" }}>
+          {spinning ? '•••' : 'SPIN'}
+        </button>
+      </div>
+
+      <div style={{ opacity: spinning ? 0.3 : 1 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.white, lineHeight: 1, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {artistName}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: "'Space Mono'", fontSize: 9 }}>
+          <span style={{ color: C.white }}>{fmtDate(show.date)}</span>
+          <span style={{ color: C.purple, opacity: 0.7 }}>📍 {show.venue}</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
 
   // Handle both single artist strings and band arrays
   const artistDisplay = Array.isArray(show.bands) ? show.bands[0] : (show.artist || "Unknown Artist");
