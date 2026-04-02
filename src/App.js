@@ -538,7 +538,7 @@ function ArtistInsights({ concerts }) {
   }, [concerts]);
 
   return (
-    <Card neon style={{ minHeight: 140, display: 'flex', flexDirection: 'column', justifyContent: 'center', border: `1px solid ${C.teal}33` }}>
+    <Card neon style={{ minHeight: 150, display: 'flex', flexDirection: 'column', justifyContent: 'center', border: `1px solid ${C.teal}33` }}>
       <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, letterSpacing: 2, marginBottom: 10 }}>
         ⚡ ARCHIVE INSIGHTS
       </div>
@@ -575,125 +575,51 @@ function RandomShow({ concerts }) {
     }, 70);
   };
 
-  useEffect(() => { if (concerts.length && !show) spin(); }, [concerts.length]);
+  useEffect(() => { 
+    if (concerts.length && !show) spin(); 
+  }, [concerts.length]);
 
   if (!show) return null;
+
+  // This handles your specific data structure (bands vs artist)
   const artistName = Array.isArray(show.bands) ? show.bands[0] : (show.artist || "Unknown Artist");
 
   return (
-    <Card neon style={{ minHeight: 140, border: `1px solid ${spinning ? C.grayDim : C.purple + '66'}`, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+    <Card 
+      neon 
+      glow={!spinning}
+      style={{ 
+        minHeight: 150, 
+        border: `1px solid ${spinning ? C.grayDim : C.purple + '66'}`, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: 'center',
+        transition: '0.3s'
+      }}
+    >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.purple, letterSpacing: 2 }}>🎲 RANDOM RECALL</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.purple, letterSpacing: 2 }}>
+          🎲 {spinning ? 'SPINNING...' : 'RANDOM RECALL'}
+        </div>
         <button onClick={spin} disabled={spinning} style={{ background: 'none', border: `1px solid ${C.purple}44`, color: C.purple, fontSize: 7, padding: '2px 8px', borderRadius: 3, cursor: 'pointer', fontFamily: "'Space Mono'" }}>
           {spinning ? '•••' : 'SPIN'}
         </button>
       </div>
 
-      <div style={{ opacity: spinning ? 0.3 : 1 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.white, lineHeight: 1, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div style={{ opacity: spinning ? 0.3 : 1, transition: '0.2s' }}>
+        <div style={{ 
+          fontFamily: "'Bebas Neue'", 
+          fontSize: '2.2rem', 
+          color: C.white, 
+          lineHeight: 1, 
+          marginBottom: 4,
+          textShadow: !spinning ? `0 0 10px ${C.purple}33` : 'none'
+        }}>
           {artistName}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: "'Space Mono'", fontSize: 9 }}>
           <span style={{ color: C.white }}>{fmtDate(show.date)}</span>
-          <span style={{ color: C.purple, opacity: 0.7 }}>📍 {show.venue}</span>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-  // Handle both single artist strings and band arrays
-  const artistDisplay = Array.isArray(show.bands) ? show.bands[0] : (show.artist || "Unknown Artist");
-
-  return (
-    <Card neon style={{ minHeight: 140, border: `1px solid ${spinning ? C.grayDim : C.purple + '66'}`, position: 'relative' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.purple, letterSpacing: 2 }}>🎲 RANDOM RECALL</div>
-        <button onClick={spin} disabled={spinning} style={{ background: 'none', border: `1px solid ${C.purple}44`, color: C.purple, fontSize: 7, padding: '2px 8px', borderRadius: 3, cursor: 'pointer', fontFamily: "'Space Mono'" }}>
-          {spinning ? 'SPINNING...' : 'SPIN'}
-        </button>
-      </div>
-
-      <div style={{ opacity: spinning ? 0.3 : 1 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, lineHeight: 1, marginBottom: 4 }}>
-          {artistDisplay}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: "'Space Mono'", fontSize: 9 }}>
-          <span style={{ color: C.white }}>{fmtDate(show.date)}</span>
-          <span style={{ color: C.purple, opacity: 0.7 }}>📍 {show.venue}</span>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-  useEffect(() => { if (concerts.length && !show) spin(); }, [concerts.length]);
-
-  if (!show) return null;
-
-  return (
-    <Card 
-      glow={!spinning} 
-      neon 
-      style={{ 
-        minHeight: 200, 
-        border: `1px solid ${spinning ? C.grayDim : C.purple + '66'}`,
-        transition: 'all 0.3s ease'
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.purple, letterSpacing: 2 }}>
-          🎲 {spinning ? 'SPINNING...' : 'RANDOM RECALL'}
-        </div>
-        <button 
-          onClick={spin} 
-          disabled={spinning}
-          style={{ 
-            background: spinning ? C.bgCardAlt : `${C.purple}22`, 
-            border: `1px solid ${C.purple}55`, 
-            color: spinning ? C.grayDim : C.purple, 
-            fontSize: 8, 
-            padding: '5px 12px', 
-            borderRadius: 4, 
-            cursor: 'pointer', 
-            fontFamily: "'Space Mono'",
-            transition: '0.2s'
-          }}
-        >
-          {spinning ? '•••' : 'SPIN AGAIN'}
-        </button>
-      </div>
-
-      <div style={{ 
-        filter: spinning ? 'blur(1px)' : 'none', 
-        transform: spinning ? 'translateY(-2px)' : 'none',
-        transition: 'filter 0.1s, transform 0.1s' 
-      }}>
-        <div style={{ 
-          fontFamily: "'Bebas Neue'", 
-          fontSize: '2.6rem', 
-          color: spinning ? C.grayDim : C.white, 
-          lineHeight: 0.9, 
-          marginBottom: 10,
-          textShadow: !spinning ? `0 0 15px ${C.purple}44` : 'none'
-        }}>
-          {show.artist}
-        </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ fontSize: '0.9rem', color: spinning ? C.grayDim : C.white }}>
-            {fmtDate(show.date)}
-          </div>
-          <div style={{ 
-            fontFamily: "'Space Mono'", 
-            fontSize: 9, 
-            color: C.purple, 
-            background: `${C.purple}11`, 
-            padding: '2px 6px', 
-            borderRadius: 3 
-          }}>
-            {show.venue.toUpperCase()}
-          </div>
+          <span style={{ color: C.purple, opacity: 0.8 }}>📍 {show.venue?.toUpperCase()}</span>
         </div>
       </div>
     </Card>
