@@ -1166,9 +1166,10 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
   const [hovered, setHovered] = React.useState(false);
   const bands = item.bands || [];
   
-  // Identify the genre color based on the headliner
+  // 1. Get the Genre Color (Hardcoded fallback to Teal if missing)
   const headliner = bands[0] || "";
-  const themeColor = getBandColor(headliner);
+  const genre = GENRE_MAP[headliner] || "Other";
+  const themeColor = GENRE_COLORS[genre] || "#00f2ff";
 
   return (
     <div 
@@ -1180,29 +1181,66 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
         alignItems: 'center', width: '100%', position: 'relative', cursor: 'pointer'
       }}
     >
-      {/* Node Dot now uses Genre Color */}
+      {/* Connector Dot */}
       <div style={{ 
         position: 'absolute', left: '50%', width: hovered ? 16 : 12, height: hovered ? 16 : 12, 
         borderRadius: '50%', background: themeColor, 
         transform: 'translateX(-50%)', zIndex: 5, 
-        boxShadow: hovered ? `0 0 20px ${themeColor}` : 'none',
+        boxShadow: hovered ? `0 0 20px ${themeColor}` : `0 0 8px ${themeColor}66`,
         border: '2px solid #0a0a0c', transition: '0.2s'
       }} />
       
+      {/* THE CARD CONTAINER */}
       <div style={{ 
         width: '43%', padding: '20px', borderRadius: '12px',
         border: '1px solid rgba(255,255,255,0.1)',
-        // Left/Right border now reflects Genre Color
         borderLeft: isLeft ? `4px solid ${themeColor}` : '1px solid rgba(255,255,255,0.1)',
         borderRight: !isLeft ? `4px solid ${themeColor}` : '1px solid rgba(255,255,255,0.1)',
-        background: hovered ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
+        background: hovered ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
         transform: hovered ? `scale(1.05) rotate(${isLeft ? '1deg' : '-1deg'})` : 'scale(1) rotate(0deg)',
         transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-        zIndex: hovered ? 20 : 1
+        zIndex: hovered ? 20 : 1,
+        boxShadow: hovered ? `0 10px 40px -10px ${themeColor}33` : 'none'
       }}>
-        {/* ... rest of your card content (date, bands, venue) ... */}
-        <div style={{ marginTop: 12, fontSize: 10, color: themeColor, opacity: 0.8, fontFamily: "'Space Mono'", borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 8 }}>
-          {item.venue} // {item.city}
+        
+        {/* Date & Badge Row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#888', letterSpacing: '1px' }}>
+            {item.date}
+          </span>
+          {item.is_festival && (
+            <span style={{ 
+              color: '#ffcc00', fontSize: 8, fontWeight: 'bold', 
+              border: '1px solid #ffcc0044', padding: '2px 6px', borderRadius: '4px' 
+            }}>FESTIVAL</span>
+          )}
+        </div>
+
+        {/* BAND NAMES (The part that was missing!) */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+          {bands.map((band, idx) => (
+            <span key={idx} style={{ 
+              fontFamily: idx === 0 ? "'Bebas Neue'" : "'Inter', sans-serif", 
+              fontSize: idx === 0 ? '1.9rem' : '1rem',
+              color: '#ffffff', // Forced white
+              lineHeight: 1.1, 
+              letterSpacing: idx === 0 ? '1px' : '0',
+              opacity: idx !== 0 && !hovered ? 0.5 : 1,
+              transition: '0.2s',
+              textShadow: idx === 0 && hovered ? `0 0 15px ${themeColor}88` : 'none'
+            }}>
+              {band}{idx < bands.length - 1 ? (idx === 0 ? '' : ' • ') : ''}
+            </span>
+          ))}
+        </div>
+
+        {/* Venue Info */}
+        <div style={{ 
+          marginTop: 15, fontSize: 10, color: themeColor, 
+          fontFamily: "'Space Mono'", borderTop: '1px solid rgba(255,255,255,0.1)', 
+          paddingTop: 10, opacity: 0.8 
+        }}>
+          {item.venue?.toUpperCase()} <span style={{color: '#444'}}>//</span> {item.city?.toUpperCase()}
         </div>
       </div>
     </div>
