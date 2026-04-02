@@ -929,58 +929,71 @@ function DecadeBlocks({ sets }) {
 function TimelineTab({ concerts, setActiveTab }) {
   // 1. Process Data into Years and Months
   const yearsData = useMemo(() => {
-    if (!concerts.length) return [];
-    
-    // Sort everything chronologically first
+    if (!concerts || concerts.length === 0) return [];
+
+    // 1. Sort all concerts chronologically (Oldest to Newest for processing)
     const sorted = [...concerts].sort((a, b) => a.date.localeCompare(b.date));
     
-    // Group into years
-    const byYear = {};
+    const groups = {};
     sorted.forEach(show => {
       const yr = new Date(show.date + 'T12:00:00').getFullYear();
-      if (!byYear[yr]) byYear[yr] = [];
-      byYear[yr].push(show);
+      if (!groups[yr]) groups[yr] = [];
+      groups[yr].push(show);
     });
 
-    const quarterlyTargetMonths = [0, 3, 6, 9]; // Jan, Apr, Jul, Oct
+    const quarterlyTargetMonths = [0, 3, 6, 9]; 
     const monthNames = ["JANUARY", "APRIL", "JULY", "OCTOBER"];
 
-    // Build the "Flow" for each year
-    return Object.entries(byYear).sort((a, b) => b[0] - a[0]).map(([year, shows]) => {
+    // 2. Build the timeline flow for each year
+    return Object.entries(groups).sort((a, b) => b[0] - a[0]).map(([year, yearShows]) => {
       const yearFlow = [];
-      const showsByMonth = {};
       
-      shows.forEach(s => {
+      // Map shows by month index
+      const monthBuckets = {};
+      yearShows.forEach(s => {
         const m = new Date(s.date + 'T12:00:00').getMonth();
-        if (!showsByMonth[m]) showsByMonth[m] = [];
-        showsByMonth[m].push(s);
+        if (!monthBuckets[m]) monthBuckets[m] = [];
+        monthBuckets[m].push(s);
       });
 
-      // Loop through all 12 months to ensure NO SHOW IS LEFT BEHIND
+      // We go through all 12 months to ensure we hit every show
       for (let m = 0; m <= 11; m++) {
-        // Add Marker if it's a Quarterly month
+        // Drop Marker
         if (quarterlyTargetMonths.includes(m)) {
           yearFlow.push({ 
             type: 'MONTH_MARKER', 
-            label: monthNames[quarterlyTargetMonths.indexOf(m)] 
+            label: monthNames[quarterlyTargetMonths.indexOf(m)],
+            monthIndex: m 
           });
         }
         
-        // Add all shows for this month
-        if (showsByMonth[m]) {
-          showsByMonth[m].forEach((show) => {
-            // Find gap from previous show in the flow
-            const allPreviousShows = yearFlow.filter(item => item.type === 'SHOW');
-            const lastShow = allPreviousShows[allPreviousShows.length - 1];
-            let gap = 0;
-            if (lastShow) {
-              gap = Math.ceil(Math.abs(new Date(show.date) - new Date(lastShow.date)) / (1000*60*60*24));
-            }
-            yearFlow.push({ ...show, type: 'SHOW', gapDays: gap });
+        // Drop all shows for this month
+        if (monthBuckets[m]) {
+          monthBuckets[m].forEach((show) => {
+            yearFlow.push({ ...show, type: 'SHOW' });
           });
         }
       }
-      return [year, yearFlow];
+
+      // 3. Final Pass: Calculate gaps and side-alternation within the year flow
+      let showCounter = 0;
+      const finalFlow = yearFlow.map((item, idx) => {
+        if (item.type === 'MONTH_MARKER') return item;
+
+        // It's a show: calculate gap from previous show (if any)
+        const prevShow = yearFlow.slice(0, idx).reverse().find(i => i.type === 'SHOW');
+        let gap = 0;
+        if (prevShow) {
+          const d1 = new Date(item.date + 'T12:00:00');
+          const d2 = new Date(prevShow.date + 'T12:00:00');
+          gap = Math.ceil(Math.abs(d1 - d2) / (1000 * 60 * 60 * 24));
+        }
+
+        showCounter++;
+        return { ...item, gapDays: gap, side: showCounter % 2 === 0 ? 'right' : 'left' };
+      });
+
+      return [year, finalFlow];
     });
   }, [concerts]);
 
