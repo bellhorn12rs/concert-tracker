@@ -783,16 +783,14 @@ const STATE_COORDS = {
 };
 
 function LocationHeatmap({ concerts }) {
-  const [hovered, setHovered] = useState(null);
-
-  // 1. Calculate State Colors (Heatmap)
+  // 1. Calculate State Colors
   const stateCounts = useMemo(() => {
     const m = {};
     concerts.forEach(c => { if (c.state) m[c.state] = (m[c.state] || 0) + 1; });
     return m;
   }, [concerts]);
 
-  // 2. Calculate City Bubbles (Overlay)
+  // 2. Calculate City Bubbles
   const cityData = useMemo(() => {
     const m = {};
     concerts.forEach(c => {
@@ -809,32 +807,44 @@ function LocationHeatmap({ concerts }) {
   const maxCity = Math.max(...cityData.map(d => d.count), 1);
 
   return (
-    <div style={{ position: 'relative', padding: '10px 0' }}>
-      <svg viewBox="0 0 800 480" style={{ width: '100%', height: 'auto', display: 'block' }}>
-        {/* DRAW THE STATE GRID (Heatmap Layer) */}
+    <div style={{ position: 'relative', background: '#050508', borderRadius: '12px', padding: '24px', border: `1px solid ${C.border}` }}>
+      <svg viewBox="0 0 960 600" style={{ width: '100%', height: 'auto', display: 'block' }}>
+        {/* PHYSICAL US OUTLINE (The "Map" Look) */}
+        <path 
+          d="M165,100 L795,100 L840,150 L840,400 L700,500 L300,500 L120,400 Z" 
+          fill="#111118" 
+          stroke={C.border} 
+          strokeWidth="2" 
+          opacity="0.5"
+        />
+        
+        {/* SUBTLE STATE GRID LINES */}
+        <line x1="300" y1="100" x2="300" y2="500" stroke={C.border} strokeWidth="0.5" opacity="0.2" />
+        <line x1="550" y1="100" x2="550" y2="500" stroke={C.border} strokeWidth="0.5" opacity="0.2" />
+        <line x1="165" y1="300" x2="840" y2="300" stroke={C.border} strokeWidth="0.5" opacity="0.2" />
+
+        {/* STATE SQUARES (Heatmap Layer) */}
         {Object.entries(STATE_COORDS).map(([abbr, pos]) => {
           const count = stateCounts[abbr] || 0;
           const isVisited = count > 0;
-          
-          // Color logic: Navy for unvisited, Teal/Purple for visited
           const stateFill = isVisited 
             ? (count / maxState > 0.6 ? C.teal : C.purple) 
-            : '#12121a';
+            : 'transparent';
 
           return (
             <g key={abbr}>
-              {/* State Square */}
               <rect
-                x={pos.x - 18} y={pos.y - 18} width={36} height={36} rx={4}
+                x={pos.x - 16} y={pos.y - 16} width={32} height={32} rx={6}
                 fill={stateFill}
-                stroke={isVisited ? C.borderLit : C.border}
-                strokeWidth={isVisited ? 1 : 0.5}
-                opacity={isVisited ? 1 : 0.4}
+                stroke={isVisited ? C.white : C.grayDim}
+                strokeWidth={isVisited ? 1.5 : 0.5}
+                opacity={isVisited ? 1 : 0.2}
+                style={{ filter: isVisited ? `drop-shadow(0 0 8px ${stateFill}66)` : 'none' }}
               />
               <text 
                 x={pos.x} y={pos.y + 4} 
                 textAnchor="middle" 
-                style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, fill: isVisited ? C.white : C.grayDim, fontWeight: 700, pointerEvents: 'none' }}
+                style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, fill: isVisited ? C.white : C.grayDim, fontWeight: 700, pointerEvents: 'none' }}
               >
                 {abbr}
               </text>
@@ -842,35 +852,37 @@ function LocationHeatmap({ concerts }) {
           );
         })}
 
-        {/* DRAW CITY BUBBLES (Quantity Layer) */}
+        {/* CITY BUBBLES (Quantity Layer) */}
         {cityData.map((city, i) => {
-          // Radius grows based on show count in that city
-          const radius = Math.sqrt(city.count / maxCity) * 35 + 4;
+          const radius = Math.sqrt(city.count / maxCity) * 45 + 5;
           return (
             <circle
               key={`city-${i}`}
               cx={city.x}
               cy={city.y}
               r={radius}
-              fill={C.cyan}
-              opacity={0.3}
+              fill="transparent"
               stroke={C.cyan}
-              strokeWidth={1.5}
-              style={{ pointerEvents: 'none', filter: 'blur(1px)' }}
+              strokeWidth="2"
+              opacity="0.6"
+              style={{ pointerEvents: 'none', filter: `drop-shadow(0 0 10px ${C.cyan})` }}
             />
           );
         })}
       </svg>
 
-      {/* Map Legend */}
-      <div style={{ display: 'flex', gap: 20, marginTop: 15, justifyContent: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 12, height: 12, background: C.teal, borderRadius: 2 }} />
-          <span style={{ fontSize: 9, color: C.gray, fontFamily: "'Space Mono'", textTransform: 'uppercase' }}>Show in State</span>
+      <div style={{ display: 'flex', gap: 24, marginTop: 20, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 14, height: 14, background: C.teal, borderRadius: 3 }} />
+          <span style={{ fontSize: 10, color: C.white, fontFamily: "'Space Mono'", letterSpacing: '1px' }}>HEAVY PRESENCE</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 14, height: 14, border: `1px solid ${C.cyan}`, borderRadius: '50%', background: `${C.cyan}44` }} />
-          <span style={{ fontSize: 9, color: C.gray, fontFamily: "'Space Mono'", textTransform: 'uppercase' }}>City Show Count (Bubble Size)</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 14, height: 14, background: C.purple, borderRadius: 3 }} />
+          <span style={{ fontSize: 10, color: C.white, fontFamily: "'Space Mono'", letterSpacing: '1px' }}>VISITED</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 16, height: 16, border: `2px solid ${C.cyan}`, borderRadius: '50%' }} />
+          <span style={{ fontSize: 10, color: C.white, fontFamily: "'Space Mono'", letterSpacing: '1px' }}>SHOW DENSITY</span>
         </div>
       </div>
     </div>
