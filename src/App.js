@@ -37,6 +37,60 @@ const fmtDate = d => {
 };
 const getYear = d => d ? new Date(d + 'T12:00:00').getFullYear() : null;
 
+// --- GENRE CONFIGURATION ---
+const GENRE_COLORS = {
+  "Indie Rock": "#00f2ff",    // Teal
+  "Alternative": "#9d00ff",   // Purple
+  "Experimental": "#ff00ff",  // Magenta
+  "Electronic": "#ff0077",    // Pink
+  "Jam": "#ffcc00",           // Gold
+  "Folk": "#ffaa00",          // Amber
+  "Classic Rock": "#ff4400",  // Red
+  "Pop/Piano": "#00e5ff",     // Cyan
+  "Punk": "#a2ff00",          // Lime
+  "Other": "#444444"          // Gray
+};
+
+// genre definitions
+const GENRE_MAP = {
+  "Typhoon": "Indie Rock", "The Happy Fits": "Indie Rock", "Krooked Kings": "Indie Rock",
+  "Modest Mouse": "Indie Rock", "Built to Spill": "Indie Rock", "Death Cab for Cutie": "Indie Rock",
+  "The Decemberists": "Indie Rock", "Spoon": "Indie Rock", "Guster": "Indie Rock",
+  "Dr. Dog": "Indie Rock", "The Shins": "Indie Rock", "The National": "Indie Rock", 
+  "The War on Drugs": "Indie Rock", "Bright Eyes": "Indie Rock",
+  
+  "Radiohead": "Alternative", "Arcade Fire": "Alternative", "Beck": "Alternative", 
+  "St. Vincent": "Alternative", "Muse": "Alternative", "The Killers": "Alternative",
+
+  "Ween": "Experimental", "The Flaming Lips": "Experimental", "Animal Collective": "Experimental",
+  "Tame Impala": "Experimental", "Mars Volta": "Experimental", "Nine Inch Nails": "Experimental",
+
+  "LCD Soundsystem": "Electronic", "CHVRCHES": "Electronic", "M83": "Electronic",
+  "Odesza": "Electronic", "Justice": "Electronic", "Daft Punk": "Electronic",
+
+  "Phish": "Jam", "The Grateful Dead": "Jam", "Umphrey's McGee": "Jam", 
+  "Disco Biscuits": "Jam", "Goose": "Jam", "STS9": "Jam",
+
+  "Fleet Foxes": "Folk", "Bon Iver": "Folk", "The Avett Brothers": "Folk", 
+  "Father John Misty": "Folk", "Tallest Man on Earth": "Folk",
+
+  "Tom Petty": "Classic Rock", "Tom Petty & The Heartbreakers": "Classic Rock",
+  "Neil Young": "Classic Rock", "Bruce Springsteen": "Classic Rock", "Billy Idol": "Classic Rock",
+
+  "Ben Folds": "Pop/Piano", "Ben Folds Five": "Pop/Piano", "Phoenix": "Pop/Piano", 
+  "Vampire Weekend": "Pop/Piano", "Foster The People": "Pop/Piano",
+
+  "IDLES": "Punk", "Turnstile": "Punk", "The Stooges": "Punk", "Fugazi": "Punk",
+  
+  "default": "Other"
+};
+
+// HELPER: Get color for a band
+const getBandColor = (bandName) => {
+  const genre = GENRE_MAP[bandName] || "Other";
+  return GENRE_COLORS[genre];
+};
+
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
 
 // 📋 SETLIST SPOTLIGHT WIDGET (The Randomizer)
@@ -1063,10 +1117,58 @@ function TimelineTab({ concerts, setActiveTab }) {
   );
 }
 
+//genre section
+function GenreDNA({ concerts }) {
+  const stats = React.useMemo(() => {
+    const counts = {};
+    concerts.forEach(c => {
+      (c.bands || []).forEach(artist => {
+        const g = GENRE_MAP[artist] || "Other";
+        counts[g] = (counts[g] || 0) + 1;
+      });
+    });
+    
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count, color: GENRE_COLORS[name] }))
+      .sort((a, b) => b.count - a.count);
+  }, [concerts]);
+
+  return (
+    <div style={{ 
+      background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)',
+      borderRadius: '12px', padding: '20px', marginTop: '20px' 
+    }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', marginBottom: '15px', letterSpacing: '1px' }}>
+        SONIC DNA // TOP GENRES
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {stats.slice(0, 10).map((g) => (
+          <div key={g.name}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: '9px', fontFamily: "'Space Mono'" }}>
+              <span style={{ color: g.color }}>{g.name.toUpperCase()}</span>
+              <span style={{ color: '#888' }}>{g.count} SETS</span>
+            </div>
+            <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 2 }}>
+              <div style={{ 
+                width: `${(g.count / stats[0].count) * 100}%`, height: '100%', 
+                background: g.color, boxShadow: `0 0 10px ${g.color}44`, borderRadius: 2 
+              }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── INTERNAL CARD COMPONENT ──────────────────────────────────────────────
 function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
   const [hovered, setHovered] = React.useState(false);
   const bands = item.bands || [];
+  
+  // Identify the genre color based on the headliner
+  const headliner = bands[0] || "";
+  const themeColor = getBandColor(headliner);
 
   return (
     <div 
@@ -1078,46 +1180,28 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
         alignItems: 'center', width: '100%', position: 'relative', cursor: 'pointer'
       }}
     >
+      {/* Node Dot now uses Genre Color */}
       <div style={{ 
         position: 'absolute', left: '50%', width: hovered ? 16 : 12, height: hovered ? 16 : 12, 
-        borderRadius: '50%', background: item.is_festival ? '#ffcc00' : '#00f2ff', 
+        borderRadius: '50%', background: themeColor, 
         transform: 'translateX(-50%)', zIndex: 5, 
-        boxShadow: hovered ? `0 0 20px ${item.is_festival ? '#ffcc00' : '#00f2ff'}` : 'none',
+        boxShadow: hovered ? `0 0 20px ${themeColor}` : 'none',
         border: '2px solid #0a0a0c', transition: '0.2s'
       }} />
       
       <div style={{ 
-        width: '43%', 
-        padding: '20px',
-        borderRadius: '12px',
+        width: '43%', padding: '20px', borderRadius: '12px',
         border: '1px solid rgba(255,255,255,0.1)',
-        borderLeft: isLeft ? `4px solid ${item.is_festival ? '#ffcc00' : '#00f2ff'}` : '1px solid rgba(255,255,255,0.1)',
-        borderRight: !isLeft ? `4px solid ${item.is_festival ? '#ffcc00' : '#9d00ff'}` : '1px solid rgba(255,255,255,0.1)',
+        // Left/Right border now reflects Genre Color
+        borderLeft: isLeft ? `4px solid ${themeColor}` : '1px solid rgba(255,255,255,0.1)',
+        borderRight: !isLeft ? `4px solid ${themeColor}` : '1px solid rgba(255,255,255,0.1)',
         background: hovered ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
         transform: hovered ? `scale(1.05) rotate(${isLeft ? '1deg' : '-1deg'})` : 'scale(1) rotate(0deg)',
         transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-        zIndex: hovered ? 20 : 1,
-        boxShadow: hovered ? '0 10px 30px rgba(0,0,0,0.5)' : 'none'
+        zIndex: hovered ? 20 : 1
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-          <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#888' }}>{item.date}</span>
-          {item.is_festival && <span style={{ color: '#ffcc00', fontSize: 8, fontWeight: 'bold' }}>FESTIVAL</span>}
-        </div>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-          {bands.map((band, idx) => (
-            <span key={idx} style={{ 
-              fontFamily: idx === 0 ? "'Bebas Neue'" : "'Inter'", 
-              fontSize: idx === 0 ? '1.8rem' : '0.95rem',
-              color: '#fff', lineHeight: 1, opacity: idx !== 0 && !hovered ? 0.5 : 1,
-              transition: '0.2s'
-            }}>
-              {band}{idx < bands.length - 1 ? (idx === 0 ? '' : ' • ') : ''}
-            </span>
-          ))}
-        </div>
-
-        <div style={{ marginTop: 12, fontSize: 10, color: '#00f2ff', opacity: 0.7, fontFamily: "'Space Mono'", borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 8 }}>
+        {/* ... rest of your card content (date, bands, venue) ... */}
+        <div style={{ marginTop: 12, fontSize: 10, color: themeColor, opacity: 0.8, fontFamily: "'Space Mono'", borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 8 }}>
           {item.venue} // {item.city}
         </div>
       </div>
