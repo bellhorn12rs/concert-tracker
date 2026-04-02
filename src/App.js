@@ -205,20 +205,7 @@ function HallOfFame({ sets, onShare }) {
   );
 }
 
-// ... Existing Card, CardTitle, OnThisDay, YouWereThere, etc components follow here ...
-// ─── HALL OF FAME ARTISTS ─────────────────────────────────────────────────────
-// These get the full timeline treatment in the Hall of Fame tab
-const HALL_OF_FAME_MIN = 7; // seen 7+ times
 
-
-
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-const fmtDate = (d) => {
-  if (!d) return '—';
-  return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-};
-const getYear = (d) => d ? parseInt(d.slice(0, 4)) : null;
-const SETLIST_START = '2015-10-09';
 
 // ─── SHARED ATOMS ─────────────────────────────────────────────────────────────
 const Badge = ({ children, color = C.teal, bg = C.tealFaint }) => (
