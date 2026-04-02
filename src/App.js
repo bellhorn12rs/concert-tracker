@@ -634,14 +634,18 @@ function HallOfFame({ sets, onShare }) {
   }, [sets]);
 
   const selectedData = selected ? artists.find(a => a.artist === selected) : null;
-
   const MEDAL = ['🥇', '🥈', '🥉'];
-
   const topRef = useRef(null);
 
   const handleSelect = (artist, isSelected) => {
-    setSelected(isSelected ? null : artist);
-    if (!isSelected) setTimeout(() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30);
+    if (isSelected) {
+      setSelected(null);
+    } else {
+      setSelected(artist);
+      setTimeout(() => {
+        topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
   };
 
   return (
@@ -650,30 +654,46 @@ function HallOfFame({ sets, onShare }) {
         Artists seen {HALL_OF_FAME_MIN}+ times — click any to see full history
       </div>
 
-      {/* Timeline for selected artist — shown ABOVE the grid */}
+      {/* Timeline for selected artist */}
       {selectedData && (
-        <div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.teal}55`, borderRadius: 8, padding: '18px 20px', marginBottom: 24, boxShadow: `0 0 20px ${C.tealGlow}` }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', letterSpacing: '0.08em', color: C.teal, marginBottom: 4 }}>{selectedData.artist}</div>
-          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            {selectedData.shows.length} sets · first: {fmtDate(selectedData.shows[selectedData.shows.length - 1]?.date)} · last: {fmtDate(selectedData.shows[0]?.date)}
+        <div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.teal}55`, borderRadius: 8, padding: '18px 20px', marginBottom: 24, boxShadow: `0 0 20px ${C.teal}22` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', letterSpacing: '0.08em', color: C.teal, marginBottom: 4, lineHeight: 1 }}>{selectedData.artist}</div>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                {selectedData.shows.length} sets · first: {fmtDate(selectedData.shows[selectedData.shows.length - 1]?.date)} · last: {fmtDate(selectedData.shows[0]?.date)}
+              </div>
+            </div>
+            <button onClick={() => setSelected(null)} style={{ background: 'none', border: `1px solid ${C.border}`, color: C.gray, fontSize: 10, borderRadius: 4, padding: '4px 8px', cursor: 'pointer' }}>CLOSE</button>
           </div>
 
-          {/* Full show list as vertical timeline */}
           <div style={{ position: 'relative', paddingLeft: 20 }}>
-            {/* timeline spine */}
             <div style={{ position: 'absolute', left: 5, top: 0, bottom: 0, width: 1, background: `linear-gradient(to bottom, ${C.teal}, ${C.grayDim})` }} />
-            {[...selectedData.shows].reverse().map((s, i) => (
-              <div key={i} style={{ position: 'relative', marginBottom: 10, paddingLeft: 14 }}>
-                {/* dot */}
-                <div style={{ position: 'absolute', left: -7, top: 4, width: 8, height: 8, borderRadius: '50%', background: s.is_festival ? C.teal : C.grayDim, border: `1px solid ${s.is_festival ? C.teal : C.border}`, boxShadow: s.is_festival ? `0 0 6px ${C.teal}` : 'none' }} />
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.tealDim, whiteSpace: 'nowrap' }}>{fmtDate(s.date)}</span>
-                  {s.is_festival && s.festival_day && <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.teal, background: `${C.teal}18`, padding: '1px 5px', borderRadius: 2 }}>{s.festival_day}</span>}
-                  <span style={{ fontSize: '0.75rem', color: C.gray }}>{[s.venue, s.city, s.state].filter(Boolean).join(', ')}</span>
-                  {s.has_setlist && <span style={{ fontSize: 11 }} title="Got setlist">📋</span>}
+            
+            {[...selectedData.shows].reverse().map((s, i) => {
+              const hasSet = s.has_setlist || (s.has_setlist_names && s.has_setlist_names.trim() !== '');
+              
+              return (
+                <div key={i} style={{ position: 'relative', marginBottom: 12, paddingLeft: 14 }}>
+                  {/* The Status Dots */}
+                  <div style={{ 
+                    position: 'absolute', left: -7, top: 4, width: 8, height: 8, borderRadius: '50%', 
+                    background: s.is_festival ? C.teal : (hasSet ? C.gold : C.grayDim), 
+                    border: `1px solid ${s.is_festival ? C.teal : (hasSet ? C.gold : C.border)}`,
+                    boxShadow: s.is_festival ? `0 0 8px ${C.teal}aa` : (hasSet ? `0 0 8px ${C.gold}aa` : 'none'),
+                    zIndex: 2
+                  }} />
+                  
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: hasSet ? C.gold : C.tealDim }}>{fmtDate(s.date)}</span>
+                    {s.is_festival && <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.teal, background: `${C.teal}18`, padding: '1px 5px', borderRadius: 2 }}>FEST</span>}
+                    <span style={{ fontSize: '0.8rem', color: C.white }}>{s.venue}</span>
+                    <span style={{ fontSize: '0.75rem', color: C.grayDim }}>{s.city}, {s.state}</span>
+                    {hasSet && <span style={{ fontSize: 11, filter: 'drop-shadow(0 0 2px gold)' }} title="Setlist Captured">📋</span>}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -683,15 +703,42 @@ function HallOfFame({ sets, onShare }) {
         {artists.map((a, i) => {
           const isSelected = selected === a.artist;
           const festCount = a.shows.filter(s => s.is_festival).length;
+          const setlistCount = a.shows.filter(s => s.has_setlist || (s.has_setlist_names && s.has_setlist_names.trim() !== '')).length;
           const pct = Math.round((festCount / a.shows.length) * 100);
+          
           return (
-            <div key={a.artist} onClick={() => handleSelect(a.artist, isSelected)} style={{ background: isSelected ? `${C.teal}18` : C.bgCard, border: `1px solid ${isSelected ? C.teal : C.border}`, borderRadius: 8, padding: '12px 14px', cursor: 'pointer', transition: 'all 0.18s', boxShadow: isSelected ? `0 0 16px ${C.tealGlow}` : 'none' }}>
+            <div key={a.artist} onClick={() => handleSelect(a.artist, isSelected)} 
+                 style={{ 
+                   background: isSelected ? `${C.teal}18` : C.bgCard, 
+                   border: `1px solid ${isSelected ? C.teal : (setlistCount > 0 ? `${C.gold}33` : C.border)}`, 
+                   borderRadius: 8, padding: '12px 14px', cursor: 'pointer', transition: 'all 0.18s', 
+                   boxShadow: isSelected ? `0 0 16px ${C.teal}33` : 'none',
+                   position: 'relative'
+                 }}>
+              
+              {setlistCount > 0 && (
+                <div style={{ position: 'absolute', top: 8, right: 8, width: 6, height: 6, borderRadius: '50%', background: C.gold, boxShadow: `0 0 5px ${C.gold}` }} />
+              )}
+
               <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: isSelected ? C.teal : C.tealDim, marginBottom: 4 }}>{MEDAL[i] || '🎤'} #{i + 1}</div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: C.white, marginBottom: 6, lineHeight: 1.2 }}>{a.artist}</div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: isSelected ? C.teal : C.gray, lineHeight: 1 }}>{a.shows.length}×</div>
-              <div style={{ marginTop: 6, height: 3, background: C.border, borderRadius: 2, overflow: 'hidden' }}><div style={{ height: '100%', width: `${pct}%`, background: C.teal, borderRadius: 2 }} /></div>
-              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.grayDim, marginTop: 3 }}>{festCount}F · {a.shows.length - festCount}S</div>
-              {onShare && <button onClick={e => { e.stopPropagation(); onShare(a.artist, a.shows); }} style={{ marginTop: 6, fontFamily: "'Space Mono', monospace", fontSize: 7, textTransform: 'uppercase', background: 'transparent', border: `1px solid ${C.teal}44`, color: C.tealDim, borderRadius: 2, padding: '2px 7px', cursor: 'pointer', width: '100%' }}>Share ↗</button>}
+              <div style={{ fontSize: '0.9rem', fontWeight: 600, color: C.white, marginBottom: 6, lineHeight: 1.2 }}>{a.artist}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: isSelected ? C.teal : C.white, lineHeight: 1 }}>{a.shows.length}×</div>
+              
+              <div style={{ marginTop: 8, height: 3, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: C.teal, borderRadius: 2 }} />
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.grayDim }}>{festCount}F · {a.shows.length - festCount}S</div>
+                {setlistCount > 0 && <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.gold }}>{setlistCount} SETLISTS</div>}
+              </div>
+
+              {onShare && (
+                <button onClick={e => { e.stopPropagation(); onShare(a.artist, a.shows); }} 
+                        style={{ marginTop: 10, fontFamily: "'Space Mono', monospace", fontSize: 7, textTransform: 'uppercase', background: 'transparent', border: `1px solid ${C.teal}44`, color: C.tealDim, borderRadius: 2, padding: '4px 0', cursor: 'pointer', width: '100%' }}>
+                  Share History ↗
+                </button>
+              )}
             </div>
           );
         })}
@@ -699,7 +746,6 @@ function HallOfFame({ sets, onShare }) {
     </div>
   );
 }
-
 // ─── SHAREABLE ARTIST CARD ────────────────────────────────────────────────────
 function ShareCard({ artist, shows, onClose }) {
   const festCount = shows.filter(s => s.is_festival).length;
@@ -1369,7 +1415,39 @@ export default function App() {
                   })}
                 </div>
               </Card>
-
+{/* SETLIST CAPTURE PROGRESS */}
+<div style={{ background: C.bgCard, padding: 20, borderRadius: 8, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 25 }}>
+  <div style={{ position: 'relative', width: 80, height: 80 }}>
+    {/* SVG Progress Circle */}
+    <svg width="80" height="80" viewBox="0 0 80 80">
+      <circle cx="40" cy="40" r="34" fill="none" stroke={C.border} strokeWidth="6" />
+      <circle 
+        cx="40" cy="40" r="34" fill="none" stroke={C.gold} strokeWidth="6" 
+        strokeDasharray={2 * Math.PI * 34}
+        strokeDashoffset={2 * Math.PI * 34 * (1 - (stats.setlistCount / stats.totalShows))}
+        strokeLinecap="round"
+        style={{ transition: 'stroke-dashoffset 1s ease-out', transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
+      />
+    </svg>
+    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.gold }}>
+      {Math.round((stats.setlistCount / stats.totalShows) * 100)}%
+    </div>
+  </div>
+  
+  <div>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', lineHeight: 1 }}>Archive Completion</div>
+    <div style={{ fontSize: '0.8rem', color: C.gray, marginTop: 4 }}>
+      You have secured <span style={{ color: C.gold, fontWeight: 'bold' }}>{stats.setlistCount}</span> physical setlists 
+      out of <span style={{ color: '#fff' }}>{stats.totalShows}</span> attended shows.
+    </div>
+    <button 
+      onClick={() => setActiveTab('setlist_vault')}
+      style={{ marginTop: 10, background: 'none', border: `1px solid ${C.gold}44`, color: C.gold, fontSize: '0.7rem', padding: '4px 8px', borderRadius: 3, cursor: 'pointer', fontFamily: "'Space Mono'" }}
+    >
+      VIEW COLLECTION →
+    </button>
+  </div>
+</div>
               {/* Sets per year — area-style bar chart */}
               <Card neon>
                 <CardTitle>Sets Per Year</CardTitle>
@@ -1712,7 +1790,55 @@ export default function App() {
 
         {/* ── HALL OF FAME ── */}
         {activeTab === 'hof' && (
-          <HallOfFame sets={sets} onShare={(artist, shows) => setShareCard({ artist, shows })} />
+          <HallOfFame 
+            sets={sets} 
+            concerts={concerts} // Pass concerts to HOF for setlist check
+            onShare={(artist, shows) => setShareCard({ artist, shows })} 
+          />
+        )}
+
+        {/* ── SETLIST VAULT (NEW) ── */}
+        {activeTab === 'setlist_vault' && (
+          <div style={{ padding: '24px 0' }} className="fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <div>
+                <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.gold, margin: 0, lineHeight: 1 }}>THE SETLIST VAULT</h2>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginTop: 4 }}>
+                  {stats.setlistCount} PHYSICAL ITEMS RECOVERED
+                </div>
+              </div>
+              <button 
+                onClick={() => setActiveTab('dashboard')}
+                style={{ background: 'none', border: `1px solid ${C.border}`, color: C.gray, padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 }}
+              >
+                ← DASHBOARD
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+              {concerts
+                .filter(c => c.has_setlist || (c.has_setlist_names && c.has_setlist_names.trim() !== ''))
+                .sort((a, b) => b.date.localeCompare(a.date))
+                .map(c => (
+                  <div 
+                    key={c.id} 
+                    onClick={() => { setEditTarget(c); }}
+                    className="setlist-card"
+                    style={{ 
+                      background: C.bgCard, border: `1px solid ${C.gold}33`, borderRadius: 10, padding: 20, 
+                      cursor: 'pointer', position: 'relative', overflow: 'hidden', transition: 'transform 0.2s' 
+                    }}
+                  >
+                    <div style={{ fontSize: 9, color: C.gold, fontFamily: "'Space Mono'", marginBottom: 10, letterSpacing: '0.1em' }}>{fmtDate(c.date)}</div>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: C.white, marginBottom: 4, lineHeight: 1 }}>
+                      {c.has_setlist_names || "VERIFIED SETLIST"}
+                    </div>
+                    <div style={{ fontSize: 11, color: C.gray, fontFamily: "'Space Mono'" }}>{c.venue} • {c.city}</div>
+                    <div style={{ position: 'absolute', right: -10, bottom: -10, opacity: 0.1, fontSize: '4rem', transform: 'rotate(-15deg)' }}>📋</div>
+                  </div>
+                ))}
+            </div>
+          </div>
         )}
 
         {/* ── PASSPORT ── */}
