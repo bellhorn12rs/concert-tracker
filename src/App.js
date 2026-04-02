@@ -925,11 +925,13 @@ function DecadeBlocks({ sets }) {
     </div>
   );
 }
+// ─── THE BULLETPROOF TIMELINE ────────────────────────────────────────────────
 function TimelineTab({ concerts, setActiveTab }) {
-  const yearsData = useMemo(() => {
+  // 1. DATA ENGINE (Ensures 100% of shows are captured)
+  const yearsData = React.useMemo(() => {
     if (!concerts || concerts.length === 0) return [];
 
-    // 1. Sort everything chronologically (Newest at top for the timeline)
+    // Sort Newest to Oldest
     const sorted = [...concerts].sort((a, b) => b.date.localeCompare(a.date));
     
     const groups = {};
@@ -939,7 +941,7 @@ function TimelineTab({ concerts, setActiveTab }) {
       groups[yr].push(show);
     });
 
-    const quarterlyTargetMonths = [9, 6, 3, 0]; // Oct, Jul, Apr, Jan (descending)
+    const quarterlyTargetMonths = [9, 6, 3, 0]; // Oct, Jul, Apr, Jan
     const monthNames = { 9: "OCTOBER", 6: "JULY", 3: "APRIL", 0: "JANUARY" };
 
     return Object.entries(groups).sort((a, b) => b[0] - a[0]).map(([year, yearShows]) => {
@@ -947,11 +949,11 @@ function TimelineTab({ concerts, setActiveTab }) {
       let usedMarkers = new Set();
       let showCounter = 0;
 
-      // 2. We iterate through the shows of the year (which are already sorted desc)
       yearShows.forEach((show, idx) => {
-        const showMonth = new Date(show.date + 'T12:00:00').getMonth();
+        const d = new Date(show.date + 'T12:00:00');
+        const showMonth = d.getMonth();
 
-        // 3. Inject Markers: If we haven't placed a marker for a quarter that is >= this show's month
+        // Inject Month Markers
         quarterlyTargetMonths.forEach(m => {
           if (showMonth <= m && !usedMarkers.has(m)) {
             finalFlow.push({ type: 'MONTH_MARKER', label: monthNames[m], id: `marker-${year}-${m}` });
@@ -959,8 +961,8 @@ function TimelineTab({ concerts, setActiveTab }) {
           }
         });
 
-        // 4. Calculate Gap for spacing
-        const nextShow = yearShows[idx + 1]; // "Next" in the array is actually "Previous" in time
+        // Calculate Spacing Gap
+        const nextShow = yearShows[idx + 1];
         let gap = 0;
         if (nextShow) {
           const d1 = new Date(show.date + 'T12:00:00');
@@ -977,18 +979,11 @@ function TimelineTab({ concerts, setActiveTab }) {
         });
       });
 
-      // 5. Catch-all: If a year was so empty it didn't trigger markers, add them at the bottom
-      quarterlyTargetMonths.forEach(m => {
-        if (!usedMarkers.has(m)) {
-          finalFlow.push({ type: 'MONTH_MARKER', label: monthNames[m], id: `marker-${year}-${m}` });
-          usedMarkers.add(m);
-        }
-      });
-
       return [year, finalFlow];
     });
   }, [concerts]);
 
+  // Tab Teleport
   const teleport = (date) => {
     if (typeof setActiveTab === 'function') {
       setActiveTab('byDay');
@@ -999,34 +994,38 @@ function TimelineTab({ concerts, setActiveTab }) {
     }
   };
 
+  if (!yearsData.length) return <div style={{color: 'white', padding: 100}}>Loading Timeline...</div>;
+
   return (
-    <div style={{ padding: '80px 0', background: C.bg }} className="fade-in">
+    <div style={{ padding: '80px 0', background: '#0a0a0c' }} className="fade-in">
       <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative' }}>
         
+        {/* Spine */}
         <div style={{ 
           position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2,
-          background: `linear-gradient(to bottom, ${C.teal}, ${C.purple}, ${C.gold}, transparent)`,
+          background: 'linear-gradient(to bottom, #00f2ff, #9d00ff, #ffcc00, transparent)',
           transform: 'translateX(-50%)', opacity: 0.15
         }} />
 
         {yearsData.map(([year, flow], yIdx) => (
-          <div key={year} style={{ position: 'relative', marginBottom: 100 }}>
+          <div key={year} style={{ position: 'relative', marginBottom: 120 }}>
             
-            {/* STICKY MARGIN YEARS */}
+            {/* LEFT STICKY YEAR */}
             <div style={{ position: 'absolute', left: '-180px', top: 0, bottom: 0, width: '100px' }}>
               <div style={{ 
                 position: 'sticky', top: '250px', fontFamily: "'Bebas Neue'", fontSize: '6.5rem', 
-                color: 'transparent', WebkitTextStroke: `2px ${yIdx % 2 === 0 ? C.teal : C.purple}`,
-                filter: `drop-shadow(0 0 15px ${yIdx % 2 === 0 ? C.teal : C.purple}44)`,
+                color: 'transparent', WebkitTextStroke: `2px ${yIdx % 2 === 0 ? '#00f2ff' : '#9d00ff'}`,
+                filter: `drop-shadow(0 0 15px ${yIdx % 2 === 0 ? '#00f2ff' : '#9d00ff'}44)`,
                 opacity: 0.6, transform: 'rotate(-90deg)', transformOrigin: 'center'
               }}>{year}</div>
             </div>
 
+            {/* RIGHT STICKY YEAR */}
             <div style={{ position: 'absolute', right: '-180px', top: 0, bottom: 0, width: '100px' }}>
               <div style={{ 
                 position: 'sticky', top: '250px', fontFamily: "'Bebas Neue'", fontSize: '6.5rem', 
-                color: 'transparent', WebkitTextStroke: `2px ${yIdx % 2 === 0 ? C.teal : C.purple}`,
-                filter: `drop-shadow(0 0 15px ${yIdx % 2 === 0 ? C.teal : C.purple}44)`,
+                color: 'transparent', WebkitTextStroke: `2px ${yIdx % 2 === 0 ? '#00f2ff' : '#9d00ff'}`,
+                filter: `drop-shadow(0 0 15px ${yIdx % 2 === 0 ? '#00f2ff' : '#9d00ff'}44)`,
                 opacity: 0.6, transform: 'rotate(90deg)', transformOrigin: 'center'
               }}>{year}</div>
             </div>
@@ -1035,12 +1034,12 @@ function TimelineTab({ concerts, setActiveTab }) {
               {flow.map((item) => {
                 if (item.type === 'MONTH_MARKER') {
                   return (
-                    <div key={item.id} style={{ margin: '60px 0 30px 0', textAlign: 'center', position: 'relative', zIndex: 10 }}>
+                    <div key={item.id} style={{ margin: '80px 0 40px 0', textAlign: 'center', position: 'relative', zIndex: 10 }}>
                       <span style={{
-                        fontFamily: "'Space Mono'", fontSize: '14px', color: C.white,
-                        background: C.bg, padding: '8px 24px', borderRadius: '4px',
-                        border: `2px solid ${C.purple}`, fontWeight: 700,
-                        boxShadow: `0 0 20px ${C.purple}44`, letterSpacing: '6px'
+                        fontFamily: "'Space Mono'", fontSize: '14px', color: '#fff',
+                        background: '#0a0a0c', padding: '8px 24px', borderRadius: '4px',
+                        border: '2px solid #9d00ff', fontWeight: 700,
+                        boxShadow: '0 0 20px rgba(157, 0, 255, 0.3)', letterSpacing: '6px'
                       }}>{item.label}</span>
                     </div>
                   );
@@ -1059,6 +1058,68 @@ function TimelineTab({ concerts, setActiveTab }) {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── INTERNAL CARD COMPONENT ──────────────────────────────────────────────
+function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
+  const [hovered, setHovered] = React.useState(false);
+  const bands = item.bands || [];
+
+  return (
+    <div 
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={onTeleport}
+      style={{ 
+        marginTop, display: 'flex', justifyContent: isLeft ? 'flex-start' : 'flex-end', 
+        alignItems: 'center', width: '100%', position: 'relative', cursor: 'pointer'
+      }}
+    >
+      <div style={{ 
+        position: 'absolute', left: '50%', width: hovered ? 16 : 12, height: hovered ? 16 : 12, 
+        borderRadius: '50%', background: item.is_festival ? '#ffcc00' : '#00f2ff', 
+        transform: 'translateX(-50%)', zIndex: 5, 
+        boxShadow: hovered ? `0 0 20px ${item.is_festival ? '#ffcc00' : '#00f2ff'}` : 'none',
+        border: '2px solid #0a0a0c', transition: '0.2s'
+      }} />
+      
+      <div style={{ 
+        width: '43%', 
+        padding: '20px',
+        borderRadius: '12px',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderLeft: isLeft ? `4px solid ${item.is_festival ? '#ffcc00' : '#00f2ff'}` : '1px solid rgba(255,255,255,0.1)',
+        borderRight: !isLeft ? `4px solid ${item.is_festival ? '#ffcc00' : '#9d00ff'}` : '1px solid rgba(255,255,255,0.1)',
+        background: hovered ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
+        transform: hovered ? `scale(1.05) rotate(${isLeft ? '1deg' : '-1deg'})` : 'scale(1) rotate(0deg)',
+        transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        zIndex: hovered ? 20 : 1,
+        boxShadow: hovered ? '0 10px 30px rgba(0,0,0,0.5)' : 'none'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#888' }}>{item.date}</span>
+          {item.is_festival && <span style={{ color: '#ffcc00', fontSize: 8, fontWeight: 'bold' }}>FESTIVAL</span>}
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+          {bands.map((band, idx) => (
+            <span key={idx} style={{ 
+              fontFamily: idx === 0 ? "'Bebas Neue'" : "'Inter'", 
+              fontSize: idx === 0 ? '1.8rem' : '0.95rem',
+              color: '#fff', lineHeight: 1, opacity: idx !== 0 && !hovered ? 0.5 : 1,
+              transition: '0.2s'
+            }}>
+              {band}{idx < bands.length - 1 ? (idx === 0 ? '' : ' • ') : ''}
+            </span>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 12, fontSize: 10, color: '#00f2ff', opacity: 0.7, fontFamily: "'Space Mono'", borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 8 }}>
+          {item.venue} // {item.city}
+        </div>
       </div>
     </div>
   );
