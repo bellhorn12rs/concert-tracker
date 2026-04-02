@@ -1345,13 +1345,42 @@ async function updateArtistGenre(artistName, newGenre) {
   }
 }
   async function fetchConcerts() {
-    try {
-      const { data, error } = await supabase.from('concerts').select('*').order('date', { ascending: false });
-      if (error) throw error;
-      setConcerts(data || []);
-    } catch (err) { console.error(err.message); }
-    finally { setLoading(false); }
+  try {
+    const { data, error } = await supabase
+      .from('concerts')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (error) throw error;
+    
+    if (data) {
+      setConcerts(data);
+
+      // --- THE SYNC LOGIC ---
+      // This builds a fresh map of all your manual "stamps" from the DB
+      const dbGenres = {};
+      data.forEach(show => {
+        if (show.genre) {
+          // Identify the headliner (first band in the array)
+          const headliner = show.bands?.[0];
+          if (headliner) {
+            dbGenres[headliner] = show.genre;
+          }
+        }
+      });
+
+      // Update the App's "Memory" (State) with the DB values
+      setManualGenres(prev => ({
+        ...GENRE_MAP, // Keep your hardcoded defaults
+        ...dbGenres   // Overwrite with whatever you stamped in Supabase
+      }));
+    }
+  } catch (err) { 
+    console.error("Fetch Error:", err.message); 
+  } finally { 
+    setLoading(false); 
   }
+}
 
  async function handleSave(id, payload) {
     try {
