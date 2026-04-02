@@ -523,7 +523,6 @@ function ManageTab({ concerts, onEdit, onAdd }) {
     </div>
   );
 }
-
 // ─── YOU WERE THERE DATA ──────────────────────────────────────────────────────
 const YOU_WERE_THERE = [
   { label: "STAMINA CHECK", text: "You've survived 182 festival days. That is a lot of spicy pie and port-a-potties.", match: c => c.is_festival },
@@ -532,7 +531,7 @@ const YOU_WERE_THERE = [
   { label: "LOCAL LEGEND", text: "Portland, Oregon: Where 90% of your memories (and hearing loss) happened.", match: c => c.city === 'Portland' },
   { label: "THE GRIND", text: "2017 was a heavy year. You were catching sets like it was a full-time job.", match: c => c.date.includes('2017') },
 ];
-// ─── YOU WERE THERE WIDGET ────────────────────────────────────────────────────
+
 // ─── YOU WERE THERE WIDGET ────────────────────────────────────────────────────
 function YouWereThere({ concerts }) {
   const [idx, setIdx] = useState(() => Math.floor(Math.random() * YOU_WERE_THERE.length));
@@ -540,9 +539,8 @@ function YouWereThere({ concerts }) {
 
   const fact = YOU_WERE_THERE[idx];
 
-  // Logic to find a specific concert for the fun facts
   const matchedConcert = useMemo(() => {
-    if (!fact.match) return null;
+    if (!fact || !fact.match) return null;
     return concerts.find(c => fact.match(c)) || null;
   }, [fact, concerts]);
 
@@ -557,7 +555,6 @@ function YouWereThere({ concerts }) {
   return (
     <Card neon style={{ minHeight: 180, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
       <>
-        {/* BACKGROUND ICON */}
         <div style={{ 
           position: 'absolute', 
           right: 20, 
@@ -584,13 +581,11 @@ function YouWereThere({ concerts }) {
               </button>
             </div>
 
-            {/* THE MAIN TEXT BLOCK */}
             <div style={{ opacity: fading ? 0 : 1, transition: '0.2s' }}>
               <div style={{ fontSize: '1.15rem', color: C.white, lineHeight: 1.4, fontWeight: 300, marginBottom: 12, maxWidth: '85%' }}>
                 "{fact.text}"
               </div>
               
-              {/* SHOW MATCHED CONCERT OR A GENERAL STAT FALLBACK */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: C.tealDim, fontFamily: "'Space Mono'", fontSize: 10 }}>
                 {matchedConcert ? (
                   <>📍 {fmtDate(matchedConcert.date)} · {matchedConcert.venue.toUpperCase()}</>
@@ -601,7 +596,6 @@ function YouWereThere({ concerts }) {
             </div>
           </div>
 
-          {/* THE PAGER DOTS */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 5, marginTop: 15 }}>
             {YOU_WERE_THERE.map((_, i) => (
               <div 
