@@ -1175,14 +1175,63 @@ export default function App() {
         />
       )}
 
-      {/* HEADER */}
-      <div style={{ background: `linear-gradient(180deg, #050508 0%, ${C.bgCard} 100%)`, borderBottom: `1px solid ${C.teal}33`, padding: '28px 24px 20px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: -40, left: '50%', transform: 'translateX(-50%)', width: 400, height: 120, background: `radial-gradient(ellipse, ${C.tealGlow}, transparent)`, pointerEvents: 'none' }} />
-        <h1 style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(2rem, 6vw, 3.5rem)', letterSpacing: '0.12em', color: C.white, margin: 0, position: 'relative' }}>
-          🎸 Eric's <span style={{ color: C.teal, textShadow: `0 0 20px ${C.teal}66` }}>Concert</span> History
-        </h1>
-        <div style={{ marginTop: 6, fontFamily: "'Space Mono', monospace", fontSize: '0.78rem', color: C.gray, letterSpacing: '0.1em' }}>Every show. Every set. Every memory.</div>
-        <div style={{ width: 80, height: 1, background: `linear-gradient(to right, transparent, ${C.teal}, transparent)`, margin: '12px auto 0' }} />
+     {/* HEADER */}
+      <div style={{ 
+        background: `linear-gradient(180deg, #050508 0%, ${C.bgCard} 100%)`, 
+        borderBottom: `2px solid ${C.teal}33`, 
+        padding: '45px 24px 35px', 
+        textAlign: 'center', 
+        position: 'relative', 
+        overflow: 'hidden' 
+      }}>
+        {/* Neon background glow */}
+        <div style={{ 
+          position: 'absolute', top: -50, left: '50%', transform: 'translateX(-50%)', 
+          width: 500, height: 150, background: `radial-gradient(ellipse, ${C.tealGlow}, transparent)`, 
+          pointerEvents: 'none' 
+        }} />
+        
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <h1 style={{ 
+            fontFamily: "'Bebas Neue'", 
+            fontSize: 'clamp(2.5rem, 8vw, 5rem)', 
+            letterSpacing: '0.12em', 
+            color: C.white, 
+            margin: 0, 
+            lineHeight: 0.85,
+            textShadow: `0 0 20px rgba(255,255,255,0.1)`
+          }}>
+            <span style={{ color: C.teal }}>🎸</span> LIVE // <span style={{ color: C.teal, textShadow: `0 0 30px ${C.teal}aa` }}>IN CONCERT</span>
+          </h1>
+          
+          <div style={{ 
+            marginTop: 18, 
+            fontFamily: "'Space Mono', monospace", 
+            fontSize: '0.75rem', 
+            color: C.gray, 
+            letterSpacing: '0.25em', 
+            textTransform: 'uppercase',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '15px',
+            flexWrap: 'wrap'
+          }}>
+            <span>{years.length > 0 ? `${years[years.length - 1] - years[0]} YEARS` : '0 YEARS'}</span>
+            <span style={{ color: C.tealDim }}>•</span>
+            <span>{stateCounts.length} STATES</span>
+            <span style={{ color: C.tealDim }}>•</span>
+            <span style={{ color: C.white }}>{stats.totalSets.toLocaleString()}+ SETS 🤘</span>
+          </div>
+          
+          <div style={{ 
+            width: 200, 
+            height: 2, 
+            background: `linear-gradient(to right, transparent, ${C.teal}, ${C.cyan}, transparent)`, 
+            margin: '25px auto 0', 
+            opacity: 0.8 
+          }} />
+        </div>
       </div>
 
       {/* STAT STRIP */}
