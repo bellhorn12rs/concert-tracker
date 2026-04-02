@@ -979,6 +979,23 @@ function DecadeBlocks({ sets }) {
     </div>
   );
 }
+// timeline helper
+function GenreLegend() {
+  return (
+    <div style={{ 
+      display: 'flex', flexWrap: 'wrap', gap: '15px', justifyContent: 'center', 
+      padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px',
+      margin: '0 auto 40px auto', maxWidth: '900px', border: '1px solid rgba(255,255,255,0.05)'
+    }}>
+      {Object.entries(GENRE_COLORS).map(([name, color]) => (
+        <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, boxShadow: `0 0 8px ${color}` }} />
+          <span style={{ fontFamily: "'Space Mono'", fontSize: '9px', color: '#888', letterSpacing: '1px' }}>{name.toUpperCase()}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 // ─── THE BULLETPROOF TIMELINE ────────────────────────────────────────────────
 function TimelineTab({ concerts, setActiveTab }) {
   // 1. DATA ENGINE (Ensures 100% of shows are captured)
