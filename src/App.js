@@ -30,35 +30,35 @@ const C = {
 
 const HALL_OF_FAME_MIN = 6;
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-const fmtDate = d => {
-  if (!d) return '—';
-  return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-};
-const getYear = d => d ? new Date(d + 'T12:00:00').getFullYear() : null;
-
-// --- GENRE CONFIGURATION ---
+// ─── GENRE ENGINE ─────────────────────────────────────────────────────────────
 const GENRE_COLORS = {
-  "Indie Rock": "#00f2ff",    // Teal
-  "Alternative": "#9d00ff",   // Purple
-  "Experimental": "#ff00ff",  // Magenta
-  "Electronic": "#ff0077",    // Pink
-  "Jam": "#ffcc00",           // Gold
-  "Folk": "#ffaa00",          // Amber
-  "Classic Rock": "#ff4400",  // Red
-  "Pop/Piano": "#00e5ff",     // Cyan
-  "Punk": "#a2ff00",          // Lime
-  "Other": "#444444"          // Gray
+  "Indie Rock":   "#00f2ff", // Teal
+  "Alternative":  "#9d00ff", // Purple
+  "Experimental": "#ff00ff", // Magenta
+  "Electronic":   "#ff0077", // Pink
+  "Jam":          "#ffcc00", // Gold
+  "Folk":         "#ffaa00", // Amber
+  "Classic Rock": "#ff4400", // Red
+  "Pop":          "#00e5ff", // Cyan
+  "Hip Hop":      "#a2ff00", // Lime
+  "Punk":         "#ff3300", // Bright Red/Orange
+  "Other":        "#444444"  // Gray
 };
-// HELPER: Converts hex (#ff0077) to rgba with transparency (0.1)
+
+// HELPER: Creates the "Color Fill" alpha versions for card backgrounds
 const hexToRgba = (hex, alpha) => {
-  if (!hex || hex === 'transparent') return `rgba(255,255,255,${alpha})`;
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  if (!hex || hex === 'transparent' || hex === 'none') return `rgba(255,255,255,${alpha})`;
+  try {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  } catch (e) {
+    return `rgba(255,255,255,${alpha})`;
+  }
 };
-// genre definitions
+
+// STATIC DEFAULTS (Will be overridden by your 'manualGenres' state)
 const GENRE_MAP = {
   "Typhoon": "Indie Rock", "The Happy Fits": "Indie Rock", "Krooked Kings": "Indie Rock",
   "Modest Mouse": "Indie Rock", "Built to Spill": "Indie Rock", "Death Cab for Cutie": "Indie Rock",
@@ -84,19 +84,20 @@ const GENRE_MAP = {
   "Tom Petty": "Classic Rock", "Tom Petty & The Heartbreakers": "Classic Rock",
   "Neil Young": "Classic Rock", "Bruce Springsteen": "Classic Rock", "Billy Idol": "Classic Rock",
 
-  "Ben Folds": "Pop/Piano", "Ben Folds Five": "Pop/Piano", "Phoenix": "Pop/Piano", 
-  "Vampire Weekend": "Pop/Piano", "Foster The People": "Pop/Piano",
+  "Ben Folds": "Pop", "Ben Folds Five": "Pop", "Phoenix": "Pop", 
+  "Vampire Weekend": "Pop", "Foster The People": "Pop",
 
-  "IDLES": "Punk", "Turnstile": "Punk", "The Stooges": "Punk", "Fugazi": "Punk",
-  
-  "default": "Other"
+  "IDLES": "Punk", "Turnstile": "Punk", "The Stooges": "Punk", "Fugazi": "Punk"
 };
 
-// HELPER: Get color for a band
-const getBandColor = (bandName) => {
-  const genre = GENRE_MAP[bandName] || "Other";
-  return GENRE_COLORS[genre];
+// ─── DATE HELPERS ─────────────────────────────────────────────────────────────
+const fmtDate = d => {
+  if (!d) return '—';
+  // Force local noon to prevent timezone shifts
+  return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
+
+const getYear = d => d ? new Date(d + 'T12:00:00').getFullYear() : null;
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
 
@@ -1284,6 +1285,7 @@ export default function App() {
   const [loading, setLoading]       = useState(true);
   const [activeTab, setActiveTab]   = useState('dashboard');
   const [search, setSearch]         = useState('');
+  const [manualGenres, setManualGenres] = React.useState(GENRE_MAP);
   const [yearFilter, setYearFilter] = useState('all');
   const [festFilter, setFestFilter] = useState('all');
   const [browseView, setBrowseView] = useState('shows');
@@ -1306,7 +1308,19 @@ export default function App() {
     login();
     fetchConcerts(); 
   }, []);
+async function updateArtistGenre(artistName, newGenre) {
+  // This updates every single concert in your DB where this artist appears
+  const { error } = await supabase
+    .from('concerts')
+    .update({ genre: newGenre })
+    .eq('artist', artistName); 
 
+  if (error) {
+    console.error("Error saving genre to DB:", error.message);
+  } else {
+    console.log(`Successfully mapped ${artistName} to ${newGenre}`);
+  }
+}
   async function fetchConcerts() {
     try {
       const { data, error } = await supabase.from('concerts').select('*').order('date', { ascending: false });
@@ -1854,7 +1868,7 @@ export default function App() {
       })}
   </div>
 )}
-        {/* ── BROWSE ── */}
+{/* ── BROWSE ── */}
 {activeTab === 'browse' && (
   <div style={{ padding: '24px 0' }} className="fade-in">
     {/* --- SEARCH & FILTERS BAR --- */}
@@ -1895,59 +1909,79 @@ export default function App() {
               </tr>
             </thead>
             <tbody>
-              {paged.map((s, i) => (
-                <tr key={`${s.id}-${s.artist}`} className="row-hover" style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 1 ? C.bgCardAlt : 'transparent' }} onClick={() => setEditTarget(s)}>
-                  <td style={{ padding: '8px 12px', fontFamily: "'Space Mono', monospace", fontSize: '0.7rem', color: C.gray, whiteSpace: 'nowrap' }}>{fmtDate(s.date)}</td>
-                  <td style={{ padding: '8px 12px', color: C.white, fontWeight: 500 }}>{s.artist}</td>
-                  <td style={{ padding: '8px 12px', color: C.gray }}>{s.venue || '—'}</td>
-                  <td style={{ padding: '8px 12px', color: C.gray }}>{s.city || '—'}</td>
-                  <td style={{ padding: '8px 12px', color: C.gray }}>{s.state || '—'}</td>
-                  <td style={{ padding: '8px 12px' }}>{s.is_festival ? <Badge color={C.teal}>Fest</Badge> : <Badge color={C.grayDim} bg="transparent">Solo</Badge>}</td>
-                  <td style={{ padding: '8px 12px', fontStyle: 'italic', fontSize: '0.72rem', color: C.tealDim }}>{s.festival_day || '—'}</td>
-                  <td style={{ padding: '8px 12px', textAlign: 'center' }}>
-                    <span style={{ fontSize: 16, opacity: s.has_setlist ? 1 : 0.1 }}>📋</span>
-                  </td>
-                  <td style={{ padding: '8px 12px', color: C.tealDim, fontSize: 12 }}>✎</td>
-                </tr>
-              ))}
+              {paged.map((s, i) => {
+                const gColor = GENRE_COLORS[manualGenres[s.artist] || "Other"];
+                return (
+                  <tr key={`${s.id}-${s.artist}`} className="row-hover" style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 1 ? C.bgCardAlt : 'transparent' }} onClick={() => setEditTarget(s)}>
+                    <td style={{ padding: '8px 12px', fontFamily: "'Space Mono', monospace", fontSize: '0.7rem', color: C.gray, whiteSpace: 'nowrap' }}>{fmtDate(s.date)}</td>
+                    <td style={{ padding: '8px 12px', color: C.white, fontWeight: 500 }}>
+                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ width: 6, height: 6, borderRadius: '50%', background: gColor }} />
+                          {s.artist}
+                       </div>
+                    </td>
+                    <td style={{ padding: '8px 12px', color: C.gray }}>{s.venue || '—'}</td>
+                    <td style={{ padding: '8px 12px', color: C.gray }}>{s.city || '—'}</td>
+                    <td style={{ padding: '8px 12px', color: C.gray }}>{s.state || '—'}</td>
+                    <td style={{ padding: '8px 12px' }}>{s.is_festival ? <Badge color={C.teal}>Fest</Badge> : <Badge color={C.grayDim} bg="transparent">Solo</Badge>}</td>
+                    <td style={{ padding: '8px 12px', fontStyle: 'italic', fontSize: '0.72rem', color: C.tealDim }}>{s.festival_day || '—'}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                      <span style={{ fontSize: 16, opacity: s.has_setlist ? 1 : 0.1, color: '#ffcc00' }}>{s.has_setlist ? '✓' : '📋'}</span>
+                    </td>
+                    <td style={{ padding: '8px 12px', color: C.tealDim, fontSize: 12 }}>✎</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
-        {/* Pagination logic goes here (keep your existing) */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 14 }}>
+            <button style={{ background: C.bgCard, color: C.white, border: `1px solid ${C.border}`, padding: '5px 10px', borderRadius: 4, cursor: 'pointer' }} onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>←</button>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, alignSelf: 'center' }}>pg {page} / {totalPages}</span>
+            <button style={{ background: C.bgCard, color: C.white, border: `1px solid ${C.border}`, padding: '5px 10px', borderRadius: 4, cursor: 'pointer' }} onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>→</button>
+          </div>
+        )}
       </>
     )}
 
-    {/* --- BY ARTIST VIEW (GENRE MANAGER) --- */}
+    {/* --- BY ARTIST VIEW (GENRE COMMAND CENTER) --- */}
     {browseView === 'artists' && (
-      <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
         {artistRows.map(({ artist, shows }) => {
           const fc = shows.filter(s => s.is_festival).length;
           const slCount = shows.filter(s => s.has_setlist).length;
           
-          // --- GENRE LOGIC ---
-          const currentGenre = GENRE_MAP[artist] || "Other";
+          // Use the 'manualGenres' state to drive the color fill
+          const currentGenre = manualGenres[artist] || "Other";
           const gColor = GENRE_COLORS[currentGenre] || "#444";
 
           return (
             <div key={artist} style={{ 
-              background: hexToRgba(gColor, 0.05), // Subtle color fill
+              background: hexToRgba(gColor, 0.05),
               border: `1px solid ${hexToRgba(gColor, 0.2)}`, 
-              borderLeft: `4px solid ${gColor}`,
-              borderRadius: 8, padding: '16px', marginBottom: 12,
-              boxShadow: `0 4px 15px rgba(0,0,0,0.2)`
+              borderLeft: `5px solid ${gColor}`,
+              borderRadius: 8, padding: '16px', position: 'relative',
+              transition: 'all 0.2s ease'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: C.white, letterSpacing: '-0.02em' }}>{artist}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: C.white }}>{artist}</div>
                 
-                {/* --- GENRE PICKER (MANUAL OVERRIDE) --- */}
+                {/* --- GENRE PICKER --- */}
                 <select 
-                  style={{ ...inputSt, padding: '4px 8px', fontSize: 10, background: '#000', borderColor: gColor }}
+                  style={{ 
+                    background: '#000', color: gColor, border: `1px solid ${gColor}66`,
+                    fontSize: 9, fontFamily: "'Space Mono'", padding: '3px 6px', borderRadius: 4, cursor: 'pointer'
+                  }}
                   value={currentGenre}
-                  onChange={(e) => {
-                    // Update Local Map (for instant UI feedback)
-                    GENRE_MAP[artist] = e.target.value;
-                    // Trigger DB Update (if you built step 3's function)
-                    if(typeof updateArtistGenre === 'function') updateArtistGenre(artist, e.target.value);
+                  onChange={async (e) => {
+                    const val = e.target.value;
+                    // Instant UI Update
+                    setManualGenres(prev => ({ ...prev, [artist]: val }));
+                    // Save to Supabase
+                    if (typeof updateArtistGenre === 'function') {
+                      await updateArtistGenre(artist, val);
+                    }
                   }}
                 >
                   {Object.keys(GENRE_COLORS).map(g => (
@@ -1956,23 +1990,23 @@ export default function App() {
                 </select>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray, display: 'flex', gap: 14 }}>
                   <span>Seen <strong style={{ color: gColor }}>{shows.length}×</strong></span>
                   <span>Fest <strong style={{ color: gColor }}>{fc}</strong></span>
-                  <span>Solo <strong style={{ color: gColor }}>{shows.length - fc}</strong></span>
-                  {slCount > 0 && <span>Setlists <strong style={{ color: gColor }}>{slCount} 📋</strong></span>}
+                  {slCount > 0 && <span style={{ color: '#ffcc00' }}>{slCount} ✓</span>}
                 </div>
-                <button onClick={e => { e.stopPropagation(); setShareCard({ artist, shows }); }} style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.08em', textTransform: 'uppercase', background: `${gColor}18`, border: `1px solid ${gColor}44`, color: gColor, borderRadius: 3, padding: '3px 8px', cursor: 'pointer' }}>Share ↗</button>
+                <button onClick={() => setShareCard({ artist, shows })} style={{ background: 'none', border: 'none', color: C.tealDim, fontSize: 10, cursor: 'pointer' }}>SHARE ↗</button>
               </div>
 
-              {/* Show History Tags */}
+              {/* Show Tag Cloud */}
               <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                {shows.map((s, i) => (
-                  <span key={i} style={{ fontSize: '0.68rem', background: 'rgba(0,0,0,0.3)', border: `1px solid ${s.is_festival ? gColor + '44' : 'rgba(255,255,255,0.05)'}`, borderRadius: 3, padding: '2px 6px', color: '#bbb' }}>
-                    {fmtDate(s.date)}{s.city ? ` · ${s.city}` : ''}{s.has_setlist ? ' 📋' : ''}
+                {shows.slice(0, 8).map((s, i) => (
+                  <span key={i} style={{ fontSize: '0.65rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 3, padding: '2px 5px', color: '#888' }}>
+                    {new Date(s.date + 'T12:00:00').getFullYear()}
                   </span>
                 ))}
+                {shows.length > 8 && <span style={{ fontSize: '0.65rem', color: '#444' }}>+{shows.length - 8} more</span>}
               </div>
             </div>
           );
