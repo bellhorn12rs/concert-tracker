@@ -785,127 +785,93 @@ const STATE_COORDS = {
 function LocationHeatmap({ concerts }) {
   const [hovered, setHovered] = useState(null);
 
+  // 1. Calculate State Colors (Heatmap)
   const stateCounts = useMemo(() => {
     const m = {};
     concerts.forEach(c => { if (c.state) m[c.state] = (m[c.state] || 0) + 1; });
     return m;
   }, [concerts]);
 
-  const maxCount = Math.max(...Object.values(stateCounts), 1);
-  const allStates = Object.keys(STATE_COORDS);
+  // 2. Calculate City Bubbles (Overlay)
+  const cityData = useMemo(() => {
+    const m = {};
+    concerts.forEach(c => {
+      if (c.city && c.state && STATE_COORDS[c.state]) {
+        const key = `${c.city}, ${c.state}`;
+        if (!m[key]) m[key] = { name: c.city, state: c.state, count: 0, x: STATE_COORDS[c.state].x, y: STATE_COORDS[c.state].y };
+        m[key].count++;
+      }
+    });
+    return Object.values(m);
+  }, [concerts]);
 
-  const getColor = (count) => {
-    if (!count) return null;
-    const pct = count / maxCount;
-    if (pct > 0.7) return C.teal;
-    if (pct > 0.35) return C.cyan;
-    if (pct > 0.1) return C.purple;
-    return C.grayDim;
-  };
-
-  const getR = (count) => {
-    if (!count) return 0;
-    const pct = count / maxCount;
-    return Math.max(6, pct * 32);
-  };
+  const maxState = Math.max(...Object.values(stateCounts), 1);
+  const maxCity = Math.max(...cityData.map(d => d.count), 1);
 
   return (
-    <div style={{ position: 'relative' }}>
-      <svg viewBox="0 0 800 500" style={{ width: '100%', height: 'auto', display: 'block' }}>
-        <defs>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
-
-        {/* ── US Map outline (simplified path approximation) ── */}
-        {/* Continental outline suggestion — a series of region boxes */}
-        {/* West */}
-        <rect x="70" y="95" width="220" height="300" rx="2" fill="none" stroke={C.grayDim} strokeWidth="0.5" opacity="0.2"/>
-        {/* Mountain/Plains */}
-        <rect x="288" y="95" width="210" height="280" rx="2" fill="none" stroke={C.grayDim} strokeWidth="0.5" opacity="0.2"/>
-        {/* Midwest/East */}
-        <rect x="496" y="95" width="270" height="240" rx="2" fill="none" stroke={C.grayDim} strokeWidth="0.5" opacity="0.2"/>
-        {/* Southeast */}
-        <rect x="496" y="333" width="140" height="100" rx="2" fill="none" stroke={C.grayDim} strokeWidth="0.5" opacity="0.2"/>
-        {/* Texas bulge */}
-        <rect x="330" y="295" width="130" height="130" rx="2" fill="none" stroke={C.grayDim} strokeWidth="0.5" opacity="0.2"/>
-
-        {/* Overall US bounding box (faint) */}
-        <rect x="70" y="95" width="696" height="338" rx="4" fill="none" stroke={C.border} strokeWidth="1" opacity="0.35"/>
-
-        {/* AK box */}
-        <rect x="75" y="400" width="100" height="70" rx="2" fill="none" stroke={C.border} strokeWidth="0.5" opacity="0.3"/>
-        <text x="125" y="392" textAnchor="middle" style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, fill: C.grayDim, opacity: 0.5 }}>AK</text>
-
-        {/* HI box */}
-        <rect x="185" y="418" width="70" height="40" rx="2" fill="none" stroke={C.border} strokeWidth="0.5" opacity="0.3"/>
-        <text x="220" y="412" textAnchor="middle" style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, fill: C.grayDim, opacity: 0.5 }}>HI</text>
-
-        {/* ── State dots: all states (visited = colored, unvisited = faint) ── */}
-        {allStates.map(state => {
-          const pos = STATE_COORDS[state];
-          const count = stateCounts[state] || 0;
-          const visited = count > 0;
-          const color = getColor(count);
-          const r = visited ? getR(count) : 4;
-          const isHov = hovered === state;
-
-          if (!visited) {
-            // unvisited: tiny dim dot, no label
-            return (
-              <g key={state} onMouseEnter={() => setHovered(state)} onMouseLeave={() => setHovered(null)} style={{ cursor: 'default' }}>
-                <circle cx={pos.x} cy={pos.y} r={3} fill={C.grayDim} opacity={0.18} />
-                {isHov && (
-                  <g>
-                    <rect x={pos.x - 30} y={pos.y - 24} width={60} height={18} rx={3} fill={C.bgCard} stroke={C.grayDim} strokeWidth={0.5} />
-                    <text x={pos.x} y={pos.y - 13} textAnchor="middle" style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, fill: C.gray }}>{state}: 0</text>
-                  </g>
-                )}
-              </g>
-            );
-          }
+    <div style={{ position: 'relative', padding: '10px 0' }}>
+      <svg viewBox="0 0 800 480" style={{ width: '100%', height: 'auto', display: 'block' }}>
+        {/* DRAW THE STATE GRID (Heatmap Layer) */}
+        {Object.entries(STATE_COORDS).map(([abbr, pos]) => {
+          const count = stateCounts[abbr] || 0;
+          const isVisited = count > 0;
+          
+          // Color logic: Navy for unvisited, Teal/Purple for visited
+          const stateFill = isVisited 
+            ? (count / maxState > 0.6 ? C.teal : C.purple) 
+            : '#12121a';
 
           return (
-            <g key={state} onMouseEnter={() => setHovered(state)} onMouseLeave={() => setHovered(null)} style={{ cursor: 'pointer' }}>
-              {/* outer glow */}
-              <circle cx={pos.x} cy={pos.y} r={r + 5} fill={color} opacity={isHov ? 0.18 : 0.07} />
-              {/* main dot */}
-              <circle cx={pos.x} cy={pos.y} r={r} fill={color} opacity={isHov ? 1 : 0.82}
-                style={{ filter: isHov ? `drop-shadow(0 0 8px ${color})` : 'none', transition: 'all 0.15s' }} />
-              {/* state abbr */}
-              <text x={pos.x} y={pos.y + (r > 10 ? 4 : 3)} textAnchor="middle"
-                style={{ fontFamily: "'Space Mono', monospace", fontSize: r > 14 ? 8 : 6, fill: C.bg, fontWeight: 700, pointerEvents: 'none', userSelect: 'none' }}>
-                {state}
+            <g key={abbr}>
+              {/* State Square */}
+              <rect
+                x={pos.x - 18} y={pos.y - 18} width={36} height={36} rx={4}
+                fill={stateFill}
+                stroke={isVisited ? C.borderLit : C.border}
+                strokeWidth={isVisited ? 1 : 0.5}
+                opacity={isVisited ? 1 : 0.4}
+              />
+              <text 
+                x={pos.x} y={pos.y + 4} 
+                textAnchor="middle" 
+                style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, fill: isVisited ? C.white : C.grayDim, fontWeight: 700, pointerEvents: 'none' }}
+              >
+                {abbr}
               </text>
-              {/* tooltip */}
-              {isHov && (
-                <g>
-                  <rect x={pos.x - 40} y={pos.y - r - 34} width={80} height={26} rx={4} fill={C.bgCard} stroke={color} strokeWidth={1} />
-                  <text x={pos.x} y={pos.y - r - 22} textAnchor="middle"
-                    style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, fill: color, fontWeight: 700 }}>
-                    {state}: {count} {count === 1 ? 'show' : 'shows'}
-                  </text>
-                  <text x={pos.x} y={pos.y - r - 11} textAnchor="middle"
-                    style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, fill: C.gray }}>
-                    {Math.round((count / maxCount) * 100)}% of your max
-                  </text>
-                </g>
-              )}
             </g>
+          );
+        })}
+
+        {/* DRAW CITY BUBBLES (Quantity Layer) */}
+        {cityData.map((city, i) => {
+          // Radius grows based on show count in that city
+          const radius = Math.sqrt(city.count / maxCity) * 35 + 4;
+          return (
+            <circle
+              key={`city-${i}`}
+              cx={city.x}
+              cy={city.y}
+              r={radius}
+              fill={C.cyan}
+              opacity={0.3}
+              stroke={C.cyan}
+              strokeWidth={1.5}
+              style={{ pointerEvents: 'none', filter: 'blur(1px)' }}
+            />
           );
         })}
       </svg>
 
-      {/* Legend */}
-      <div style={{ display: 'flex', gap: 16, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-        {[[C.teal, 'Heavy (70%+)'], [C.cyan, 'Mid (35–70%)'], [C.purple, 'Light (10–35%)'], [C.grayDim, 'Few visits'], ['#333', 'Never visited']].map(([color, label]) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <div style={{ width: color === '#333' ? 6 : 8, height: color === '#333' ? 6 : 8, borderRadius: '50%', background: color, opacity: color === '#333' ? 0.3 : 1 }} />
-            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
-          </div>
-        ))}
+      {/* Map Legend */}
+      <div style={{ display: 'flex', gap: 20, marginTop: 15, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 12, height: 12, background: C.teal, borderRadius: 2 }} />
+          <span style={{ fontSize: 9, color: C.gray, fontFamily: "'Space Mono'", textTransform: 'uppercase' }}>Show in State</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 14, height: 14, border: `1px solid ${C.cyan}`, borderRadius: '50%', background: `${C.cyan}44` }} />
+          <span style={{ fontSize: 9, color: C.gray, fontFamily: "'Space Mono'", textTransform: 'uppercase' }}>City Show Count (Bubble Size)</span>
+        </div>
       </div>
     </div>
   );
