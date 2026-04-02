@@ -966,9 +966,21 @@ export default function App() {
   const [sortDir, setSortDir]       = useState('desc');
   const [page, setPage]             = useState(1);
   const [editTarget, setEditTarget] = useState(null);
-  const [shareCard, setShareCard] = useState(null); // { artist, shows }
+  const [shareCard, setShareCard] = useState(null); 
 
-  useEffect(() => { fetchConcerts(); }, []);
+  // --- AUTOMATIC ADMIN LOGIN ---
+  useEffect(() => {
+    const login = async () => {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: 'bellhorn12rs@gmail.com',
+        password: 'Kapanen24!!'
+      });
+      if (error) console.error("Admin Login Failed:", error.message);
+      else console.log("Admin Session Authenticated 🤘");
+    };
+    login();
+    fetchConcerts(); 
+  }, []);
 
   async function fetchConcerts() {
     try {
@@ -984,6 +996,7 @@ export default function App() {
       if (id) {
         const { error } = await supabase.from('concerts').update(payload).eq('id', id);
         if (error) throw error;
+        // Update local state so UI reflects changes immediately
         setConcerts(p => p.map(c => c.id === id ? { ...c, ...payload } : c));
       } else {
         const { data, error } = await supabase.from('concerts').insert([payload]).select();
@@ -991,7 +1004,10 @@ export default function App() {
         if (data?.[0]) setConcerts(p => [data[0], ...p]);
       }
       setEditTarget(null);
-    } catch (err) { alert('Save failed: ' + err.message); }
+    } catch (err) { 
+      console.error(err);
+      alert('Save failed: ' + err.message + '. Make sure you are authorized!'); 
+    }
   }
 
   async function handleDelete(id) {
