@@ -926,7 +926,8 @@ function DecadeBlocks({ sets }) {
   );
 }
 function TimelineTab({ concerts, setActiveTab }) {
-  const timelineData = useMemo(() => {
+  // ─── DATA PREP ───
+  const processedYears = useMemo(() => {
     const sorted = [...concerts].sort((a, b) => a.date.localeCompare(b.date));
     const groups = {};
     
@@ -968,47 +969,48 @@ function TimelineTab({ concerts, setActiveTab }) {
     });
   }, [concerts]);
 
-  // Teleport Logic: Go to 'byDay' and find the show
   const teleportToShow = (date) => {
-    setActiveTab('byDay');
-    setTimeout(() => {
-      // We'll give the app a second to switch tabs, then find the element
-      const el = document.querySelector(`[data-date="${date}"]`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
+    if (typeof setActiveTab === 'function') {
+      setActiveTab('byDay');
+      setTimeout(() => {
+        const el = document.querySelector(`[data-date="${date}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 150);
+    }
   };
+
+  if (!processedYears.length) return null;
 
   return (
     <div style={{ padding: '80px 0', background: C.bg }} className="fade-in">
       <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative' }}>
         
+        {/* Spine */}
         <div style={{ 
           position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2,
           background: `linear-gradient(to bottom, ${C.teal}, ${C.purple}, ${C.gold}, transparent)`,
           transform: 'translateX(-50%)', opacity: 0.15
         }} />
 
-        {yearsData.map(([year, flow], yIdx) => (
+        {processedYears.map(([year, flow], yIdx) => (
           <div key={year} style={{ position: 'relative', marginBottom: 120 }}>
             
             {/* STICKY MARGIN YEARS */}
-            <div style={{ position: 'absolute', left: '-160px', top: 0, bottom: 0, width: '100px' }}>
+            <div style={{ position: 'absolute', left: '-180px', top: 0, bottom: 0, width: '100px' }}>
               <div style={{ 
-                position: 'sticky', top: '200px', fontFamily: "'Bebas Neue'", fontSize: '6.5rem', 
+                position: 'sticky', top: '250px', fontFamily: "'Bebas Neue'", fontSize: '6.5rem', 
                 color: 'transparent', WebkitTextStroke: `2px ${yIdx % 2 === 0 ? C.teal : C.purple}`,
                 filter: `drop-shadow(0 0 15px ${yIdx % 2 === 0 ? C.teal : C.purple}44)`,
-                opacity: 0.6, transform: 'rotate(-90deg)', transformOrigin: 'center',
-                transition: '0.3s', userSelect: 'none'
+                opacity: 0.6, transform: 'rotate(-90deg)', transformOrigin: 'center'
               }}>{year}</div>
             </div>
 
-            <div style={{ position: 'absolute', right: '-160px', top: 0, bottom: 0, width: '100px' }}>
+            <div style={{ position: 'absolute', right: '-180px', top: 0, bottom: 0, width: '100px' }}>
               <div style={{ 
-                position: 'sticky', top: '200px', fontFamily: "'Bebas Neue'", fontSize: '6.5rem', 
+                position: 'sticky', top: '250px', fontFamily: "'Bebas Neue'", fontSize: '6.5rem', 
                 color: 'transparent', WebkitTextStroke: `2px ${yIdx % 2 === 0 ? C.teal : C.purple}`,
                 filter: `drop-shadow(0 0 15px ${yIdx % 2 === 0 ? C.teal : C.purple}44)`,
-                opacity: 0.6, transform: 'rotate(90deg)', transformOrigin: 'center',
-                transition: '0.3s', userSelect: 'none'
+                opacity: 0.6, transform: 'rotate(90deg)', transformOrigin: 'center'
               }}>{year}</div>
             </div>
 
@@ -1028,7 +1030,6 @@ function TimelineTab({ concerts, setActiveTab }) {
                 }
 
                 const isLeft = i % 2 === 0;
-                const bands = item.bands || [];
                 const marginTop = item.gapDays <= 2 ? 15 : Math.min(item.gapDays * 2, 150);
 
                 return (
@@ -1049,7 +1050,6 @@ function TimelineTab({ concerts, setActiveTab }) {
   );
 }
 
-// Sub-component for the interactive card logic
 function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
   const [hovered, setHovered] = useState(false);
   const bands = item.bands || [];
@@ -1064,7 +1064,6 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
         alignItems: 'center', width: '100%', position: 'relative', cursor: 'pointer'
       }}
     >
-      {/* Dynamic Connector */}
       <div style={{ 
         position: 'absolute', left: '50%', width: hovered ? 16 : 12, height: hovered ? 16 : 12, 
         borderRadius: '50%', background: item.is_festival ? C.gold : C.teal, 
@@ -1080,7 +1079,7 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
           borderLeft: isLeft ? `4px solid ${item.is_festival ? C.gold : C.teal}` : `1px solid ${C.border}`,
           borderRight: !isLeft ? `4px solid ${item.is_festival ? C.gold : C.purple}` : `1px solid ${C.border}`,
           background: hovered ? C.bgHover : (item.gapDays <= 3 ? C.bgCardAlt : C.bgCard),
-          transform: hovered ? `scale(1.03) rotate(${isLeft ? '1deg' : '-1deg'})` : 'scale(1) rotate(0deg)',
+          transform: hovered ? `scale(1.05) rotate(${isLeft ? '1deg' : '-1deg'})` : 'scale(1) rotate(0deg)',
           transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
           zIndex: hovered ? 20 : 1
         }}
@@ -1614,7 +1613,7 @@ export default function App() {
 
 {/* ── TIMELINE TAB ── */}
 {activeTab === 'timeline' && (
-  <TimelineTab concerts={concerts} />
+  <TimelineTab concerts={concerts} setActiveTab={setActiveTab} />
 )}
 
 {/* ── BY DAY ── */}
