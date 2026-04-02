@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell
 } from 'recharts';
-
+ 
 // ─── THEME ────────────────────────────────────────────────────────────────────
 const C = {
   bg:        '#0a0a0f',
@@ -27,7 +27,7 @@ const C = {
   gold:      '#ffcc00',
   purple:    '#9966ff',
 };
-
+ 
 // ─── GLOBAL STYLES ────────────────────────────────────────────────────────────
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
@@ -56,14 +56,14 @@ const GLOBAL_CSS = `
   .setlist-btn { transition: all 0.15s; }
   .setlist-btn:hover { transform: scale(1.2); }
 `;
-
+ 
 if (!document.getElementById('app-global-css')) {
   const tag = document.createElement('style');
   tag.id = 'app-global-css';
   tag.textContent = GLOBAL_CSS;
   document.head.appendChild(tag);
 }
-
+ 
 // ─── YOU WERE THERE FACTS ─────────────────────────────────────────────────────
 const YOU_WERE_THERE = [
   {
@@ -165,14 +165,14 @@ const YOU_WERE_THERE = [
     match: () => false,
   },
 ];
-
-
+ 
+ 
 // ─── HALL OF FAME ARTISTS ─────────────────────────────────────────────────────
 // These get the full timeline treatment in the Hall of Fame tab
 const HALL_OF_FAME_MIN = 7; // seen 7+ times
-
-
-
+ 
+ 
+ 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 const fmtDate = (d) => {
   if (!d) return '—';
@@ -180,7 +180,7 @@ const fmtDate = (d) => {
 };
 const getYear = (d) => d ? parseInt(d.slice(0, 4)) : null;
 const SETLIST_START = '2015-10-09';
-
+ 
 // ─── SHARED ATOMS ─────────────────────────────────────────────────────────────
 const Badge = ({ children, color = C.teal, bg = C.tealFaint }) => (
   <span style={{
@@ -190,7 +190,7 @@ const Badge = ({ children, color = C.teal, bg = C.tealFaint }) => (
     padding: '2px 6px', borderRadius: 3,
   }}>{children}</span>
 );
-
+ 
 const NEON_BORDERS = [
   { border: C.teal,   glow: 'rgba(0,229,204,0.18)' },
   { border: C.cyan,   glow: 'rgba(0,207,255,0.18)' },
@@ -200,7 +200,7 @@ const NEON_BORDERS = [
   { border: '#ff6699',glow: 'rgba(255,102,153,0.18)' },
 ];
 let _cardIdx = 0;
-
+ 
 const Card = ({ children, style = {}, glow = false, neon = false }) => {
   const nb = neon ? NEON_BORDERS[_cardIdx++ % NEON_BORDERS.length] : null;
   return (
@@ -217,7 +217,7 @@ const Card = ({ children, style = {}, glow = false, neon = false }) => {
     }}>{children}</div>
   );
 };
-
+ 
 const CardTitle = ({ children, style = {} }) => (
   <div style={{
     fontFamily: "'Space Mono', monospace", fontSize: 9, letterSpacing: '0.25em',
@@ -226,7 +226,7 @@ const CardTitle = ({ children, style = {} }) => (
     ...style,
   }}>{children}</div>
 );
-
+ 
 const HBar = ({ name, count, max, color = C.teal }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
     <div style={{ fontSize: '0.72rem', color: C.gray, width: 120, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={name}>{name}</div>
@@ -236,7 +236,7 @@ const HBar = ({ name, count, max, color = C.teal }) => (
     <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color, width: 22, textAlign: 'right', flexShrink: 0 }}>{count}</div>
   </div>
 );
-
+ 
 const Btn = ({ children, onClick, variant = 'primary', style = {}, disabled = false }) => {
   const base = {
     fontFamily: "'Space Mono', monospace", fontSize: 10, letterSpacing: '0.12em',
@@ -256,14 +256,14 @@ const Btn = ({ children, onClick, variant = 'primary', style = {}, disabled = fa
     </button>
   );
 };
-
+ 
 // ─── INPUT STYLE ──────────────────────────────────────────────────────────────
 const inputSt = {
   background: C.bgCard, border: `1px solid ${C.border}`,
   borderRadius: 4, padding: '7px 10px', color: C.white,
   fontSize: '0.85rem', outline: 'none',
 };
-
+ 
 // ─── EDIT MODAL ───────────────────────────────────────────────────────────────
 function EditModal({ concert, onClose, onSave, onDelete }) {
   const [form, setForm] = useState({
@@ -280,17 +280,17 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
+ 
   const handleSave = async () => {
     setSaving(true);
     await onSave(concert?.id, { ...form, bands: form.bands.split(',').map(b => b.trim()).filter(Boolean) });
     setSaving(false);
   };
-
+ 
   const fld = { marginBottom: 14 };
   const lbl = { display: 'block', fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 };
   const inp = { ...inputSt, width: '100%' };
-
+ 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(4px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
@@ -301,7 +301,7 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: C.gray, fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
         </div>
-
+ 
         <div style={fld}><label style={lbl}>Date</label><input style={inp} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
         <div style={fld}><label style={lbl}>Artists (comma separated)</label><input style={inp} value={form.bands} onChange={e => set('bands', e.target.value)} placeholder="Arcade Fire, LCD Soundsystem" /></div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
@@ -309,19 +309,19 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
           <div><label style={lbl}>City</label><input style={inp} value={form.city} onChange={e => set('city', e.target.value)} placeholder="Austin" /></div>
         </div>
         <div style={fld}><label style={lbl}>State</label><input style={{ ...inp, width: 80 }} value={form.state} onChange={e => set('state', e.target.value)} placeholder="TX" maxLength={2} /></div>
-
+ 
         <div style={{ ...fld, display: 'flex', alignItems: 'center', gap: 10 }}>
           <input type="checkbox" id="is_fest" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} style={{ accentColor: C.teal, width: 16, height: 16 }} />
           <label htmlFor="is_fest" style={{ ...lbl, marginBottom: 0, cursor: 'pointer' }}>Festival Day</label>
         </div>
-
+ 
         {form.is_festival && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
             <div><label style={lbl}>Festival Name</label><input style={inp} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} placeholder="Bonnaroo" /></div>
             <div><label style={lbl}>Day Label</label><input style={inp} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} placeholder="Bonnaroo Friday" /></div>
           </div>
         )}
-
+ 
         <div style={{ ...fld, display: 'flex', alignItems: 'center', gap: 10 }}>
           <input type="checkbox" id="has_sl" checked={form.has_setlist} onChange={e => set('has_setlist', e.target.checked)}
             disabled={form.date && form.date < SETLIST_START}
@@ -330,7 +330,7 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
             Got physical setlist 📋 {form.date && form.date < SETLIST_START ? '(pre-2015, not tracked)' : ''}
           </label>
         </div>
-
+ 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', marginTop: 20 }}>
           <div style={{ display: 'flex', gap: 8 }}>
             {concert?.id && !confirming && <Btn variant="danger" onClick={() => setConfirming(true)}>Delete</Btn>}
@@ -348,17 +348,17 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
     </div>
   );
 }
-
+ 
 // ─── FESTIVAL SCHEDULE CARD ───────────────────────────────────────────────────
 function FestivalScheduleCard({ event }) {
   const bands = event.bands || [];
   const STAGE_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green];
-
+ 
   // auto-flow columns based on band count
   const numCols = bands.length <= 2 ? bands.length : bands.length <= 5 ? 3 : bands.length <= 9 ? 4 : 5;
   const columns = Array.from({ length: Math.min(numCols, bands.length) }, () => []);
   bands.forEach((b, i) => columns[i % columns.length].push(b));
-
+ 
   return (
     <div className="day-card-hover" style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, marginBottom: 12, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
       <div style={{ background: `linear-gradient(135deg, ${C.bgCardAlt}, ${C.bg})`, borderBottom: `1px solid ${C.border}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -384,7 +384,7 @@ function FestivalScheduleCard({ event }) {
     </div>
   );
 }
-
+ 
 // ─── DAY CARD (standalone) ────────────────────────────────────────────────────
 function DayCard({ event }) {
   const bands = event.bands || [];
@@ -403,7 +403,7 @@ function DayCard({ event }) {
     </div>
   );
 }
-
+ 
 // ─── ON THIS DAY ──────────────────────────────────────────────────────────────
 function OnThisDay({ concerts }) {
   const today = new Date();
@@ -430,7 +430,7 @@ function OnThisDay({ concerts }) {
     </div>
   );
 }
-
+ 
 // ─── MANAGE TAB ───────────────────────────────────────────────────────────────
 function ManageTab({ concerts, onEdit, onAdd }) {
   const [search, setSearch] = useState('');
@@ -483,21 +483,21 @@ function ManageTab({ concerts, onEdit, onAdd }) {
     </div>
   );
 }
-
-
+ 
+ 
 // ─── YOU WERE THERE WIDGET ────────────────────────────────────────────────────
 function YouWereThere({ concerts }) {
   const [idx, setIdx] = useState(() => Math.floor(Math.random() * YOU_WERE_THERE.length));
   const [fading, setFading] = useState(false);
-
+ 
   const fact = YOU_WERE_THERE[idx];
-
+ 
   // Try to match a real concert from user's data, fall back to showing the static fact
   const matchedConcert = useMemo(() => {
     if (!fact.match) return null;
     return concerts.find(c => fact.match(c)) || null;
   }, [fact, concerts]);
-
+ 
   const next = () => {
     setFading(true);
     setTimeout(() => {
@@ -505,7 +505,7 @@ function YouWereThere({ concerts }) {
       setFading(false);
     }, 250);
   };
-
+ 
   return (
     <div style={{
       background: `linear-gradient(135deg, ${C.bgCard} 0%, ${C.bgCardAlt} 100%)`,
@@ -549,12 +549,12 @@ function YouWereThere({ concerts }) {
     </div>
   );
 }
-
+ 
 // ─── RANDOM SHOW ─────────────────────────────────────────────────────────────
 function RandomShow({ concerts }) {
   const [show, setShow] = useState(null);
   const [spinning, setSpinning] = useState(false);
-
+ 
   const spin = () => {
     setSpinning(true);
     let count = 0;
@@ -567,11 +567,11 @@ function RandomShow({ concerts }) {
       }
     }, 80);
   };
-
+ 
   useEffect(() => { if (concerts.length) spin(); }, [concerts.length]);
-
+ 
   if (!show) return null;
-
+ 
   return (
     <div style={{ background: C.bgCard, border: `1px solid ${C.purple}55`, borderRadius: 8, padding: '16px 20px', marginBottom: 20, boxShadow: `0 0 16px rgba(153,102,255,0.08)` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -603,11 +603,11 @@ function RandomShow({ concerts }) {
     </div>
   );
 }
-
+ 
 // ─── HALL OF FAME ─────────────────────────────────────────────────────────────
 function HallOfFame({ sets, onShare }) {
   const [selected, setSelected] = useState(null);
-
+ 
   const artists = useMemo(() => {
     const m = {};
     sets.forEach(s => {
@@ -618,17 +618,17 @@ function HallOfFame({ sets, onShare }) {
       .filter(a => a.shows.length >= HALL_OF_FAME_MIN)
       .sort((a, b) => b.shows.length - a.shows.length);
   }, [sets]);
-
+ 
   const selectedData = selected ? artists.find(a => a.artist === selected) : null;
-
+ 
   const MEDAL = ['🥇', '🥈', '🥉'];
-
+ 
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
       <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.gray, marginBottom: 16, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
         Artists seen {HALL_OF_FAME_MIN}+ times — click any to see full history
       </div>
-
+ 
       {/* Artist grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 28 }}>
         {artists.map((a, i) => {
@@ -659,7 +659,7 @@ function HallOfFame({ sets, onShare }) {
           );
         })}
       </div>
-
+ 
       {/* Timeline for selected artist */}
       {selectedData && (
         <div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.teal}55`, borderRadius: 8, padding: '18px 20px', boxShadow: `0 0 20px ${C.tealGlow}` }}>
@@ -667,7 +667,7 @@ function HallOfFame({ sets, onShare }) {
           <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
             {selectedData.shows.length} sets · first: {fmtDate(selectedData.shows[selectedData.shows.length - 1]?.date)} · last: {fmtDate(selectedData.shows[0]?.date)}
           </div>
-
+ 
           {/* Full show list as vertical timeline */}
           <div style={{ position: 'relative', paddingLeft: 20 }}>
             {/* timeline spine */}
@@ -690,7 +690,7 @@ function HallOfFame({ sets, onShare }) {
     </div>
   );
 }
-
+ 
 // ─── SHAREABLE ARTIST CARD ────────────────────────────────────────────────────
 function ShareCard({ artist, shows, onClose }) {
   const festCount = shows.filter(s => s.is_festival).length;
@@ -698,7 +698,7 @@ function ShareCard({ artist, shows, onClose }) {
   const years = [...new Set(shows.map(s => getYear(s.date)).filter(Boolean))].sort();
   const firstDate = fmtDate(shows[shows.length - 1]?.date);
   const lastDate = fmtDate(shows[0]?.date);
-
+ 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
       onClick={e => e.target === e.currentTarget && onClose()}>
@@ -714,14 +714,14 @@ function ShareCard({ artist, shows, onClose }) {
           {/* glow orb */}
           <div style={{ position: 'absolute', top: -60, right: -60, width: 200, height: 200, background: `radial-gradient(circle, ${C.tealGlow}, transparent)`, pointerEvents: 'none' }} />
           <div style={{ position: 'absolute', bottom: -40, left: -40, width: 150, height: 150, background: `radial-gradient(circle, rgba(153,102,255,0.08), transparent)`, pointerEvents: 'none' }} />
-
+ 
           <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.25em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 8, position: 'relative', zIndex: 1 }}>
             🎸 Eric's Concert History
           </div>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(1.8rem, 6vw, 2.6rem)', letterSpacing: '0.06em', color: C.white, lineHeight: 1, marginBottom: 16, position: 'relative', zIndex: 1 }}>
             {artist}
           </div>
-
+ 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16, position: 'relative', zIndex: 1 }}>
             {[
               [shows.length, 'Times Seen'],
@@ -735,7 +735,7 @@ function ShareCard({ artist, shows, onClose }) {
               </div>
             ))}
           </div>
-
+ 
           <div style={{ position: 'relative', zIndex: 1, marginBottom: 12 }}>
             <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Show History</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
@@ -744,12 +744,12 @@ function ShareCard({ artist, shows, onClose }) {
               ))}
             </div>
           </div>
-
+ 
           <div style={{ position: 'relative', zIndex: 1, fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.grayDim, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             First: {firstDate} · Last: {lastDate}
           </div>
         </div>
-
+ 
         <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'center' }}>
           <button onClick={() => {
             // Copy stats to clipboard as text
@@ -766,8 +766,254 @@ function ShareCard({ artist, shows, onClose }) {
     </div>
   );
 }
-
-
+ 
+ 
+ 
+// ─── LOCATION HEATMAP ─────────────────────────────────────────────────────────
+// US state centroids (approximate) for dot placement on SVG map
+const STATE_COORDS = {
+  AL:{x:560,y:360}, AK:{x:130,y:430}, AZ:{x:165,y:310}, AR:{x:500,y:330},
+  CA:{x:95,y:270},  CO:{x:255,y:255}, CT:{x:720,y:175}, DE:{x:700,y:215},
+  FL:{x:590,y:420}, GA:{x:580,y:360}, HI:{x:220,y:450}, ID:{x:175,y:175},
+  IL:{x:530,y:230}, IN:{x:550,y:235}, IA:{x:475,y:205}, KS:{x:415,y:270},
+  KY:{x:560,y:280}, LA:{x:495,y:390}, ME:{x:760,y:120}, MD:{x:690,y:220},
+  MA:{x:740,y:165}, MI:{x:560,y:185}, MN:{x:460,y:155}, MS:{x:530,y:370},
+  MO:{x:490,y:265}, MT:{x:220,y:145}, NE:{x:400,y:225}, NV:{x:140,y:240},
+  NH:{x:740,y:150}, NJ:{x:710,y:205}, NM:{x:240,y:320}, NY:{x:695,y:175},
+  NC:{x:645,y:295}, ND:{x:390,y:145}, OH:{x:590,y:225}, OK:{x:420,y:310},
+  OR:{x:115,y:175}, PA:{x:670,y:200}, RI:{x:745,y:175}, SC:{x:635,y:325},
+  SD:{x:390,y:185}, TN:{x:555,y:305}, TX:{x:390,y:370}, UT:{x:195,y:245},
+  VT:{x:725,y:145}, VA:{x:660,y:255}, WA:{x:130,y:135}, WV:{x:625,y:245},
+  WI:{x:510,y:180}, WY:{x:245,y:200},
+  ON:{x:640,y:135}, // Ontario
+};
+ 
+function LocationHeatmap({ concerts }) {
+  const [hovered, setHovered] = useState(null);
+ 
+  const stateCounts = useMemo(() => {
+    const m = {};
+    concerts.forEach(c => { if (c.state) m[c.state] = (m[c.state] || 0) + 1; });
+    return m;
+  }, [concerts]);
+ 
+  const maxCount = Math.max(...Object.values(stateCounts), 1);
+  const entries = Object.entries(stateCounts).filter(([st]) => STATE_COORDS[st]);
+ 
+  const getColor = (count) => {
+    const pct = count / maxCount;
+    if (pct > 0.7) return C.teal;
+    if (pct > 0.35) return C.cyan;
+    if (pct > 0.1) return C.purple;
+    return C.grayDim;
+  };
+ 
+  const getR = (count) => {
+    const pct = count / maxCount;
+    return Math.max(5, pct * 28);
+  };
+ 
+  return (
+    <div style={{ position: 'relative' }}>
+      <svg viewBox="0 0 800 500" style={{ width: '100%', height: 'auto', display: 'block' }}>
+        {/* Background map outline - simplified US border suggestion */}
+        <rect x="80" y="110" width="680" height="340" rx="4" fill="none" stroke={C.border} strokeWidth="1" opacity="0.3" />
+ 
+        {/* Dots for each state */}
+        {entries.map(([state, count]) => {
+          const pos = STATE_COORDS[state];
+          const r = getR(count);
+          const color = getColor(count);
+          const isHov = hovered === state;
+          return (
+            <g key={state} onMouseEnter={() => setHovered(state)} onMouseLeave={() => setHovered(null)} style={{ cursor: 'pointer' }}>
+              {/* glow ring */}
+              <circle cx={pos.x} cy={pos.y} r={r + 4} fill={color} opacity={isHov ? 0.2 : 0.06} />
+              {/* main dot */}
+              <circle cx={pos.x} cy={pos.y} r={r} fill={color} opacity={isHov ? 1 : 0.75}
+                style={{ filter: isHov ? `drop-shadow(0 0 6px ${color})` : 'none', transition: 'all 0.15s' }} />
+              {/* state label */}
+              <text x={pos.x} y={pos.y + (r > 10 ? 4 : 3)} textAnchor="middle"
+                style={{ fontFamily: "'Space Mono', monospace", fontSize: r > 14 ? 8 : 6, fill: C.bg, fontWeight: 700, pointerEvents: 'none' }}>
+                {state}
+              </text>
+              {/* hover tooltip */}
+              {isHov && (
+                <g>
+                  <rect x={pos.x - 36} y={pos.y - r - 32} width={72} height={24} rx={4} fill={C.bgCard} stroke={color} strokeWidth={1} />
+                  <text x={pos.x} y={pos.y - r - 22} textAnchor="middle"
+                    style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, fill: color }}>
+                    {state}: {count}
+                  </text>
+                  <text x={pos.x} y={pos.y - r - 12} textAnchor="middle"
+                    style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, fill: C.gray }}>
+                    {count === 1 ? 'show' : 'shows'}
+                  </text>
+                </g>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+ 
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 14, marginTop: 4, flexWrap: 'wrap' }}>
+        {[[C.teal, '70%+ of max'], [C.cyan, '35–70%'], [C.purple, '10–35%'], [C.grayDim, 'Under 10%']].map(([color, label]) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+ 
+// ─── TOP FESTIVALS BIG STAT BLOCKS ────────────────────────────────────────────
+function TopFestBlocks({ festBreakdown }) {
+  const top3 = festBreakdown.slice(0, 3);
+  const colors = [C.teal, C.cyan, C.purple];
+  const medals = ['🥇', '🥈', '🥉'];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {top3.map(([name, count], i) => (
+        <div key={name} style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: `${colors[i]}0a`, border: `1px solid ${colors[i]}33`,
+          borderLeft: `3px solid ${colors[i]}`, borderRadius: 4, padding: '10px 14px',
+        }}>
+          <span style={{ fontSize: '1.1rem' }}>{medals[i]}</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', letterSpacing: '0.06em', color: C.white }}>{name}</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: colors[i], lineHeight: 1 }}>{count}</div>
+            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.1em' }}>days</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+ 
+// ─── DONUT CHART ──────────────────────────────────────────────────────────────
+function DonutChart({ fest, solo }) {
+  const total = fest + solo;
+  const festPct = total ? fest / total : 0;
+  const r = 52;
+  const cx = 70;
+  const cy = 70;
+  const circumference = 2 * Math.PI * r;
+  const festDash = festPct * circumference;
+  const soloDash = (1 - festPct) * circumference;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+      <svg width={140} height={140} viewBox="0 0 140 140">
+        {/* background ring */}
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.border} strokeWidth={14} />
+        {/* solo arc */}
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.grayDim} strokeWidth={14}
+          strokeDasharray={`${soloDash} ${circumference}`}
+          strokeDashoffset={-festDash}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${cx} ${cy})`} />
+        {/* fest arc */}
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.teal} strokeWidth={14}
+          strokeDasharray={`${festDash} ${circumference}`}
+          strokeDashoffset={0}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${cx} ${cy})`}
+          style={{ filter: `drop-shadow(0 0 4px ${C.teal}66)` }} />
+        {/* center text */}
+        <text x={cx} y={cy - 6} textAnchor="middle" style={{ fontFamily: "'Bebas Neue'", fontSize: 18, fill: C.teal }}>{Math.round(festPct * 100)}%</text>
+        <text x={cx} y={cy + 10} textAnchor="middle" style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, fill: C.gray }}>FESTIVAL</text>
+      </svg>
+      <div style={{ flex: 1 }}>
+        {[[C.teal, 'Festival Days', fest], [C.grayDim, 'Standalone', solo]].map(([color, label, val]) => (
+          <div key={label} style={{ marginBottom: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
+              <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color }}>{val}</span>
+            </div>
+            <div style={{ height: 3, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${(val / total) * 100}%`, background: color, borderRadius: 2 }} />
+            </div>
+          </div>
+        ))}
+        <div style={{ marginTop: 12, fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: C.white, lineHeight: 1 }}>{total}</div>
+        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 2 }}>Total Show Days</div>
+      </div>
+    </div>
+  );
+}
+ 
+// ─── BUBBLE CITY CHART ────────────────────────────────────────────────────────
+function CityBubbles({ cityCounts }) {
+  const [hov, setHov] = useState(null);
+  const max = cityCounts[0]?.count || 1;
+  const colors = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699', C.tealDim, '#ff9944', C.cyanDim, '#cc44ff', C.grayDim, '#44ffaa'];
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'flex-end', minHeight: 80, padding: '8px 0' }}>
+      {cityCounts.slice(0, 12).map(({ name, count }, i) => {
+        const size = Math.max(36, (count / max) * 90);
+        const isHov = hov === name;
+        return (
+          <div key={name} onMouseEnter={() => setHov(name)} onMouseLeave={() => setHov(null)}
+            style={{
+              width: size, height: size, borderRadius: '50%',
+              background: `${colors[i % colors.length]}${isHov ? 'dd' : '33'}`,
+              border: `2px solid ${colors[i % colors.length]}${isHov ? 'ff' : '88'}`,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              cursor: 'default', transition: 'all 0.2s', flexShrink: 0,
+              boxShadow: isHov ? `0 0 12px ${colors[i % colors.length]}66` : 'none',
+            }}>
+            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: size > 55 ? 9 : 7, color: colors[i % colors.length], fontWeight: 700, textAlign: 'center', lineHeight: 1.1, padding: '0 2px' }}>
+              {name.split(',')[0]}
+            </div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: size > 55 ? 14 : 11, color: C.white, lineHeight: 1 }}>{count}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+ 
+// ─── DECADE BLOCKS ────────────────────────────────────────────────────────────
+function DecadeBlocks({ sets }) {
+  const dec = { '90s': 0, '00s': 0, '10s': 0, '20s': 0 };
+  sets.forEach(s => {
+    const y = getYear(s.date);
+    if (!y) return;
+    if (y < 2000) dec['90s']++;
+    else if (y < 2010) dec['00s']++;
+    else if (y < 2020) dec['10s']++;
+    else dec['20s']++;
+  });
+  const max = Math.max(...Object.values(dec));
+  const colors = [C.purple, C.cyan, C.teal, C.gold];
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+      {Object.entries(dec).map(([decade, count], i) => {
+        const pct = count / max;
+        return (
+          <div key={decade} style={{
+            background: `${colors[i]}18`,
+            border: `1px solid ${colors[i]}44`,
+            borderBottom: `3px solid ${colors[i]}`,
+            borderRadius: 4, padding: '10px 8px', textAlign: 'center',
+          }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: colors[i], lineHeight: 1 }}>{count}</div>
+            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 2 }}>{decade}</div>
+            <div style={{ marginTop: 6, height: 2, background: C.border, borderRadius: 1, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${pct * 100}%`, background: colors[i], borderRadius: 1 }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+ 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 const TABS = [
   ['dashboard', '⚡ Dashboard'],
@@ -779,7 +1025,7 @@ const TABS = [
   ['manage',    '⚙️ Manage'],
 ];
 const PER_PAGE = 40;
-
+ 
 export default function App() {
   const [concerts, setConcerts]     = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -793,9 +1039,9 @@ export default function App() {
   const [page, setPage]             = useState(1);
   const [editTarget, setEditTarget] = useState(null);
   const [shareCard, setShareCard] = useState(null); // { artist, shows }
-
+ 
   useEffect(() => { fetchConcerts(); }, []);
-
+ 
   async function fetchConcerts() {
     try {
       const { data, error } = await supabase.from('concerts').select('*').order('date', { ascending: false });
@@ -804,7 +1050,7 @@ export default function App() {
     } catch (err) { console.error(err.message); }
     finally { setLoading(false); }
   }
-
+ 
   async function handleSave(id, payload) {
     try {
       if (id) {
@@ -819,7 +1065,7 @@ export default function App() {
       setEditTarget(null);
     } catch (err) { alert('Save failed: ' + err.message); }
   }
-
+ 
   async function handleDelete(id) {
     try {
       const { error } = await supabase.from('concerts').delete().eq('id', id);
@@ -828,7 +1074,7 @@ export default function App() {
       setEditTarget(null);
     } catch (err) { alert('Delete failed: ' + err.message); }
   }
-
+ 
   async function toggleSetlist(concert) {
     const newVal = !concert.has_setlist;
     try {
@@ -837,16 +1083,16 @@ export default function App() {
       setConcerts(p => p.map(c => c.id === concert.id ? { ...c, has_setlist: newVal } : c));
     } catch (err) { console.error(err.message); }
   }
-
+ 
   // ── DERIVED ────────────────────────────────────────────────────────────────
   const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
-
+ 
   const sets = useMemo(() => {
     const r = [];
     concerts.forEach(c => (c.bands || []).forEach(band => r.push({ ...c, artist: band })));
     return r;
   }, [concerts]);
-
+ 
   const stats = useMemo(() => {
     const ac = {}, venues = new Set();
     sets.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
@@ -859,49 +1105,49 @@ export default function App() {
       setlistCount: concerts.filter(c => c.has_setlist).length,
     };
   }, [concerts, sets]);
-
+ 
   const artistCounts = useMemo(() => {
     const m = {};
     sets.forEach(s => { m[s.artist] = (m[s.artist] || 0) + 1; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 14).map(([name, count]) => ({ name, count }));
   }, [sets]);
-
+ 
   const timelineData = useMemo(() => {
     const m = {};
     sets.forEach(s => { const y = getYear(s.date); if (y) m[y] = (m[y] || 0) + 1; });
     return Object.entries(m).sort((a, b) => +a[0] - +b[0]).map(([year, count]) => ({ year: String(year).slice(2), count, fullYear: +year }));
   }, [sets]);
-
+ 
   const festBreakdown = useMemo(() => {
     const m = {};
     concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { m[c.festival_name] = (m[c.festival_name] || 0) + 1; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]);
   }, [concerts]);
-
+ 
   const cityCounts = useMemo(() => {
     const m = {};
     concerts.forEach(c => { if (c.city) m[c.city] = (m[c.city] || 0) + 1; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([name, count]) => ({ name, count }));
   }, [concerts]);
-
+ 
   const venueCounts = useMemo(() => {
     const m = {};
     concerts.forEach(c => { if (c.venue) m[c.venue] = (m[c.venue] || 0) + 1; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([name, count]) => ({ name, count }));
   }, [concerts]);
-
+ 
   const stateCounts = useMemo(() => {
     const m = {};
     concerts.forEach(c => { if (c.state) m[c.state] = (m[c.state] || 0) + 1; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]);
   }, [concerts]);
-
+ 
   const artistFestMap = useMemo(() => {
     const m = {};
     sets.forEach(s => { if (!m[s.artist]) m[s.artist] = { fest: 0, solo: 0 }; if (s.is_festival) m[s.artist].fest++; else m[s.artist].solo++; });
     return m;
   }, [sets]);
-
+ 
   const milestones = useMemo(() => {
     const sorted = [...concerts].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
     const first = sorted[0];
@@ -919,7 +1165,7 @@ export default function App() {
       { icon: '📋', label: 'Setlists', value: stats.setlistCount, sub: 'since Billy Idol ACL 2015' },
     ];
   }, [concerts, sets, timelineData, stateCounts, stats, festBreakdown]);
-
+ 
   const passport = useMemo(() => {
     const m = {};
     concerts.filter(c => c.is_festival && c.festival_name).forEach(c => {
@@ -929,7 +1175,7 @@ export default function App() {
     });
     return Object.values(m).map(f => ({ ...f, years: [...f.years].sort() })).sort((a, b) => b.days - a.days);
   }, [concerts]);
-
+ 
   const festGroupings = useMemo(() => {
     const m = {};
     concerts.filter(c => c.is_festival && c.festival_name).forEach(c => {
@@ -940,7 +1186,7 @@ export default function App() {
     });
     return Object.values(m).sort((a, b) => Object.values(b.years).flat().length - Object.values(a.years).flat().length);
   }, [concerts]);
-
+ 
   const applyFilters = (list, isSet = false) => {
     let d = list;
     if (yearFilter !== 'all') d = d.filter(r => getYear(r.date) === +yearFilter);
@@ -959,7 +1205,7 @@ export default function App() {
     }
     return d;
   };
-
+ 
   const filteredSets = useMemo(() => {
     const d = applyFilters(sets, true);
     return [...d].sort((a, b) => {
@@ -970,20 +1216,20 @@ export default function App() {
       return 0;
     });
   }, [sets, yearFilter, festFilter, search, sortCol, sortDir]);
-
+ 
   const artistRows = useMemo(() => {
     if (browseView !== 'artists') return [];
     const m = {};
     applyFilters(sets, true).forEach(s => { if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; m[s.artist].shows.push(s); });
     return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
   }, [sets, yearFilter, festFilter, search, browseView]);
-
+ 
   const dayGroups = useMemo(() => applyFilters(concerts).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [concerts, yearFilter, festFilter, search]);
-
+ 
   const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const totalPages = Math.ceil(filteredSets.length / PER_PAGE);
   const handleSort = col => { if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortCol(col); setSortDir('asc'); } setPage(1); };
-
+ 
   // ── LOADING ────────────────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -993,11 +1239,11 @@ export default function App() {
       </div>
     </div>
   );
-
+ 
   // ── RENDER ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ background: C.bg, minHeight: '100vh', paddingBottom: 60 }}>
-
+ 
       {shareCard && (
         <ShareCard
           artist={shareCard.artist}
@@ -1005,7 +1251,7 @@ export default function App() {
           onClose={() => setShareCard(null)}
         />
       )}
-
+ 
       {editTarget && (
         <EditModal
           concert={editTarget === 'new' ? null : editTarget}
@@ -1014,7 +1260,7 @@ export default function App() {
           onDelete={handleDelete}
         />
       )}
-
+ 
       {/* HEADER */}
       <div style={{ background: `linear-gradient(180deg, #050508 0%, ${C.bgCard} 100%)`, borderBottom: `1px solid ${C.teal}33`, padding: '28px 24px 20px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -40, left: '50%', transform: 'translateX(-50%)', width: 400, height: 120, background: `radial-gradient(ellipse, ${C.tealGlow}, transparent)`, pointerEvents: 'none' }} />
@@ -1024,7 +1270,7 @@ export default function App() {
         <div style={{ marginTop: 6, fontFamily: "'Space Mono', monospace", fontSize: '0.78rem', color: C.gray, letterSpacing: '0.1em' }}>Every show. Every set. Every memory.</div>
         <div style={{ width: 80, height: 1, background: `linear-gradient(to right, transparent, ${C.teal}, transparent)`, margin: '12px auto 0' }} />
       </div>
-
+ 
       {/* STAT STRIP */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', background: C.bgCard, borderBottom: `1px solid ${C.border}` }}>
         {[
@@ -1040,7 +1286,7 @@ export default function App() {
           </div>
         ))}
       </div>
-
+ 
       {/* NAV */}
       <nav style={{ background: C.bgCard, borderBottom: `1px solid ${C.teal}33`, display: 'flex', overflowX: 'auto', position: 'sticky', top: 0, zIndex: 200 }}>
         {TABS.map(([id, label]) => (
@@ -1054,21 +1300,21 @@ export default function App() {
           }} onClick={() => setActiveTab(id)}>{label}</button>
         ))}
       </nav>
-
+ 
       {/* CONTENT */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
-
+ 
         {/* ── DASHBOARD ── */}
         {activeTab === 'dashboard' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
             <OnThisDay concerts={concerts} />
-
+ 
             {/* You Were There + Random Show row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16, marginBottom: 4 }}>
               <YouWereThere concerts={concerts} />
               <RandomShow concerts={concerts} />
             </div>
-
+ 
             {/* Milestones */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
               {milestones.map((m, i) => (
@@ -1080,79 +1326,83 @@ export default function App() {
                 </Card>
               ))}
             </div>
-
-            {/* Charts row 1 */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 16 }}>
+ 
+            {/* ── ROW 1: Artist podium (big) + Sets Per Year (wide bar) ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, marginBottom: 16 }}>
+ 
+              {/* Artist podium — top 5 as ranked stat blocks */}
               <Card neon>
                 <CardTitle>Most Seen Artists</CardTitle>
-                {artistCounts.slice(0, 12).map(({ name, count }) => <HBar key={name} name={name} count={count} max={artistCounts[0]?.count || 1} />)}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {artistCounts.slice(0, 5).map(({ name, count }, i) => {
+                    const podColors = [C.gold, C.gray, '#cd7f32', C.tealDim, C.grayDim];
+                    const sizes = ['1.5rem', '1.2rem', '1.1rem', '1rem', '0.95rem'];
+                    return (
+                      <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: i === 0 ? `${C.gold}0f` : C.bgCardAlt, border: `1px solid ${i === 0 ? C.gold + '44' : C.border}`, borderRadius: 5 }}>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: podColors[i], width: 18, flexShrink: 0 }}>#{i + 1}</span>
+                        <span style={{ flex: 1, fontFamily: i === 0 ? "'Bebas Neue'" : "'Inter', sans-serif", fontSize: i === 0 ? '1rem' : '0.82rem', fontWeight: i < 2 ? 700 : 400, color: C.white, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                        <span style={{ fontFamily: "'Bebas Neue'", fontSize: sizes[i], color: podColors[i], flexShrink: 0, lineHeight: 1 }}>{count}×</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </Card>
+ 
+              {/* Sets per year — area-style bar chart */}
               <Card neon>
                 <CardTitle>Sets Per Year</CardTitle>
-                <ResponsiveContainer width="100%" height={160}>
+                <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={timelineData} margin={{ top: 4, right: 4, bottom: 4, left: -20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-                    <XAxis dataKey="year" tick={{ fontSize: 9, fontFamily: "'Space Mono', monospace", fill: C.gray }} />
-                    <YAxis tick={{ fontSize: 9, fontFamily: "'Space Mono', monospace", fill: C.gray }} />
-                    <Tooltip contentStyle={{ fontFamily: "'Space Mono', monospace", fontSize: 11, background: C.bgCard, border: `1px solid ${C.teal}`, color: C.white, borderRadius: 6 }} />
-                    <Bar dataKey="count" radius={[2, 2, 0, 0]}>
-                      {timelineData.map((_, i) => <Cell key={i} fill={i % 2 === 0 ? C.teal : C.cyan} fillOpacity={0.85} />)}
-                    </Bar>
+                    <defs>
+                      <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={C.teal} stopOpacity={0.95} />
+                        <stop offset="100%" stopColor={C.teal} stopOpacity={0.15} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+                    <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono', monospace", fill: C.gray }} interval={2} />
+                    <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono', monospace", fill: C.gray }} />
+                    <Tooltip
+                      contentStyle={{ fontFamily: "'Space Mono', monospace", fontSize: 11, background: C.bgCard, border: `1px solid ${C.teal}`, color: C.white, borderRadius: 6 }}
+                      formatter={(v) => [`${v} sets`, '']}
+                      labelFormatter={(l) => `'${l}`}
+                    />
+                    <Bar dataKey="count" fill="url(#barGrad)" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
-                <CardTitle style={{ marginTop: 14 }}>Festival Days by Fest</CardTitle>
-                {festBreakdown.slice(0, 8).map(([name, count]) => <HBar key={name} name={name} count={count} max={festBreakdown[0]?.[1] || 1} color={C.cyan} />)}
               </Card>
+            </div>
+ 
+            {/* ── ROW 2: Location heatmap (full width) ── */}
+            <Card neon style={{ marginBottom: 16 }}>
+              <CardTitle>Shows by Location — hover any state for count</CardTitle>
+              <LocationHeatmap concerts={concerts} />
+            </Card>
+ 
+            {/* ── ROW 3: Donut + Top 3 Fests + Decade blocks ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
               <Card neon>
                 <CardTitle>Festival vs. Standalone</CardTitle>
-                {artistCounts.slice(0, 12).map(({ name }) => {
-                  const s = artistFestMap[name] || { fest: 0, solo: 0 };
-                  const t = s.fest + s.solo;
-                  const fp = t ? (s.fest / t) * 100 : 0;
-                  return (
-                    <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-                      <div style={{ fontSize: '0.72rem', color: C.gray, width: 110, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={name}>{name}</div>
-                      <div style={{ flex: 1, height: 10, background: C.border, borderRadius: 2, position: 'relative', overflow: 'hidden' }}>
-                        <div style={{ position: 'absolute', height: '100%', width: `${fp}%`, background: C.teal }} />
-                        <div style={{ position: 'absolute', height: '100%', width: `${100 - fp}%`, left: `${fp}%`, background: C.grayDim }} />
-                      </div>
-                      <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, width: 44 }}>
-                        <span style={{ color: C.teal }}>{s.fest}F </span><span style={{ color: C.gray }}>{s.solo}S</span>
-                      </div>
-                    </div>
-                  );
-                })}
+                <DonutChart fest={stats.festDays} solo={stats.totalShows - stats.festDays} />
               </Card>
-            </div>
-
-            {/* Charts row 2 */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-              <Card neon><CardTitle>Top Cities</CardTitle>{cityCounts.map(({ name, count }) => <HBar key={name} name={name} count={count} max={cityCounts[0]?.count || 1} color={C.cyan} />)}</Card>
-              <Card neon><CardTitle>Top Venues</CardTitle>{venueCounts.map(({ name, count }) => <HBar key={name} name={name} count={count} max={venueCounts[0]?.count || 1} color={C.purple} />)}</Card>
               <Card neon>
-                <CardTitle>States Visited</CardTitle>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                  {stateCounts.map(([st, ct]) => (
-                    <div key={st} style={{ background: C.bgCardAlt, border: `1px solid ${C.teal}33`, borderRadius: 4, padding: '5px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 36 }}>
-                      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, fontWeight: 700, color: C.teal }}>{st}</span>
-                      <span style={{ fontSize: 8, color: C.gray, marginTop: 1 }}>{ct}</span>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ marginTop: 14 }}>
-                  <CardTitle>Decade Breakdown</CardTitle>
-                  {(() => {
-                    const dec = { '90s': 0, '00s': 0, '10s': 0, '20s': 0 };
-                    sets.forEach(s => { const y = getYear(s.date); if (!y) return; if (y < 2000) dec['90s']++; else if (y < 2010) dec['00s']++; else if (y < 2020) dec['10s']++; else dec['20s']++; });
-                    const mx = Math.max(...Object.values(dec));
-                    return Object.entries(dec).map(([name, count]) => <HBar key={name} name={name} count={count} max={mx} color={C.gold} />);
-                  })()}
-                </div>
+                <CardTitle>Top Festivals — Days Attended</CardTitle>
+                <TopFestBlocks festBreakdown={festBreakdown} />
+              </Card>
+              <Card neon>
+                <CardTitle>By Decade</CardTitle>
+                <DecadeBlocks sets={sets} />
               </Card>
             </div>
+ 
+            {/* ── ROW 4: City bubbles (full width) ── */}
+            <Card neon>
+              <CardTitle>Cities — Bubble = Show Count</CardTitle>
+              <CityBubbles cityCounts={cityCounts} />
+            </Card>
           </div>
         )}
-
+ 
         {/* ── BY DAY ── */}
         {activeTab === 'byDay' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
@@ -1175,7 +1425,7 @@ export default function App() {
             )}
           </div>
         )}
-
+ 
         {/* ── BY FESTIVAL ── */}
         {activeTab === 'byFest' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
@@ -1185,14 +1435,55 @@ export default function App() {
             </div>
             {festGroupings
               .filter(fg => !search || fg.name.toLowerCase().includes(search.toLowerCase()) || Object.values(fg.years).flat().some(ev => (ev.bands || []).some(b => b.toLowerCase().includes(search.toLowerCase()))))
-              .map(fg => (
-                <div key={fg.name} style={{ marginBottom: 40 }}>
-                  {/* Festival title header */}
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', letterSpacing: '0.1em', color: C.teal, textShadow: `0 0 16px ${C.teal}55`, marginBottom: 16, paddingBottom: 8, borderBottom: `2px solid ${C.teal}33`, display: 'flex', alignItems: 'baseline', gap: 12 }}>
-                    🎪 {fg.name}
-                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.gray, fontWeight: 400 }}>
-                      {Object.keys(fg.years).length} yr{Object.keys(fg.years).length !== 1 ? 's' : ''} · {Object.values(fg.years).flat().length} days
-                    </span>
+              .map((fg, fgIdx) => {
+                const FEST_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699', '#ff9944'];
+                const fColor = FEST_COLORS[fgIdx % FEST_COLORS.length];
+                const totalDays = Object.values(fg.years).flat().length;
+                const allYears = Object.keys(fg.years).map(Number);
+                return (
+                <div key={fg.name} style={{ marginBottom: 0 }}>
+                  {/* ── CONCERT POSTER DIVIDER ── */}
+                  <div style={{
+                    position: 'relative', overflow: 'hidden',
+                    background: `linear-gradient(135deg, ${C.bg} 0%, ${fColor}18 50%, ${C.bg} 100%)`,
+                    borderTop: fgIdx > 0 ? `2px solid ${fColor}` : 'none',
+                    borderBottom: `2px solid ${fColor}`,
+                    padding: '20px 24px',
+                    marginBottom: 20,
+                    marginTop: fgIdx > 0 ? 40 : 0,
+                  }}>
+                    {/* decorative corner lines */}
+                    <div style={{ position: 'absolute', top: 6, left: 6, width: 24, height: 24, borderTop: `1px solid ${fColor}66`, borderLeft: `1px solid ${fColor}66` }} />
+                    <div style={{ position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderTop: `1px solid ${fColor}66`, borderRight: `1px solid ${fColor}66` }} />
+                    <div style={{ position: 'absolute', bottom: 6, left: 6, width: 24, height: 24, borderBottom: `1px solid ${fColor}66`, borderLeft: `1px solid ${fColor}66` }} />
+                    <div style={{ position: 'absolute', bottom: 6, right: 6, width: 24, height: 24, borderBottom: `1px solid ${fColor}66`, borderRight: `1px solid ${fColor}66` }} />
+                    {/* glow orb */}
+                    <div style={{ position: 'absolute', top: -30, left: '50%', transform: 'translateX(-50%)', width: 200, height: 80, background: `radial-gradient(ellipse, ${fColor}22, transparent)`, pointerEvents: 'none' }} />
+ 
+                    <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(2rem, 5vw, 3.2rem)', letterSpacing: '0.15em', color: fColor, textShadow: `0 0 20px ${fColor}55`, lineHeight: 1, marginBottom: 8 }}>
+                        {fg.name}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.white, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                          {totalDays} {totalDays === 1 ? 'day' : 'days attended'}
+                        </span>
+                        <span style={{ color: fColor, fontSize: 10 }}>·</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.gray, letterSpacing: '0.1em' }}>
+                          {Object.keys(fg.years).length} {Object.keys(fg.years).length === 1 ? 'year' : 'years'}
+                        </span>
+                        <span style={{ color: fColor, fontSize: 10 }}>·</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.gray, letterSpacing: '0.1em' }}>
+                          {Math.min(...allYears)}–{Math.max(...allYears)}
+                        </span>
+                      </div>
+                      {/* year tags row */}
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: 4, flexWrap: 'wrap', marginTop: 10 }}>
+                        {Object.keys(fg.years).sort().map(yr => (
+                          <span key={yr} style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, background: `${fColor}22`, color: fColor, border: `1px solid ${fColor}44`, padding: '2px 7px', borderRadius: 3 }}>{yr}</span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                   {/* Year sections */}
                   {Object.entries(fg.years).sort((a, b) => +a[0] - +b[0]).map(([yr, evs]) => (
@@ -1214,10 +1505,11 @@ export default function App() {
                     </div>
                   ))}
                 </div>
-              ))}
+                );
+              })}
           </div>
         )}
-
+ 
         {/* ── BROWSE ── */}
         {activeTab === 'browse' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
@@ -1239,7 +1531,7 @@ export default function App() {
               </div>
               <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, marginLeft: 'auto' }}>{browseView === 'shows' ? `${filteredSets.length} sets` : `${artistRows.length} artists`}</span>
             </div>
-
+ 
             {browseView === 'shows' && (
               <>
                 <div style={{ overflowX: 'auto', borderRadius: 8, border: `1px solid ${C.border}` }}>
@@ -1285,7 +1577,7 @@ export default function App() {
                 )}
               </>
             )}
-
+ 
             {browseView === 'artists' && (
               <div>
                 {artistRows.map(({ artist, shows }) => {
@@ -1319,12 +1611,12 @@ export default function App() {
             )}
           </div>
         )}
-
+ 
         {/* ── HALL OF FAME ── */}
         {activeTab === 'hof' && (
           <HallOfFame sets={sets} onShare={(artist, shows) => setShareCard({ artist, shows })} />
         )}
-
+ 
         {/* ── PASSPORT ── */}
         {activeTab === 'passport' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
@@ -1348,13 +1640,14 @@ export default function App() {
             </div>
           </div>
         )}
-
+ 
         {/* ── MANAGE ── */}
         {activeTab === 'manage' && (
           <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} />
         )}
-
+ 
       </div>
     </div>
   );
 }
+ 
