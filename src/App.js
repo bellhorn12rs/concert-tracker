@@ -1331,11 +1331,12 @@ const genreStats = React.useMemo(() => {
 async function updateArtistGenre(artistName, newGenre) {
   console.log(`📡 Sending to Supabase: ${artistName} -> ${newGenre}`);
 
-  const { data, error, count } = await supabase
+  const { data, error } = await supabase
     .from('concerts')
     .update({ genre: newGenre })
-    .eq('artist', artistName) // Make sure 'artist' is the name of your column!
-    .select(); // This asks Supabase to send back what it changed
+    // CHANGE 'artist' BELOW TO THE ACTUAL COLUMN NAME IN SUPABASE
+    .eq('artist', artistName) 
+    .select();
 
   if (error) {
     console.error("❌ Supabase Error:", error.message);
