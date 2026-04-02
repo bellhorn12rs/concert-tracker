@@ -527,30 +527,89 @@ function ManageTab({ concerts, onEdit, onAdd }) {
 
 // ─── ARCHIVE INSIGHTS WIDGET ──────────────────────────────────────────────────
 function ArtistInsights({ concerts }) {
-  const stats = useMemo(() => {
+  const [index, setIndex] = useState(0);
+
+  const insights = useMemo(() => {
+    if (!concerts.length) return [];
+
+    // 1. Peak Year Calculation
     const years = {};
     concerts.forEach(c => {
       const y = getYear(c.date);
       if (y) years[y] = (years[y] || 0) + 1;
     });
     const peakYear = Object.entries(years).sort((a, b) => b[1] - a[1])[0];
-    return { peakYear: peakYear?.[0], peakCount: peakYear?.[1] };
+
+    // 2. Most Visited City
+    const cities = {};
+    concerts.forEach(c => {
+      if (c.city) cities[c.city] = (cities[c.city] || 0) + 1;
+    });
+    const topCity = Object.entries(cities).sort((a, b) => b[1] - a[1])[0];
+
+    // 3. Festival Addiction
+    const festDays = concerts.filter(c => c.is_festival).length;
+    const festPct = Math.round((festDays / concerts.length) * 100);
+
+    return [
+      { 
+        label: "PEAK INTENSITY", 
+        val: peakYear?.[0], 
+        sub: `Your busiest year on record with ${peakYear?.[1]} shows logged.` 
+      },
+      { 
+        label: "HOME TURF", 
+        val: topCity?.[0].toUpperCase(), 
+        sub: `You've caught ${topCity?.[1]} shows here. A true local legend.` 
+      },
+      { 
+        label: "FESTIVAL RATIO", 
+        val: `${festPct}%`, 
+        sub: `Nearly ${festPct}% of your live music history happened in a field.` 
+      },
+      { 
+        label: "TOTAL LEGACY", 
+        val: concerts.length, 
+        sub: `Unique show days recorded since your journey began in 1999.` 
+      }
+    ];
   }, [concerts]);
+
+  // Auto-cycle effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex(prev => (prev + 1) % insights.length);
+    }, 6000); // Cycles every 6 seconds
+    return () => clearInterval(timer);
+  }, [insights.length]);
+
+  const active = insights[index] || { label: "LOADING", val: "...", sub: "" };
 
   return (
     <Card neon style={{ minHeight: 150, display: 'flex', flexDirection: 'column', justifyContent: 'center', border: `1px solid ${C.teal}33` }}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, letterSpacing: 2, marginBottom: 10 }}>
-        ⚡ ARCHIVE INSIGHTS
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, letterSpacing: 2, marginBottom: 12 }}>
+        ⚡ {active.label}
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.white, lineHeight: 1 }}>{stats.peakYear}</div>
-          <div style={{ fontSize: '0.75rem', color: C.gray }}>Peak Year: <span style={{ color: C.teal }}>{stats.peakCount} shows</span></div>
+      
+      <div className="fade-in" key={index}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.4rem', color: C.white, lineHeight: 1, marginBottom: 4 }}>
+          {active.val}
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.white, lineHeight: 1 }}>{concerts.length}</div>
-          <div style={{ fontSize: '0.75rem', color: C.gray }}>Total Sets Since 2015</div>
+        <div style={{ fontSize: '0.8rem', color: C.gray, lineHeight: 1.4, maxWidth: '90%' }}>
+          {active.sub}
         </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 4, marginTop: 15 }}>
+        {insights.map((_, i) => (
+          <div key={i} style={{ 
+            width: i === index ? 12 : 4, 
+            height: 4, 
+            borderRadius: 2, 
+            background: i === index ? C.teal : C.grayDim, 
+            transition: '0.3s' 
+          }} />
+        ))}
       </div>
     </Card>
   );
