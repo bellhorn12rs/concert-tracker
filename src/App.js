@@ -1028,7 +1028,7 @@ export default function App() {
     } catch (err) { console.error(err.message); }
   }
 
-  // ── DERIVED ────────────────────────────────────────────────────────────────
+ // ── DERIVED ────────────────────────────────────────────────────────────────
   const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
 
   const sets = useMemo(() => {
@@ -1042,11 +1042,14 @@ export default function App() {
     sets.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
     concerts.forEach(c => { if (c.venue) venues.add(c.venue); });
     return {
-      totalShows: concerts.length, totalSets: sets.length,
-      uniqueArtists: Object.keys(ac).length, venueCount: venues.size,
+      totalShows: concerts.length, 
+      totalSets: sets.length,
+      uniqueArtists: Object.keys(ac).length, 
+      venueCount: venues.size,
       topArtist: Object.entries(ac).sort((a, b) => b[1] - a[1])[0] || ['—', 0],
       festDays: concerts.filter(c => c.is_festival).length,
-      setlistCount: concerts.filter(c => c.has_setlist).length,
+      // UPDATED: Counts if checkbox is TRUE OR if the text field has content
+      setlistCount: concerts.filter(c => c.has_setlist || (c.has_setlist_names && c.has_setlist_names.trim() !== '')).length,
     };
   }, [concerts, sets]);
 
@@ -1106,7 +1109,8 @@ export default function App() {
       { icon: '🏟️', label: 'Wildest Day', value: fmtDate(biggestDay?.date), sub: `${biggestDay?.bands?.length || 0} acts` },
       { icon: '🗺️', label: 'States Hit', value: stateCounts.length, sub: stateCounts.slice(0, 4).map(([s]) => s).join(' · ') },
       { icon: '🎪', label: 'Festival Days', value: stats.festDays, sub: `${festBreakdown.length} different fests` },
-      { icon: '📋', label: 'Setlists', value: stats.setlistCount, sub: 'since Billy Idol ACL 2015' },
+      // UPDATED: Milestone now uses the reactive stats.setlistCount
+      { icon: '📋', label: 'Setlists', value: stats.setlistCount, sub: 'Physical Archive' },
     ];
   }, [concerts, sets, timelineData, stateCounts, stats, festBreakdown]);
 
@@ -1173,7 +1177,6 @@ export default function App() {
   const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const totalPages = Math.ceil(filteredSets.length / PER_PAGE);
   const handleSort = col => { if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortCol(col); setSortDir('asc'); } setPage(1); };
-
   // ── LOADING ────────────────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
