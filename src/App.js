@@ -524,64 +524,42 @@ function ManageTab({ concerts, onEdit, onAdd }) {
   );
 }
 
-// ─── YOU WERE THERE DATA ──────────────────────────────────────────────────────
-const YOU_WERE_THERE = [
-  { label: "STAMINA CHECK", text: "You've survived 182 festival days. That is a lot of spicy pie and port-a-potties.", match: c => c.is_festival },
-  { label: "THE DEBUT", text: "Your journey began on Oct 9, 2015. Life hasn't been quiet since.", match: c => c.date === '2015-10-09' },
-  { label: "FREQUENT FLYER", text: "Revolution Hall is your home away from home. You know exactly where the best standing spot is.", match: c => c.venue === 'Revolution Hall' },
-  { label: "LOCAL LEGEND", text: "Portland, Oregon: Where 90% of your memories (and hearing loss) happened.", match: c => c.city === 'Portland' },
-  { label: "THE GRIND", text: "2017 was a heavy year. You were catching sets like it was a full-time job.", match: c => c.date.includes('2017') },
-];
 
-// ─── YOU WERE THERE WIDGET ────────────────────────────────────────────────────
-function YouWereThere({ concerts }) {
-  const [idx, setIdx] = useState(() => Math.floor(Math.random() * YOU_WERE_THERE.length));
-  const [fading, setFading] = useState(false);
-
-  const fact = YOU_WERE_THERE[idx];
-
-  const matchedConcert = useMemo(() => {
-    if (!fact || !fact.match) return null;
-    return concerts.find(c => fact.match(c)) || null;
-  }, [fact, concerts]);
-
-  const next = () => {
-    setFading(true);
-    setTimeout(() => {
-      setIdx(i => (i + 1) % YOU_WERE_THERE.length);
-      setFading(false);
-    }, 250);
-  };
+//The New "Artist Insights" Widget
+function ArtistInsights({ concerts }) {
+  const stats = useMemo(() => {
+    const years = {};
+    concerts.forEach(c => {
+      const y = getYear(c.date);
+      if (y) years[y] = (years[y] || 0) + 1;
+    });
+    const peakYear = Object.entries(years).sort((a, b) => b[1] - a[1])[0];
+    return { peakYear: peakYear?.[0], peakCount: peakYear?.[1] };
+  }, [concerts]);
 
   return (
-    <Card neon style={{ minHeight: 180, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
-      <>
-        <div style={{ position: 'absolute', right: 20, bottom: 20, fontSize: '5.5rem', opacity: 0.04, pointerEvents: 'none', transform: 'rotate(12deg)', zIndex: 0 }}>
-          {fact.label === "STAMINA CHECK" ? '🍕' : fact.label === "LOCAL LEGEND" ? '🌲' : fact.label === "FREQUENT FLYER" ? '🏛️' : '🎸'}
+    <Card neon style={{ minHeight: 200, display: 'flex', flexDirection: 'column', justifyContent: 'center', border: `1px solid ${C.teal}33` }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.teal, letterSpacing: 2, marginBottom: 20 }}>
+        ⚡ ARCHIVE INSIGHTS
+      </div>
+      <div style={{ marginBottom: 15 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.4rem', color: C.white, lineHeight: 1 }}>
+          {stats.peakYear}
         </div>
-
-        <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold, letterSpacing: 2 }}>⭐ {fact.label}</div>
-              <button onClick={next} style={{ background: `${C.teal}15`, border: `1px solid ${C.teal}44`, color: C.teal, fontSize: 9, padding: '4px 10px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'" }}>NEXT →</button>
-            </div>
-
-            <div style={{ opacity: fading ? 0 : 1, transition: '0.2s' }}>
-              <div style={{ fontSize: '1.15rem', color: C.white, lineHeight: 1.4, fontWeight: 300, marginBottom: 12, maxWidth: '85%' }}>"{fact.text}"</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: C.tealDim, fontFamily: "'Space Mono'", fontSize: 10 }}>
-                {matchedConcert ? <>📍 {fmtDate(matchedConcert.date)} · {matchedConcert.venue.toUpperCase()}</> : <>📊 RECORDED IN YOUR ARCHIVE</>}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 5, marginTop: 15 }}>
-            {YOU_WERE_THERE.map((_, i) => (
-              <div key={i} onClick={() => setIdx(i)} style={{ width: i === idx ? 15 : 5, height: 5, borderRadius: 3, background: i === idx ? C.gold : C.grayDim, transition: '0.3s', cursor: 'pointer' }} />
-            ))}
-          </div>
+        <div style={{ fontSize: '0.85rem', color: C.gray, marginTop: 4 }}>
+          Your absolute peak year. You caught <span style={{ color: C.teal, fontWeight: 'bold' }}>{stats.peakCount}</span> shows in 12 months.
         </div>
-      </>
+      </div>
+      <div style={{ padding: '10px 0', borderTop: `1px solid ${C.border}`, display: 'flex', gap: 20 }}>
+        <div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim }}>TOTAL SETS</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.white }}>{concerts.length}</div>
+        </div>
+        <div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim }}>FIRST LOGGED</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.white }}>2015</div>
+        </div>
+      </div>
     </Card>
   );
 }
@@ -594,44 +572,86 @@ function RandomShow({ concerts }) {
   const spin = () => {
     if (!concerts.length) return;
     setSpinning(true);
-    let count = 0;
+    let iterations = 0;
+    const maxIterations = 15;
+    
     const interval = setInterval(() => {
       setShow(concerts[Math.floor(Math.random() * concerts.length)]);
-      count++;
-      if (count > 10) {
+      iterations++;
+      if (iterations >= maxIterations) {
         clearInterval(interval);
         setSpinning(false);
       }
-    }, 80);
+    }, 60 + (iterations * 10)); // Gradually slows down
   };
 
-  useEffect(() => {
-    if (concerts.length) spin();
-  }, [concerts.length]);
+  useEffect(() => { if (concerts.length && !show) spin(); }, [concerts.length]);
 
   if (!show) return null;
 
   return (
-    <Card neon style={{ position: 'relative' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: C.purple }}>🎲 Random Recall</div>
-        <button onClick={spin} style={{
-          fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase',
-          background: C.purple + '22', border: `1px solid ${C.purple}55`, borderRadius: 3,
-          color: C.purple, padding: '4px 10px', cursor: 'pointer', transition: 'all 0.15s',
-        }}>
-          {spinning ? 'SPINNING...' : 'SPIN AGAIN'}
+    <Card 
+      glow={!spinning} 
+      neon 
+      style={{ 
+        minHeight: 200, 
+        border: `1px solid ${spinning ? C.grayDim : C.purple + '66'}`,
+        transition: 'all 0.3s ease'
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.purple, letterSpacing: 2 }}>
+          🎲 {spinning ? 'SPINNING...' : 'RANDOM RECALL'}
+        </div>
+        <button 
+          onClick={spin} 
+          disabled={spinning}
+          style={{ 
+            background: spinning ? C.bgCardAlt : `${C.purple}22`, 
+            border: `1px solid ${C.purple}55`, 
+            color: spinning ? C.grayDim : C.purple, 
+            fontSize: 8, 
+            padding: '5px 12px', 
+            borderRadius: 4, 
+            cursor: 'pointer', 
+            fontFamily: "'Space Mono'",
+            transition: '0.2s'
+          }}
+        >
+          {spinning ? '•••' : 'SPIN AGAIN'}
         </button>
       </div>
-      <div style={{ opacity: spinning ? 0.4 : 1, transition: 'opacity 0.1s' }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', letterSpacing: '0.08em', color: C.white, marginBottom: 4 }}>
+
+      <div style={{ 
+        filter: spinning ? 'blur(1px)' : 'none', 
+        transform: spinning ? 'translateY(-2px)' : 'none',
+        transition: 'filter 0.1s, transform 0.1s' 
+      }}>
+        <div style={{ 
+          fontFamily: "'Bebas Neue'", 
+          fontSize: '2.6rem', 
+          color: spinning ? C.grayDim : C.white, 
+          lineHeight: 0.9, 
+          marginBottom: 10,
+          textShadow: !spinning ? `0 0 15px ${C.purple}44` : 'none'
+        }}>
           {show.artist}
         </div>
-        <div style={{ fontSize: '0.85rem', color: C.gray, marginBottom: 8 }}>{fmtDate(show.date)}</div>
-        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.grayDim, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          {show.venue && <span>📍 {show.venue}</span>}
-          {show.city && <span>{show.city}</span>}
-          {show.is_festival && <span style={{ color: C.tealDim }}>🎪 FESTIVAL</span>}
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ fontSize: '0.9rem', color: spinning ? C.grayDim : C.white }}>
+            {fmtDate(show.date)}
+          </div>
+          <div style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 9, 
+            color: C.purple, 
+            background: `${C.purple}11`, 
+            padding: '2px 6px', 
+            borderRadius: 3 
+          }}>
+            {show.venue.toUpperCase()}
+          </div>
         </div>
       </div>
     </Card>
@@ -1269,10 +1289,11 @@ export default function App() {
     <OnThisDay concerts={concerts} />
 
     {/* You Were There + Random Show row */}
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16, marginBottom: 4 }}>
-      <YouWereThere concerts={concerts} />
-      <RandomShow concerts={concerts} />
-    </div>
+   {/* Artist Insights + Random Show row */}
+<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+  <ArtistInsights concerts={concerts} />
+  <RandomShow concerts={concerts} />
+</div>
 
     {/* Milestones */}
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
