@@ -1054,7 +1054,7 @@ function TimelineTab({ concerts, setActiveTab }) {
     });
   }, [concerts]);
 
-  // Tab Teleport
+  // Tab Teleport Logic
   const teleport = (date) => {
     if (typeof setActiveTab === 'function') {
       setActiveTab('byDay');
@@ -1068,10 +1068,14 @@ function TimelineTab({ concerts, setActiveTab }) {
   if (!yearsData.length) return <div style={{color: 'white', padding: 100}}>Loading Timeline...</div>;
 
   return (
-    <div style={{ padding: '80px 0', background: '#0a0a0c' }} className="fade-in">
+    <div style={{ padding: '40px 0 80px 0', background: '#0a0a0c' }} className="fade-in">
+      
+      {/* --- GENRE LEGEND --- */}
+      <GenreLegend />
+
       <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative' }}>
         
-        {/* Spine */}
+        {/* --- CENTRAL SPINE --- */}
         <div style={{ 
           position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2,
           background: 'linear-gradient(to bottom, #00f2ff, #9d00ff, #ffcc00, transparent)',
@@ -1082,7 +1086,7 @@ function TimelineTab({ concerts, setActiveTab }) {
           <div key={year} style={{ position: 'relative', marginBottom: 120 }}>
             
             {/* LEFT STICKY YEAR */}
-            <div style={{ position: 'absolute', left: '-180px', top: 0, bottom: 0, width: '100px' }}>
+            <div style={{ position: 'absolute', left: '-180px', top: 0, bottom: 0, width: '100px', zIndex: 1 }}>
               <div style={{ 
                 position: 'sticky', top: '250px', fontFamily: "'Bebas Neue'", fontSize: '6.5rem', 
                 color: 'transparent', WebkitTextStroke: `2px ${yIdx % 2 === 0 ? '#00f2ff' : '#9d00ff'}`,
@@ -1092,7 +1096,7 @@ function TimelineTab({ concerts, setActiveTab }) {
             </div>
 
             {/* RIGHT STICKY YEAR */}
-            <div style={{ position: 'absolute', right: '-180px', top: 0, bottom: 0, width: '100px' }}>
+            <div style={{ position: 'absolute', right: '-180px', top: 0, bottom: 0, width: '100px', zIndex: 1 }}>
               <div style={{ 
                 position: 'sticky', top: '250px', fontFamily: "'Bebas Neue'", fontSize: '6.5rem', 
                 color: 'transparent', WebkitTextStroke: `2px ${yIdx % 2 === 0 ? '#00f2ff' : '#9d00ff'}`,
@@ -1183,10 +1187,10 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
   const [hovered, setHovered] = React.useState(false);
   const bands = item.bands || [];
   
-  // 1. Get the Genre Color (Hardcoded fallback to Teal if missing)
+  // 1. Determine Genre & Color
   const headliner = bands[0] || "";
   const genre = GENRE_MAP[headliner] || "Other";
-  const themeColor = GENRE_COLORS[genre] || "#00f2ff";
+  const themeColor = GENRE_COLORS[genre] || "#444444";
 
   return (
     <div 
@@ -1200,64 +1204,67 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
     >
       {/* Connector Dot */}
       <div style={{ 
-        position: 'absolute', left: '50%', width: hovered ? 16 : 12, height: hovered ? 16 : 12, 
+        position: 'absolute', left: '50%', width: 12, height: 12, 
         borderRadius: '50%', background: themeColor, 
         transform: 'translateX(-50%)', zIndex: 5, 
-        boxShadow: hovered ? `0 0 20px ${themeColor}` : `0 0 8px ${themeColor}66`,
-        border: '2px solid #0a0a0c', transition: '0.2s'
+        boxShadow: `0 0 ${hovered ? '20px' : '10px'} ${themeColor}`,
+        border: '2px solid #0a0a0c', transition: '0.3s'
       }} />
       
-      {/* THE CARD CONTAINER */}
+      {/* THE CARD */}
       <div style={{ 
         width: '43%', padding: '20px', borderRadius: '12px',
-        border: '1px solid rgba(255,255,255,0.1)',
-        borderLeft: isLeft ? `4px solid ${themeColor}` : '1px solid rgba(255,255,255,0.1)',
-        borderRight: !isLeft ? `4px solid ${themeColor}` : '1px solid rgba(255,255,255,0.1)',
-        background: hovered ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
-        transform: hovered ? `scale(1.05) rotate(${isLeft ? '1deg' : '-1deg'})` : 'scale(1) rotate(0deg)',
-        transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-        zIndex: hovered ? 20 : 1,
-        boxShadow: hovered ? `0 10px 40px -10px ${themeColor}33` : 'none'
+        background: item.is_festival ? 'rgba(255, 204, 0, 0.03)' : 'rgba(255,255,255,0.02)',
+        // THE NEON BORDER (Genre Based)
+        border: `1px solid ${hovered ? themeColor : 'rgba(255,255,255,0.1)'}`,
+        borderLeft: isLeft ? `6px solid ${themeColor}` : `1px solid ${hovered ? themeColor : 'rgba(255,255,255,0.1)'}`,
+        borderRight: !isLeft ? `6px solid ${themeColor}` : `1px solid ${hovered ? themeColor : 'rgba(255,255,255,0.1)'}`,
+        transform: hovered ? `scale(1.03) translateY(-5px)` : 'scale(1)',
+        transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        boxShadow: hovered ? `0 15px 40px -15px ${themeColor}66` : 'none',
+        zIndex: hovered ? 20 : 1
       }}>
         
-        {/* Date & Badge Row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-          <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#888', letterSpacing: '1px' }}>
-            {item.date}
-          </span>
-          {item.is_festival && (
-            <span style={{ 
-              color: '#ffcc00', fontSize: 8, fontWeight: 'bold', 
-              border: '1px solid #ffcc0044', padding: '2px 6px', borderRadius: '4px' 
-            }}>FESTIVAL</span>
-          )}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, alignItems: 'center' }}>
+          <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#666' }}>{item.date}</span>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {/* Setlist Checkmark */}
+            {item.has_setlist && <span title="Setlist available" style={{ color: '#ffcc00', fontSize: '12px' }}>✓</span>}
+            {/* Festival Badge */}
+            {item.is_festival && (
+              <span style={{ 
+                background: '#ffcc00', color: '#000', fontSize: '8px', 
+                fontWeight: '900', padding: '2px 6px', borderRadius: '2px', letterSpacing: '1px'
+              }}>FESTIVAL</span>
+            )}
+          </div>
         </div>
 
-        {/* BAND NAMES (The part that was missing!) */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+        {/* Bands in White */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: 15 }}>
           {bands.map((band, idx) => (
             <span key={idx} style={{ 
-              fontFamily: idx === 0 ? "'Bebas Neue'" : "'Inter', sans-serif", 
-              fontSize: idx === 0 ? '1.9rem' : '1rem',
-              color: '#ffffff', // Forced white
-              lineHeight: 1.1, 
-              letterSpacing: idx === 0 ? '1px' : '0',
-              opacity: idx !== 0 && !hovered ? 0.5 : 1,
-              transition: '0.2s',
-              textShadow: idx === 0 && hovered ? `0 0 15px ${themeColor}88` : 'none'
+              fontFamily: idx === 0 ? "'Bebas Neue'" : "'Inter'", 
+              fontSize: idx === 0 ? '2rem' : '1rem',
+              color: '#ffffff', lineHeight: 1,
+              opacity: idx !== 0 && !hovered ? 0.4 : 1
             }}>
               {band}{idx < bands.length - 1 ? (idx === 0 ? '' : ' • ') : ''}
             </span>
           ))}
         </div>
 
-        {/* Venue Info */}
+        {/* Venue/City in White (Fixed) */}
         <div style={{ 
-          marginTop: 15, fontSize: 10, color: themeColor, 
-          fontFamily: "'Space Mono'", borderTop: '1px solid rgba(255,255,255,0.1)', 
-          paddingTop: 10, opacity: 0.8 
+          marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center'
         }}>
-          {item.venue?.toUpperCase()} <span style={{color: '#444'}}>//</span> {item.city?.toUpperCase()}
+          <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#ffffff', opacity: 0.7 }}>
+            {item.venue?.toUpperCase()} // {item.city?.toUpperCase()}
+          </span>
+          <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: themeColor, fontWeight: 'bold' }}>
+            {genre.toUpperCase()}
+          </span>
         </div>
       </div>
     </div>
