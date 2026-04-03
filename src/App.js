@@ -2111,19 +2111,10 @@ export default function App() {
         {activeTab === 'browse' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
             <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
-              <input style={{ ...inputSt, flex: 1, minWidth: 160 }} placeholder="Search artist, venue, city, festival..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
-              <select style={inputSt} value={yearFilter} onChange={e => { setYearFilter(e.target.value); setPage(1); }}>
-                <option value="all">All Years</option>
-                {years.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-              <select style={inputSt} value={festFilter} onChange={e => { setFestFilter(e.target.value); setPage(1); }}>
-                <option value="all">All Shows</option>
-                <option value="fest">Festival Only</option>
-                <option value="solo">Standalone Only</option>
-              </select>
+              <input style={{ ...inputSt, flex: 1, minWidth: 160 }} placeholder="Search artist..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
               <div style={{ display: 'flex', border: `1px solid ${C.border}`, borderRadius: 4, overflow: 'hidden' }}>
                 {[['shows', 'By Set'], ['artists', 'By Artist']].map(([v, l]) => (
-                  <button key={v} style={{ fontFamily: "'Space Mono'", fontSize: 9, textTransform: 'uppercase', background: browseView === v ? C.teal : C.bgCard, color: browseView === v ? C.bg : C.gray, border: 'none', padding: '7px 12px', cursor: 'pointer' }} onClick={() => setBrowseView(v)}>{l}</button>
+                  <button key={v} style={{ fontFamily: "'Space Mono'", fontSize: 9, background: browseView === v ? C.teal : C.bgCard, color: browseView === v ? C.bg : C.gray, border: 'none', padding: '7px 12px', cursor: 'pointer' }} onClick={() => setBrowseView(v)}>{l}</button>
                 ))}
               </div>
             </div>
@@ -2133,20 +2124,17 @@ export default function App() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
                   <thead>
                     <tr style={{ background: C.bgCardAlt }}>
-                      {[['date','Date'],['artist','Artist'],['venue','Venue'],['city','City']].map(([col, lbl]) => (
-                        <th key={col} style={{ padding: '10px 12px', textAlign: 'left', color: C.tealDim, borderBottom: `1px solid ${C.border}` }}>{lbl}</th>
-                      ))}
-                      <th style={{ padding: '10px 12px', borderBottom: `1px solid ${C.border}` }} />
+                      <th style={{ padding: '10px 12px', textAlign: 'left', color: C.tealDim }}>DATE</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'left', color: C.tealDim }}>ARTIST</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'left', color: C.tealDim }}>VENUE</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paged.map((s, i) => (
-                      <tr key={`${s.id}-${s.artist}`} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 1 ? C.bgCardAlt : 'transparent' }} onClick={() => setEditTarget(s)}>
+                      <tr key={i} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 1 ? C.bgCardAlt : 'transparent' }}>
                         <td style={{ padding: '8px 12px', color: C.gray }}>{s.date}</td>
-                        <td style={{ padding: '8px 12px', color: C.white, fontWeight: 600 }}>{s.artist}</td>
+                        <td style={{ padding: '8px 12px', color: C.white }}>{s.artist}</td>
                         <td style={{ padding: '8px 12px', color: C.gray }}>{s.venue}</td>
-                        <td style={{ padding: '8px 12px', color: C.gray }}>{s.city}</td>
-                        <td style={{ padding: '8px 12px', textAlign: 'center' }}>{s.has_setlist ? '📋' : ''}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -2158,8 +2146,8 @@ export default function App() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
                 {artistRows.map(({ artist, shows }) => (
                   <div key={artist} style={{ background: C.bgCard, borderLeft: `5px solid ${C.teal}`, borderRadius: 8, padding: '16px' }}>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 700, color: C.white }}>{artist}</div>
-                    <div style={{ fontSize: 10, color: C.gray }}>Seen {shows.length}×</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: C.white }}>{artist}</div>
+                    <div style={{ fontSize: 10, color: C.gray }}>{shows.length} shows seen</div>
                   </div>
                 ))}
               </div>
@@ -2169,7 +2157,9 @@ export default function App() {
 
         {/* ── HALL OF FAME TAB ── */}
         {activeTab === 'hof' && (
-          <HallOfFame sets={sets} concerts={concerts} onShare={(artist, shows) => setShareCard({ artist, shows })} />
+          <div style={{ padding: '24px 0' }}>
+            <HallOfFame sets={sets} concerts={concerts} onShare={(artist, shows) => setShareCard({ artist, shows })} />
+          </div>
         )}
 
         {/* ── SETLIST VAULT TAB ── */}
@@ -2180,7 +2170,7 @@ export default function App() {
               {concerts.filter(c => c.has_setlist).map(c => (
                 <div key={c.id} style={{ background: C.bgCard, border: `1px solid ${C.gold}33`, padding: 20, borderRadius: 10 }}>
                   <div style={{ color: C.gold, fontSize: 10 }}>{c.date}</div>
-                  <div style={{ fontSize: '1.5rem', color: '#fff' }}>{c.artist}</div>
+                  <div style={{ fontSize: '1.2rem', color: '#fff' }}>{c.artist}</div>
                 </div>
               ))}
             </div>
@@ -2203,13 +2193,15 @@ export default function App() {
 
         {/* ── MANAGE TAB ── */}
         {activeTab === 'manage' && (
-          <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} />
+          <div style={{ padding: '24px 0' }}>
+            <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} />
+          </div>
         )}
 
-      </main> {/* CLOSES MAIN */}
-    </div> // CLOSES MAIN DIV
-  ); // CLOSES RETURN
-} // CLOSES APP FUNCTION
+      </main> {/* Closes Main Content Area */}
+    </div> {/* Closes Sidebar/Page Layout Wrapper */}
+  ); // Closes Return Statement
+} // Closes App Function
 
 // ─── EXTERNAL COMPONENTS (OUTSIDE APP) ───
 
@@ -2220,7 +2212,7 @@ function SonicDNA({ stats }) {
     <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', marginBottom: '15px' }}>SONIC DNA</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {stats.map((g) => (
+        {stats.slice(0, 10).map((g) => (
           <div key={g.name} style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: g.color, fontSize: 10 }}>{g.name.toUpperCase()}</span>
             <span style={{ color: '#888', fontSize: 10 }}>{g.count} SETS</span>
