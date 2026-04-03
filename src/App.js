@@ -1887,19 +1887,25 @@ export default function App() {
       {/* CONTENT */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
 
-        {/* ── DASHBOARD ── */}
+        {/* --- DASHBOARD TAB --- */}
 {activeTab === 'dashboard' && (
-  <div style={{ padding: '24px 0' }} className="fade-in">
-    <OnThisDay concerts={concerts} />
-
-    {/* Artist Insights + Random Show row */}
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-      <ArtistInsights concerts={concerts} />
-      <RandomShow concerts={concerts} />
+  <> {/* <--- THIS FRAGMENT WRAPS EVERYTHING TOGETHER */}
+    
+    {/* 1. THE 5-COL GLOBAL STATS GRID */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
+       {/* ... your 5 Card components go here ... */}
     </div>
 
-    {/* ── COMMAND CENTER GRID (Replaces old Milestones) ── */}
-    {/* --- COMMAND CENTER: 10 GLOBAL STATS --- */}
+    {/* 2. THE NEON MARQUEE ROW */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 15, marginBottom: 20 }}>
+       {/* ... your Marquee and Side Cards go here ... */}
+    </div>
+
+    {/* 3. THE GENRE DNA / SONIC DNA */}
+    <SonicDNA stats={genreStats} />
+
+  </> // {/* <--- CLOSES THE FRAGMENT */}
+)}
 <div style={{ 
   display: 'grid', 
   gridTemplateColumns: 'repeat(5, 1fr)', 
