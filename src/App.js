@@ -307,20 +307,22 @@ function NewsTicker({ concerts, artistCounts, genreStats }) {
   const items = useMemo(() => {
     const bits = [];
     if (artistCounts[0]) bits.push(`🏆 ALL-TIME LEADER: ${artistCounts[0].name.toUpperCase()} — SEEN ${artistCounts[0].count} TIMES`);
-    if (genreStats[0]) bits.push(`🎸 DOMINANT GENRE: ${genreStats[0].name.toUpperCase()} WITH ${genreStats[0].count} SETS`);
-    const recent = concerts.slice(0, 3);
-    recent.forEach(c => bits.push(`⚡ RECENTLY ATTENDED: ${(c.bands||[]).join(', ').toUpperCase()} — ${fmtDateShort(c.date).toUpperCase()}`));
-    bits.push(`📍 ${new Set(concerts.map(c=>c.state).filter(Boolean)).size} STATES CONQUERED`);
+    if (artistCounts[1]) bits.push(`🎸 ${artistCounts[1].name.toUpperCase()} — ${artistCounts[1].count} SHOWS AND COUNTING`);
+    if (genreStats[0]) bits.push(`🧬 DOMINANT GENRE: ${genreStats[0].name.toUpperCase()} WITH ${genreStats[0].count} SETS`);
+    concerts.slice(0,3).forEach(c => bits.push(`⚡ RECENTLY ATTENDED: ${(c.bands||[]).join(', ').toUpperCase()} — ${fmtDateShort(c.date).toUpperCase()}`));
+    bits.push(`📍 ${new Set(concerts.map(c=>c.state).filter(Boolean)).size} STATES CONQUERED ACROSS ${concerts.length} SHOW DAYS`);
     bits.push(`🎪 ${new Set(concerts.filter(c=>c.is_festival&&c.festival_name).map(c=>c.festival_name)).size} UNIQUE FESTIVALS ATTENDED`);
-    return bits.join('   ///   ');
+    bits.push(`🎯 ${new Set(concerts.flatMap(c=>c.bands||[])).size} UNIQUE ARTISTS WITNESSED LIVE`);
+    const txt = bits.join('   ///   ') + '   ///   ';
+    return txt + txt; // double for seamless loop
   }, [concerts, artistCounts, genreStats]);
 
   return (
-    <div style={{ background:C.bgCard, borderTop:`1px solid ${C.border}`, borderBottom:`1px solid ${C.border}`, padding:'6px 0', overflow:'hidden', marginTop:16 }}>
-      <div style={{ display:'flex', alignItems:'center', gap:0 }}>
-        <div style={{ background:C.teal, color:C.bg, fontFamily:"'Space Mono',monospace", fontSize:9, letterSpacing:'0.15em', fontWeight:700, padding:'3px 12px', flexShrink:0, textTransform:'uppercase', whiteSpace:'nowrap' }}>LIVE FEED</div>
-        <div style={{ overflow:'hidden', flex:1 }}>
-          <div style={{ display:'inline-block', whiteSpace:'nowrap', animation:'ticker-scroll 40s linear infinite', fontFamily:"'Space Mono',monospace", fontSize:9, color:C.gray, paddingLeft:20 }}>{items}&nbsp;&nbsp;&nbsp;&nbsp;{items}</div>
+    <div style={{ background:C.bgCard, border:`1px solid ${C.teal}33`, borderRadius:6, overflow:'hidden', marginTop:16 }}>
+      <div style={{ display:'flex', alignItems:'stretch' }}>
+        <div style={{ background:C.teal, color:C.bg, fontFamily:"'Bebas Neue'", fontSize:15, letterSpacing:'0.2em', padding:'12px 18px', flexShrink:0, display:'flex', alignItems:'center', whiteSpace:'nowrap', boxShadow:`4px 0 12px ${C.tealGlow}` }}>LIVE FEED</div>
+        <div style={{ overflow:'hidden', flex:1, background:`${C.teal}08` }}>
+          <div style={{ display:'inline-block', whiteSpace:'nowrap', animation:'ticker-scroll 90s linear infinite', fontFamily:"'Space Mono',monospace", fontSize:12, color:C.teal, padding:'12px 24px', letterSpacing:'0.06em', textShadow:`0 0 8px ${C.tealGlow}` }}>{items}</div>
         </div>
       </div>
     </div>
@@ -950,12 +952,12 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
         <div style={{ position:'absolute', left:'50%', top:0, bottom:0, width:2, background:'linear-gradient(to bottom,#00f2ff,#9d00ff,#ffcc00,transparent)', transform:'translateX(-50%)', opacity:0.2 }} />
         {yearsData.map(([year,flow],yIdx) => (
           <div key={year} style={{ position:'relative', marginBottom:120 }}>
-            {/* Year labels — tight to the spine */}
-            <div style={{ position:'absolute', left:'calc(50% - 140px)', top:0 }}>
-              <div style={{ position:'sticky', top:200, fontFamily:"'Bebas Neue'", fontSize:'5rem', color:'transparent', WebkitTextStroke:`1.5px ${yIdx%2===0?'#00f2ff':'#9d00ff'}`, opacity:0.5, lineHeight:1, textAlign:'right' }}>{year}</div>
+            {/* Year labels — pushed to outer margins, sticky scroll */}
+            <div style={{ position:'absolute', left:0, top:0, width:'7%', zIndex:10 }}>
+              <div style={{ position:'sticky', top:80, fontFamily:"'Bebas Neue'", fontSize:'clamp(2.5rem,4vw,4.5rem)', color:'transparent', WebkitTextStroke:`1.5px ${yIdx%2===0?'#00f2ff':'#9d00ff'}`, opacity:0.7, lineHeight:1, textAlign:'left', paddingLeft:4 }}>{year}</div>
             </div>
-            <div style={{ position:'absolute', right:'calc(50% - 140px)', top:0 }}>
-              <div style={{ position:'sticky', top:200, fontFamily:"'Bebas Neue'", fontSize:'5rem', color:'transparent', WebkitTextStroke:`1.5px ${yIdx%2===0?'#00f2ff':'#9d00ff'}`, opacity:0.5, lineHeight:1 }}>{year}</div>
+            <div style={{ position:'absolute', right:0, top:0, width:'7%', zIndex:10 }}>
+              <div style={{ position:'sticky', top:80, fontFamily:"'Bebas Neue'", fontSize:'clamp(2.5rem,4vw,4.5rem)', color:'transparent', WebkitTextStroke:`1.5px ${yIdx%2===0?'#00f2ff':'#9d00ff'}`, opacity:0.7, lineHeight:1, textAlign:'right', paddingRight:4 }}>{year}</div>
             </div>
             <div style={{ width:'100%', padding:'0 20px' }}>
               {flow.map(item => item.type==='MONTH_MARKER'
@@ -984,7 +986,7 @@ function ByDayTab({ dayGroups, onEdit, genreMap }) {
 }
 
 // ─── BY FESTIVAL TAB ──────────────────────────────────────────────────────────
-function ByFestTab({ festGroupings }) {
+function ByFestTab({ festGroupings, genreMap = {} }) {
   const [collapsed, setCollapsed] = useState({});
   const toggle = (name,year) => setCollapsed(p=>({...p,[`${name}-${year}`]:!p[`${name}-${year}`]}));
   const FEST_COLORS = [C.teal,C.cyan,C.purple,C.gold,C.green,'#ff6699','#ff4400','#a2ff00'];
@@ -1024,7 +1026,7 @@ function ByFestTab({ festGroupings }) {
                     <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray }}>{shows.length} {shows.length===1?'DAY':'DAYS'} · {new Set(shows.flatMap(s=>s.bands||[])).size} ARTISTS</div>
                     <div style={{ marginLeft:'auto', color:C.grayDim, fontSize:10 }}>{isCollapsed?'▸':'▾'}</div>
                   </div>
-                  {!isCollapsed && shows.sort((a,b)=>a.date.localeCompare(b.date)).map(s => <WristbandCard key={s.id} event={s} compact />)}
+                  {!isCollapsed && shows.sort((a,b)=>a.date.localeCompare(b.date)).map(s => <WristbandCard key={s.id} event={s} genreMap={genreMap} compact />)}
                 </div>
               );
             })}
@@ -1715,13 +1717,40 @@ export default function App() {
       {editTarget && <EditModal concert={editTarget==='new'?null:editTarget} onClose={()=>setEditTarget(null)} onSave={handleSave} onDelete={handleDelete} />}
       {upcomingModal!==null && <UpcomingModal show={upcomingModal==='new'?null:upcomingModal} onClose={()=>setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
 
-      {/* ── STAT BAR ── */}
-      <div style={{ background:`linear-gradient(180deg,#050508 0%,${C.bgCard} 100%)`, borderBottom:`1px solid ${C.teal}22` }}>
-        <div style={{ maxWidth:1200, margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(4,1fr)', borderBottom:`1px solid ${C.border}` }}>
-          <CountUpStat value={headerStats.totalSets} label="Total Sets" sub="individual performances" />
-          <CountUpStat value={headerStats.uniqueArtists} label="Unique Artists" sub="bands & performers" />
-          <CountUpStat value={headerStats.totalShows} label="Show Days" sub={`${headerStats.festDays} fest · ${headerStats.totalShows-headerStats.festDays} solo`} />
-          <CountUpStat value={headerStats.setlistCount} label="Setlists" sub="physical collections 📋" color={C.gold} />
+      {/* ── HERO HEADER ── */}
+      <div style={{ background:`linear-gradient(180deg,#050508 0%,${C.bgCard} 100%)`, borderBottom:`1px solid ${C.teal}22`, padding:'36px 24px 0', textAlign:'center' }}>
+        <div style={{ maxWidth:1200, margin:'0 auto' }}>
+          <h1 style={{ fontFamily:"'Bebas Neue'", fontSize:'clamp(3rem,8vw,6rem)', color:C.white, margin:'0 0 8px', lineHeight:1, letterSpacing:'0.04em' }}>
+            🎸 LIVE <span style={{ color:C.gray, fontSize:'0.7em' }}>//</span> <span style={{ color:C.teal }}>IN CONCERT</span>
+          </h1>
+          <div style={{ fontFamily:"'Space Mono',monospace", fontSize:'0.75rem', color:C.gray, display:'flex', justifyContent:'center', gap:20, flexWrap:'wrap', marginBottom:28 }}>
+            <span>{years.length>0?`${years[years.length-1]-years[0]} YEARS`:'0 YEARS'}</span>
+            <span style={{ color:C.grayDim }}>·</span>
+            <span>{stateCounts.length} STATES</span>
+            <span style={{ color:C.grayDim }}>·</span>
+            <span style={{ color:C.white, fontWeight:700 }}>{headerStats.totalSets.toLocaleString()} SETS 🤘</span>
+          </div>
+
+          {/* Neon stat tiles */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:0, borderTop:`1px solid ${C.border}`, marginTop:0 }}>
+            {[
+              { value:headerStats.totalSets, label:'TOTAL SETS', sub:'individual performances', color:C.teal, icon:'🎵' },
+              { value:headerStats.uniqueArtists, label:'UNIQUE ARTISTS', sub:'bands & performers', color:C.cyan, icon:'🎤' },
+              { value:headerStats.totalShows, label:'SHOW DAYS', sub:`${headerStats.festDays} fest · ${headerStats.totalShows-headerStats.festDays} solo`, color:C.purple, icon:'📅' },
+              { value:headerStats.setlistCount, label:'SETLISTS', sub:'click to view vault', color:C.gold, icon:'📋', onClick:()=>setActiveTab('vault') },
+            ].map((s,i) => (
+              <div key={s.label} onClick={s.onClick}
+                style={{ padding:'20px 16px', borderRight:i<3?`1px solid ${C.border}`:'none', textAlign:'center', cursor:s.onClick?'pointer':'default', position:'relative', overflow:'hidden', transition:'background 0.2s' }}
+                onMouseEnter={e=>{ if(s.onClick)e.currentTarget.style.background=hexToRgba(s.color,0.06); }}
+                onMouseLeave={e=>{ e.currentTarget.style.background='transparent'; }}>
+                {/* Neon glow line at bottom */}
+                <div style={{ position:'absolute', bottom:0, left:'10%', right:'10%', height:2, background:s.color, boxShadow:`0 0 8px ${s.color}, 0 0 16px ${s.color}`, borderRadius:2 }} />
+                <div style={{ fontSize:'1.2rem', marginBottom:4 }}>{s.icon}</div>
+                <CountUpStat value={s.value} label={s.label} sub={s.sub} color={s.color} />
+                {s.onClick && <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:s.color, letterSpacing:'0.15em', marginTop:4, opacity:0.7 }}>↗ VIEW VAULT</div>}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -1734,7 +1763,7 @@ export default function App() {
             const isFestGroup=group==='fest';
             return (
               <button key={id} onClick={()=>setActiveTab(id)}
-                style={{ fontFamily:"'Space Mono'", fontSize:10, color:isActive?color:C.gray, background:isFestGroup?'rgba(255,204,0,0.04)':'none', border:'none', borderBottom:isActive?`2px solid ${color}`:'2px solid transparent', padding:'12px 16px', cursor:'pointer', whiteSpace:'nowrap', flexShrink:0, position:'relative', transition:'color 0.2s', ['--tab-color']:color }}>
+                style={{ fontFamily:"'Space Mono'", fontSize:10, color:isActive?color:C.gray, background:isFestGroup?'rgba(255,204,0,0.04)':'none', border:'none', borderBottom:isActive?`2px solid ${color}`:'2px solid transparent', padding:'12px 16px', cursor:'pointer', whiteSpace:'nowrap', flexShrink:0, position:'relative', transition:'color 0.2s' }}>
                 {label}
                 {isFestGroup && !isActive && <div style={{ position:'absolute', top:0, left:0, right:0, height:1, background:'rgba(255,204,0,0.2)' }} />}
               </button>
@@ -1806,16 +1835,28 @@ export default function App() {
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:0 }}>
               <Card neon>
                 <CardTitle>Most Seen Artists</CardTitle>
-                {artistCounts.slice(0,6).map((a,i) => { const gc=genreMap[a.name]?GENRE_COLORS[genreMap[a.name]]:null; return (
-                  <div key={a.name} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0', borderBottom:`1px solid ${C.border}` }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <span style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.grayDim }}>#{i+1}</span>
-                      <span style={{ fontSize:'0.85rem', color:C.white }}>{a.name}</span>
-                      {gc && <div style={{ width:6, height:6, borderRadius:'50%', background:gc, boxShadow:`0 0 5px ${gc}` }} />}
+                {artistCounts.slice(0,6).map((a,i) => {
+                  const gc = genreMap[a.name] ? GENRE_COLORS[genreMap[a.name]] : null;
+                  const MEDALS = ['🥇','🥈','🥉','🏅','🏅','🏅'];
+                  const pct = Math.round((a.count / (artistCounts[0]?.count||1)) * 100);
+                  return (
+                    <div key={a.name} style={{ marginBottom:10, padding:'10px 12px', background:gc?hexToRgba(gc,0.06):C.bgCardAlt, borderRadius:6, border:`1px solid ${gc?hexToRgba(gc,0.25):C.border}`, position:'relative', overflow:'hidden' }}>
+                      {/* Fill bar */}
+                      <div style={{ position:'absolute', left:0, top:0, bottom:0, width:`${pct}%`, background:gc?hexToRgba(gc,0.1):'rgba(255,255,255,0.03)', borderRadius:6, transition:'width 1s ease' }} />
+                      <div style={{ position:'relative', display:'flex', alignItems:'center', gap:10 }}>
+                        <span style={{ fontSize:'1.1rem', flexShrink:0 }}>{MEDALS[i]}</span>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:'0.9rem', fontWeight:700, color:gc||C.white, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{a.name}</div>
+                          {genreMap[a.name] && <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:gc, textTransform:'uppercase', letterSpacing:'0.08em', marginTop:1 }}>{genreMap[a.name]}</div>}
+                        </div>
+                        <div style={{ textAlign:'right', flexShrink:0 }}>
+                          <span style={{ color:C.gold, fontFamily:"'Bebas Neue'", fontSize:'1.6rem', lineHeight:1 }}>{a.count}</span>
+                          <span style={{ color:C.grayDim, fontFamily:"'Space Mono',monospace", fontSize:8, marginLeft:2 }}>×</span>
+                        </div>
+                      </div>
                     </div>
-                    <span style={{ color:C.gold, fontFamily:"'Bebas Neue'", fontSize:'1.4rem' }}>{a.count}×</span>
-                  </div>
-                ); })}
+                  );
+                })}
               </Card>
               <Card neon style={{ display:'flex', flexDirection:'column' }}>
                 <CardTitle>Setlist Spotlight 📋</CardTitle>
@@ -1823,7 +1864,7 @@ export default function App() {
               </Card>
             </div>
 
-            {/* News ticker */}
+            {/* News ticker — big, slow, bright */}
             <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
           </>
         )}
@@ -1841,7 +1882,7 @@ export default function App() {
           </>
         )}
 
-        {activeTab==='byFest' && <ByFestTab festGroupings={festGroupings} />}
+        {activeTab==='byFest' && <ByFestTab festGroupings={festGroupings} genreMap={genreMap} />}
 
         {activeTab==='passport' && <PassportTab passport={passport} onNavigateToFest={name=>{ setActiveTab('byFest'); setTimeout(()=>{ const el=document.getElementById(`fest-${name.replace(/\s+/g,'-')}`); if(el)el.scrollIntoView({behavior:'smooth',block:'start'}); },150); }} />}
 
