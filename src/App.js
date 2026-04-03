@@ -1945,40 +1945,53 @@ const TABS = [
 ];
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   // ── THEME ────────────────────────────────────────────────────────────────────
   const [themeId, setThemeIdRaw] = useState(() => localStorage.getItem('concert-theme') || 'neon-noir');
 
   const setThemeId = (id) => {
-    // Mutate the global C object so all components instantly re-read new colors
     Object.assign(C, THEMES[id]);
     setThemeIdRaw(id);
     localStorage.setItem('concert-theme', id);
   };
 
-  // Apply theme on first load
   useEffect(() => { Object.assign(C, THEMES[themeId]); }, []);
 
-  // Force re-render when theme changes by using themeId as a key signal
   const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
-  const [concerts, setConcerts]   = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [editTarget, setEditTarget] = useState(null);
-  const [shareCard, setShareCard] = useState(null);
-  const [upcoming, setUpcoming]   = useState([]);
+
+  // ── DATA STATE ───────────────────────────────────────────────────────────────
+  const [concerts, setConcerts]         = useState([]);
+  const [artistGenres, setArtistGenres] = useState({}); // <── THIS WAS MISSING
+  const [upcoming, setUpcoming]         = useState([]);
+  const [loading, setLoading]           = useState(true);
+  
+  // ── UI STATE ─────────────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab]       = useState('dashboard');
+  const [editTarget, setEditTarget]     = useState(null);
+  const [shareCard, setShareCard]       = useState(null);
   const [upcomingModal, setUpcomingModal] = useState(null);
 
-  // Filter state
-  const [search, setSearch]         = useState('');
-  const [yearFilter, setYearFilter] = useState('all');
-  const [festFilter, setFestFilter] = useState('all');
-  const [genreFilter, setGenreFilter] = useState('all');
-  const [browseView, setBrowseView] = useState('shows');
-  const [sortCol, setSortCol]       = useState('date');
-  const [sortDir, setSortDir]       = useState('desc');
-  const [page, setPage]             = useState(1);
+  // ── FILTER STATE ─────────────────────────────────────────────────────────────
+  const [search, setSearch]             = useState('');
+  const [yearFilter, setYearFilter]     = useState('all');
+  const [festFilter, setFestFilter]     = useState('all');
+  const [genreFilter, setGenreFilter]   = useState('all');
+  const [browseView, setBrowseView]     = useState('shows');
+  const [sortCol, setSortCol]           = useState('date');
+  const [sortDir, setSortDir]           = useState('desc');
+  const [page, setPage]                 = useState(1);
 
+  // ── INITIAL FETCH ───────────────────────────────────────────────────────────
+  // This replaces your old useEffect to make sure genres load first
+  useEffect(() => { 
+    const init = async () => {
+      setLoading(true);
+      await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]);
+      setLoading(false);
+    };
+    init();
+  }, []);
   // ── DERIVED DATA ────────────────────────────────────────────────────────────
   // ── DERIVED DATA ────────────────────────────────────────────────────────────
   // This now pulls from the dedicated artist_genres table instead of concert rows
