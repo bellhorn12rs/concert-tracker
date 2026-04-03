@@ -1657,17 +1657,7 @@ export default function App() {
       setEditTarget(null);
     } catch (err) { alert('Delete failed: ' + err.message); }
   }
-
-  async function toggleSetlist(concert) {
-    const newVal = !concert.has_setlist;
-    try {
-      const { error } = await supabase.from('concerts').update({ has_setlist: newVal }).eq('id', concert.id);
-      if (error) throw error;
-      setConcerts(p => p.map(c => c.id === concert.id ? { ...c, has_setlist: newVal } : c));
-    } catch (err) { console.error(err.message); }
-  }
-
- async function toggleSetlist(concert) {
+async function toggleSetlist(concert) {
     const newVal = !concert.has_setlist;
     try {
       const { error } = await supabase.from('concerts').update({ has_setlist: newVal }).eq('id', concert.id);
@@ -1677,6 +1667,12 @@ export default function App() {
   }
 
   // --- 6. RENDER DATA (DERIVED) ---
+
+  const allSetsList = useMemo(() => {
+    const r = [];
+    concerts.forEach(c => (c.bands || []).forEach(band => r.push({ ...c, artist: band })));
+    return r;
+  }, [concerts]);
 
   // 1. Foundation: This must be first
   const allSetsList = useMemo(() => {
