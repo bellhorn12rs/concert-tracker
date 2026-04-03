@@ -1499,32 +1499,7 @@ export default function App() {
 
   // ==========================================
 
-  // 2. DASHBOARD STATS (Grid Cards)
-  const dashboardStats = useMemo(() => {
-    if (!concerts || concerts.length === 0) {
-      return { topBand: 'None', topCount: 0, totalSets: 0, stateCount: 0, venueCount: 0, newDiscoveries: 0 };
-    }
-    const counts = {};
-    allSetsList.forEach(s => { if (s.artist) counts[s.artist] = (counts[s.artist] || 0) + 1; });
-    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-    const states = new Set(concerts.map(c => c.state).filter(Boolean));
-    const venues = new Set(concerts.map(c => c.venue).filter(Boolean));
-    
-    // Fresh Blood calculation
-    const recent = new Set(concerts.filter(c => c.date >= '2025').flatMap(c => c.bands || [c.artist]));
-    const old = new Set(concerts.filter(c => c.date < '2025').flatMap(c => c.bands || [c.artist]));
-    const fresh = [...recent].filter(b => !old.has(b)).length;
-
-    return {
-      topBand: top ? top[0] : 'None',
-      topCount: top ? top[1] : 0,
-      totalSets: allSetsList.length,
-      stateCount: states.size,
-      venueCount: venues.size,
-      newDiscoveries: fresh
-    };
-  }, [concerts, allSetsList]);
-
+ 
   // 3. HEADER STATS (Navigation/Top Bar)
   const headerStats = useMemo(() => {
     const venues = new Set(concerts.map(c => c.venue).filter(Boolean));
