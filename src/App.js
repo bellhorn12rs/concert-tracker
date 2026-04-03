@@ -2107,56 +2107,63 @@ export default function App() {
       })}
   </div>
 )}
-{/* ── MAIN CONTENT AREA ── */}
-        <div className="tab-container" style={{ padding: '24px 0' }}>
+{/* ─── MAIN TABS CONTAINER ─── */}
+        <div style={{ padding: '24px 0' }}>
           
-          {/* ── BROWSE TAB ── */}
+          {/* BROWSE */}
           {activeTab === 'browse' && (
             <div className="fade-in">
-              <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
-                <input style={{ ...inputSt, flex: 1 }} placeholder="Search..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
-                <div style={{ display: 'flex', border: `1px solid ${C.border}`, borderRadius: 4, overflow: 'hidden' }}>
-                  {[['shows', 'By Set'], ['artists', 'By Artist']].map(([v, l]) => (
-                    <button key={v} style={{ fontFamily: "'Space Mono'", fontSize: 9, background: browseView === v ? C.teal : C.bgCard, color: browseView === v ? C.bg : C.gray, border: 'none', padding: '7px 12px', cursor: 'pointer' }} onClick={() => setBrowseView(v)}>{l}</button>
-                  ))}
+              <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+                <input style={inputSt} placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
+                <div style={{ display: 'flex', background: C.bgCard, borderRadius: 4, overflow: 'hidden', border: `1px solid ${C.border}` }}>
+                  <button style={{ padding: '8px 12px', background: browseView === 'shows' ? C.teal : 'transparent', color: browseView === 'shows' ? C.bg : C.gray, border: 'none', cursor: 'pointer', fontSize: 10 }} onClick={() => setBrowseView('shows')}>SETS</button>
+                  <button style={{ padding: '8px 12px', background: browseView === 'artists' ? C.teal : 'transparent', color: browseView === 'artists' ? C.bg : C.gray, border: 'none', cursor: 'pointer', fontSize: 10 }} onClick={() => setBrowseView('artists')}>ARTISTS</button>
                 </div>
               </div>
-
-              {browseView === 'shows' && (
-                <div style={{ overflowX: 'auto', borderRadius: 8, border: `1px solid ${C.border}` }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
-                    <thead>
-                      <tr style={{ background: C.bgCardAlt }}>
-                        <th style={{ padding: '10px 12px', textAlign: 'left', color: C.tealDim }}>DATE</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'left', color: C.tealDim }}>ARTIST</th>
+              {browseView === 'shows' ? (
+                <div style={{ border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                    <thead style={{ background: C.bgCardAlt, color: C.tealDim }}>
+                      <tr>
+                        <th style={{ padding: 12, textAlign: 'left' }}>DATE</th>
+                        <th style={{ padding: 12, textAlign: 'left' }}>ARTIST</th>
+                        <th style={{ padding: 12, textAlign: 'left' }}>VENUE</th>
                       </tr>
                     </thead>
                     <tbody>
                       {paged.map((s, i) => (
-                        <tr key={i} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 1 ? C.bgCardAlt : 'transparent' }}>
-                          <td style={{ padding: '8px 12px', color: C.gray }}>{s.date}</td>
-                          <td style={{ padding: '8px 12px', color: C.white }}>{s.artist}</td>
+                        <tr key={i} style={{ borderBottom: `1px solid ${C.border}`, color: C.gray }}>
+                          <td style={{ padding: 12 }}>{s.date}</td>
+                          <td style={{ padding: 12, color: '#fff' }}>{s.artist}</td>
+                          <td style={{ padding: 12 }}>{s.venue}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 12 }}>
+                  {artistRows.slice(0, 50).map(a => (
+                    <div key={a.artist} style={{ background: C.bgCard, padding: 15, borderRadius: 8, borderLeft: `4px solid ${C.teal}` }}>
+                      <div style={{ color: '#fff', fontWeight: 'bold' }}>{a.artist}</div>
+                      <div style={{ fontSize: 10, color: C.gray }}>{a.shows.length} Shows</div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}
 
-          {/* ── HALL OF FAME TAB ── */}
-          {activeTab === 'hof' && (
-            <HallOfFame sets={sets} concerts={concerts} onShare={(artist, shows) => setShareCard({ artist, shows })} />
-          )}
+          {/* HOF */}
+          {activeTab === 'hof' && <HallOfFame sets={sets} concerts={concerts} onShare={(artist, shows) => setShareCard({ artist, shows })} />}
 
-          {/* ── SETLIST VAULT TAB ── */}
+          {/* VAULT */}
           {activeTab === 'setlist_vault' && (
             <div>
-              <h2 style={{ fontFamily: "'Bebas Neue'", color: C.gold }}>THE VAULT</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+              <h2 style={{ fontFamily: "'Bebas Neue'", color: C.gold, fontSize: '2rem' }}>THE VAULT</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 15 }}>
                 {concerts.filter(c => c.has_setlist).map(c => (
-                  <div key={c.id} style={{ background: C.bgCard, padding: 20, borderRadius: 10, border: `1px solid ${C.gold}33` }}>
+                  <div key={c.id} style={{ background: C.bgCard, padding: 20, borderRadius: 10, border: `1px solid ${C.gold}44` }}>
                     <div style={{ color: C.gold, fontSize: 10 }}>{c.date}</div>
                     <div style={{ color: '#fff' }}>{c.artist}</div>
                   </div>
@@ -2165,44 +2172,46 @@ export default function App() {
             </div>
           )}
 
-          {/* ── PASSPORT TAB ── */}
+          {/* PASSPORT */}
           {activeTab === 'passport' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
               {passport.map(f => (
-                <div key={f.name} style={{ background: C.bgCard, border: `1px solid ${C.border}`, padding: 15, borderRadius: 8 }}>
+                <div key={f.name} style={{ background: C.bgCard, padding: 15, borderRadius: 8, textAlign: 'center', border: `1px solid ${C.border}` }}>
                   <div style={{ fontSize: '1.5rem', color: C.teal }}>{f.days}</div>
-                  <div style={{ fontSize: 10, color: '#fff' }}>{f.name}</div>
+                  <div style={{ fontSize: 9, color: '#fff' }}>{f.name}</div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* ── MANAGE TAB ── */}
-          {activeTab === 'manage' && (
-            <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} />
-          )}
+          {/* MANAGE */}
+          {activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} />}
 
-        </div> {/* Closes tab-container */}
-      </main> {/* Closes Main wrapper */}
-    </div> {/* Closes Page wrapper */}
-  ); // Closes Return
-} // Closes App
+        </div> {/* END OF TAB PADDING DIV */}
+      </main> {/* END OF MAIN WRAPPER */}
+    </div> {/* END OF PAGE WRAPPER */}
+  );
+}
 
-// --- COMPONENTS OUTSIDE APP ---
+// ─── HELPER COMPONENTS (OUTSIDE APP) ───
+
 function SonicDNA({ stats }) {
   if (!stats || stats.length === 0) return null;
-  const maxCount = stats[0].count;
+  const max = stats[0].count;
   return (
-    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff' }}>SONIC DNA</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {stats.slice(0, 10).map((g) => (
-          <div key={g.name} style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: g.color, fontSize: 10 }}>{g.name.toUpperCase()}</span>
-            <span style={{ color: '#888', fontSize: 10 }}>{g.count} SETS</span>
+    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff', marginBottom: 15 }}>SONIC DNA</div>
+      {stats.slice(0, 10).map(g => (
+        <div key={g.name} style={{ marginBottom: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: g.color }}>
+            <span>{g.name.toUpperCase()}</span>
+            <span>{g.count} SETS</span>
           </div>
-        ))}
-      </div>
+          <div style={{ height: 4, background: '#111', borderRadius: 2, marginTop: 4 }}>
+            <div style={{ width: `${(g.count/max)*100}%`, height: '100%', background: g.color, borderRadius: 2 }} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
