@@ -2353,6 +2353,13 @@ export default function App() {
     </div>
   );
 }
+{/* ─── END OF MAIN LAYOUT ─── */}
+    </main>
+  );
+} // <--- THIS CLOSES THE MAIN APP FUNCTION
+
+// ─── THE FOLLOWING COMPONENTS LIVE OUTSIDE OF APP ───
+
 // --- SONIC DNA COMPONENT ---
 function SonicDNA({ stats }) {
   if (!stats || stats.length === 0) return null;
@@ -2393,9 +2400,11 @@ function SonicDNA({ stats }) {
   );
 }
 
-// ─── FINAL CLOSURE ───
-// These two characters are the most important. 
-// They close the original "return (" and the "function App() {" 
-// that started 2000 lines ago.
-    );
+// Helper for card colors
+function hexToRgba(hex, alpha) {
+  if (!hex) return `rgba(255,255,255,${alpha})`;
+  const r = parseInt(hex.slice(1, 3), 16),
+        g = parseInt(hex.slice(3, 5), 16),
+        b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
