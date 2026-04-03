@@ -527,65 +527,88 @@ function SetlistSpotlight({ concerts, onVault }) {
   );
 }
 
-// ─── ARTIST INSIGHTS ──────────────────────────────────────────────────────────
+// ─── ARTIST INSIGHTS (POSTER EDITION) ─────────────────────────────────────────
 function ArtistInsights({ concerts }) {
   const [index, setIndex] = useState(0);
-  // ... (keep your existing insights useMemo logic here) ...
+  const insights = useMemo(() => {
+    if (!concerts.length) return [];
+    const yrMap = {};
+    concerts.forEach(c => { const y=getYear(c.date); if(y) yrMap[y]=(yrMap[y]||0)+1; });
+    const peakYear = Object.entries(yrMap).sort((a,b)=>b[1]-a[1])[0];
+    const cityMap = {};
+    concerts.forEach(c => { if(c.city) cityMap[c.city]=(cityMap[c.city]||0)+1; });
+    const topCity = Object.entries(cityMap).sort((a,b)=>b[1]-a[1])[0];
+    const festDays = concerts.filter(c=>c.is_festival).length;
+    const festPct = Math.round((festDays/concerts.length)*100);
+    const venueMap = {};
+    concerts.forEach(c => { if(c.venue) venueMap[c.venue]=(venueMap[c.venue]||0)+1; });
+    const topVenue = Object.entries(venueMap).sort((a,b)=>b[1]-a[1])[0];
+    const allSets = [];
+    concerts.forEach(c => (c.bands||[]).forEach(b => { if(b) allSets.push({...c, artist:b}); }));
+    const artistDates = {};
+    allSets.forEach(s => { if(!artistDates[s.artist]) artistDates[s.artist]=[]; artistDates[s.artist].push(s.date); });
+    let longestRel = { artist:'', span:0, shows:0 };
+    Object.entries(artistDates).forEach(([artist,dates]) => {
+      if(dates.length<2) return;
+      const span = Math.round((new Date(dates.reduce((a,b)=>a>b?a:b))-new Date(dates.reduce((a,b)=>a<b?a:b)))/(1000*60*60*24*365));
+      if(span>longestRel.span) longestRel={artist,span,shows:dates.length};
+    });
+    const years = Object.keys(yrMap).map(Number).sort();
+    let maxStreak=1, cur=1;
+    for(let i=1;i<years.length;i++){if(years[i]===years[i-1]+1){cur++;maxStreak=Math.max(maxStreak,cur);}else cur=1;}
+    const uniqueArtists = new Set(allSets.map(s=>s.artist));
+    const oneTimers = Object.values(artistDates).filter(d=>d.length===1).length;
+    const weekend = concerts.filter(c=>{const d=new Date(c.date+'T12:00:00');return[4,5,6].includes(d.getDay());}).length;
+    const uniqueFests = new Set(concerts.filter(c=>c.is_festival&&c.festival_name).map(c=>c.festival_name));
+    const austinShows = concerts.filter(c=>c.city==='Austin').length;
+    const austinPct = Math.round((austinShows/concerts.length)*100);
+    const avgBands = (allSets.length/concerts.length).toFixed(1);
+    const heavy = Object.entries(artistDates).filter(([,d])=>d.length>=10).length;
+    return [
+      { label:'PEAK INTENSITY', val:peakYear?.[0], sub:`Your busiest year on record with ${peakYear?.[1]} shows logged.` },
+      { label:'HOME TURF', val:topCity?.[0]?.toUpperCase(), sub:`${topCity?.[1]} shows in your most-visited city.` },
+      { label:'FESTIVAL RATIO', val:`${festPct}%`, sub:`${festPct}% of your history happened in a field.` },
+      { label:'TOTAL LEGACY', val:concerts.length, sub:`Unique show days logged since you started.` },
+      { label:'JUNE IS YOUR MONTH', val:'JUNE', sub:`76 shows in June — more than any other month by a mile.` },
+      { label:'MOST LOYAL STAGE', val:topVenue?.[0], sub:`You've been to ${topVenue?.[0]} ${topVenue?.[1]} times.` },
+      { label:'LONGEST STREAK', val:`${maxStreak} YRS`, sub:`${maxStreak} consecutive years without missing a single year.` },
+      { label:'SXSW CHAMPION', val:'9 BANDS', sub:`Your personal record — 9 acts in a single day at SXSW 2008.` },
+      { label:'RIDE OR DIE', val:longestRel.artist, sub:`${longestRel.span}-year relationship across ${longestRel.shows} shows.` },
+      { label:'UNIQUE ARTISTS', val:uniqueArtists.size, sub:`${oneTimers} of them you've only seen once.` },
+      { label:'WEEKEND WARRIOR', val:`${Math.round((weekend/concerts.length)*100)}%`, sub:`${Math.round((weekend/concerts.length)*100)}% of your shows fall on a Friday, Saturday, or Sunday.` },
+      { label:'FESTIVAL PASSPORT', val:`${uniqueFests.size} FESTS`, sub:`${uniqueFests.size} unique festivals across ${festDays} total days.` },
+      { label:'AUSTIN DOMINANCE', val:`${austinPct}%`, sub:`${austinShows} of ${concerts.length} shows happened in Austin, TX.` },
+      { label:'BANDS PER DAY', val:avgBands, sub:`Average ${avgBands} acts per show day. You never leave early.` },
+      { label:'HEAVY ROTATION', val:`${heavy} ARTISTS`, sub:`${heavy} artists you've seen 10 or more times.` },
+    ];
+  }, [concerts]);
+
+  useEffect(() => {
+    if (!insights.length) return;
+    const t = setInterval(() => setIndex(p => (p+1) % insights.length), 5500);
+    return () => clearInterval(t);
+  }, [insights.length]);
 
   const active = insights[index] || { label:'LOADING', val:'...', sub:'' };
-  
+
   return (
-    <Card neon className="card-texture" style={{ minHeight: 220, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+    <Card neon className="card-texture" style={{ minHeight: 220, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
       <div className="big-watermark">{active.label.split(' ')[0]}</div>
-      
       <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ 
-          background: C.teal, 
-          color: C.bg, 
-          fontFamily: "'Space Mono'", 
-          fontSize: 9, 
-          padding: '4px 10px', 
-          width: 'fit-content', 
-          fontWeight: 900, 
-          marginBottom: 15,
-          borderRadius: '2px'
-        }}>
+        <div style={{ background: C.teal, color: C.bg, fontFamily: "'Space Mono'", fontSize: 9, padding: '4px 10px', width: 'fit-content', fontWeight: 900, marginBottom: 15, borderRadius: '2px' }}>
           ⚡ {active.label}
         </div>
-
         <div className="fade-in" key={index} style={{ flex: 1 }}>
-          <div style={{ 
-            fontFamily: "'Bebas Neue'", 
-            fontSize: active.val.length > 8 ? '2.5rem' : '4rem', 
-            color: C.white, 
-            lineHeight: 0.9, 
-            marginBottom: 10,
-            textShadow: `0 0 20px ${hexToRgba(C.teal, 0.3)}`
-          }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: (active.val?.length || 0) > 8 ? '2.5rem' : '4rem', color: C.white, lineHeight: 0.9, marginBottom: 10, textShadow: `0 0 20px ${hexToRgba(C.teal, 0.3)}` }}>
             {active.val}
           </div>
-          <div style={{ 
-            fontSize: '0.95rem', 
-            color: C.gray, 
-            lineHeight: 1.4, 
-            maxWidth: '90%',
-            fontFamily: "'Space Mono'",
-            borderLeft: `2px solid ${C.teal}33`,
-            paddingLeft: 12
-          }}>
+          <div style={{ fontSize: '0.95rem', color: C.gray, lineHeight: 1.4, maxWidth: '90%', fontFamily: "'Space Mono'", borderLeft: `2px solid ${C.teal}33`, paddingLeft: 12 }}>
             {active.sub}
           </div>
         </div>
-
         <div style={{ display: 'flex', gap: 4, marginTop: 20 }}>
           {insights.map((_, i) => (
-            <div key={i} style={{ 
-              flex: 1, 
-              height: 3, 
-              borderRadius: 2, 
-              background: i === index ? C.teal : C.grayDim, 
-              transition: '0.3s' 
-            }} />
+            <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i === index ? C.teal : C.grayDim, transition: '0.3s' }} />
           ))}
         </div>
       </div>
@@ -614,55 +637,56 @@ function ArtistInsights({ concerts }) {
   );
 }
 
-// ─── RANDOM SHOW (WHEEL OF MEMORIES) ──────────────────────────────────────────
+// ─── RANDOM SHOW (POSTER EDITION) ─────────────────────────────────────────────
 function RandomShow({ concerts }) {
   const [show, setShow] = useState(null);
   const [spinning, setSpinning] = useState(false);
-  
-  // ... (keep your existing spin logic here) ...
+
+  const spin = () => {
+    if (!concerts.length) return;
+    setSpinning(true);
+    let iterations = 0;
+    const maxIterations = 15;
+    const interval = setInterval(() => {
+      setShow(concerts[Math.floor(Math.random() * concerts.length)]);
+      iterations++;
+      if (iterations >= maxIterations) {
+        clearInterval(interval);
+        setSpinning(false);
+      }
+    }, 80);
+  };
+
+  useEffect(() => { if (concerts.length && !show) spin(); }, [concerts.length]);
+
+  if (!show) return null;
 
   const bands = show.bands || [show.artist];
 
   return (
-    <Card neon className="card-texture" style={{ minHeight: 220, position: 'relative' }}>
+    <Card neon className="card-texture" style={{ minHeight: 220, position: 'relative', overflow: 'hidden' }}>
       <div className="big-watermark">{getYear(show.date)}</div>
-
       <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
           <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.purple, letterSpacing: 2, fontWeight: 700 }}>
             {spinning ? "🧠 RECALLING..." : "🎲 RANDOM RECALL"}
           </div>
-          <button onClick={spin} disabled={spinning} style={{ 
-            background: spinning ? C.grayDim : `linear-gradient(45deg, ${C.purple}, #ff00ff)`, 
-            border: 'none', color: '#fff', fontSize: 8, padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontWeight: 900
-          }}>
+          <button onClick={spin} disabled={spinning} style={{ background: spinning ? C.grayDim : `linear-gradient(45deg, ${C.purple}, #ff00ff)`, border: 'none', color: '#fff', fontSize: 8, padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontWeight: 900 }}>
             {spinning ? "•••" : "SPIN"}
           </button>
         </div>
-
         <div className={spinning ? "spinning-text" : "fade-in"} style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
             <span style={{ background: C.white, color: C.bg, fontFamily: "'Bebas Neue'", fontSize: '1.4rem', padding: '0 8px' }}>{getYear(show.date)}</span>
             {show.is_festival && <Badge color={C.gold}>FESTIVAL</Badge>}
           </div>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 15 }}>
             {bands.slice(0, 3).map((b, i) => (
-              <div key={i} style={{ 
-                fontFamily: "'Bebas Neue'", 
-                fontSize: bands.length > 2 ? '1.5rem' : '2.2rem', 
-                color: C.white, 
-                lineHeight: 1,
-                letterSpacing: '0.05em',
-                background: 'rgba(255,255,255,0.03)',
-                padding: '4px 8px',
-                borderLeft: `3px solid ${C.purple}`
-              }}>
+              <div key={i} style={{ fontFamily: "'Bebas Neue'", fontSize: bands.length > 2 ? '1.5rem' : '2.2rem', color: C.white, lineHeight: 1, letterSpacing: '0.05em', background: 'rgba(255,255,255,0.03)', padding: '4px 8px', borderLeft: `3px solid ${C.purple}` }}>
                 {b.toUpperCase()}
               </div>
             ))}
           </div>
-
           <div style={{ marginTop: 'auto' }}>
             <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.purple, fontWeight: 700 }}>
               📍 {show.venue?.toUpperCase() || 'UNKNOWN VENUE'}
