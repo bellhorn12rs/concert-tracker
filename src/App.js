@@ -1500,21 +1500,7 @@ export default function App() {
   // ==========================================
 
  
-  // 3. HEADER STATS (Navigation/Top Bar)
-  const headerStats = useMemo(() => {
-    const venues = new Set(concerts.map(c => c.venue).filter(Boolean));
-    const ac = {};
-    allSetsList.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
-    
-    return {
-      totalShows: concerts.length,
-      totalSets: allSetsList.length,
-      venueCount: venues.size,
-      festDays: concerts.filter(c => c.is_festival).length,
-      topArtist: Object.entries(ac).sort((a, b) => b[1] - a[1])[0] || ['—', 0],
-      setlistCount: concerts.filter(c => c.has_setlist || c.has_setlist_names).length
-    };
-  }, [concerts, allSetsList]);
+ 
 
   // 4. CHART & TIMELINE PREP
   const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
