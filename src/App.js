@@ -335,31 +335,55 @@ function SetlistSpotlight({ concerts, onVault }) {
   const [index,setIndex]=useState(0);
   const vault=useMemo(()=>concerts.filter(c=>c.has_setlist||c.has_setlist_names?.trim()),[concerts]);
   const slides=useMemo(()=>{
-    if (!vault.length) return [{label:'ARCHIVE EMPTY',val:'Start collecting!',sub:'Edit a show to log a setlist'}];
-    const recent=[...vault].sort((a,b)=>b.date.localeCompare(a.date))[0];
+    if (!vault.length) return [{label:'ARCHIVE EMPTY',val:'Start collecting!',sub:'Edit a show to log a setlist',card:null}];
+    const sorted=[...vault].sort((a,b)=>b.date.localeCompare(a.date));
+    const recent=sorted[0];
     const artCounts={};
     vault.forEach(c=>(c.has_setlist_names||'').split(',').forEach(n=>{ const name=n.trim(); if(name) artCounts[name]=(artCounts[name]||0)+1; }));
     const topArt=Object.entries(artCounts).sort((a,b)=>b[1]-a[1])[0];
     const venCounts={};
     vault.forEach(c=>{ venCounts[c.venue]=(venCounts[c.venue]||0)+1; });
     const topVen=Object.entries(venCounts).sort((a,b)=>b[1]-a[1])[0];
+    const makeCard=(c,band)=>({ band:band||c.has_setlist_names?.split(',')[0]||'?', date:c.date, venue:c.venue, city:c.city, state:c.state, genre:c.genre });
     return [
-      {label:'LATEST ADDITION',val:recent.has_setlist_names?.split(',')[0]||'Verified Setlist',sub:`${fmtDate(recent.date)} @ ${recent.venue}`},
-      {label:`${vault.length} SETLISTS COLLECTED`,val:'VIEW VAULT',sub:'Click to browse your physical setlists'},
-      {label:'ARCHIVE MVP',val:topArt?.[0]||'Keep digging!',sub:`${topArt?.[1]||0} setlists from this artist`},
-      {label:'LUCKY VENUE',val:topVen?.[0]||'N/A',sub:`${topVen?.[1]||0} setlists captured here`},
+      {label:'LATEST ADDITION',val:recent.has_setlist_names?.split(',')[0]||'Setlist',sub:`${fmtDate(recent.date)} @ ${recent.venue}`,card:makeCard(recent)},
+      {label:`${vault.length} SETLISTS COLLECTED`,val:'VIEW VAULT →',sub:'Click to browse your physical setlists',card:makeCard(sorted[Math.floor(Math.random()*sorted.length)])},
+      {label:'ARCHIVE MVP',val:topArt?.[0]||'Keep digging!',sub:`${topArt?.[1]||0} setlists from this artist`,card:topArt?makeCard(vault.find(c=>(c.has_setlist_names||'').includes(topArt[0]))||vault[0],topArt[0]):null},
+      {label:'LUCKY VENUE',val:topVen?.[0]||'N/A',sub:`${topVen?.[1]||0} setlists here`,card:makeCard(vault.find(c=>c.venue===topVen?.[0])||vault[0])},
     ];
   },[vault]);
-  useEffect(()=>{ if(slides.length<=1)return; const t=setInterval(()=>setIndex(p=>(p+1)%slides.length),5000); return()=>clearInterval(t); },[slides.length]);
+  useEffect(()=>{ if(slides.length<=1)return; const t=setInterval(()=>setIndex(p=>(p+1)%slides.length),5500); return()=>clearInterval(t); },[slides.length]);
   const s=slides[index];
+  const gc=s.card?.genre?GENRE_COLORS[s.card.genre]:null;
+  const TAPE_COLORS=['#ffcc00','#00e5cc','#9966ff','#ff4466'];
+  const tapeColor=TAPE_COLORS[index%TAPE_COLORS.length];
+
   return (
-    <div style={{ textAlign:'center',cursor:'pointer',padding:'10px 0' }} onClick={onVault}>
-      <div style={{ fontFamily:"'Space Mono'",fontSize:9,color:C.gold,letterSpacing:2,marginBottom:12,textTransform:'uppercase' }}>{s.label}</div>
-      <div className="fade-in" key={index} style={{ minHeight:60 }}>
-        <div style={{ fontFamily:"'Bebas Neue'",fontSize:'1.8rem',color:s.val==='VIEW VAULT'?C.teal:C.white,lineHeight:1.1,marginBottom:4 }}>{s.val}</div>
-        <div style={{ fontSize:'0.8rem',color:C.gray,fontStyle:'italic' }}>{s.sub}</div>
-      </div>
-      <div style={{ display:'flex',justifyContent:'center',gap:5,marginTop:18 }}>
+    <div style={{ cursor:'pointer',height:'100%',display:'flex',flexDirection:'column' }} onClick={onVault}>
+      <div style={{ fontFamily:"'Space Mono'",fontSize:8,color:C.gold,letterSpacing:2,marginBottom:12,textTransform:'uppercase' }}>{s.label}</div>
+
+      {/* Mini paper card */}
+      {s.card&&(
+        <div className="fade-in" key={index} style={{ flex:1,position:'relative',transform:`rotate(${['-2deg','1.5deg','-1deg','2.5deg'][index%4]})`,marginBottom:16 }}>
+          {/* Tape */}
+          <div style={{ position:'absolute',top:-10,left:'50%',transform:'translateX(-50%)',width:48,height:18,background:tapeColor,opacity:0.8,borderRadius:2,zIndex:10 }} />
+          {/* Paper */}
+          <div style={{ background:'linear-gradient(160deg,#f5f0e8,#e8e0cc)',borderRadius:4,padding:'28px 20px 20px',boxShadow:'0 6px 24px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.6)',position:'relative',overflow:'hidden' }}>
+            {[0,1,2,3].map(j=><div key={j} style={{ position:'absolute',left:50,right:0,top:60+j*22,height:1,background:'rgba(150,180,220,0.3)' }} />)}
+            <div style={{ position:'absolute',left:44,top:0,bottom:0,width:1,background:'rgba(220,60,60,0.25)' }} />
+            {gc&&<div style={{ position:'absolute',top:0,right:0,background:gc,padding:'2px 8px 2px 12px',borderRadius:'0 4px 0 8px',fontFamily:"'Space Mono',monospace",fontSize:6,color:'#000',textTransform:'uppercase',fontWeight:700 }}>{s.card.genre}</div>}
+            <div style={{ paddingLeft:14 }}>
+              <div style={{ fontFamily:"'Caveat',cursive",fontSize:'1.5rem',fontWeight:700,color:'#1a1a2e',lineHeight:1.1,marginBottom:8 }}>{s.card.band}</div>
+              <div style={{ fontFamily:"'Caveat',cursive",fontSize:'0.85rem',color:'#2a2a4e',marginBottom:2 }}>{fmtDate(s.card.date)}</div>
+              <div style={{ fontFamily:"'Caveat',cursive",fontSize:'0.8rem',color:'#3a3a5e' }}>{s.card.venue}</div>
+              <div style={{ fontFamily:"'Caveat',cursive",fontSize:'0.75rem',color:'#5a5a7e' }}>{[s.card.city,s.card.state].filter(Boolean).join(', ')}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ fontFamily:"'Bebas Neue'",fontSize:'1rem',color:s.val==='VIEW VAULT →'?C.teal:C.gray,marginBottom:4,textAlign:'center' }}>{s.sub}</div>
+      <div style={{ display:'flex',justifyContent:'center',gap:5,marginTop:'auto',paddingTop:8 }}>
         {slides.map((_,i)=><div key={i} style={{ width:4,height:4,borderRadius:'50%',background:i===index?C.gold:C.grayDim,transition:'0.3s' }} />)}
       </div>
     </div>
@@ -487,7 +511,7 @@ function RandomShow({ concerts }) {
     <Card neon style={{ minHeight:150,border:`1px solid ${spinning?C.grayDim:C.purple+'66'}`,display:'flex',flexDirection:'column',justifyContent:'center',transition:'0.3s' }}>
       <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8 }}>
         <div style={{ fontFamily:"'Space Mono'",fontSize:8,color:C.purple,letterSpacing:2 }}>🎲 {spinning?'SPINNING...':'RANDOM RECALL'}</div>
-        <button onClick={spin} disabled={spinning} style={{ background:'none',border:`1px solid ${C.purple}44`,color:C.purple,fontSize:7,padding:'2px 8px',borderRadius:3,cursor:'pointer',fontFamily:"'Space Mono'" }}>{spinning?'•••':'SPIN'}</button>
+        <button onClick={spin} disabled={spinning} style={{ background:spinning?'transparent':`${C.purple}33`,border:`1px solid ${C.purple}88`,color:C.purple,fontSize:9,padding:'4px 12px',borderRadius:3,cursor:'pointer',fontFamily:"'Space Mono'",letterSpacing:'0.08em',fontWeight:700,transition:'all 0.2s' }}>{spinning?'•••':'SPIN'}</button>
       </div>
       <div style={{ opacity:spinning?0.3:1,transition:'0.2s' }}>
         <div style={{ fontFamily:"'Bebas Neue'",fontSize:'2.2rem',color:C.white,lineHeight:1,marginBottom:4 }}>{artistName}</div>
@@ -675,14 +699,11 @@ function SetlistVaultTab({ concerts }) {
     concerts.forEach(c=>{
       if (!c.has_setlist_names?.trim()) return;
       const bands=c.has_setlist_names.split(',').map(b=>b.trim()).filter(Boolean);
-      bands.forEach(band=>{
-        results.push({ id:`${c.id}-${band}`, band, date:c.date, venue:c.venue, city:c.city, state:c.state, festival_name:c.festival_name, is_festival:c.is_festival, genre:c.genre });
-      });
+      bands.forEach(band=>{ results.push({ id:`${c.id}-${band}`, band, date:c.date, venue:c.venue, city:c.city, state:c.state, festival_name:c.festival_name, is_festival:c.is_festival, genre:c.genre }); });
     });
     return results.sort((a,b)=>b.date.localeCompare(a.date));
   },[concerts]);
 
-  // Scatter angles and offsets for each card — deterministic based on index
   const ROTATIONS=[-3,-1.5,2,0.5,-2.5,1,-0.5,2.5,-1,3,-2,1.5];
   const DURATIONS=['6s','7s','5.5s','8s','6.5s','7.5s','5s','9s'];
   const TAPE_COLORS=['#ffcc00','#00e5cc','#9966ff','#ff4466','#00cfff','#ffaa00'];
@@ -695,79 +716,47 @@ function SetlistVaultTab({ concerts }) {
     </div>
   );
 
+  // Split into 3 columns for masonry feel
+  const cols = [[], [], []];
+  setlists.forEach((s, i) => cols[i % 3].push({ ...s, colIdx: i }));
+
+  const PaperCard = ({ s, i }) => {
+    const rot=ROTATIONS[i%ROTATIONS.length];
+    const dur=DURATIONS[i%DURATIONS.length];
+    const tapeColor=TAPE_COLORS[i%TAPE_COLORS.length];
+    const gc=s.genre?GENRE_COLORS[s.genre]:null;
+    return (
+      <div className="paper-float" style={{ '--r':`${rot}deg`,'--dur':dur, position:'relative', transform:`rotate(${rot}deg)`, marginBottom:40, zIndex:1 }}>
+        <div style={{ position:'absolute',top:-12,left:'50%',transform:'translateX(-50%)',width:56,height:22,background:tapeColor,opacity:0.75,borderRadius:3,zIndex:10,boxShadow:`0 2px 8px ${hexToRgba(tapeColor,0.4)}` }} />
+        <div style={{ background:'linear-gradient(160deg,#f5f0e8 0%,#ede8d8 40%,#e8e0cc 100%)', borderRadius:4, padding:'32px 28px 24px', boxShadow:`0 8px 32px rgba(0,0,0,0.5),0 2px 8px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.6)`, position:'relative', overflow:'hidden' }}>
+          {[0,1,2,3,4].map(j=><div key={j} style={{ position:'absolute',left:60,right:0,top:72+j*26,height:1,background:'rgba(150,180,220,0.35)' }} />)}
+          <div style={{ position:'absolute',left:54,top:0,bottom:0,width:1.5,background:'rgba(220,60,60,0.3)' }} />
+          <div style={{ position:'absolute',left:18,top:'28%',width:16,height:16,borderRadius:'50%',background:'rgba(0,0,0,0.12)',boxShadow:'inset 0 1px 3px rgba(0,0,0,0.2)' }} />
+          {gc&&<div style={{ position:'absolute',top:0,right:0,background:gc,padding:'3px 10px 3px 14px',borderRadius:'0 4px 0 10px',fontFamily:"'Space Mono',monospace",fontSize:7,color:'#000',letterSpacing:'0.1em',textTransform:'uppercase',fontWeight:700 }}>{s.genre}</div>}
+          <div style={{ paddingLeft:18 }}>
+            <div style={{ fontFamily:"'Caveat',cursive",fontSize:'clamp(1.4rem,3vw,1.9rem)',fontWeight:700,color:'#1a1a2e',lineHeight:1.1,marginBottom:12 }}>{s.band}</div>
+            <div style={{ fontFamily:"'Caveat',cursive",fontSize:'1rem',color:'#2a2a4e',marginBottom:3 }}>{fmtDate(s.date)}</div>
+            <div style={{ fontFamily:"'Caveat',cursive",fontSize:'0.9rem',color:'#3a3a5e',marginBottom:2 }}>{s.venue}</div>
+            <div style={{ fontFamily:"'Caveat',cursive",fontSize:'0.85rem',color:'#5a5a7e' }}>{[s.city,s.state].filter(Boolean).join(', ')}{s.is_festival?` · ${s.festival_name}`:''}</div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ padding:'40px 0 80px' }} className="fade-in">
       <div style={{ textAlign:'center',marginBottom:48 }}>
-        <div style={{ fontFamily:"'Bebas Neue'",fontSize:'clamp(2.5rem,6vw,4rem)',color:C.white,letterSpacing:'0.06em',marginBottom:8 }}>
-          📋 SETLIST <span style={{ color:C.teal }}>VAULT</span>
-        </div>
-        <div style={{ fontFamily:"'Space Mono',monospace",fontSize:9,color:C.gray,letterSpacing:'0.2em',textTransform:'uppercase' }}>
-          {setlists.length} setlist{setlists.length!==1?'s':''} in the archive
-        </div>
+        <div style={{ fontFamily:"'Bebas Neue'",fontSize:'clamp(2.5rem,6vw,4rem)',color:C.white,letterSpacing:'0.06em',marginBottom:8 }}>📋 SETLIST <span style={{ color:C.teal }}>VAULT</span></div>
+        <div style={{ fontFamily:"'Space Mono',monospace",fontSize:9,color:C.gray,letterSpacing:'0.2em',textTransform:'uppercase' }}>{setlists.length} setlist{setlists.length!==1?'s':''} in the archive</div>
       </div>
-
-      {/* Scattered paper cards */}
-      <div style={{ display:'flex',flexDirection:'column',alignItems:'center',gap:0 }}>
-        {setlists.map((s,i)=>{
-          const rot=ROTATIONS[i%ROTATIONS.length];
-          const dur=DURATIONS[i%DURATIONS.length];
-          const tapeColor=TAPE_COLORS[i%TAPE_COLORS.length];
-          const gc=s.genre?GENRE_COLORS[s.genre]:null;
-          const offset=(i%2===0?-60:60)+(i%3===0?20:-20);
-
-          return (
-            <div key={s.id}
-              className="paper-float"
-              style={{
-                '--r':`${rot}deg`,
-                '--dur':dur,
-                position:'relative',
-                transform:`rotate(${rot}deg) translateX(${offset}px)`,
-                marginBottom: i<setlists.length-1?'-30px':'0',
-                zIndex:setlists.length-i,
-                width:'min(480px,85vw)',
-              }}>
-
-              {/* Tape piece */}
-              <div style={{ position:'absolute',top:-12,left:'50%',transform:'translateX(-50%)',width:64,height:24,background:tapeColor,opacity:0.75,borderRadius:3,zIndex:10,boxShadow:`0 2px 8px ${hexToRgba(tapeColor,0.4)}` }} />
-
-              {/* Paper */}
-              <div style={{
-                background:'linear-gradient(160deg,#f5f0e8 0%,#ede8d8 40%,#e8e0cc 100%)',
-                borderRadius:4, padding:'36px 32px 28px',
-                boxShadow:`0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.6)`,
-                position:'relative', overflow:'hidden',
-              }}>
-                {/* Ruled lines */}
-                {[0,1,2,3,4,5].map(j=>(
-                  <div key={j} style={{ position:'absolute',left:64,right:0,top:80+j*28,height:1,background:'rgba(150,180,220,0.35)' }} />
-                ))}
-                {/* Red margin line */}
-                <div style={{ position:'absolute',left:58,top:0,bottom:0,width:1.5,background:'rgba(220,60,60,0.3)' }} />
-                {/* Hole punches */}
-                <div style={{ position:'absolute',left:20,top:'30%',width:18,height:18,borderRadius:'50%',background:'rgba(0,0,0,0.12)',boxShadow:'inset 0 1px 3px rgba(0,0,0,0.2)' }} />
-
-                {/* Genre tag (top right corner folded look) */}
-                {gc&&(
-                  <div style={{ position:'absolute',top:0,right:0,background:gc,padding:'4px 12px 4px 16px',borderRadius:'0 4px 0 12px',fontFamily:"'Space Mono',monospace",fontSize:7,color:'#000',letterSpacing:'0.1em',textTransform:'uppercase',fontWeight:700 }}>{s.genre}</div>
-                )}
-
-                {/* Content */}
-                <div style={{ paddingLeft:20 }}>
-                  <div style={{ fontFamily:"'Caveat',cursive",fontSize:'clamp(1.6rem,5vw,2.2rem)',fontWeight:700,color:'#1a1a2e',lineHeight:1.1,marginBottom:14 }}>{s.band}</div>
-                  <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:8 }}>
-                    <div>
-                      <div style={{ fontFamily:"'Caveat',cursive",fontSize:'1.1rem',color:'#2a2a4e',marginBottom:4 }}>{fmtDate(s.date)}</div>
-                      <div style={{ fontFamily:"'Caveat',cursive",fontSize:'1rem',color:'#3a3a5e' }}>{s.venue}</div>
-                      <div style={{ fontFamily:"'Caveat',cursive",fontSize:'0.9rem',color:'#5a5a7e' }}>{[s.city,s.state].filter(Boolean).join(', ')}{s.is_festival?` · ${s.festival_name}`:''}</div>
-                    </div>
-                    <div style={{ fontFamily:"'Space Mono',monospace",fontSize:32,color:'rgba(0,0,0,0.06)',lineHeight:1,userSelect:'none' }}>📋</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      {/* 3-column masonry */}
+      <div style={{ display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'0 40px',alignItems:'start' }}>
+        {cols.map((col,ci)=>(
+          <div key={ci} style={{ display:'flex',flexDirection:'column' }}>
+            {col.map(s=><PaperCard key={s.id} s={s} i={s.colIdx} />)}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -935,7 +924,7 @@ function ByFestTab({ festGroupings }) {
         const uniqueArtists=new Set(allShows.flatMap(s=>s.bands||[])).size;
         return (
           <div key={fest.name} style={{ marginBottom:48 }}>
-            <div style={{ position:'relative',borderRadius:12,overflow:'hidden',marginBottom:20,background:`linear-gradient(135deg,${hexToRgba(color,0.12)},${C.bgCard})`,border:`1px solid ${hexToRgba(color,0.5)}`,boxShadow:`0 0 40px ${hexToRgba(color,0.2)},0 4px 20px rgba(0,0,0,0.6)`,padding:'32px 36px' }}>
+            <div id={`fest-${fest.name.replace(/\s+/g,'-')}`} style={{ position:'relative',borderRadius:12,overflow:'hidden',marginBottom:20,background:`linear-gradient(135deg,${hexToRgba(color,0.12)},${C.bgCard})`,border:`1px solid ${hexToRgba(color,0.5)}`,boxShadow:`0 0 40px ${hexToRgba(color,0.2)},0 4px 20px rgba(0,0,0,0.6)`,padding:'32px 36px' }}>
               <div style={{ position:'absolute',top:-60,right:-60,width:300,height:300,background:`radial-gradient(circle,${hexToRgba(color,0.15)},transparent)`,pointerEvents:'none' }} />
               <div style={{ position:'absolute',left:0,top:0,bottom:0,width:4,background:`linear-gradient(to bottom,${color},${hexToRgba(color,0.2)})`,borderRadius:'12px 0 0 12px' }} />
               <div style={{ position:'relative',zIndex:1 }}>
@@ -973,20 +962,24 @@ function ByFestTab({ festGroupings }) {
   );
 }
 
-function PassportTab({ passport }) {
+function PassportTab({ passport, onNavigateToFest }) {
   return (
     <div style={{ padding:'24px 0' }} className="fade-in">
-      <div style={{ fontFamily:"'Space Mono',monospace",fontSize:10,color:C.gray,marginBottom:20,letterSpacing:'0.1em',textTransform:'uppercase' }}>Your festival attendance record</div>
+      <div style={{ fontFamily:"'Space Mono',monospace",fontSize:10,color:C.gray,marginBottom:20,letterSpacing:'0.1em',textTransform:'uppercase' }}>Your festival attendance record — click any card to view full history</div>
       <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:14 }}>
         {passport.map(f=>(
-          <Card key={f.name} neon>
+          <div key={f.name} onClick={()=>onNavigateToFest(f.name)}
+            style={{ background:C.bgCard,border:`1px solid ${C.teal}33`,borderRadius:8,padding:16,cursor:'pointer',transition:'all 0.18s' }}
+            onMouseEnter={e=>{e.currentTarget.style.border=`1px solid ${C.teal}88`;e.currentTarget.style.boxShadow=`0 0 16px ${C.tealGlow}`;}}
+            onMouseLeave={e=>{e.currentTarget.style.border=`1px solid ${C.teal}33`;e.currentTarget.style.boxShadow='none';}}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10 }}>
               <div style={{ fontFamily:"'Bebas Neue'",fontSize:'1.3rem',color:C.gold,lineHeight:1 }}>{f.name}</div>
               <div style={{ textAlign:'right' }}><div style={{ fontFamily:"'Bebas Neue'",fontSize:'1.6rem',color:C.teal,lineHeight:1 }}>{f.days}</div><div style={{ fontFamily:"'Space Mono',monospace",fontSize:7,color:C.gray,textTransform:'uppercase' }}>days</div></div>
             </div>
             <div style={{ fontFamily:"'Space Mono',monospace",fontSize:8,color:C.gray,marginBottom:8,textTransform:'uppercase' }}>{f.years.length} {f.years.length===1?'year':'years'} attended</div>
-            <div style={{ display:'flex',flexWrap:'wrap',gap:4 }}>{f.years.map(y=><span key={y} style={{ fontFamily:"'Space Mono',monospace",fontSize:8,background:`${C.gold}22`,color:C.gold,border:`1px solid ${C.gold}44`,padding:'2px 6px',borderRadius:3 }}>{y}</span>)}</div>
-          </Card>
+            <div style={{ display:'flex',flexWrap:'wrap',gap:4,marginBottom:10 }}>{f.years.map(y=><span key={y} style={{ fontFamily:"'Space Mono',monospace",fontSize:8,background:`${C.gold}22`,color:C.gold,border:`1px solid ${C.gold}44`,padding:'2px 6px',borderRadius:3 }}>{y}</span>)}</div>
+            <div style={{ fontFamily:"'Space Mono',monospace",fontSize:7,color:C.tealDim,textTransform:'uppercase',letterSpacing:'0.1em' }}>↗ View full festival history</div>
+          </div>
         ))}
         {!passport.length&&<div style={{ color:C.gray,textAlign:'center',gridColumn:'1/-1',padding:60 }}>No festival passport stamps yet.</div>}
       </div>
@@ -1115,11 +1108,369 @@ function ManageTab({ concerts, onEdit, onAdd }) {
   );
 }
 
-// ─── TAB CONFIG ───────────────────────────────────────────────────────────────
+// ─── USA HEATMAP ──────────────────────────────────────────────────────────────
+// State abbreviation → [svgPath, labelX, labelY, cityOffsetX, cityOffsetY]
+const STATE_PATHS = {
+  AL:{d:"M 567 295 L 578 295 L 580 340 L 565 340 Z",lx:568,ly:318},
+  AK:{d:"M 90 370 L 160 370 L 160 430 L 90 430 Z",lx:118,ly:403},
+  AZ:{d:"M 168 265 L 215 265 L 215 320 L 168 320 Z",lx:185,ly:293},
+  AR:{d:"M 530 280 L 565 280 L 565 310 L 530 310 Z",lx:542,ly:295},
+  CA:{d:"M 110 200 L 165 185 L 175 265 L 125 285 L 110 260 Z",lx:133,ly:232},
+  CO:{d:"M 255 230 L 315 230 L 315 270 L 255 270 Z",lx:280,ly:250},
+  CT:{d:"M 720 168 L 732 168 L 732 178 L 720 178 Z",lx:722,ly:174},
+  DE:{d:"M 705 195 L 715 195 L 715 210 L 705 210 Z",lx:706,ly:203},
+  FL:{d:"M 575 340 L 640 340 L 645 385 L 600 395 L 575 370 Z",lx:603,ly:362},
+  GA:{d:"M 578 295 L 615 295 L 615 340 L 580 340 Z",lx:592,ly:318},
+  HI:{d:"M 220 410 L 280 410 L 280 435 L 220 435 Z",lx:245,ly:424},
+  ID:{d:"M 175 155 L 215 145 L 220 205 L 195 210 L 175 195 Z",lx:193,ly:178},
+  IL:{d:"M 540 210 L 562 210 L 562 270 L 540 270 Z",lx:546,ly:240},
+  IN:{d:"M 562 210 L 583 210 L 583 260 L 562 260 Z",lx:567,ly:235},
+  IA:{d:"M 490 200 L 540 200 L 540 230 L 490 230 Z",lx:508,ly:215},
+  KS:{d:"M 390 255 L 450 255 L 450 285 L 390 285 Z",lx:413,ly:270},
+  KY:{d:"M 575 255 L 635 255 L 635 278 L 575 278 Z",lx:598,ly:267},
+  LA:{d:"M 510 320 L 560 320 L 565 355 L 520 360 L 510 345 Z",lx:532,ly:337},
+  ME:{d:"M 740 130 L 762 125 L 768 158 L 745 162 Z",lx:750,ly:145},
+  MD:{d:"M 685 205 L 720 200 L 722 215 L 690 218 Z",lx:699,ly:210},
+  MA:{d:"M 725 162 L 760 158 L 762 172 L 728 175 Z",lx:738,ly:168},
+  MI:{d:"M 562 175 L 605 170 L 608 205 L 565 210 Z",lx:580,ly:190},
+  MN:{d:"M 468 155 L 510 150 L 512 200 L 470 200 Z",lx:486,ly:177},
+  MS:{d:"M 545 295 L 570 295 L 568 345 L 545 342 Z",lx:551,ly:319},
+  MO:{d:"M 490 240 L 540 238 L 542 280 L 492 282 Z",lx:509,ly:260},
+  MT:{d:"M 215 145 L 310 138 L 312 188 L 218 195 Z",lx:258,ly:165},
+  NE:{d:"M 385 220 L 450 218 L 452 252 L 387 254 Z",lx:413,ly:237},
+  NV:{d:"M 160 195 L 200 188 L 208 260 L 168 268 Z",lx:180,ly:228},
+  NH:{d:"M 730 148 L 742 145 L 744 170 L 732 172 Z",lx:733,ly:159},
+  NJ:{d:"M 710 182 L 722 180 L 723 200 L 712 202 Z",lx:712,ly:191},
+  NM:{d:"M 245 280 L 290 278 L 292 325 L 247 327 Z",lx:265,ly:303},
+  NY:{d:"M 665 162 L 728 155 L 730 185 L 668 192 Z",lx:693,ly:173},
+  NC:{d:"M 620 272 L 690 265 L 692 288 L 622 295 Z",lx:650,ly:280},
+  ND:{d:"M 380 148 L 468 145 L 470 178 L 382 180 Z",lx:420,ly:163},
+  OH:{d:"M 600 205 L 638 202 L 640 245 L 602 248 Z",lx:615,ly:225},
+  OK:{d:"M 380 282 L 450 280 L 452 312 L 382 314 Z",lx:410,ly:297},
+  OR:{d:"M 130 168 L 192 162 L 195 210 L 133 215 Z",lx:158,ly:190},
+  PA:{d:"M 640 185 L 700 180 L 702 208 L 642 212 Z",lx:665,ly:197},
+  RI:{d:"M 735 172 L 744 171 L 745 180 L 736 181 Z",lx:736,ly:177},
+  SC:{d:"M 618 290 L 655 285 L 658 315 L 622 318 Z",lx:634,ly:302},
+  SD:{d:"M 382 180 L 468 178 L 470 212 L 384 214 Z",lx:420,ly:196},
+  TN:{d:"M 545 270 L 635 265 L 637 288 L 547 293 Z",lx:585,ly:279},
+  TX:{d:"M 335 295 L 450 290 L 455 380 L 395 395 L 340 365 Z",lx:393,ly:340},
+  UT:{d:"M 215 220 L 255 218 L 257 270 L 217 272 Z",lx:232,ly:245},
+  VT:{d:"M 718 148 L 730 145 L 732 168 L 720 170 Z",lx:721,ly:158},
+  VA:{d:"M 638 245 L 700 240 L 702 268 L 640 272 Z",lx:665,ly:257},
+  WA:{d:"M 148 138 L 200 132 L 202 162 L 150 168 Z",lx:172,ly:152},
+  WV:{d:"M 635 225 L 668 222 L 670 252 L 637 255 Z",lx:648,ly:238},
+  WI:{d:"M 510 168 L 555 162 L 558 205 L 512 208 Z",lx:530,ly:186},
+  WY:{d:"M 255 190 L 318 185 L 320 228 L 257 230 Z",lx:284,ly:208},
+  DC:{d:"M 700 215 L 707 215 L 707 222 L 700 222 Z",lx:700,ly:219},
+};
+
+// City lat/lon → approximate SVG coords (viewBox 0 0 860 500)
+const CITY_COORDS = {
+  'Austin':    {x:393,y:345},'Manchester': {x:756,y:148},'Boston':     {x:746,y:165},
+  'Portland':  {x:155,y:192},'Northampton':{x:728,y:167},'Bend':       {x:163,y:188},
+  'Austin':    {x:393,y:345},'Dallas':     {x:420,y:315},'Houston':    {x:430,y:355},
+  'Atlanta':   {x:590,y:310},'Nashville':  {x:562,y:272},'Chicago':    {x:548,y:218},
+  'New York':  {x:706,y:182},'Los Angeles':{x:143,y:268},'San Francisco':{x:120,y:248},
+  'Denver':    {x:285,y:252},'Seattle':    {x:165,y:148},'Minneapolis': {x:487,y:185},
+  'New Orleans':{x:530,y:350},'Hartford':  {x:725,y:172},'Lowell':     {x:740,y:162},
+  'Buffalo':   {x:660,y:183},'Northampton':{x:728,y:167},'San Antonio':{x:385,y:365},
+  'Forest Grove':{x:148,y:193},'Bend':     {x:163,y:185},
+};
+
+function USAHeatmap({ concerts }) {
+  const visitedStates=useMemo(()=>{
+    const s=new Set();
+    concerts.forEach(c=>{ if(c.state)s.add(c.state.toUpperCase().trim()); });
+    return s;
+  },[concerts]);
+
+  const cityData=useMemo(()=>{
+    const m={};
+    concerts.forEach(c=>{ if(c.city){ m[c.city]=(m[c.city]||0)+1; } });
+    return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+  },[concerts]);
+
+  const maxCity=Math.max(...cityData.map(([,n])=>n),1);
+
+  return (
+    <div style={{ marginTop:16,marginBottom:16 }}>
+      <Card neon style={{ padding:'20px 24px' }}>
+        <CardTitle>Concert Map 🗺️ — {visitedStates.size} States Visited</CardTitle>
+        <div style={{ position:'relative',width:'100%',paddingBottom:'58%',overflow:'hidden' }}>
+          <svg viewBox="80 125 780 300" style={{ position:'absolute',top:0,left:0,width:'100%',height:'100%' }} xmlns="http://www.w3.org/2000/svg">
+            {/* Render all states */}
+            {Object.entries(STATE_PATHS).map(([abbr,{d,lx,ly}])=>{
+              const visited=visitedStates.has(abbr);
+              return (
+                <g key={abbr}>
+                  <path d={d}
+                    fill={visited?hexToRgba(C.teal,0.35):hexToRgba('#ffffff',0.04)}
+                    stroke={visited?C.teal:'#2a3a4a'}
+                    strokeWidth={visited?1.5:0.8}
+                    style={{ filter:visited?`drop-shadow(0 0 4px ${C.teal}66)`:'none', transition:'all 0.3s' }}
+                  />
+                  <text x={lx} y={ly} textAnchor="middle" style={{ fontSize:'5px',fontFamily:"'Space Mono',monospace",fill:visited?C.teal:'#445566',fontWeight:visited?'bold':'normal',pointerEvents:'none' }}>{abbr}</text>
+                </g>
+              );
+            })}
+
+            {/* City bubbles */}
+            {cityData.slice(0,20).map(([city,count])=>{
+              const coords=CITY_COORDS[city];
+              if(!coords) return null;
+              const r=Math.max(4,Math.min(22,4+(count/maxCity)*18));
+              return (
+                <g key={city}>
+                  <circle cx={coords.x} cy={coords.y} r={r}
+                    fill={hexToRgba(C.gold,0.25)}
+                    stroke={C.gold}
+                    strokeWidth={1.5}
+                    style={{ filter:`drop-shadow(0 0 ${r/2}px ${C.gold}88)` }}
+                  />
+                  {count>5&&<text x={coords.x} y={coords.y+1} textAnchor="middle" dominantBaseline="middle" style={{ fontSize:`${Math.max(4,Math.min(7,r*0.65))}px`,fontFamily:"'Space Mono',monospace",fill:'#fff',fontWeight:'bold',pointerEvents:'none' }}>{count}</text>}
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+        {/* Legend */}
+        <div style={{ display:'flex',gap:20,marginTop:8,flexWrap:'wrap' }}>
+          <div style={{ display:'flex',alignItems:'center',gap:6 }}>
+            <div style={{ width:14,height:14,borderRadius:2,background:hexToRgba(C.teal,0.35),border:`1px solid ${C.teal}` }} />
+            <span style={{ fontFamily:"'Space Mono',monospace",fontSize:8,color:C.gray }}>Visited state</span>
+          </div>
+          <div style={{ display:'flex',alignItems:'center',gap:6 }}>
+            <div style={{ width:14,height:14,borderRadius:'50%',background:hexToRgba(C.gold,0.25),border:`1px solid ${C.gold}` }} />
+            <span style={{ fontFamily:"'Space Mono',monospace",fontSize:8,color:C.gray }}>City bubble (sized by show count)</span>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ─── POSTER GENERATOR ─────────────────────────────────────────────────────────
+const POSTER_TEMPLATES = [
+  { id:0, name:'NEON NOIR', bg:'#050510', accent:'#00f2ff', accent2:'#ff0077', font:'Bebas Neue', style:'cyber' },
+  { id:1, name:'DESERT HEAT', bg:'#1a0a00', accent:'#ff6600', accent2:'#ffcc00', font:'Bebas Neue', style:'warm' },
+  { id:2, name:'FOREST GROVE', bg:'#010f08', accent:'#00cc66', accent2:'#88ffaa', font:'Bebas Neue', style:'nature' },
+  { id:3, name:'COSMIC VOID', bg:'#05000f', accent:'#9966ff', accent2:'#ff66cc', font:'Bebas Neue', style:'cosmic' },
+  { id:4, name:'BLOOD MOON', bg:'#0f0000', accent:'#ff3300', accent2:'#ff9900', font:'Bebas Neue', style:'dark' },
+  { id:5, name:'ICE PALACE', bg:'#00050f', accent:'#00cfff', accent2:'#ffffff', font:'Bebas Neue', style:'cold' },
+  { id:6, name:'GOLDEN AGE', bg:'#0a0800', accent:'#ffcc00', accent2:'#ff9900', font:'Bebas Neue', style:'vintage' },
+  { id:7, name:'ULTRAVIOLET', bg:'#08000f', accent:'#cc00ff', accent2:'#ff00aa', font:'Bebas Neue', style:'uv' },
+  { id:8, name:'COPPER WIRE', bg:'#0a0500', accent:'#cc7733', accent2:'#ffaa55', font:'Bebas Neue', style:'copper' },
+  { id:9, name:'DEEP SEA', bg:'#000a0f', accent:'#00aabb', accent2:'#55eeff', font:'Bebas Neue', style:'ocean' },
+  { id:10,name:'MIDNIGHT SUN', bg:'#0f0800', accent:'#ffaa00', accent2:'#ff5500', font:'Bebas Neue', style:'sunset' },
+  { id:11,name:'CHROME PUNK', bg:'#080808', accent:'#ffffff', accent2:'#ff3300', font:'Bebas Neue', style:'punk' },
+];
+
+const FEST_NAME_PARTS = {
+  'Indie Rock':    [['Cedar','Hollow','Silver','Petal'],['Wire','Bloom','Pines','Hollow']],
+  'Electronic':   [['Neon','Circuit','Static','Pulse'],['Grid','Wave','Surge','Current']],
+  'Jam':          [['Rolling','Wandering','Spiral','Endless'],['Current','River','Flow','Grove']],
+  'Folk':         [['Timber','Ember','Moss','Willow'],['Creek','Ridge','Vale','Hearth']],
+  'Alternative':  [['Fault','Storm','Drift','Void'],['Line','Break','Surge','Shift']],
+  'Punk':         [['Concrete','Iron','Rust','Broken'],['Teeth','Wire','Fist','Noise']],
+  'Classic Rock': [['Thunder','Stone','Fender','Chrome'],['Mountain','Road','Highway','Peak']],
+  'Hip Hop':      [['Block','Street','Crown','Signal'],['Party','Cypher','Summit','Cipher']],
+  'Experimental': [['Strange','Liminal','Fractal','Echo'],['Ritual','Chamber','Loop','Signal']],
+  'default':      [['Open','Free','Wild','Lost'],['Ground','Field','Valley','Plains']],
+};
+
+function generateFestName(dominantGenre) {
+  const parts=FEST_NAME_PARTS[dominantGenre]||FEST_NAME_PARTS['default'];
+  const a=parts[0][Math.floor(Math.random()*parts[0].length)];
+  const b=parts[1][Math.floor(Math.random()*parts[1].length)];
+  const suffixes=['Festival','Fest','Music Festival','Gathering','Sessions','Summit'];
+  return `${a} ${b} ${suffixes[Math.floor(Math.random()*suffixes.length)]}`;
+}
+
+function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
+  const [genreMix, setGenreMix] = useState({ 'Indie Rock':30,'Electronic':20,'Folk':20,'Jam':15,'Alternative':15 });
+  const [templateIdx, setTemplateIdx] = useState(0);
+  const [festName, setFestName] = useState('');
+  const [generated, setGenerated] = useState(null);
+  const [headlinerCount, setHeadlinerCount] = useState(2);
+  const [totalActs, setTotalActs] = useState(20);
+
+  const availableGenres = useMemo(()=>GENRES.filter(g=>g!=='Other'),[]);
+
+  const totalPct = Object.values(genreMix).reduce((a,b)=>a+b,0);
+
+  // Artist pool: build from our data, ranked by times seen
+  const artistPool = useMemo(()=>{
+    const m={};
+    allSetsList.forEach(s=>{
+      const g=genreMap[s.artist]||s.genre||null;
+      if(!g||g==='Other')return;
+      if(!m[s.artist])m[s.artist]={artist:s.artist,genre:g,count:0};
+      m[s.artist].count++;
+    });
+    return Object.values(m).sort((a,b)=>b.count-a.count);
+  },[allSetsList,genreMap]);
+
+  const generate = () => {
+    const tpl = POSTER_TEMPLATES[templateIdx];
+    // Normalize mix
+    const total = Object.values(genreMix).reduce((a,b)=>a+b,0)||100;
+    const normalized = {};
+    Object.entries(genreMix).forEach(([g,v])=>{ normalized[g]=Math.round((v/total)*totalActs); });
+
+    // Pick artists per genre
+    const picked = [];
+    const used = new Set();
+    Object.entries(normalized).forEach(([genre,count])=>{
+      if(count<=0)return;
+      const pool=artistPool.filter(a=>a.genre===genre&&!used.has(a.artist));
+      pool.slice(0,count).forEach(a=>{ picked.push({...a}); used.add(a.artist); });
+    });
+
+    // Sort by count desc for billing order
+    picked.sort((a,b)=>b.count-a.count);
+
+    const dominantGenre=Object.entries(genreMix).sort((a,b)=>b[1]-a[1])[0]?.[0]||'default';
+    const name=festName.trim()||generateFestName(dominantGenre);
+
+    setGenerated({ tpl, artists:picked, name, headlinerCount });
+  };
+
+  const tpl = POSTER_TEMPLATES[templateIdx];
+
+  return (
+    <div style={{ padding:'24px 0' }} className="fade-in">
+      <div style={{ textAlign:'center',marginBottom:32 }}>
+        <div style={{ fontFamily:"'Bebas Neue'",fontSize:'clamp(2rem,5vw,3.5rem)',color:C.white,letterSpacing:'0.06em',marginBottom:8 }}>🎨 POSTER <span style={{ color:C.teal }}>GENERATOR</span></div>
+        <div style={{ fontFamily:"'Space Mono',monospace",fontSize:9,color:C.gray }}>Build your dream festival from your concert history</div>
+      </div>
+
+      <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:24,marginBottom:32 }}>
+        {/* Left: Controls */}
+        <div>
+          <Card neon style={{ marginBottom:16 }}>
+            <CardTitle>Genre Mix</CardTitle>
+            <div style={{ fontFamily:"'Space Mono',monospace",fontSize:8,color:totalPct===100?C.green:totalPct>100?C.red:C.gold,marginBottom:12 }}>Total: {totalPct}% {totalPct!==100&&'(should equal 100)'}</div>
+            {availableGenres.map(g=>(
+              <div key={g} style={{ display:'flex',alignItems:'center',gap:10,marginBottom:8 }}>
+                <div style={{ width:10,height:10,borderRadius:'50%',background:GENRE_COLORS[g],flexShrink:0 }} />
+                <span style={{ fontFamily:"'Space Mono',monospace",fontSize:8,color:C.gray,width:90,flexShrink:0 }}>{g}</span>
+                <input type="range" min={0} max={100} value={genreMix[g]||0}
+                  onChange={e=>setGenreMix(p=>({...p,[g]:+e.target.value}))}
+                  style={{ flex:1,accentColor:GENRE_COLORS[g] }}
+                />
+                <span style={{ fontFamily:"'Space Mono',monospace",fontSize:9,color:GENRE_COLORS[g],width:32,textAlign:'right',flexShrink:0 }}>{genreMix[g]||0}%</span>
+              </div>
+            ))}
+          </Card>
+
+          <Card neon style={{ marginBottom:16 }}>
+            <CardTitle>Options</CardTitle>
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontFamily:"'Space Mono',monospace",fontSize:8,color:C.gray,marginBottom:6 }}>TOTAL ACTS: {totalActs}</div>
+              <input type="range" min={5} max={40} value={totalActs} onChange={e=>setTotalActs(+e.target.value)} style={{ width:'100%',accentColor:C.teal }} />
+            </div>
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontFamily:"'Space Mono',monospace",fontSize:8,color:C.gray,marginBottom:6 }}>HEADLINERS: {headlinerCount}</div>
+              <input type="range" min={1} max={4} value={headlinerCount} onChange={e=>setHeadlinerCount(+e.target.value)} style={{ width:'100%',accentColor:C.gold }} />
+            </div>
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontFamily:"'Space Mono',monospace",fontSize:8,color:C.gray,marginBottom:6 }}>FESTIVAL NAME (leave blank to auto-generate)</div>
+              <input value={festName} onChange={e=>setFestName(e.target.value)} placeholder="e.g. Neon Pines Festival" style={{ ...inputSt,width:'100%' }} />
+            </div>
+          </Card>
+
+          {/* Template picker */}
+          <Card neon>
+            <CardTitle>Poster Template</CardTitle>
+            <div style={{ display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6 }}>
+              {POSTER_TEMPLATES.map((t,i)=>(
+                <div key={t.id} onClick={()=>setTemplateIdx(i)}
+                  style={{ background:t.bg,border:`2px solid ${i===templateIdx?t.accent:C.border}`,borderRadius:6,padding:'8px 4px',cursor:'pointer',textAlign:'center',boxShadow:i===templateIdx?`0 0 12px ${t.accent}66`:'none',transition:'all 0.2s' }}>
+                  <div style={{ fontFamily:"'Space Mono',monospace",fontSize:6,color:t.accent,textTransform:'uppercase',letterSpacing:1,lineHeight:1.3 }}>{t.name}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <div style={{ marginTop:20 }}>
+            <Btn onClick={generate} style={{ width:'100%',padding:'14px',fontSize:13,letterSpacing:'0.2em',background:`linear-gradient(90deg,${tpl.accent},${tpl.accent2})`,color:'#000' }}>⚡ GENERATE POSTER</Btn>
+          </div>
+        </div>
+
+        {/* Right: Poster preview */}
+        <div>
+          {generated ? (() => {
+            const { tpl:t, artists, name, headlinerCount:hc } = generated;
+            const headliners = artists.slice(0,hc);
+            const midTier = artists.slice(hc,hc+Math.ceil((artists.length-hc)/2));
+            const undercard = artists.slice(hc+Math.ceil((artists.length-hc)/2));
+            return (
+              <div style={{ background:t.bg,borderRadius:12,overflow:'hidden',border:`2px solid ${t.accent}`,boxShadow:`0 0 40px ${hexToRgba(t.accent,0.3)}`,padding:'40px 32px',fontFamily:"'Bebas Neue'",textAlign:'center',position:'relative',minHeight:600 }}>
+                {/* Background pattern */}
+                <div style={{ position:'absolute',inset:0,background:`radial-gradient(ellipse at 50% 0%,${hexToRgba(t.accent,0.15)},transparent 70%)`,pointerEvents:'none' }} />
+                <div style={{ position:'absolute',inset:0,background:`radial-gradient(ellipse at 50% 100%,${hexToRgba(t.accent2,0.1)},transparent 70%)`,pointerEvents:'none' }} />
+
+                <div style={{ position:'relative',zIndex:1 }}>
+                  {/* Top decorative line */}
+                  <div style={{ height:2,background:`linear-gradient(90deg,transparent,${t.accent},${t.accent2},transparent)`,marginBottom:24 }} />
+
+                  {/* Festival name */}
+                  <div style={{ fontSize:'clamp(2rem,5vw,3.5rem)',letterSpacing:'0.08em',color:t.accent,lineHeight:1,marginBottom:4,textShadow:`0 0 30px ${hexToRgba(t.accent,0.5)}` }}>{name}</div>
+                  <div style={{ fontFamily:"'Space Mono',monospace",fontSize:9,color:t.accent2,letterSpacing:'0.3em',marginBottom:32 }}>JUNE 2026 · PRESENTED BY YOUR CONCERT HISTORY</div>
+
+                  {/* Headliners */}
+                  {headliners.map((a,i)=>(
+                    <div key={a.artist} style={{ fontSize:i===0?'clamp(2.5rem,6vw,4rem)':'clamp(1.8rem,4vw,2.8rem)', color:i===0?'#ffffff':t.accent, letterSpacing:'0.06em', lineHeight:1.1, marginBottom:8, textShadow:i===0?`0 0 20px ${hexToRgba(t.accent,0.4)}`:'none' }}>{a.artist}</div>
+                  ))}
+
+                  {/* Divider */}
+                  <div style={{ display:'flex',alignItems:'center',gap:12,margin:'20px 0' }}>
+                    <div style={{ flex:1,height:1,background:`linear-gradient(90deg,transparent,${t.accent}88)` }} />
+                    <div style={{ fontFamily:"'Space Mono',monospace",fontSize:7,color:t.accent,letterSpacing:'0.2em' }}>ALSO FEATURING</div>
+                    <div style={{ flex:1,height:1,background:`linear-gradient(90deg,${t.accent}88,transparent)` }} />
+                  </div>
+
+                  {/* Mid-tier */}
+                  <div style={{ fontSize:'clamp(1rem,2.5vw,1.6rem)',color:t.accent2,letterSpacing:'0.05em',lineHeight:1.6,marginBottom:16 }}>
+                    {midTier.map(a=>a.artist).join(' · ')}
+                  </div>
+
+                  {/* Undercard */}
+                  {undercard.length>0&&(
+                    <div style={{ fontFamily:"'Space Mono',monospace",fontSize:'clamp(6px,1.2vw,9px)',color:hexToRgba(t.accent2,0.6),letterSpacing:'0.12em',lineHeight:2,marginBottom:24 }}>
+                      {undercard.map(a=>a.artist).join('  ·  ')}
+                    </div>
+                  )}
+
+                  {/* Bottom decorative */}
+                  <div style={{ height:1,background:`linear-gradient(90deg,transparent,${t.accent},${t.accent2},transparent)`,marginTop:24,marginBottom:16 }} />
+                  <div style={{ fontFamily:"'Space Mono',monospace",fontSize:7,color:hexToRgba(t.accent,0.5),letterSpacing:'0.2em' }}>ALL ARTISTS PERSONALLY CURATED FROM YOUR 27-YEAR CONCERT HISTORY</div>
+                </div>
+              </div>
+            );
+          })() : (
+            <div style={{ background:C.bgCard,border:`2px dashed ${C.border}`,borderRadius:12,minHeight:600,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16 }}>
+              <div style={{ fontSize:'4rem' }}>🎨</div>
+              <div style={{ fontFamily:"'Bebas Neue'",fontSize:'1.5rem',color:C.grayDim }}>YOUR POSTER APPEARS HERE</div>
+              <div style={{ fontFamily:"'Space Mono',monospace",fontSize:9,color:C.grayDim }}>Configure your mix and hit Generate</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 const TABS = [
-  ['dashboard','⚡ Dashboard'],['timeline','⏳ Timeline'],['byDay','📅 By Day'],
-  ['byFest','🎪 By Festival'],['browse','🔍 Browse'],['hof','🏆 Hall of Fame'],
-  ['passport','🗺️ Passport'],['vault','📋 Setlist Vault'],['manage','⚙️ Manage'],
+  ['dashboard','⚡ Dashboard',null],
+  ['timeline','⏳ Timeline',null],
+  ['byDay','📅 By Day',null],
+  ['byFest','🎪 By Festival','fest-group'],
+  ['passport','🗺️ Passport','fest-group'],
+  ['browse','🔍 Browse',null],
+  ['hof','🏆 Hall of Fame',null],
+  ['vault','📋 Setlist Vault',null],
+  ['poster','🎨 Poster Generator',null],
+  ['manage','⚙️ Manage',null],
 ];
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
@@ -1161,7 +1512,7 @@ export default function App() {
     return{topBand:top?top[0]:'None',topCount:top?top[1]:0,totalSets:allSetsList.length,stateCount:states.size,venueCount:venues.size,newDiscoveries:[...recentBands].filter(b=>!oldBands.has(b)).length};
   },[concerts,allSetsList]);
 
-  const genreStats=useMemo(()=>{ const counts={}; concerts.forEach(c=>{ const g=c.genre||'Other'; counts[g]=(counts[g]||0)+1; }); return Object.entries(counts).map(([name,count])=>({name,count,color:GENRE_COLORS[name]||GENRE_COLORS['Other']})).sort((a,b)=>b.count-a.count); },[concerts]);
+  const genreStats=useMemo(()=>{ const counts={}; allSetsList.forEach(s=>{ const g=genreMap[s.artist]||s.genre||'Other'; counts[g]=(counts[g]||0)+1; }); return Object.entries(counts).map(([name,count])=>({name,count,color:GENRE_COLORS[name]||GENRE_COLORS['Other']})).sort((a,b)=>b.count-a.count); },[allSetsList,genreMap]);
   const timelineData=useMemo(()=>{ const m={}; allSetsList.forEach(s=>{ const y=getYear(s.date); if(y)m[y]=(m[y]||0)+1; }); return Object.entries(m).sort((a,b)=>+a[0]-+b[0]).map(([year,count])=>({year:String(year).slice(2),count,fullYear:+year})); },[allSetsList]);
   const artistCounts=useMemo(()=>{ const m={}; allSetsList.forEach(s=>{ m[s.artist]=(m[s.artist]||0)+1; }); return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([name,count])=>({name,count})); },[allSetsList]);
   const festBreakdown=useMemo(()=>{ const m={}; concerts.filter(c=>c.is_festival&&c.festival_name).forEach(c=>{ m[c.festival_name]=(m[c.festival_name]||0)+1; }); return Object.entries(m).sort((a,b)=>b[1]-a[1]); },[concerts]);
@@ -1210,8 +1561,8 @@ export default function App() {
 
       {/* ── NAV ── */}
       <nav style={{ background:C.bgCard,borderBottom:`1px solid ${C.teal}33`,display:'flex',overflowX:'auto',position:'sticky',top:0,zIndex:200 }}>
-        {TABS.map(([id,label])=>(
-          <button key={id} onClick={()=>setActiveTab(id)} style={{ fontFamily:"'Space Mono'",fontSize:10,color:activeTab===id?C.teal:C.gray,background:'none',border:'none',borderBottom:activeTab===id?`2px solid ${C.teal}`:'2px solid transparent',padding:'12px 16px',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0 }}>{label}</button>
+        {TABS.map(([id,label,group])=>(
+          <button key={id} onClick={()=>setActiveTab(id)} style={{ fontFamily:"'Space Mono'",fontSize:10,color:activeTab===id?C.teal:C.gray,background:group==='fest-group'?'rgba(0,229,204,0.06)':'none',border:'none',borderBottom:activeTab===id?`2px solid ${C.teal}`:'2px solid transparent',borderTop:group==='fest-group'?`1px solid ${C.teal}33`:'1px solid transparent',padding:'12px 16px',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0 }}>{label}</button>
         ))}
       </nav>
 
@@ -1291,11 +1642,14 @@ export default function App() {
                   </div>
                 ); })}
               </Card>
-              <Card neon>
+              <Card neon style={{ display:'flex',flexDirection:'column' }}>
                 <CardTitle>Setlist Spotlight 📋</CardTitle>
                 <SetlistSpotlight concerts={concerts} onVault={()=>setActiveTab('vault')} />
               </Card>
             </div>
+
+            {/* Row 5: USA Heatmap — full width */}
+            <USAHeatmap concerts={concerts} />
           </>
         )}
 
@@ -1318,8 +1672,9 @@ export default function App() {
         )}
 
         {activeTab==='hof'&&<HallOfFame sets={allSetsList} genreMap={genreMap} onShare={(a,s)=>setShareCard({artist:a,shows:s})} />}
-        {activeTab==='passport'&&<PassportTab passport={passport} />}
+        {activeTab==='passport'&&<PassportTab passport={passport} onNavigateToFest={name=>{ setActiveTab('byFest'); setTimeout(()=>{ const el=document.getElementById(`fest-${name.replace(/\s+/g,'-')}`); if(el)el.scrollIntoView({behavior:'smooth',block:'start'}); },150); }} />}
         {activeTab==='vault'&&<SetlistVaultTab concerts={concerts} />}
+        {activeTab==='poster'&&<PosterGeneratorTab concerts={concerts} genreMap={genreMap} allSetsList={allSetsList} />}
         {activeTab==='manage'&&<ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={()=>setEditTarget('new')} />}
 
       </main>
