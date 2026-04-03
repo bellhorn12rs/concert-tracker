@@ -112,57 +112,60 @@ const getYear = d => d ? new Date(d + 'T12:00:00').getFullYear() : null;
 const daysSince = d => { if (!d) return 0; return Math.floor((Date.now() - new Date(d + 'T12:00:00')) / 86400000); };
 
 
-// ─── STYLES ───────────────────────────────────────────────────────────────────
+// ─── STYLES (ANTI-VOID EDITION) ───────────────────────────────────────────────
 const MarqueeStyles = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Monoton&family=Bebas+Neue&family=Space+Mono&family=Caveat:wght@600;700&display=swap');
 
-    /* KILL THE VOID: Background Dot Grid */
     body {
-      background-color: #0a0a0f;
-      background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 0);
-      background-size: 30px 30px;
+      background-color: #050508;
+      /* Scanline / Mesh Texture */
+      background-image: 
+        linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03)),
+        radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+      background-size: 100% 4px, 3px 100%, 32px 32px;
       background-attachment: fixed;
     }
 
-    /* THEME FILLER: Subtle header glow */
-    main {
-      position: relative;
-      background: rgba(10, 10, 15, 0.4);
-      border-left: 1px solid rgba(0, 229, 204, 0.05);
-      border-right: 1px solid rgba(0, 229, 204, 0.05);
-      box-shadow: 0 0 100px rgba(0,0,0,0.5);
+    /* Ambient Background Glows to break the black */
+    body::before {
+      content: "";
+      position: fixed;
+      top: -10%; left: -10%; width: 40%; height: 40%;
+      background: radial-gradient(circle, rgba(0, 229, 204, 0.05) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: -1;
     }
 
-    @keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-    @keyframes marquee-slow { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-    @keyframes pulse-teal { 0%,100%{box-shadow:0 0 24px rgba(0,229,204,0.15)} 50%{box-shadow:0 0 40px rgba(0,229,204,0.35)} }
-    @keyframes fade-in-kf { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-    @keyframes float { 0%,100%{transform:rotate(var(--r)) translateY(0)} 50%{transform:rotate(var(--r)) translateY(-6px)} }
-    @keyframes rainbow-border { 0%{border-color:#00f2ff;box-shadow:0 0 12px #00f2ff44} 25%{border-color:#9d00ff;box-shadow:0 0 12px #9d00ff44} 50%{border-color:#ff00ff;box-shadow:0 0 12px #ff00ff44} 75%{border-color:#ffcc00;box-shadow:0 0 12px #ffcc0044} 100%{border-color:#00f2ff;box-shadow:0 0 12px #00f2ff44} }
-    @keyframes count-up { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-    @keyframes chasing-bulb { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.1)} }
-    @keyframes ferris-rotate { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-    @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-    @keyframes card-tilt { 0%,100%{transform:perspective(600px) rotateY(0deg)} 50%{transform:perspective(600px) rotateY(4deg)} }
-    @keyframes flicker { 0%,98%,100%{opacity:1} 99%{opacity:0.85} }
+    /* Card Framing - Add a "Plastic" sheen to stop them from looking flat */
+    .card-sheen {
+      position: relative;
+      overflow: hidden;
+    }
+    .card-sheen::after {
+      content: "";
+      position: absolute;
+      top: 0; left: -100%; width: 50%; height: 100%;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.03), transparent);
+      transform: skewX(-25deg);
+      transition: 0.75s;
+    }
+    .card-sheen:hover::after { left: 150%; }
 
-    .marquee-text { display:inline-block; padding-left:100%; animation:marquee 28s linear infinite; }
-    .marquee-letter { font-family:'Bebas Neue',sans-serif; letter-spacing:2px; text-transform:uppercase; color:#ffcc00; }
-    .fade-in { animation:fade-in-kf 0.35s ease both; }
-    .row-hover:hover { background:#1c1c28 !important; cursor:pointer; }
-    .day-card-hover:hover { border-color:#00e5cc44 !important; }
-    .rainbow-anim { animation:rainbow-border 4s linear infinite; }
-    .paper-float { animation:float var(--dur,6s) ease-in-out infinite; }
-    .ticket-hover:hover { transform:perspective(600px) rotateY(3deg) scale(1.01); box-shadow:0 8px 32px rgba(0,0,0,0.6); }
-    .ticket-hover { transition:all 0.25s cubic-bezier(0.175,0.885,0.32,1.275); }
-    .ferris-wheel-ring { animation:ferris-rotate 20s linear infinite; transform-origin:center; }
-    .marquee-flicker { animation:flicker 8s ease-in-out infinite; }
+    @keyframes slot-machine {
+      0% { transform: translateY(0); opacity: 1; }
+      20% { transform: translateY(-10px); opacity: 0.5; }
+      21% { transform: translateY(10px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
 
-    /* SIDEWAYS YEAR STYLING */
+    .spinning-text { animation: slot-machine 0.1s infinite; }
+    
+    /* Sideways Year docking fix */
     .sticky-year {
       position: sticky;
-      top: 120px;
+      top: 100px;
       font-family: 'Bebas Neue', sans-serif;
       font-size: 5rem;
       line-height: 1;
@@ -172,14 +175,8 @@ const MarqueeStyles = () => (
       user-select: none;
       pointer-events: none;
     }
-
-    .tab-active { position:relative; }
-    .tab-active::after { content:''; position:absolute; bottom:0; left:10%; right:10%; height:2px; background:var(--tab-color,#00e5cc); box-shadow:0 0 8px var(--tab-color,#00e5cc), 0 0 16px var(--tab-color,#00e5cc); border-radius:2px; }
-    .perf-edge { background-image:radial-gradient(circle at 0 50%, transparent 8px, #111118 8px); background-size:1px 20px; }
-    .wristband { background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px); }
   `}</style>
 );
-
 // ─── SHARED ATOMS ─────────────────────────────────────────────────────────────
 const Badge = ({ children, color = C.teal, bg = C.tealFaint }) => (
   <span style={{ display:'inline-block', fontFamily:"'Space Mono',monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color, background:bg, border:`1px solid ${color}44`, padding:'2px 6px', borderRadius:3 }}>{children}</span>
@@ -564,24 +561,92 @@ function ArtistInsights({ concerts }) {
   );
 }
 
-// ─── RANDOM SHOW ──────────────────────────────────────────────────────────────
+// ─── RANDOM SHOW (WHEEL OF MEMORIES) ──────────────────────────────────────────
 function RandomShow({ concerts }) {
-  const [show, setShow] = useState(null), [spinning, setSpinning] = useState(false);
-  const spin = () => { if(!concerts.length)return; setSpinning(true); let i=0; const iv=setInterval(()=>{ setShow(concerts[Math.floor(Math.random()*concerts.length)]); if(++i>=12){clearInterval(iv);setSpinning(false);} },70); };
-  useEffect(() => { if(concerts.length&&!show) spin(); }, [concerts.length]);
+  const [show, setShow] = useState(null);
+  const [spinning, setSpinning] = useState(false);
+  
+  const spin = () => {
+    if (!concerts.length) return;
+    setSpinning(true);
+    let iterations = 0;
+    const maxIterations = 15;
+    
+    const interval = setInterval(() => {
+      setShow(concerts[Math.floor(Math.random() * concerts.length)]);
+      iterations++;
+      if (iterations >= maxIterations) {
+        clearInterval(interval);
+        setSpinning(false);
+      }
+    }, 80);
+  };
+
+  useEffect(() => { if (concerts.length && !show) spin(); }, [concerts.length]);
+
   if (!show) return null;
-  const artistName = Array.isArray(show.bands) ? show.bands[0] : (show.artist||'Unknown');
+
+  const bands = show.bands || [show.artist];
+  const isFest = show.is_festival;
+
   return (
-    <Card neon style={{ minHeight:150, border:`1px solid ${spinning?C.grayDim:C.purple+'66'}`, display:'flex', flexDirection:'column', justifyContent:'center', transition:'0.3s' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-        <div style={{ fontFamily:"'Space Mono'", fontSize:8, color:C.purple, letterSpacing:2 }}>🎲 {spinning?'SPINNING...':'RANDOM RECALL'}</div>
-        <button onClick={spin} disabled={spinning} style={{ background:spinning?'transparent':`${C.purple}33`, border:`1px solid ${C.purple}88`, color:C.purple, fontSize:9, padding:'4px 12px', borderRadius:3, cursor:'pointer', fontFamily:"'Space Mono'", letterSpacing:'0.08em', fontWeight:700, transition:'all 0.2s' }}>{spinning?'•••':'SPIN'}</button>
+    <Card neon style={{ 
+      minHeight: 180, 
+      display: 'flex', 
+      flexDirection: 'column', 
+      justifyContent: 'center',
+      borderColor: spinning ? C.purple : C.border,
+      boxShadow: spinning ? `0 0 30px ${hexToRgba(C.purple, 0.3)}` : 'none',
+      transition: '0.2s all'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.purple, letterSpacing: 3, fontWeight: 700 }}>
+          {spinning ? "🧠 RECALLING..." : "🎲 RANDOM RECALL"}
+        </div>
+        <button 
+          onClick={spin} 
+          disabled={spinning} 
+          style={{ 
+            background: spinning ? C.grayDim : `linear-gradient(45deg, ${C.purple}, #ff00ff)`, 
+            border: 'none', 
+            color: '#fff', 
+            fontSize: 9, 
+            padding: '6px 14px', 
+            borderRadius: 20, 
+            cursor: 'pointer', 
+            fontFamily: "'Space Mono'", 
+            fontWeight: 900,
+            boxShadow: spinning ? 'none' : `0 0 15px ${hexToRgba(C.purple, 0.5)}`,
+            transform: spinning ? 'scale(0.95)' : 'scale(1)',
+            transition: '0.2s'
+          }}>
+          {spinning ? "SPINNING" : "SPIN AGAIN"}
+        </button>
       </div>
-      <div style={{ opacity:spinning?0.3:1, transition:'0.2s' }}>
-        <div style={{ fontFamily:"'Bebas Neue'", fontSize:'2.2rem', color:C.white, lineHeight:1, marginBottom:4 }}>{artistName}</div>
-        <div style={{ fontFamily:"'Space Mono'", fontSize:9 }}>
-          <span style={{ color:C.white }}>{fmtDate(show.date)}</span>
-          <span style={{ color:C.purple, opacity:0.8, marginLeft:8 }}>📍 {show.venue?.toUpperCase()}</span>
+
+      <div className={spinning ? "spinning-text" : "fade-in"} style={{ flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+           <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.white }}>{getYear(show.date)}</span>
+           {isFest && <Badge color={C.gold}>FESTIVAL</Badge>}
+        </div>
+        
+        {/* All bands shown for that day */}
+        <div style={{ 
+          fontFamily: "'Bebas Neue'", 
+          fontSize: bands.length > 3 ? '1.5rem' : '2rem', 
+          color: spinning ? C.gray : C.white, 
+          lineHeight: 1, 
+          marginBottom: 8,
+          letterSpacing: '0.02em'
+        }}>
+          {bands.slice(0, 5).join(' • ')}{bands.length > 5 ? ' ...' : ''}
+        </div>
+
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.purple, opacity: 0.8 }}>
+          📍 {show.venue?.toUpperCase() || 'UNKNOWN VENUE'}
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, marginTop: 4 }}>
+          {show.city?.toUpperCase()}, {show.state}
         </div>
       </div>
     </Card>
@@ -2134,6 +2199,14 @@ export default function App() {
         zIndex: 1,
         minHeight: '80vh'
       }}>
+        {/* Add this "Decoration" element to fill space visually */}
+        <div style={{ 
+          position: 'absolute', 
+          top: 0, right: 0, 
+          width: '300px', height: '300px', 
+          background: `radial-gradient(circle at top right, ${hexToRgba(C.teal, 0.03)}, transparent 70%)`,
+          pointerEvents: 'none'
+        }} />
 
         {/* ════ DASHBOARD ════ */}
         {activeTab === 'dashboard' && (
