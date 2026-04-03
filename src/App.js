@@ -125,7 +125,10 @@ const MarqueeStyles = () => (
     @keyframes count-up { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
     @keyframes chasing-bulb { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.1)} }
     @keyframes ferris-rotate { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-    @keyframes ticker-scroll { 0%{transform:translateX(100%)} 100%{transform:translateX(-100%)} }
+    @keyframes ticker-scroll { 
+  0% { transform: translateX(0); } 
+  100% { transform: translateX(-50%); } 
+}
     @keyframes card-tilt { 0%,100%{transform:perspective(600px) rotateY(0deg)} 50%{transform:perspective(600px) rotateY(4deg)} }
     @keyframes flicker { 0%,98%,100%{opacity:1} 99%{opacity:0.85} }
 
@@ -305,30 +308,65 @@ function FerrisWheel({ size = 120 }) {
 // ─── NEWS TICKER ──────────────────────────────────────────────────────────────
 function NewsTicker({ concerts, artistCounts, genreStats }) {
   const items = useMemo(() => {
+    // Safety check: show a standby message if data hasn't loaded yet
+    if (concerts.length === 0) return "INITIALIZING LIVE FEED... STAND BY...   ///   INITIALIZING LIVE FEED... STAND BY... ";
+    
     const bits = [];
     if (artistCounts[0]) bits.push(`🏆 ALL-TIME LEADER: ${artistCounts[0].name.toUpperCase()} — SEEN ${artistCounts[0].count} TIMES`);
     if (artistCounts[1]) bits.push(`🎸 ${artistCounts[1].name.toUpperCase()} — ${artistCounts[1].count} SHOWS AND COUNTING`);
     if (genreStats[0]) bits.push(`🧬 DOMINANT GENRE: ${genreStats[0].name.toUpperCase()} WITH ${genreStats[0].count} SETS`);
-    concerts.slice(0,3).forEach(c => bits.push(`⚡ RECENTLY ATTENDED: ${(c.bands||[]).join(', ').toUpperCase()} — ${fmtDateShort(c.date).toUpperCase()}`));
+    
+    concerts.slice(0,3).forEach(c => {
+        const bands = Array.isArray(c.bands) ? c.bands.join(', ') : (c.artist || 'UNKNOWN');
+        bits.push(`⚡ RECENTLY ATTENDED: ${bands.toUpperCase()} — ${fmtDateShort(c.date).toUpperCase()}`);
+    });
+
     bits.push(`📍 ${new Set(concerts.map(c=>c.state).filter(Boolean)).size} STATES CONQUERED ACROSS ${concerts.length} SHOW DAYS`);
     bits.push(`🎪 ${new Set(concerts.filter(c=>c.is_festival&&c.festival_name).map(c=>c.festival_name)).size} UNIQUE FESTIVALS ATTENDED`);
     bits.push(`🎯 ${new Set(concerts.flatMap(c=>c.bands||[])).size} UNIQUE ARTISTS WITNESSED LIVE`);
+    
     const txt = bits.join('   ///   ') + '   ///   ';
-    return txt + txt; // double for seamless loop
+    return txt + txt; // Double the string for the seamless loop
   }, [concerts, artistCounts, genreStats]);
 
   return (
     <div style={{ background:C.bgCard, border:`1px solid ${C.teal}33`, borderRadius:6, overflow:'hidden', marginTop:16 }}>
       <div style={{ display:'flex', alignItems:'stretch' }}>
-        <div style={{ background:C.teal, color:C.bg, fontFamily:"'Bebas Neue'", fontSize:15, letterSpacing:'0.2em', padding:'12px 18px', flexShrink:0, display:'flex', alignItems:'center', whiteSpace:'nowrap', boxShadow:`4px 0 12px ${C.tealGlow}` }}>LIVE FEED</div>
-        <div style={{ overflow:'hidden', flex:1, background:`${C.teal}08` }}>
-          <div style={{ display:'inline-block', whiteSpace:'nowrap', animation:'ticker-scroll 90s linear infinite', fontFamily:"'Space Mono',monospace", fontSize:12, color:C.teal, padding:'12px 24px', letterSpacing:'0.06em', textShadow:`0 0 8px ${C.tealGlow}` }}>{items}</div>
+        <div style={{ 
+          background:C.teal, 
+          color:C.bg, 
+          fontFamily:"'Bebas Neue'", 
+          fontSize:15, 
+          letterSpacing:'0.2em', 
+          padding:'12px 18px', 
+          flexShrink:0, 
+          display:'flex', 
+          alignItems:'center', 
+          whiteSpace:'nowrap', 
+          boxShadow:`4px 0 12px ${C.tealGlow}`,
+          zIndex: 10 
+        }}>
+          LIVE FEED
+        </div>
+        <div style={{ overflow:'hidden', flex:1, background:`${C.teal}08`, display:'flex', alignItems:'center' }}>
+          <div style={{ 
+            display:'inline-block', 
+            whiteSpace:'nowrap', 
+            animation:'ticker-scroll 90s linear infinite', 
+            fontFamily:"'Space Mono',monospace", 
+            fontSize:12, 
+            color:C.teal, 
+            padding:'12px 24px', 
+            letterSpacing:'0.06em', 
+            textShadow:`0 0 8px ${C.tealGlow}` 
+          }}>
+            {items}
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
 // ─── ON THIS DAY ──────────────────────────────────────────────────────────────
 function OnThisDay({ concerts }) {
   const today = new Date(), mm = String(today.getMonth()+1).padStart(2,'0'), dd = String(today.getDate()).padStart(2,'0');
@@ -1755,38 +1793,42 @@ export default function App() {
       </div>
 
       {/* ── NAV ── */}
-      <nav style={{ background:C.bgCard, borderBottom:`1px solid ${C.teal}22`, display:'flex', overflowX:'auto', position:'sticky', top:0, zIndex:200 }}>
-        {/* Main tabs */}
-        <div style={{ display:'flex', flex:1 }}>
-          {TABS.filter(([,,g])=>g!=='right').map(([id,label,group,color]) => {
-            const isActive=activeTab===id;
-            const isFestGroup=group==='fest';
-            return (
-              <button key={id} onClick={()=>setActiveTab(id)}
-                style={{ fontFamily:"'Space Mono'", fontSize:10, color:isActive?color:C.gray, background:isFestGroup?'rgba(255,204,0,0.04)':'none', border:'none', borderBottom:isActive?`2px solid ${color}`:'2px solid transparent', padding:'12px 16px', cursor:'pointer', whiteSpace:'nowrap', flexShrink:0, position:'relative', transition:'color 0.2s' }}>
-                {label}
-                {isFestGroup && !isActive && <div style={{ position:'absolute', top:0, left:0, right:0, height:1, background:'rgba(255,204,0,0.2)' }} />}
-              </button>
-            );
-          })}
-        </div>
-        {/* Right tabs (Browse + Manage) */}
-        <div style={{ display:'flex', borderLeft:`1px solid ${C.border}` }}>
-          {TABS.filter(([,,g])=>g==='right').map(([id,label,,color]) => {
-            const isActive=activeTab===id;
-            return (
-              <button key={id} onClick={()=>setActiveTab(id)}
-                style={{ fontFamily:"'Space Mono'", fontSize:10, color:isActive?color:C.grayDim, background:'none', border:'none', borderBottom:isActive?`2px solid ${color}`:'2px solid transparent', padding:'12px 16px', cursor:'pointer', whiteSpace:'nowrap', flexShrink:0, transition:'color 0.2s' }}>
-                {label}
-              </button>
-            );
-          })}
-          <ThemeSwitcher />
-        </div>
-      </nav>
-
-      <main style={{ maxWidth:1200, margin:'0 auto', padding:'0 20px' }}>
-
+<nav style={{ background: C.bgCard, borderBottom: `1px solid ${C.teal}22`, display: 'flex', position: 'sticky', top: 0, zIndex: 200 }}>
+  {/* Wrap only the tabs in the scrollable area */}
+  <div style={{ display: 'flex', flex: 1, overflowX: 'auto', scrollbarWidth: 'none' }}>
+    {TABS.filter(([,,g]) => g !== 'right').map(([id, label, group, color]) => {
+      const isActive = activeTab === id;
+      const isFestGroup = group === 'fest';
+      return (
+        <button key={id} onClick={() => setActiveTab(id)}
+          style={{ 
+            fontFamily: "'Space Mono'", fontSize: 10, color: isActive ? color : C.gray, 
+            background: isFestGroup ? 'rgba(255,204,0,0.04)' : 'none', border: 'none', 
+            borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent', 
+            padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, 
+            position: 'relative', transition: 'color 0.2s' 
+          }}>
+          {label}
+          {isActive && <div className="tab-active" style={{ '--tab-color': color }} />}
+        </button>
+      );
+    })}
+  </div>
+  
+  {/* Keep the right-side tools outside the scroll so they don't clip */}
+  <div style={{ display: 'flex', borderLeft: `1px solid ${C.border}`, background: C.bgCard }}>
+    {TABS.filter(([,,g]) => g === 'right').map(([id, label,, color]) => {
+      const isActive = activeTab === id;
+      return (
+        <button key={id} onClick={() => setActiveTab(id)}
+          style={{ fontFamily: "'Space Mono'", fontSize: 10, color: isActive ? color : C.grayDim, background: 'none', border: 'none', borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent', padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+          {label}
+        </button>
+      );
+    })}
+    <ThemeSwitcher />
+  </div>
+</nav>
         {/* ════ DASHBOARD ════ */}
         {activeTab==='dashboard' && (
           <>
