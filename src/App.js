@@ -1794,7 +1794,8 @@ export default function App() {
 
       {/* ── NAV ── */}
 <nav style={{ background: C.bgCard, borderBottom: `1px solid ${C.teal}22`, display: 'flex', position: 'sticky', top: 0, zIndex: 200 }}>
-  {/* Wrap only the tabs in the scrollable area */}
+  
+  {/* 1. This DIV handles the scrolling tabs */}
   <div style={{ display: 'flex', flex: 1, overflowX: 'auto', scrollbarWidth: 'none' }}>
     {TABS.filter(([,,g]) => g !== 'right').map(([id, label, group, color]) => {
       const isActive = activeTab === id;
@@ -1809,13 +1810,12 @@ export default function App() {
             position: 'relative', transition: 'color 0.2s' 
           }}>
           {label}
-          {isActive && <div className="tab-active" style={{ '--tab-color': color }} />}
         </button>
       );
     })}
-  </div>
+  </div> {/* <-- Closes scrolling tabs DIV */}
   
-  {/* Keep the right-side tools outside the scroll so they don't clip */}
+  {/* 2. This DIV handles the right-side tools */}
   <div style={{ display: 'flex', borderLeft: `1px solid ${C.border}`, background: C.bgCard }}>
     {TABS.filter(([,,g]) => g === 'right').map(([id, label,, color]) => {
       const isActive = activeTab === id;
@@ -1827,8 +1827,9 @@ export default function App() {
       );
     })}
     <ThemeSwitcher />
-  </div>
-</nav>
+  </div> {/* <-- Closes tools DIV */}
+
+</nav> {/* <-- Closes the NAV itself */}/nav>
         {/* ════ DASHBOARD ════ */}
         {activeTab==='dashboard' && (
           <>
