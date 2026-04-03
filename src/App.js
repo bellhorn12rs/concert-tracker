@@ -322,9 +322,43 @@ function TheaterMarquee({ upcoming, onAdd, onEdit }) {
                 <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.15rem', color:C.gold, letterSpacing:'0.06em', lineHeight:1 }}>{show.artist}</div>
                 {show.venue && <div style={{ fontFamily:"'Space Mono'", fontSize:7, color:'#555', marginTop:1 }}>{show.venue}</div>}
               </div>
-              <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:C.gold, background:'rgba(255,204,0,0.12)', border:'1px solid rgba(255,204,0,0.3)', padding:'2px 6px', borderRadius:3, whiteSpace:'nowrap' }}>{show.status||'TICKETS BOUGHT'}</span>
-              <button onClick={() => onEdit(show)} style={{ background:'none', border:`1px solid #333`, color:'#888', cursor:'pointer', fontSize:9, borderRadius:3, padding:'3px 8px', fontFamily:"'Space Mono'" }}>EDIT</button>
-            </div>
+              <span style={{ 
+              fontFamily: "'Space Mono'", 
+              fontSize: 7, 
+              color: C.gold, 
+              background: 'rgba(255,204,0,0.12)', 
+              border: '1px solid rgba(255,204,0,0.3)', 
+              padding: '2px 6px', 
+              borderRadius: 3, 
+              whiteSpace: 'nowrap' 
+            }}>
+              {show.status || 'TICKETS BOUGHT'}
+            </span>
+            
+            <button 
+              onClick={() => onEdit(show)} 
+              style={{ 
+                background: 'none', 
+                border: `1px solid #333`, 
+                color: '#888', 
+                cursor: 'pointer', 
+                fontSize: 9, 
+                borderRadius: 3, 
+                padding: '3px 8px', 
+                fontFamily: "'Space Mono'",
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = C.gold;
+                e.currentTarget.style.color = C.gold;
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = '#333';
+                e.currentTarget.style.color = '#888';
+              }}
+            >
+              EDIT
+            </button></div>
           ))}
           {!upcoming.length && <div style={{ color:'#333', fontFamily:"'Space Mono'", fontSize:9, textAlign:'center', padding:20 }}>NO SHOWS QUEUED</div>}
         </div>
@@ -1844,27 +1878,91 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
 
 // ─── MODALS ───────────────────────────────────────────────────────────────────
 function UpcomingModal({ show, onClose, onSave, onDelete }) {
-  const isNew=!show?.id;
-  const [form, setForm]=useState({ artist:show?.artist||'', venue:show?.venue||'', date:show?.date||'', status:show?.status||'TICKETS BOUGHT' });
-  const [saving, setSaving]=useState(false);
-  const set=(k,v)=>setForm(f=>({...f,[k]:v}));
-  const lbl={ display:'block', fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:C.tealDim, marginBottom:4 };
-  const inp={...inputSt,width:'100%'};
-  const handleSave=async()=>{ if(!form.artist||!form.date)return alert('Artist and date required.'); setSaving(true); await onSave(show?.id,form); setSaving(false); };
+  const isNew = !show?.id;
+  const [form, setForm] = useState({ artist: '', venue: '', date: '', status: 'TICKETS BOUGHT' });
+  const [saving, setSaving] = useState(false);
+
+  // THIS FIXES THE "STUCK" DATA: Sync form state when the 'show' prop changes
+  useEffect(() => {
+    if (show && show.id) {
+      setForm({
+        artist: show.artist || '',
+        venue: show.venue || '',
+        date: show.date || '',
+        status: show.status || 'TICKETS BOUGHT'
+      });
+    } else {
+      setForm({ artist: '', venue: '', date: '', status: 'TICKETS BOUGHT' });
+    }
+  }, [show]);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  
+  const handleSave = async () => { 
+    if (!form.artist || !form.date) return alert('Artist and date required.'); 
+    setSaving(true); 
+    await onSave(show?.id, form); 
+    setSaving(false); 
+  };
+
+  const lbl = { display: 'block', fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 };
+  const inp = { ...inputSt, width: '100%', marginBottom: 15 };
+
   return (
-    <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,0.85)',zIndex:1100,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(4px)' }} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="fade-in" style={{ background:C.bgCard,border:`1px solid ${C.gold}`,borderRadius:10,padding:24,width:'100%',maxWidth:420,boxShadow:'0 0 40px rgba(255,204,0,0.2)' }}>
-        <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20 }}>
-          <div style={{ fontFamily:"'Bebas Neue'",fontSize:'1.4rem',color:C.gold }}>{isNew?'Add Upcoming Show':'Edit Upcoming Show'}</div>
-          <button onClick={onClose} style={{ background:'none',border:'none',color:C.gray,fontSize:'1.2rem',cursor:'pointer' }}>✕</button>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(10px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="fade-in card-texture" style={{ background: C.bgCard, border: `1px solid ${C.gold}`, borderRadius: 12, padding: 32, width: '100%', maxWidth: 420, boxShadow: `0 0 50px ${hexToRgba(C.gold, 0.2)}`, position: 'relative', overflow: 'hidden' }}>
+        
+        {/* Poster Style Header */}
+        <div style={{ position: 'absolute', top: -10, right: -10, fontFamily: "'Bebas Neue'", fontSize: '6rem', color: 'rgba(255,204,0,0.03)', pointerEvents: 'none' }}>
+          {isNew ? 'NEW' : 'EDIT'}
         </div>
-        <div style={{ marginBottom:14 }}><label style={lbl}>Artist *</label><input style={inp} value={form.artist} onChange={e=>set('artist',e.target.value)} /></div>
-        <div style={{ marginBottom:14 }}><label style={lbl}>Venue</label><input style={inp} value={form.venue} onChange={e=>set('venue',e.target.value)} /></div>
-        <div style={{ marginBottom:14 }}><label style={lbl}>Date *</label><input style={{...inp,colorScheme:'dark'}} type="date" value={form.date} onChange={e=>set('date',e.target.value)} /></div>
-        <div style={{ marginBottom:20 }}><label style={lbl}>Status</label><select style={inp} value={form.status} onChange={e=>set('status',e.target.value)}><option value="TICKETS BOUGHT">Tickets Bought</option><option value="PENDING">Pending</option><option value="DREAMING">Dreaming</option></select></div>
-        <div style={{ display:'flex',justifyContent:'space-between',gap:8 }}>
-          <div>{!isNew&&<Btn variant="danger" onClick={()=>onDelete(show.id)}>Delete</Btn>}</div>
-          <div style={{ display:'flex',gap:8 }}><Btn variant="secondary" onClick={onClose}>Cancel</Btn><Btn onClick={handleSave} disabled={saving} style={{ background:C.gold,color:'#000' }}>{saving?'Saving...':'Save'}</Btn></div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25, position: 'relative', zIndex: 1 }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, letterSpacing: '0.05em' }}>
+            {isNew ? 'STAGING NEW SHOW' : 'REVISING SHOW'}
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: C.gray, fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+        </div>
+
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <label style={lbl}>Artist / Band *</label>
+          <input style={inp} value={form.artist} onChange={e => set('artist', e.target.value)} placeholder="e.g. Tame Impala" />
+          
+          <label style={lbl}>Venue</label>
+          <input style={inp} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="e.g. Red Rocks" />
+          
+          <label style={lbl}>Date *</label>
+          <input style={{ ...inp, colorScheme: 'dark' }} type="date" value={form.date} onChange={e => set('date', e.target.value)} />
+          
+          <label style={lbl}>Status</label>
+          <select style={inp} value={form.status} onChange={e => set('status', e.target.value)}>
+            <option value="TICKETS BOUGHT">TICKETS BOUGHT</option>
+            <option value="PENDING">PENDING</option>
+            <option value="DREAMING">DREAMING</option>
+          </select>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 10 }}>
+            <div>
+              {!isNew && (
+                <button 
+                  onClick={() => onDelete(show.id)} 
+                  style={{ background: 'none', border: `1px solid ${C.red}`, color: C.red, padding: '10px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9, fontWeight: 700 }}
+                >
+                  DELETE
+                </button>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Btn variant="secondary" onClick={onClose}>CANCEL</Btn>
+              <button 
+                onClick={handleSave} 
+                disabled={saving} 
+                style={{ background: C.gold, color: '#000', border: 'none', padding: '10px 24px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10, fontWeight: 900, boxShadow: `0 4px 15px ${hexToRgba(C.gold, 0.4)}` }}
+              >
+                {saving ? 'SAVING...' : 'SAVE SHOW'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2189,12 +2287,31 @@ export default function App() {
     }
   }
 
-  async function handleUpcomingSave(id, payload) {
-    if (id) await supabase.from('upcoming_concerts').update(payload).eq('id', id);
-    else await supabase.from('upcoming_concerts').insert([payload]);
+  // Find this function in your main App logic and replace it:
+async function handleUpcomingSave(id, payload) {
+  if (id) {
+    // UPDATING EXISTING SHOW
+    const { error } = await supabase.from('upcoming_concerts').update(payload).eq('id', id);
+    if (error) console.error("Update error:", error);
+  } else {
+    // ADDING NEW SHOW
+    const { error } = await supabase.from('upcoming_concerts').insert([payload]);
+    if (error) console.error("Insert error:", error);
+  }
+  
+  await fetchUpcoming(); // Refresh the marquee data
+  setUpcomingModal(null); // Close the modal
+}
+
+// Ensure Delete works too:
+async function handleUpcomingDelete(id) {
+  if (window.confirm('Remove this show from the marquee?')) {
+    const { error } = await supabase.from('upcoming_concerts').delete().eq('id', id);
+    if (error) console.error("Delete error:", error);
     await fetchUpcoming();
     setUpcomingModal(null);
   }
+}
 
   async function handleUpcomingDelete(id) { if (window.confirm('Delete?')) { await supabase.from('upcoming_concerts').delete().eq('id', id); fetchUpcoming(); setUpcomingModal(null); } }
 
