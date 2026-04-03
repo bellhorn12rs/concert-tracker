@@ -2013,32 +2013,49 @@ export default function App() {
           </div>
 
           {/* THE CINEMATIC LIST */}
-          <div style={{ maxHeight: '100px', overflowY: 'auto' }}>
-            {upcoming.length === 0 ? (
-              <div style={{ color: '#333', fontSize: 10, textAlign: 'center', marginTop: 10 }}>MARQUEE IS DARK... ADD A SHOW</div>
-            ) : (
-              upcoming.map((show, i) => (
-               {/* Inside upcoming.map... */}
-<div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid #1a1a1a' }}>
-  <div 
-    onClick={async () => {
-      const newArtist = prompt("Edit Artist:", show.artist);
-      if (newArtist) {
-        await supabase.from('upcoming_concerts').update({ artist: newArtist }).eq('id', show.id);
-        fetchUpcoming();
-      }
-    }}
-    style={{ cursor: 'pointer' }}
-  >
-    <div className="marquee-letter" style={{ fontSize: '1.2rem', lineHeight: 1 }}>{show.artist}</div>
-    <div style={{ color: '#666', fontSize: 9, textTransform: 'uppercase', marginTop: 4 }}>@{show.venue || 'TBA'}</div>
-  </div>
-  
-  <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 10 }}>
-    <div>
-      <div style={{ color: '#fff', fontSize: 10 }}>{show.date}</div>
-      <div style={{ fontSize: 8, color: '#ffcc00' }}>{show.status}</div>
-    </div>
+        <div style={{ maxHeight: '100px', overflowY: 'auto' }}>
+          {upcoming.length === 0 ? (
+            <div style={{ color: '#333', fontSize: 10, textAlign: 'center', marginTop: 10 }}>
+              MARQUEE IS DARK... ADD A SHOW
+            </div>
+          ) : (
+            upcoming.map((show, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid #1a1a1a' }}>
+                <div 
+                  onClick={async () => {
+                    const newArtist = prompt("Edit Artist:", show.artist);
+                    if (newArtist) {
+                      await supabase.from('upcoming_concerts').update({ artist: newArtist }).eq('id', show.id);
+                      fetchUpcoming();
+                    }
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="marquee-letter" style={{ fontSize: '1.2rem', lineHeight: 1 }}>{show.artist}</div>
+                  <div style={{ color: '#666', fontSize: 9, textTransform: 'uppercase', marginTop: 4 }}>@{show.venue || 'TBA'}</div>
+                </div>
+                
+                <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div>
+                    <div style={{ color: '#fff', fontSize: 10 }}>{show.date}</div>
+                    <div style={{ fontSize: 8, color: '#ffcc00' }}>{show.status}</div>
+                  </div>
+                  <button 
+                    onClick={async () => {
+                      if(window.confirm("Delete this entry?")) {
+                        await supabase.from('upcoming_concerts').delete().eq('id', show.id);
+                        fetchUpcoming();
+                      }
+                    }}
+                    style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer', fontSize: '12px' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
     {/* TRASH CAN TO DELETE */}
     <button 
       onClick={async () => {
