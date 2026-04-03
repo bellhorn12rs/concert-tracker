@@ -1667,16 +1667,25 @@ export default function App() {
     } catch (err) { console.error(err.message); }
   }
 
+ async function toggleSetlist(concert) {
+    const newVal = !concert.has_setlist;
+    try {
+      const { error } = await supabase.from('concerts').update({ has_setlist: newVal }).eq('id', concert.id);
+      if (error) throw error;
+      setConcerts(p => p.map(c => c.id === concert.id ? { ...c, has_setlist: newVal } : c));
+    } catch (err) { console.error(err.message); }
+  }
+
   // --- 6. RENDER DATA (DERIVED) ---
 
-  // FOUNDATION: This must come first
+  // 1. Foundation: This must be first
   const allSetsList = useMemo(() => {
     const r = [];
     concerts.forEach(c => (c.bands || []).forEach(band => r.push({ ...c, artist: band })));
     return r;
   }, [concerts]);
 
-  // STATS: Header & Dashboard logic
+  // 2. Global Header Stats
   const headerStats = useMemo(() => {
     const ac = {}, venues = new Set();
     allSetsList.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
@@ -1692,6 +1701,7 @@ export default function App() {
     };
   }, [concerts, allSetsList]);
 
+  // 3. Dashboard Logic
   const dashboardStats = useMemo(() => {
     const bandCounts = {};
     allSetsList.forEach(s => { if(s.artist) bandCounts[s.artist] = (bandCounts[s.artist] || 0) + 1; });
@@ -1717,7 +1727,7 @@ export default function App() {
     };
   }, [concerts, allSetsList]);
 
-  // VISUALS: Timeline & Charts
+  // 4. Chart & List Prep
   const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
 
   const artistCounts = useMemo(() => {
@@ -1765,7 +1775,7 @@ export default function App() {
     return Object.values(m).sort((a, b) => Object.values(b.years).flat().length - Object.values(a.years).flat().length);
   }, [concerts]);
 
-  // NAVIGATION: Filters & Pagination
+  // 5. Navigation Logic
   const applyFilters = (list, isSet = false) => {
     let d = list;
     if (yearFilter !== 'all') d = d.filter(r => getYear(r.date) === +yearFilter);
@@ -1796,7 +1806,6 @@ export default function App() {
   }, [allSetsList, yearFilter, festFilter, search, sortCol, sortDir]);
 
   const dayGroups = useMemo(() => applyFilters(concerts).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [concerts, yearFilter, festFilter, search]);
-  
   const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const totalPages = Math.ceil(filteredSets.length / PER_PAGE);
 
