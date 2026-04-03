@@ -1317,17 +1317,21 @@ const genreStats = React.useMemo(() => {
 }, [concerts, manualGenres]);
   // --- AUTOMATIC ADMIN LOGIN ---
   useEffect(() => {
-    const login = async () => {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: 'bellhorn12rs@gmail.com',
-        password: 'Kapanen24!!'
-      });
-      if (error) console.error("Admin Login Failed:", error.message);
-      else console.log("Admin Session Authenticated 🤘");
-    };
-    login();
-    fetchConcerts(); 
-  }, []);
+  // 1. Supabase automatically checks for an existing session in LocalStorage
+  const checkSession = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      console.log("Welcome back, Admin 🤘");
+    } else {
+      console.log("Running in Guest Mode");
+    }
+  };
+
+  checkSession();
+  
+  // 2. Fetch the data normally
+  fetchConcerts(); 
+}, []);
 async function updateArtistGenre(artistName, newGenre) {
   console.log(`📡 Sending to Supabase: ${artistName} -> ${newGenre}`);
 
