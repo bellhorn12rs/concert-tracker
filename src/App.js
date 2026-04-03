@@ -1304,6 +1304,7 @@ const TABS = [
 const PER_PAGE = 40;
 
 export default function App() {
+  // --- 1. STATE ---
   const [concerts, setConcerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -1318,76 +1319,55 @@ export default function App() {
   const [editTarget, setEditTarget] = useState(null);
   const [shareCard, setShareCard] = useState(null);
   const [upcoming, setUpcoming] = useState([]);
-  const [newUpcoming, setNewUpcoming] = useState({ artist: '', venue: '', date: '', status: 'TICKETS' });
+  const [newUpcoming, setNewUpcoming] = useState({ artist: '', venue: '', date: '', status: 'TICKETS BOUGHT' });
 
-  // --- 2. LOGIC / MEMO (CLEANED & ORDERED) ---
+  // --- 2. DATA ENGINE (ORDERED) ---
 
-  // FOUNDATION: This must be first because everything else uses it
   const allSetsList = useMemo(() => {
-    const sets = [];
+    const r = [];
     concerts.forEach(c => {
-      if (c.bands && Array.isArray(c.bands)) {
-        c.bands.forEach(b => sets.push({ ...c, artist: b }));
-      } else if (c.artist) {
-        sets.push({ ...c, artist: c.artist });
-      }
+      const bands = Array.isArray(c.bands) ? c.bands : [c.artist];
+      bands.forEach(band => { if (band) r.push({ ...c, artist: band }); });
     });
-    return sets;
+    return r;
   }, [concerts]);
 
-  // HEADER & DASHBOARD LOGIC
-  const headerStats = useMemo(() => {
-    const ac = {}, venues = new Set();
-    allSetsList.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
-    concerts.forEach(c => { if (c.venue) venues.add(c.venue); });
-    return {
-      totalShows: concerts.length, 
-      totalSets: allSetsList.length,
-      uniqueArtists: Object.keys(ac).length, 
-      venueCount: venues.size,
-      topArtist: Object.entries(ac).sort((a, b) => b[1] - a[1])[0] || ['—', 0],
-      festDays: concerts.filter(c => c.is_festival).length,
-      setlistCount: concerts.filter(c => c.has_setlist || (c.has_setlist_names && c.has_setlist_names.trim() !== '')).length,
-    };
-  }, [concerts, allSetsList]);
-
   const dashboardStats = useMemo(() => {
-    if (!concerts || concerts.length === 0) return {
-      topBand: 'None', topCount: 0, totalSets: 0, uniqueBands: 0, 
-      stateCount: 0, cityCount: 0, venueCount: 0, newDiscoveries: 0, 
-      activeSpan: 0, avgPerYear: 0
-    };
-
-    const bandCounts = {};
-    allSetsList.forEach(s => { if(s.artist) bandCounts[s.artist] = (bandCounts[s.artist] || 0) + 1; });
-    const topEntry = Object.entries(bandCounts).sort((a, b) => b[1] - a[1])[0];
-    
-    const states = [...new Set(concerts.map(c => c.state).filter(Boolean))];
-    const venues = [...new Set(concerts.map(c => c.venue).filter(Boolean))];
-
-    const recentBands = new Set(concerts
-      .filter(c => c.date.startsWith('2025') || c.date.startsWith('2026'))
-      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    const historicalBands = new Set(concerts
-      .filter(c => !c.date.startsWith('2025') && !c.date.startsWith('2026'))
-      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    const newDiscoveries = [...recentBands].filter(b => !historicalBands.has(b)).length;
-
-    const yearsList = concerts.map(c => new Date(c.date + 'T12:00:00').getFullYear()).sort((a,b) => a-b);
-    const activeSpan = yearsList.length > 0 ? (yearsList[yearsList.length - 1] - yearsList[0]) : 0;
-
+    if (!concerts.length) return { topBand: 'None', topCount: 0, totalSets: 0, stateCount: 0, venueCount: 0, newDiscoveries: 0 };
+    const ac = {};
+    allSetsList.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
+    const top = Object.entries(ac).sort((a, b) => b[1] - a[1])[0];
+    const states = new Set(concerts.map(c => c.state).filter(Boolean));
+    const venues = new Set(concerts.map(c => c.venue).filter(Boolean));
+    const recent = new Set(concerts.filter(c => c.date >= '2025').flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
+    const old = new Set(concerts.filter(c => c.date < '2025').flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
     return {
-      topBand: topEntry ? topEntry[0] : 'None',
-      topCount: topEntry ? topEntry[1] : 0,
+      topBand: top ? top[0] : 'None',
+      topCount: top ? top[1] : 0,
       totalSets: allSetsList.length,
-      stateCount: states.length,
-      venueCount: venues.length,
-      newDiscoveries,
-      activeSpan
+      stateCount: states.size,
+      venueCount: venues.size,
+      newDiscoveries: [...recent].filter(b => !old.has(b)).length
     };
   }, [concerts, allSetsList]);
 
-  // CHART & TIMELINE DATA
+  const headerStats = useMemo(() => ({
+    totalShows: concerts.length,
+    totalSets: allSetsList.length,
+    festDays: concerts.filter(c => c.is_festival).length,
+    setlistCount: concerts.filter(c => c.has_setlist || c.has_setlist_names).length,
+  }), [concerts, allSetsList]);
+
+  const genreStats = useMemo(() => {
+    const counts = {};
+    concerts.forEach(c => {
+      const artist = Array.isArray(c.bands) ? c.bands[0] : c.artist;
+      const g = manualGenres[artist] || "Other";
+      counts[g] = (counts[g] || 0) + 1;
+    });
+    return Object.entries(counts).map(([name, count]) => ({ name, count, color: GENRE_COLORS[name] || "#444" })).sort((a, b) => b.count - a.count);
+  }, [concerts, manualGenres]);
+
   const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
 
   const artistCounts = useMemo(() => {
@@ -1414,7 +1394,29 @@ export default function App() {
     return Object.entries(m).sort((a, b) => b[1] - a[1]);
   }, [concerts]);
 
-  // NAVIGATION & FILTERING
+  const passport = useMemo(() => {
+    const m = {};
+    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => {
+      if (!m[c.festival_name]) m[c.festival_name] = { name: c.festival_name, days: 0, years: new Set() };
+      m[c.festival_name].days++;
+      const y = getYear(c.date); if (y) m[c.festival_name].years.add(y);
+    });
+    return Object.values(m).map(f => ({ ...f, years: [...f.years].sort() })).sort((a, b) => b.days - a.days);
+  }, [concerts]);
+
+  const festGroupings = useMemo(() => {
+    const m = {};
+    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => {
+      const yr = getYear(c.date) || 'Unknown';
+      if (!m[c.festival_name]) m[c.festival_name] = { name: c.festival_name, years: {} };
+      if (!m[c.festival_name].years[yr]) m[c.festival_name].years[yr] = [];
+      m[c.festival_name].years[yr].push(c);
+    });
+    return Object.values(m).sort((a, b) => Object.values(b.years).flat().length - Object.values(a.years).flat().length);
+  }, [concerts]);
+
+  // --- 3. FILTER LOGIC ---
+
   const applyFilters = (list, isSet = false) => {
     let d = list;
     if (yearFilter !== 'all') d = d.filter(r => getYear(r.date) === +yearFilter);
@@ -1444,18 +1446,32 @@ export default function App() {
     });
   }, [allSetsList, yearFilter, festFilter, search, sortCol, sortDir]);
 
-  // APP STARTUP & FUNCTIONS
-  useEffect(() => {
-    const initApp = async () => {
-      fetchConcerts();
-      fetchUpcoming();
-    };
-    initApp();
-  }, []);
+  const artistRows = useMemo(() => {
+    if (browseView !== 'artists') return [];
+    const m = {};
+    applyFilters(allSetsList, true).forEach(s => { 
+      if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; 
+      m[s.artist].shows.push(s); 
+    });
+    return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
+  }, [allSetsList, yearFilter, festFilter, search, browseView]);
+
+  const dayGroups = useMemo(() => applyFilters(concerts).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [concerts, yearFilter, festFilter, search]);
+  const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const totalPages = Math.ceil(filteredSets.length / PER_PAGE);
+
+  // --- 4. DB ACTIONS ---
+
+  useEffect(() => { fetchConcerts(); fetchUpcoming(); }, []);
 
   async function fetchConcerts() {
     const { data } = await supabase.from('concerts').select('*').order('date', { ascending: false });
-    if (data) setConcerts(data);
+    if (data) {
+      setConcerts(data);
+      const dbGenres = {};
+      data.forEach(show => { if (show.genre) dbGenres[show.bands?.[0] || show.artist] = show.genre; });
+      setManualGenres(prev => ({ ...prev, ...dbGenres }));
+    }
     setLoading(false);
   }
 
@@ -1465,37 +1481,169 @@ export default function App() {
   }
 
   const addUpcomingShow = async () => {
-    if (!newUpcoming.artist || !newUpcoming.date) return alert("Fill required fields!");
+    if (!newUpcoming.artist || !newUpcoming.date) return alert("Fill required fields! 📅");
     const { error } = await supabase.from('upcoming_concerts').insert([newUpcoming]);
-    if (!error) {
-      setNewUpcoming({ artist: '', venue: '', date: '', status: 'TICKETS BOUGHT' });
-      fetchUpcoming();
-    }
+    if (!error) { setNewUpcoming({ artist: '', venue: '', date: '', status: 'TICKETS BOUGHT' }); fetchUpcoming(); }
   };
 
   async function handleSave(id, payload) {
     if (id) await supabase.from('concerts').update(payload).eq('id', id);
     else await supabase.from('concerts').insert([payload]);
-    fetchConcerts();
-    setEditTarget(null);
+    fetchConcerts(); setEditTarget(null);
   }
 
   async function handleDelete(id) {
-    await supabase.from('concerts').delete().eq('id', id);
-    fetchConcerts();
-    setEditTarget(null);
+    if(window.confirm("Delete show?")) {
+      await supabase.from('concerts').delete().eq('id', id);
+      fetchConcerts(); setEditTarget(null);
+    }
   }
 
   const toggleSetlist = async (concert) => {
     const newVal = !concert.has_setlist;
-    try {
-      const { error } = await supabase.from('concerts').update({ has_setlist: newVal }).eq('id', concert.id);
-      if (error) throw error;
-      setConcerts(prev => prev.map(c => c.id === concert.id ? { ...c, has_setlist: newVal } : c));
-    } catch (err) {
-      console.error("Setlist Toggle Error:", err.message);
-    }
+    await supabase.from('concerts').update({ has_setlist: newVal }).eq('id', concert.id);
+    fetchConcerts();
   };
+
+  if (loading) return (
+    <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING</div>
+    </div>
+  );
+
+  // --- 5. RENDER ---
+  return (
+    <div style={{ background: C.bg, minHeight: '100vh', paddingBottom: 60 }}>
+      <MarqueeStyles />
+      {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
+      {editTarget && <EditModal concert={editTarget === 'new' ? null : editTarget} onClose={() => setEditTarget(null)} onSave={handleSave} onDelete={handleDelete} />}
+
+      <div style={{ background: `linear-gradient(180deg, #050508 0%, ${C.bgCard} 100%)`, borderBottom: `2px solid ${C.teal}33`, padding: '45px 24px 35px', textAlign: 'center' }}>
+        <h1 style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(2.5rem, 8vw, 5rem)', color: C.white, margin: 0 }}>
+          <span style={{ color: C.teal }}>🎸</span> LIVE // <span style={{ color: C.teal }}>IN CONCERT</span>
+        </h1>
+        <div style={{ marginTop: 18, fontFamily: "'Space Mono'", fontSize: '0.75rem', color: C.gray, display: 'flex', justifyContent: 'center', gap: '15px' }}>
+          <span>{years.length > 0 ? `${years[years.length - 1] - years[0]} YEARS` : '0 YEARS'}</span>
+          <span>{stateCounts.length} STATES</span>
+          <span style={{ color: C.white }}>{headerStats.totalSets.toLocaleString()}+ SETS 🤘</span>
+        </div>
+      </div>
+
+      <nav style={{ background: C.bgCard, borderBottom: `1px solid ${C.teal}33`, display: 'flex', overflowX: 'auto', position: 'sticky', top: 0, zIndex: 200 }}>
+        {TABS.map(([id, label]) => (
+          <button key={id} style={{ fontFamily: "'Space Mono'", fontSize: 10, color: activeTab === id ? C.teal : C.gray, background: 'none', border: 'none', borderBottom: activeTab === id ? `2px solid ${C.teal}` : '2px solid transparent', padding: '12px 16px', cursor: 'pointer' }} onClick={() => setActiveTab(id)}>{label}</button>
+        ))}
+      </nav>
+
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
+        {activeTab === 'dashboard' && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20, marginTop: 20 }}>
+              <Card neon color="#00e5ff">
+                <div style={{ fontSize: 8, color: C.tealDim }}>HEAVY ROTATION</div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{dashboardStats.topBand}</div>
+                <div style={{ fontSize: 7, color: C.gray }}>SEEN {dashboardStats.topCount} TIMES</div>
+              </Card>
+              <Card neon color="#ff00ff">
+                <div style={{ fontSize: 8, color: C.tealDim }}>TRAVELER</div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{dashboardStats.stateCount} STATES</div>
+              </Card>
+              <Card neon color="#ffcc00">
+                <div style={{ fontSize: 8, color: C.tealDim }}>VENUE MASTERY</div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{dashboardStats.venueCount} STAGES</div>
+              </Card>
+              <Card neon color="#00ffab">
+                <div style={{ fontSize: 8, color: C.tealDim }}>FRESH BLOOD</div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{dashboardStats.newDiscoveries} NEW ACTS</div>
+                <div style={{ fontSize: 7, color: C.gray }}>FIRST SEEN IN '25/'26</div>
+              </Card>
+              <Card neon color="#7000ff">
+                <div style={{ fontSize: 8, color: C.tealDim }}>TOTAL VOLUME</div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{dashboardStats.totalSets} SETS</div>
+              </Card>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 15, marginBottom: 20 }}>
+              <ArtistInsights concerts={concerts} />
+              <div style={{ background: '#0a0a0a', border: '3px solid #222', borderRadius: 12, position: 'relative', overflow: 'hidden', boxShadow: '0 0 30px rgba(255, 204, 0, 0.15)' }}>
+                <div style={{ background: '#ffcc00', color: '#000', padding: '4px 0', borderBottom: '2px solid #000' }}>
+                   <div className="marquee-text" style={{ fontFamily: "'Space Mono'", fontSize: 10, fontWeight: '900', whiteSpace: 'nowrap', letterSpacing: '1px' }}>
+                     FOR YOUR CONSIDERATION • STAGING THE VIBE • TICKETS SECURED? • TOUR BUS INBOUND •&nbsp;
+                   </div>
+                </div>
+                <div style={{ padding: '20px' }}>
+                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 15 }}>
+                     <input placeholder="Artist" value={newUpcoming.artist} onChange={e => setNewUpcoming({...newUpcoming, artist: e.target.value})} style={{ background: '#111', border: '1px solid #333', color: '#ffcc00', fontSize: 10, padding: '8px', flex: '2 1 120px', borderRadius: 4 }} />
+                     <button onClick={addUpcomingShow} style={{ background: '#ffcc00', color: '#000', border: 'none', fontSize: 9, fontWeight: '900', padding: '0 15px', cursor: 'pointer', borderRadius: 4 }}>STAMP IT</button>
+                   </div>
+                   <div style={{ maxHeight: '100px', overflowY: 'auto' }}>
+                     {upcoming.map((show, i) => (
+                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid #1a1a1a' }}>
+                         <div>
+                           <div style={{ fontSize: '1.2rem', fontFamily: "'Bebas Neue'", color: '#fff' }}>{show.artist}</div>
+                           <div style={{ color: '#666', fontSize: 8 }}>@{show.venue || 'TBA'}</div>
+                         </div>
+                         <div style={{ color: '#ffcc00', fontSize: 10 }}>{show.date}</div>
+                       </div>
+                     ))}
+                   </div>
+                </div>
+              </div>
+              <RandomShow concerts={concerts} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: 16, marginBottom: 16 }}>
+              <SonicDNA stats={genreStats} />
+              <Card neon>
+                <CardTitle>Sets Per Year</CardTitle>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={timelineData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+                    <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                    <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                    <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10 }} />
+                    <Bar dataKey="count" fill={C.teal} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Card>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+              <Card neon><CardTitle>Fest vs Standalone</CardTitle>
+                <DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} />
+              </Card>
+              <Card neon><CardTitle>Top Festivals</CardTitle>
+                <TopFestBlocks festBreakdown={festBreakdown} />
+              </Card>
+              <Card neon><CardTitle>By Decade</CardTitle>
+                <DecadeBlocks sets={allSetsList} />
+              </Card>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} />}
+        {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} />}
+        {activeTab === 'passport' && <PassportTab passport={passport} />}
+        {activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} />}
+        {activeTab === 'browse' && (
+          <BrowseTab 
+            browseView={browseView} setBrowseView={setBrowseView}
+            search={search} setSearch={setSearch}
+            yearFilter={yearFilter} setYearFilter={setYearFilter}
+            festFilter={festFilter} setFestFilter={setFestFilter}
+            sortCol={sortCol} setSortCol={setSortCol}
+            sortDir={sortDir} setSortDir={setSortDir}
+            paged={paged} page={page} setPage={setPage} totalPages={totalPages}
+            artistRows={artistRows} years={years}
+            onShare={(a, s) => setShareCard({ artist: a, shows: s })}
+            onEdit={setEditTarget}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
 
   // ==========================================
 
