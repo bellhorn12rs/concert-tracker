@@ -1769,9 +1769,10 @@ export default function App() {
         ))}
       </nav>
 
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
+<main style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
         {activeTab === 'dashboard' && (
           <>
+            {/* 1. TOP GLOBAL STATS GRID */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20, marginTop: 20 }}>
               <Card neon color="#00e5ff">
                 <div style={{ fontSize: 8, color: C.tealDim }}>HEAVY ROTATION</div>
@@ -1796,27 +1797,85 @@ export default function App() {
               </Card>
             </div>
 
+            {/* 2. CENTER ROW: MARQUEE RESTORED */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 15, marginBottom: 20 }}>
               <ArtistInsights concerts={concerts} />
-              <div style={{ background: '#0a0a0a', border: '3px solid #222', borderRadius: 12, position: 'relative', overflow: 'hidden', boxShadow: '0 0 30px rgba(255, 204, 0, 0.15)' }}>
-                <div style={{ background: '#ffcc00', color: '#000', padding: '4px 0', overflow: 'hidden', display: 'flex' }}>
-                   <div className="marquee-text" style={{ fontFamily: "'Space Mono'", fontSize: 10, fontWeight: '900', whiteSpace: 'nowrap' }}>FOR YOUR CONSIDERATION • TOUR BUS INBOUND • FOR YOUR CONSIDERATION • TOUR BUS INBOUND •</div>
-                </div>
-                <div style={{ padding: '20px' }}>
-                   <div style={{ display: 'flex', gap: 6, marginBottom: 15 }}>
-                     <input placeholder="Artist" value={newUpcoming.artist} onChange={e => setNewUpcoming({...newUpcoming, artist: e.target.value})} style={{ background: '#111', border: '1px solid #333', color: '#ffcc00', fontSize: 10, padding: '8px', flex: 2 }} />
-                     <button onClick={addUpcomingShow} style={{ background: '#ffcc00', color: '#000', border: 'none', fontSize: 9, fontWeight: '900', padding: '0 15px', cursor: 'pointer' }}>STAMP IT</button>
+              
+              <div style={{ background: '#0a0a0a', border: '3px solid #222', borderRadius: 12, position: 'relative', overflow: 'hidden', boxShadow: '0 0 30px rgba(255, 204, 0, 0.15), inset 0 0 20px #000' }}>
+                <div style={{ background: '#ffcc00', color: '#000', padding: '4px 0', overflow: 'hidden', display: 'flex', borderBottom: '2px solid #000' }}>
+                   <div className="marquee-text" style={{ fontFamily: "'Space Mono'", fontSize: 10, fontWeight: '900', whiteSpace: 'nowrap', letterSpacing: '1px' }}>
+                     FOR YOUR CONSIDERATION • STAGING THE VIBE • TICKETS SECURED? • TOUR BUS INBOUND •&nbsp;
+                     FOR YOUR CONSIDERATION • STAGING THE VIBE • TICKETS SECURED? • TOUR BUS INBOUND •&nbsp;
                    </div>
+                </div>
+
+                <div style={{ padding: '20px' }}>
+                   {/* FULL INPUT ROW RESTORED */}
+                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 15 }}>
+                     <input 
+                       placeholder="Artist" 
+                       value={newUpcoming.artist}
+                       onChange={e => setNewUpcoming({...newUpcoming, artist: e.target.value})}
+                       style={{ background: '#111', border: '1px solid #333', color: '#ffcc00', fontSize: 10, padding: '8px', flex: '2 1 120px', borderRadius: 4, fontFamily: "'Space Mono'" }}
+                     />
+                     <input 
+                       placeholder="Venue" 
+                       value={newUpcoming.venue}
+                       onChange={e => setNewUpcoming({...newUpcoming, venue: e.target.value})}
+                       style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '8px', flex: '1 1 100px', borderRadius: 4 }}
+                     />
+                     <input 
+                       type="date"
+                       value={newUpcoming.date}
+                       onChange={e => setNewUpcoming({...newUpcoming, date: e.target.value})}
+                       style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '7px', flex: '1 1 110px', borderRadius: 4, colorScheme: 'dark' }}
+                     />
+                     <select
+                       value={newUpcoming.status}
+                       onChange={e => setNewUpcoming({...newUpcoming, status: e.target.value})}
+                       style={{ background: '#111', border: '1px solid #333', color: '#ffcc00', fontSize: 10, padding: '8px', borderRadius: 4, cursor: 'pointer' }}
+                     >
+                       <option value="TICKETS BOUGHT">TICKETS BOUGHT</option>
+                       <option value="PENDING">PENDING</option>
+                       <option value="DREAMING">DREAMING</option>
+                     </select>
+                     <button 
+                       onClick={addUpcomingShow}
+                       style={{ background: '#ffcc00', color: '#000', border: 'none', fontSize: 9, fontWeight: '900', padding: '0 15px', cursor: 'pointer', borderRadius: 4, flex: '1 1 50px' }}
+                     >
+                       STAMP IT
+                     </button>
+                   </div>
+
+                   {/* FULL LIST DISPLAY RESTORED */}
                    <div style={{ maxHeight: '100px', overflowY: 'auto' }}>
-                     {upcoming.map((show, i) => (
-                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1a1a1a', paddingBottom: 8, marginBottom: 8 }}>
-                         <div className="marquee-letter" style={{ fontSize: '1rem' }}>{show.artist}</div>
-                         <div style={{ fontSize: 9, color: '#fff' }}>{show.date}</div>
-                       </div>
-                     ))}
+                     {upcoming.length === 0 ? (
+                       <div style={{ color: '#333', fontSize: 10, textAlign: 'center', marginTop: 10 }}>MARQUEE IS DARK... ADD A SHOW</div>
+                     ) : (
+                       upcoming.map((show, i) => (
+                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid #1a1a1a' }}>
+                           <div>
+                             <div className="marquee-letter" style={{ fontSize: '1.2rem', lineHeight: 1 }}>{show.artist}</div>
+                             <div style={{ color: '#666', fontSize: 8, textTransform: 'uppercase', marginTop: 4 }}>@{show.venue || 'TBA'}</div>
+                           </div>
+                           
+                           <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 10 }}>
+                             <div>
+                               <div style={{ color: '#fff', fontSize: 10 }}>{show.date}</div>
+                               <div style={{ fontSize: 8, color: '#ffcc00' }}>{show.status}</div>
+                             </div>
+                             <button 
+                               onClick={async () => { if(window.confirm("Delete?")) { await supabase.from('upcoming_concerts').delete().eq('id', show.id); fetchUpcoming(); } }}
+                               style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer' }}
+                             >✕</button>
+                           </div>
+                         </div>
+                       ))
+                     )}
                    </div>
                 </div>
               </div>
+
               <RandomShow concerts={concerts} />
             </div>
 
