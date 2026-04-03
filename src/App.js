@@ -1342,6 +1342,49 @@ export default function App() {
       activeSpan: 0, avgPerYear: 0
     };
 
+    // 1. Count every set (Headliners + Openers)
+    const bandCounts = {};
+    allSetsList.forEach(s => { 
+      if(s.artist) bandCounts[s.artist] = (bandCounts[s.artist] || 0) + 1; 
+    });
+    
+    // 2. Heavy Rotation
+    const topEntry = Object.entries(bandCounts).sort((a, b) => b[1] - a[1])[0];
+    
+    // 3. Location Mastery
+    const states = [...new Set(concerts.map(c => c.state).filter(Boolean))];
+    const cities = [...new Set(concerts.map(c => c.city).filter(Boolean))];
+    const venues = [...new Set(concerts.map(c => c.venue).filter(Boolean))];
+
+    // 4. Fresh Blood (New for '25/'26)
+    const recentBands = new Set(concerts
+      .filter(c => c.date.startsWith('2025') || c.date.startsWith('2026'))
+      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
+    
+    const historicalBands = new Set(concerts
+      .filter(c => !c.date.startsWith('2025') && !c.date.startsWith('2026'))
+      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
+    
+    const newDiscoveries = [...recentBands].filter(b => !historicalBands.has(b)).length;
+
+    // 5. Active Timeline
+    const years = concerts.map(c => new Date(c.date + 'T12:00:00').getFullYear()).sort((a,b) => a-b);
+    const activeSpan = years.length > 0 ? (years[years.length - 1] - years[0]) : 0;
+
+    return {
+      topBand: topEntry ? topEntry[0] : 'None',
+      topCount: topEntry ? topEntry[1] : 0,
+      totalSets: allSetsList.length,
+      uniqueBands: Object.keys(bandCounts).length,
+      stateCount: states.length,
+      cityCount: cities.length,
+      venueCount: venues.length,
+      newDiscoveries,
+      activeSpan,
+      avgPerYear: (concerts.length / (activeSpan || 1)).toFixed(1)
+    };
+  }, [concerts, allSetsList]);
+
     const allBands = concerts.flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]);
     const bandCounts = {};
     allBands.forEach(b => { if(b) bandCounts[b] = (bandCounts[b] || 0) + 1; });
