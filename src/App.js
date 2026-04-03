@@ -1320,186 +1320,26 @@ export default function App() {
   const [upcoming, setUpcoming] = useState([]);
   const [newUpcoming, setNewUpcoming] = useState({ artist: '', venue: '', date: '', status: 'TICKETS' });
 
-  // ── 2. LOGIC / MEMO (RENAMED TO AVOID DUPLICATES) ──
-  
-  const genreStats = useMemo(() => {
-    if (!concerts || concerts.length === 0) return [];
-    const counts = {};
-    concerts.forEach(c => {
-      const artistName = Array.isArray(c.bands) ? c.bands[0] : c.artist;
-      const g = manualGenres[artistName] || "Other";
-      counts[g] = (counts[g] || 0) + 1;
-    });
-    return Object.entries(counts)
-      .map(([name, count]) => ({ name, count, color: GENRE_COLORS[name] || "#444" }))
-      .sort((a, b) => b.count - a.count);
-  }, [concerts, manualGenres]);
+  // --- 2. LOGIC / MEMO (CLEANED & ORDERED) ---
 
-  const dashboardStats = useMemo(() => {
-    if (!concerts || concerts.length === 0) return {
-      topBand: 'None', topCount: 0, totalSets: 0, uniqueBands: 0, 
-      stateCount: 0, cityCount: 0, venueCount: 0, newDiscoveries: 0, 
-      activeSpan: 0, avgPerYear: 0
-    };
-
-    // 1. Count every set (Headliners + Openers)
-    const bandCounts = {};
-    allSetsList.forEach(s => { 
-      if(s.artist) bandCounts[s.artist] = (bandCounts[s.artist] || 0) + 1; 
-    });
-    
-    // 2. Heavy Rotation
-    const topEntry = Object.entries(bandCounts).sort((a, b) => b[1] - a[1])[0];
-    
-    // 3. Location Mastery
-    const states = [...new Set(concerts.map(c => c.state).filter(Boolean))];
-    const cities = [...new Set(concerts.map(c => c.city).filter(Boolean))];
-    const venues = [...new Set(concerts.map(c => c.venue).filter(Boolean))];
-
-    // 4. Fresh Blood (New for '25/'26)
-    const recentBands = new Set(concerts
-      .filter(c => c.date.startsWith('2025') || c.date.startsWith('2026'))
-      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    
-    const historicalBands = new Set(concerts
-      .filter(c => !c.date.startsWith('2025') && !c.date.startsWith('2026'))
-      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    
-    const newDiscoveries = [...recentBands].filter(b => !historicalBands.has(b)).length;
-
-    // 5. Active Timeline
-    const years = concerts.map(c => new Date(c.date + 'T12:00:00').getFullYear()).sort((a,b) => a-b);
-    const activeSpan = years.length > 0 ? (years[years.length - 1] - years[0]) : 0;
-
-    return {
-      topBand: topEntry ? topEntry[0] : 'None',
-      topCount: topEntry ? topEntry[1] : 0,
-      totalSets: allSetsList.length,
-      uniqueBands: Object.keys(bandCounts).length,
-      stateCount: states.length,
-      cityCount: cities.length,
-      venueCount: venues.length,
-      newDiscoveries,
-      activeSpan,
-      avgPerYear: (concerts.length / (activeSpan || 1)).toFixed(1)
-    };
-  }, [concerts, allSetsList]);
-
-    const allBands = concerts.flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]);
-    const bandCounts = {};
-    allBands.forEach(b => { if(b) bandCounts[b] = (bandCounts[b] || 0) + 1; });
-    const topEntry = Object.entries(bandCounts).sort((a, b) => b[1] - a[1])[0];
-    const states = [...new Set(concerts.map(c => c.state).filter(Boolean))];
-    const cities = [...new Set(concerts.map(c => c.city).filter(Boolean))];
-    const venues = [...new Set(concerts.map(c => c.venue).filter(Boolean))];
-
-    const recentBands = new Set(concerts
-      .filter(c => c.date.startsWith('2025') || c.date.startsWith('2026'))
-      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    const historicalBands = new Set(concerts
-      .filter(c => !c.date.startsWith('2025') && !c.date.startsWith('2026'))
-      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    const newDiscoveries = [...recentBands].filter(b => !historicalBands.has(b)).length;
-
-    const years = concerts.map(c => new Date(c.date).getFullYear()).sort((a,b) => a-b);
-    const activeSpan = years.length > 0 ? (years[years.length - 1] - years[0]) : 0;
-
-    return {
-      topBand: topEntry ? topEntry[0] : 'None',
-      topCount: topEntry ? topEntry[1] : 0,
-      totalSets: allBands.length,
-      uniqueBands: Object.keys(bandCounts).length,
-      stateCount: states.length,
-      cityCount: cities.length,
-      venueCount: venues.length,
-      newDiscoveries,
-      activeSpan,
-      avgPerYear: (concerts.length / (activeSpan || 1)).toFixed(1)
-    };
-  }, [concerts]);
-
-  const summaryStats = useMemo(() => {
-    const ac = {}, venues = new Set();
-    const setsFlat = [];
-    concerts.forEach(c => (c.bands || []).forEach(band => setsFlat.push({ ...c, artist: band })));
-    setsFlat.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
-    concerts.forEach(c => { if (c.venue) venues.add(c.venue); });
-    return {
-      totalShows: concerts.length, 
-      totalSets: setsFlat.length,
-      uniqueArtists: Object.keys(ac).length, 
-      venueCount: venues.size,
-      topArtist: Object.entries(ac).sort((a, b) => b[1] - a[1])[0] || ['—', 0],
-      festDays: concerts.filter(c => c.is_festival).length,
-      setlistCount: concerts.filter(c => c.has_setlist || (c.has_setlist_names && c.has_setlist_names.trim() !== '')).length,
-    };
-  }, [concerts]);
-// --- 1. CORE DATA PREP (MUST BE FIRST) ---
-  // --- 1. CORE DATA PREP ---
+  // FOUNDATION: This must be first because everything else uses it
   const allSetsList = useMemo(() => {
-    const r = [];
-    concerts.forEach(c => (c.bands || []).forEach(band => r.push({ ...c, artist: band })));
-    return r;
+    const sets = [];
+    concerts.forEach(c => {
+      if (c.bands && Array.isArray(c.bands)) {
+        c.bands.forEach(b => sets.push({ ...c, artist: b }));
+      } else if (c.artist) {
+        sets.push({ ...c, artist: c.artist });
+      }
+    });
+    return sets;
   }, [concerts]);
 
-  const dashboardStats = useMemo(() => {
-    if (!concerts || concerts.length === 0) return {
-      topBand: 'None', topCount: 0, totalSets: 0, uniqueBands: 0, 
-      stateCount: 0, cityCount: 0, venueCount: 0, newDiscoveries: 0, 
-      activeSpan: 0, avgPerYear: 0
-    };
-
-  // --- 2. DASHBOARD CALCULATIONS ---
-  const dashboardStats = useMemo(() => {
-    if (!concerts || concerts.length === 0) return {
-      topBand: 'None', topCount: 0, totalSets: 0, uniqueBands: 0, 
-      stateCount: 0, cityCount: 0, venueCount: 0, newDiscoveries: 0, 
-      activeSpan: 0, avgPerYear: 0
-    };
-
-    const bandCounts = {};
-    allSetsList.forEach(s => { 
-      if(s.artist) bandCounts[s.artist] = (bandCounts[s.artist] || 0) + 1; 
-    });
-    
-    const topEntry = Object.entries(bandCounts).sort((a, b) => b[1] - a[1])[0];
-    const states = [...new Set(concerts.map(c => c.state).filter(Boolean))];
-    const cities = [...new Set(concerts.map(c => c.city).filter(Boolean))];
-    const venues = [...new Set(concerts.map(c => c.venue).filter(Boolean))];
-
-    const recentBands = new Set(concerts
-      .filter(c => c.date.startsWith('2025') || c.date.startsWith('2026'))
-      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    
-    const historicalBands = new Set(concerts
-      .filter(c => !c.date.startsWith('2025') && !c.date.startsWith('2026'))
-      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    
-    const newDiscoveries = [...recentBands].filter(b => !historicalBands.has(b)).length;
-
-    const years = concerts.map(c => new Date(c.date + 'T12:00:00').getFullYear()).sort((a,b) => a-b);
-    const activeSpan = years.length > 0 ? (years[years.length - 1] - years[0]) : 0;
-
-    return {
-      topBand: topEntry ? topEntry[0] : 'None',
-      topCount: topEntry ? topEntry[1] : 0,
-      totalSets: allSetsList.length,
-      uniqueBands: Object.keys(bandCounts).length,
-      stateCount: states.length,
-      cityCount: cities.length,
-      venueCount: venues.length,
-      newDiscoveries,
-      activeSpan,
-      avgPerYear: (concerts.length / (activeSpan || 1)).toFixed(1)
-    };
-  }, [concerts, allSetsList]);
-
-  // --- 3. SUMMARY/HEADER CALCULATIONS ---
+  // HEADER & DASHBOARD LOGIC
   const headerStats = useMemo(() => {
     const ac = {}, venues = new Set();
     allSetsList.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
     concerts.forEach(c => { if (c.venue) venues.add(c.venue); });
-    
     return {
       totalShows: concerts.length, 
       totalSets: allSetsList.length,
@@ -1511,7 +1351,6 @@ export default function App() {
     };
   }, [concerts, allSetsList]);
 
-  // --- 3. DASHBOARD SPECIFIC CALCULATIONS ---
   const dashboardStats = useMemo(() => {
     if (!concerts || concerts.length === 0) return {
       topBand: 'None', topCount: 0, totalSets: 0, uniqueBands: 0, 
@@ -1524,223 +1363,200 @@ export default function App() {
     const topEntry = Object.entries(bandCounts).sort((a, b) => b[1] - a[1])[0];
     
     const states = [...new Set(concerts.map(c => c.state).filter(Boolean))];
-    const cities = [...new Set(concerts.map(c => c.city).filter(Boolean))];
     const venues = [...new Set(concerts.map(c => c.venue).filter(Boolean))];
 
     const recentBands = new Set(concerts
       .filter(c => c.date.startsWith('2025') || c.date.startsWith('2026'))
       .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    
     const historicalBands = new Set(concerts
       .filter(c => !c.date.startsWith('2025') && !c.date.startsWith('2026'))
       .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    
     const newDiscoveries = [...recentBands].filter(b => !historicalBands.has(b)).length;
 
-    const years = concerts.map(c => new Date(c.date + 'T12:00:00').getFullYear()).sort((a,b) => a-b);
-    const activeSpan = years.length > 0 ? (years[years.length - 1] - years[0]) : 0;
+    const yearsList = concerts.map(c => new Date(c.date + 'T12:00:00').getFullYear()).sort((a,b) => a-b);
+    const activeSpan = yearsList.length > 0 ? (yearsList[yearsList.length - 1] - yearsList[0]) : 0;
 
     return {
       topBand: topEntry ? topEntry[0] : 'None',
       topCount: topEntry ? topEntry[1] : 0,
       totalSets: allSetsList.length,
-      uniqueBands: Object.keys(bandCounts).length,
       stateCount: states.length,
-      cityCount: cities.length,
       venueCount: venues.length,
       newDiscoveries,
-      activeSpan,
-      avgPerYear: (concerts.length / (activeSpan || 1)).toFixed(1)
+      activeSpan
     };
   }, [concerts, allSetsList]);
 
-  // --- 4. APP STARTUP & SIDE EFFECTS ---
+  // CHART & TIMELINE DATA
+  const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
+
+  const artistCounts = useMemo(() => {
+    const m = {};
+    allSetsList.forEach(s => { m[s.artist] = (m[s.artist] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
+  }, [allSetsList]);
+
+  const timelineData = useMemo(() => {
+    const m = {};
+    allSetsList.forEach(s => { const y = getYear(s.date); if (y) m[y] = (m[y] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => +a[0] - +b[0]).map(([year, count]) => ({ year: String(year).slice(2), count, fullYear: +year }));
+  }, [allSetsList]);
+
+  const festBreakdown = useMemo(() => {
+    const m = {};
+    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { m[c.festival_name] = (m[c.festival_name] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  }, [concerts]);
+
+  const stateCounts = useMemo(() => {
+    const m = {};
+    concerts.forEach(c => { if (c.state) m[c.state] = (m[c.state] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  }, [concerts]);
+
+  // NAVIGATION & FILTERING
+  const applyFilters = (list, isSet = false) => {
+    let d = list;
+    if (yearFilter !== 'all') d = d.filter(r => getYear(r.date) === +yearFilter);
+    if (festFilter === 'fest') d = d.filter(r => r.is_festival);
+    if (festFilter === 'solo') d = d.filter(r => !r.is_festival);
+    if (search) {
+      const q = search.toLowerCase();
+      d = d.filter(r => {
+        const bands = isSet ? [r.artist] : (r.bands || []);
+        return bands.some(b => b.toLowerCase().includes(q)) ||
+          (r.venue || '').toLowerCase().includes(q) ||
+          (r.city || '').toLowerCase().includes(q) ||
+          (r.festival_name || '').toLowerCase().includes(q);
+      });
+    }
+    return d;
+  };
+
+  const filteredSets = useMemo(() => {
+    const d = applyFilters(allSetsList, true);
+    return [...d].sort((a, b) => {
+      let av = sortCol === 'artist' ? (a.artist || '').toLowerCase() : (String(a[sortCol] || '')).toLowerCase();
+      let bv = sortCol === 'artist' ? (b.artist || '').toLowerCase() : (String(b[sortCol] || '')).toLowerCase();
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [allSetsList, yearFilter, festFilter, search, sortCol, sortDir]);
+
+  // APP STARTUP & FUNCTIONS
   useEffect(() => {
     const initApp = async () => {
-      const adminEmail = process.env.REACT_APP_ADMIN_EMAIL;
-      const adminPw = process.env.REACT_APP_ADMIN_PASSWORD;
-
-      if (adminEmail && adminPw) {
-        const { data } = await supabase.auth.signInWithPassword({
-          email: adminEmail,
-          password: adminPw,
-        });
-        if (data?.session) console.log("Welcome back, Admin 🤘");
-      }
       fetchConcerts();
       fetchUpcoming();
     };
     initApp();
   }, []);
 
-  // --- 5. DATABASE FUNCTIONS ---
   async function fetchConcerts() {
-    try {
-      const { data, error } = await supabase
-        .from('concerts')
-        .select('*')
-        .order('date', { ascending: false });
-
-      if (error) throw error;
-      if (data) {
-        setConcerts(data);
-        const dbGenres = {};
-        data.forEach(show => {
-          if (show.genre) {
-            const headliner = show.bands?.[0] || show.artist;
-            if (headliner) dbGenres[headliner] = show.genre;
-          }
-        });
-        setManualGenres(prev => ({ ...GENRE_MAP, ...dbGenres }));
-      }
-    } catch (err) {
-      console.error("Fetch Error:", err.message);
-    } finally {
-      setLoading(false);
-    }
+    const { data } = await supabase.from('concerts').select('*').order('date', { ascending: false });
+    if (data) setConcerts(data);
+    setLoading(false);
   }
 
   async function fetchUpcoming() {
-    const { data, error } = await supabase
-      .from('upcoming_concerts')
-      .select('*')
-      .order('date', { ascending: true });
+    const { data } = await supabase.from('upcoming_concerts').select('*').order('date', { ascending: true });
     if (data) setUpcoming(data);
-    if (error) console.error("Error fetching upcoming:", error.message);
   }
 
   const addUpcomingShow = async () => {
-    if (!newUpcoming.artist || !newUpcoming.date) {
-      alert("Please enter at least an Artist and a Date! 📅");
-      return;
-    }
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      alert("Session expired! Please login via console again.");
-      return;
-    }
+    if (!newUpcoming.artist || !newUpcoming.date) return alert("Fill required fields!");
     const { error } = await supabase.from('upcoming_concerts').insert([newUpcoming]);
-    if (error) {
-      alert("Database Error: " + error.message);
-    } else {
+    if (!error) {
       setNewUpcoming({ artist: '', venue: '', date: '', status: 'TICKETS BOUGHT' });
-      fetchUpcoming(); 
+      fetchUpcoming();
     }
   };
 
   async function handleSave(id, payload) {
-    try {
-      let result;
-      if (id) {
-        result = await supabase.from('concerts').update(payload).eq('id', id).select();
-      } else {
-        result = await supabase.from('concerts').insert([payload]).select();
-      }
-      if (result.error) throw result.error;
-      if (id) {
-        setConcerts(p => p.map(c => c.id === id ? { ...c, ...payload } : c));
-      } else {
-        setConcerts(p => [result.data[0], ...p]);
-      }
-      alert("✅ SAVED");
-      setEditTarget(null);
-    } catch (err) {
-      alert('❌ FAILED: ' + err.message);
-    }
+    if (id) await supabase.from('concerts').update(payload).eq('id', id);
+    else await supabase.from('concerts').insert([payload]);
+    fetchConcerts();
+    setEditTarget(null);
   }
 
   async function handleDelete(id) {
-    try {
-      const { error } = await supabase.from('concerts').delete().eq('id', id);
-      if (error) throw error;
-      setConcerts(p => p.filter(c => c.id !== id));
-      setEditTarget(null);
-    } catch (err) { alert('Delete failed: ' + err.message); }
+    await supabase.from('concerts').delete().eq('id', id);
+    fetchConcerts();
+    setEditTarget(null);
   }
-async function toggleSetlist(concert) {
+
+  const toggleSetlist = async (concert) => {
     const newVal = !concert.has_setlist;
     try {
       const { error } = await supabase.from('concerts').update({ has_setlist: newVal }).eq('id', concert.id);
       if (error) throw error;
-      setConcerts(p => p.map(c => c.id === concert.id ? { ...c, has_setlist: newVal } : c));
-    } catch (err) { console.error(err.message); }
-  }
+      setConcerts(prev => prev.map(c => c.id === concert.id ? { ...c, has_setlist: newVal } : c));
+    } catch (err) {
+      console.error("Setlist Toggle Error:", err.message);
+    }
+  };
 
   // ==========================================
   // --- 6. RENDER DATA (DERIVED) ---
   // ==========================================
 
+  // 1. FOUNDATION: Flat list of every performance
   const allSetsList = useMemo(() => {
-    const r = [];
-    concerts.forEach(c => (c.bands || []).forEach(band => r.push({ ...c, artist: band })));
-    return r;
+    const sets = [];
+    concerts.forEach(c => {
+      if (c.bands && Array.isArray(c.bands)) {
+        c.bands.forEach(b => sets.push({ ...c, artist: b }));
+      } else if (c.artist) {
+        sets.push({ ...c, artist: c.artist });
+      }
+    });
+    return sets;
   }, [concerts]);
 
+  // 2. DASHBOARD STATS (Grid Cards)
   const dashboardStats = useMemo(() => {
-    if (!concerts || concerts.length === 0) return {
-      topBand: 'None', topCount: 0, totalSets: 0, uniqueBands: 0, 
-      stateCount: 0, cityCount: 0, venueCount: 0, newDiscoveries: 0, 
-      activeSpan: 0, avgPerYear: 0
-    };
-    const bandCounts = {};
-    allSetsList.forEach(s => { if(s.artist) bandCounts[s.artist] = (bandCounts[s.artist] || 0) + 1; });
-    const topEntry = Object.entries(bandCounts).sort((a, b) => b[1] - a[1])[0];
-    const states = [...new Set(concerts.map(c => c.state).filter(Boolean))];
-    const venues = [...new Set(concerts.map(c => c.venue).filter(Boolean))];
-    const recentBands = new Set(concerts.filter(c => c.date.startsWith('2025') || c.date.startsWith('2026')).flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    const historicalBands = new Set(concerts.filter(c => !c.date.startsWith('2025') && !c.date.startsWith('2026')).flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    const newDiscoveries = [...recentBands].filter(b => !historicalBands.has(b)).length;
-    return {
-      topBand: topEntry ? topEntry[0] : 'None',
-      topCount: topEntry ? topEntry[1] : 0,
-      totalSets: allSetsList.length,
-      stateCount: states.length,
-      venueCount: venues.length,
-      newDiscoveries
-    };
-  }, [concerts, allSetsList]);
+    if (!concerts || concerts.length === 0) {
+      return { topBand: 'None', topCount: 0, totalSets: 0, stateCount: 0, venueCount: 0, newDiscoveries: 0 };
+    }
+    const counts = {};
+    allSetsList.forEach(s => { if (s.artist) counts[s.artist] = (counts[s.artist] || 0) + 1; });
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    const states = new Set(concerts.map(c => c.state).filter(Boolean));
+    const venues = new Set(concerts.map(c => c.venue).filter(Boolean));
+    
+    // Fresh Blood calculation
+    const recent = new Set(concerts.filter(c => c.date >= '2025').flatMap(c => c.bands || [c.artist]));
+    const old = new Set(concerts.filter(c => c.date < '2025').flatMap(c => c.bands || [c.artist]));
+    const fresh = [...recent].filter(b => !old.has(b)).length;
 
-  const headerStats = useMemo(() => {
-    const ac = {}, venues = new Set();
-    allSetsList.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
-    concerts.forEach(c => { if (c.venue) venues.add(c.venue); });
     return {
-      totalShows: concerts.length, 
+      topBand: top ? top[0] : 'None',
+      topCount: top ? top[1] : 0,
       totalSets: allSetsList.length,
-      uniqueArtists: Object.keys(ac).length, 
+      stateCount: states.size,
       venueCount: venues.size,
-      topArtist: Object.entries(ac).sort((a, b) => b[1] - a[1])[0] || ['—', 0],
-      festDays: concerts.filter(c => c.is_festival).length,
-      setlistCount: concerts.filter(c => c.has_setlist || (c.has_setlist_names && c.has_setlist_names.trim() !== '')).length,
+      newDiscoveries: fresh
     };
   }, [concerts, allSetsList]);
-  // 3. Dashboard Logic
-  const dashboardStats = useMemo(() => {
-    const bandCounts = {};
-    allSetsList.forEach(s => { if(s.artist) bandCounts[s.artist] = (bandCounts[s.artist] || 0) + 1; });
-    const topEntry = Object.entries(bandCounts).sort((a, b) => b[1] - a[1])[0];
-    const states = [...new Set(concerts.map(c => c.state).filter(Boolean))];
-    const venues = [...new Set(concerts.map(c => c.venue).filter(Boolean))];
 
-    const recentBands = new Set(concerts
-      .filter(c => c.date.startsWith('2025') || c.date.startsWith('2026'))
-      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    const historicalBands = new Set(concerts
-      .filter(c => !c.date.startsWith('2025') && !c.date.startsWith('2026'))
-      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    const newDiscoveries = [...recentBands].filter(b => !historicalBands.has(b)).length;
-
+  // 3. HEADER STATS (Navigation/Top Bar)
+  const headerStats = useMemo(() => {
+    const venues = new Set(concerts.map(c => c.venue).filter(Boolean));
+    const ac = {};
+    allSetsList.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
+    
     return {
-      topBand: topEntry ? topEntry[0] : 'None',
-      topCount: topEntry ? topEntry[1] : 0,
+      totalShows: concerts.length,
       totalSets: allSetsList.length,
-      stateCount: states.length,
-      venueCount: venues.length,
-      newDiscoveries
+      venueCount: venues.size,
+      festDays: concerts.filter(c => c.is_festival).length,
+      topArtist: Object.entries(ac).sort((a, b) => b[1] - a[1])[0] || ['—', 0],
+      setlistCount: concerts.filter(c => c.has_setlist || c.has_setlist_names).length
     };
   }, [concerts, allSetsList]);
 
-  // 4. Chart & List Prep
+  // 4. CHART & TIMELINE PREP
   const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
 
   const artistCounts = useMemo(() => {
