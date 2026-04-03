@@ -1381,10 +1381,20 @@ export default function App() {
       return;
     }
     
-    const { error } = await supabase.from('upcoming_concerts').insert([newUpcoming]);
+    // This line ensures we are using the current logged-in user session
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      alert("Session expired! Please login via console again.");
+      return;
+    }
+
+    const { error } = await supabase
+      .from('upcoming_concerts')
+      .insert([newUpcoming]);
     
     if (error) {
-      alert("Error adding show: " + error.message);
+      alert("Database Error: " + error.message);
     } else {
       setNewUpcoming({ artist: '', venue: '', date: '', status: 'TICKETS' });
       fetchUpcoming(); 
