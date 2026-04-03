@@ -1190,9 +1190,10 @@ function TimelineTab({ concerts, setActiveTab }) {
 }
 
 //genre section
+// ─── GENRE DNA COMPONENT ──────────────────────────────────────────────────
 function GenreDNA({ concerts }) {
-const stats = useMemo(() => {
-  const counts = {};
+  const genreData = useMemo(() => {
+    const counts = {};
     concerts.forEach(c => {
       (c.bands || []).forEach(artist => {
         const g = GENRE_MAP[artist] || "Other";
@@ -1201,9 +1202,11 @@ const stats = useMemo(() => {
     });
     
     return Object.entries(counts)
-      .map(([name, count]) => ({ name, count, color: GENRE_COLORS[name] }))
+      .map(([name, count]) => ({ name, count, color: GENRE_COLORS[name] || "#444" }))
       .sort((a, b) => b.count - a.count);
   }, [concerts]);
+
+  if (!genreData.length) return null;
 
   return (
     <div style={{ 
@@ -1214,7 +1217,7 @@ const stats = useMemo(() => {
         SONIC DNA // TOP GENRES
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {stats.slice(0, 10).map((g) => (
+        {genreData.slice(0, 10).map((g) => (
           <div key={g.name}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: '9px', fontFamily: "'Space Mono'" }}>
               <span style={{ color: g.color }}>{g.name.toUpperCase()}</span>
@@ -1222,7 +1225,7 @@ const stats = useMemo(() => {
             </div>
             <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 2 }}>
               <div style={{ 
-                width: `${(g.count / stats[0].count) * 100}%`, height: '100%', 
+                width: `${(g.count / genreData[0].count) * 100}%`, height: '100%', 
                 background: g.color, boxShadow: `0 0 10px ${g.color}44`, borderRadius: 2 
               }} />
             </div>
@@ -1233,13 +1236,10 @@ const stats = useMemo(() => {
   );
 }
 
-
 // ─── INTERNAL CARD COMPONENT ──────────────────────────────────────────────
 function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
   const [hovered, setHovered] = React.useState(false);
   const bands = item.bands || [];
-  
-  // 1. Identify the Genre and Color
   const headliner = bands[0] || "";
   const genre = GENRE_MAP[headliner] || "Other";
   const themeColor = GENRE_COLORS[genre] || "#444444";
@@ -1254,7 +1254,6 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
         alignItems: 'center', width: '100%', position: 'relative', cursor: 'pointer'
       }}
     >
-      {/* Connector Dot */}
       <div style={{ 
         position: 'absolute', left: '50%', width: 12, height: 12, 
         borderRadius: '50%', background: themeColor, 
@@ -1263,24 +1262,17 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
         border: '2px solid #0a0a0c', transition: '0.3s'
       }} />
       
-      {/* --- THE UPDATED CARD --- */}
       <div style={{ 
         width: '43%', padding: '20px', borderRadius: '12px',
-        // STEP 1: Non-neon fill version (5% opacity normally, 15% on hover)
         background: hovered ? hexToRgba(themeColor, 0.15) : hexToRgba(themeColor, 0.05),
         border: `1px solid ${hovered ? themeColor : hexToRgba(themeColor, 0.3)}`,
-        
         borderLeft: isLeft ? `6px solid ${themeColor}` : `1px solid ${hovered ? themeColor : hexToRgba(themeColor, 0.3)}`,
         borderRight: !isLeft ? `6px solid ${themeColor}` : `1px solid ${hovered ? themeColor : hexToRgba(themeColor, 0.3)}`,
-        
         transform: hovered ? `scale(1.03) translateY(-5px)` : 'scale(1)',
         transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
         boxShadow: hovered ? `0 15px 40px -15px ${themeColor}66` : 'none',
         zIndex: hovered ? 20 : 1
       }}>
-        {/* ... (Keep the rest of your card content the same) ... */}
-        
-        {/* Band Names */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: 15 }}>
           {bands.map((band, idx) => (
             <span key={idx} style={{ 
@@ -1293,8 +1285,6 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
             </span>
           ))}
         </div>
-
-        {/* Bottom Venue Row */}
         <div style={{ 
           marginTop: 10, paddingTop: 10, borderTop: `1px solid ${hexToRgba(themeColor, 0.2)}`,
           display: 'flex', justifyContent: 'space-between', alignItems: 'center'
@@ -1310,6 +1300,7 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
     </div>
   );
 }
+
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 const TABS = [
   ['dashboard', '⚡ Dashboard'],
@@ -1324,7 +1315,6 @@ const TABS = [
 const PER_PAGE = 40;
 
 export default function App() {
-  // --- 1. STATE ---
   const [concerts, setConcerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -1338,12 +1328,11 @@ export default function App() {
   const [page, setPage] = useState(1);
   const [editTarget, setEditTarget] = useState(null);
   const [shareCard, setShareCard] = useState(null);
-
-  // --- UPCOMING COMMAND CENTER STATE ---
   const [upcoming, setUpcoming] = useState([]);
   const [newUpcoming, setNewUpcoming] = useState({ artist: '', venue: '', date: '', status: 'TICKETS' });
 
-  // --- 2. LOGIC / MEMO ---
+  // ── 2. LOGIC / MEMO (RENAMED TO AVOID DUPLICATES) ──
+  
   const genreStats = useMemo(() => {
     if (!concerts || concerts.length === 0) return [];
     const counts = {};
@@ -1353,13 +1342,66 @@ export default function App() {
       counts[g] = (counts[g] || 0) + 1;
     });
     return Object.entries(counts)
-      .map(([name, count]) => ({
-        name,
-        count,
-        color: GENRE_COLORS[name] || "#444"
-      }))
+      .map(([name, count]) => ({ name, count, color: GENRE_COLORS[name] || "#444" }))
       .sort((a, b) => b.count - a.count);
   }, [concerts, manualGenres]);
+
+  const dashboardStats = useMemo(() => {
+    if (!concerts || concerts.length === 0) return {
+      topBand: 'None', topCount: 0, totalSets: 0, uniqueBands: 0, 
+      stateCount: 0, cityCount: 0, venueCount: 0, newDiscoveries: 0, 
+      activeSpan: 0, avgPerYear: 0
+    };
+
+    const allBands = concerts.flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]);
+    const bandCounts = {};
+    allBands.forEach(b => { if(b) bandCounts[b] = (bandCounts[b] || 0) + 1; });
+    const topEntry = Object.entries(bandCounts).sort((a, b) => b[1] - a[1])[0];
+    const states = [...new Set(concerts.map(c => c.state).filter(Boolean))];
+    const cities = [...new Set(concerts.map(c => c.city).filter(Boolean))];
+    const venues = [...new Set(concerts.map(c => c.venue).filter(Boolean))];
+
+    const recentBands = new Set(concerts
+      .filter(c => c.date.startsWith('2025') || c.date.startsWith('2026'))
+      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
+    const historicalBands = new Set(concerts
+      .filter(c => !c.date.startsWith('2025') && !c.date.startsWith('2026'))
+      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
+    const newDiscoveries = [...recentBands].filter(b => !historicalBands.has(b)).length;
+
+    const years = concerts.map(c => new Date(c.date).getFullYear()).sort((a,b) => a-b);
+    const activeSpan = years.length > 0 ? (years[years.length - 1] - years[0]) : 0;
+
+    return {
+      topBand: topEntry ? topEntry[0] : 'None',
+      topCount: topEntry ? topEntry[1] : 0,
+      totalSets: allBands.length,
+      uniqueBands: Object.keys(bandCounts).length,
+      stateCount: states.length,
+      cityCount: cities.length,
+      venueCount: venues.length,
+      newDiscoveries,
+      activeSpan,
+      avgPerYear: (concerts.length / (activeSpan || 1)).toFixed(1)
+    };
+  }, [concerts]);
+
+  const summaryStats = useMemo(() => {
+    const ac = {}, venues = new Set();
+    const setsFlat = [];
+    concerts.forEach(c => (c.bands || []).forEach(band => setsFlat.push({ ...c, artist: band })));
+    setsFlat.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
+    concerts.forEach(c => { if (c.venue) venues.add(c.venue); });
+    return {
+      totalShows: concerts.length, 
+      totalSets: setsFlat.length,
+      uniqueArtists: Object.keys(ac).length, 
+      venueCount: venues.size,
+      topArtist: Object.entries(ac).sort((a, b) => b[1] - a[1])[0] || ['—', 0],
+      festDays: concerts.filter(c => c.is_festival).length,
+      setlistCount: concerts.filter(c => c.has_setlist || (c.has_setlist_names && c.has_setlist_names.trim() !== '')).length,
+    };
+  }, [concerts]);
 // --- ADDITIONAL DASHBOARD CALCULATIONS ---
   
   const stats = useMemo(() => {
