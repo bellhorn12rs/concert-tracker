@@ -1191,8 +1191,8 @@ function TimelineTab({ concerts, setActiveTab }) {
 
 //genre section
 function GenreDNA({ concerts }) {
-  const stats = React.useMemo(() => {
-    const counts = {};
+const stats = useMemo(() => {
+  const counts = {};
     concerts.forEach(c => {
       (c.bands || []).forEach(artist => {
         const g = GENRE_MAP[artist] || "Other";
@@ -1361,13 +1361,18 @@ export default function App() {
       .sort((a, b) => b.count - a.count);
   }, [concerts, manualGenres]);
 // --- ADDITIONAL DASHBOARD CALCULATIONS ---
+  
   const stats = useMemo(() => {
-    if (!concerts.length) return {};
+    if (!concerts || concerts.length === 0) return {
+      topBand: 'None', topCount: 0, totalSets: 0, uniqueBands: 0, 
+      stateCount: 0, cityCount: 0, venueCount: 0, newDiscoveries: 0, 
+      activeSpan: 0, avgPerYear: 0
+    };
 
     // 1. All-time Headliners & Sets
     const allBands = concerts.flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]);
     const bandCounts = {};
-    allBands.forEach(b => bandCounts[b] = (bandCounts[b] || 0) + 1);
+    allBands.forEach(b => { if(b) bandCounts[b] = (bandCounts[b] || 0) + 1; });
     
     // 2. Heavy Rotation (Most Seen)
     const topEntry = Object.entries(bandCounts).sort((a, b) => b[1] - a[1])[0];
@@ -1378,16 +1383,19 @@ export default function App() {
     const venues = [...new Set(concerts.map(c => c.venue).filter(Boolean))];
 
     // 4. "New Discovery" (Bands seen for the first time in 2025/2026)
-    const recentShows = concerts.filter(c => c.date.startsWith('2025') || c.date.startsWith('2026'));
-    const recentBands = new Set(recentShows.flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    const oldBands = new Set(concerts
+    const recentBands = new Set(concerts
+      .filter(c => c.date.startsWith('2025') || c.date.startsWith('2026'))
+      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
+    
+    const historicalBands = new Set(concerts
       .filter(c => !c.date.startsWith('2025') && !c.date.startsWith('2026'))
       .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
-    const newDiscoveries = [...recentBands].filter(b => !oldBands.has(b)).length;
+    
+    const newDiscoveries = [...recentBands].filter(b => !historicalBands.has(b)).length;
 
     // 5. Time Span
-    const years = concerts.map(c => new Date(c.date).getFullYear()).sort();
-    const activeSpan = years[years.length - 1] - years[0];
+    const years = concerts.map(c => new Date(c.date).getFullYear()).sort((a,b) => a-b);
+    const activeSpan = years.length > 0 ? (years[years.length - 1] - years[0]) : 0;
 
     return {
       topBand: topEntry ? topEntry[0] : 'None',
@@ -1402,7 +1410,6 @@ export default function App() {
       avgPerYear: (concerts.length / (activeSpan || 1)).toFixed(1)
     };
   }, [concerts]);
-
   // --- 3. APP STARTUP (Secure Environment Variables) ---
   useEffect(() => {
     const initApp = async () => {
