@@ -1447,7 +1447,9 @@ export default function App() {
       if (error) throw error;
       setConcerts(p => p.map(c => c.id === concert.id ? { ...c, has_setlist: newVal } : c));
     } catch (err) { console.error(err.message); }
-  }
+  } // <--- THIS BRACKET CLOSES THE FUNCTION
+
+  // --- 5. RENDER LOGIC BELOW ---
 
   // --- 5. RENDER LOGIC BELOW ---
  // ── DERIVED ────────────────────────────────────────────────────────────────
