@@ -454,9 +454,7 @@ function OnThisDay({ concerts }) {
             <div style={{ width:1, height:28, background:C.border, flexShrink:0 }} />
             <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, textTransform:'uppercase', letterSpacing:'0.08em', flexShrink:0 }}>{location}</div>
             <a href={ytUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-              style={{ display:'inline-flex', alignItems:'center', gap:5, background:'rgba(255,0,0,0.15)', border:'1px solid rgba(255,0,0,0.35)', borderRadius:20, padding:'4px 10px', textDecoration:'none', fontFamily:"'Space Mono',monospace", fontSize:7, letterSpacing:'0.1em', textTransform:'uppercase', color:'#ff4444', flexShrink:0, transition:'all 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.background='rgba(255,0,0,0.3)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background='rgba(255,0,0,0.15)'; }}>
+              style={{ display:'inline-flex', alignItems:'center', gap:5, background:'rgba(255,0,0,0.15)', border:'1px solid rgba(255,0,0,0.35)', borderRadius:20, padding:'4px 10px', textDecoration:'none', fontFamily:"'Space Mono',monospace", fontSize:7, letterSpacing:'0.1em', textTransform:'uppercase', color:'#ff4444', flexShrink:0, transition:'all 0.15s' }}>
               ▶ Search
             </a>
           </div>
@@ -616,28 +614,7 @@ function ArtistInsights({ concerts }) {
   );
 }
 
-  useEffect(() => {
-    if (!insights.length) return;
-    const t = setInterval(() => setIndex(p => (p+1) % insights.length), 5500);
-    return () => clearInterval(t);
-  }, [insights.length]);
-
-  const active = insights[index] || { label:'LOADING', val:'...', sub:'' };
-  return (
-    <Card neon style={{ minHeight:150, display:'flex', flexDirection:'column', justifyContent:'center' }}>
-      <div style={{ fontFamily:"'Space Mono'", fontSize:8, color:C.teal, letterSpacing:2, marginBottom:12 }}>⚡ {active.label}</div>
-      <div className="fade-in" key={index}>
-        <div style={{ fontFamily:"'Bebas Neue'", fontSize:'2.2rem', color:C.white, lineHeight:1, marginBottom:4 }}>{active.val}</div>
-        <div style={{ fontSize:'0.78rem', color:C.gray, lineHeight:1.4 }}>{active.sub}</div>
-      </div>
-      <div style={{ display:'flex', gap:3, marginTop:15, flexWrap:'wrap' }}>
-        {insights.map((_,i) => <div key={i} style={{ width:i===index?10:3, height:3, borderRadius:2, background:i===index?C.teal:C.grayDim, transition:'0.3s' }} />)}
-      </div>
-    </Card>
-  );
-}
-
-// ─── RANDOM SHOW (POSTER EDITION) ─────────────────────────────────────────────
+// ─── RANDOM SHOW (WHEEL OF MEMORIES) ──────────────────────────────────────────
 function RandomShow({ concerts }) {
   const [show, setShow] = useState(null);
   const [spinning, setSpinning] = useState(false);
@@ -700,78 +677,6 @@ function RandomShow({ concerts }) {
     </Card>
   );
 }
-
-  useEffect(() => { if (concerts.length && !show) spin(); }, [concerts.length]);
-
-  if (!show) return null;
-
-  const bands = show.bands || [show.artist];
-  const isFest = show.is_festival;
-
-  return (
-    <Card neon style={{ 
-      minHeight: 180, 
-      display: 'flex', 
-      flexDirection: 'column', 
-      justifyContent: 'center',
-      borderColor: spinning ? C.purple : C.border,
-      boxShadow: spinning ? `0 0 30px ${hexToRgba(C.purple, 0.3)}` : 'none',
-      transition: '0.2s all'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.purple, letterSpacing: 3, fontWeight: 700 }}>
-          {spinning ? "🧠 RECALLING..." : "🎲 RANDOM RECALL"}
-        </div>
-        <button 
-          onClick={spin} 
-          disabled={spinning} 
-          style={{ 
-            background: spinning ? C.grayDim : `linear-gradient(45deg, ${C.purple}, #ff00ff)`, 
-            border: 'none', 
-            color: '#fff', 
-            fontSize: 9, 
-            padding: '6px 14px', 
-            borderRadius: 20, 
-            cursor: 'pointer', 
-            fontFamily: "'Space Mono'", 
-            fontWeight: 900,
-            boxShadow: spinning ? 'none' : `0 0 15px ${hexToRgba(C.purple, 0.5)}`,
-            transform: spinning ? 'scale(0.95)' : 'scale(1)',
-            transition: '0.2s'
-          }}>
-          {spinning ? "SPINNING" : "SPIN AGAIN"}
-        </button>
-      </div>
-
-      <div className={spinning ? "spinning-text" : "fade-in"} style={{ flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-           <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.white }}>{getYear(show.date)}</span>
-           {isFest && <Badge color={C.gold}>FESTIVAL</Badge>}
-        </div>
-        
-        {/* All bands shown for that day */}
-        <div style={{ 
-          fontFamily: "'Bebas Neue'", 
-          fontSize: bands.length > 3 ? '1.5rem' : '2rem', 
-          color: spinning ? C.gray : C.white, 
-          lineHeight: 1, 
-          marginBottom: 8,
-          letterSpacing: '0.02em'
-        }}>
-          {bands.slice(0, 5).join(' • ')}{bands.length > 5 ? ' ...' : ''}
-        </div>
-
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.purple, opacity: 0.8 }}>
-          📍 {show.venue?.toUpperCase() || 'UNKNOWN VENUE'}
-        </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, marginTop: 4 }}>
-          {show.city?.toUpperCase()}, {show.state}
-        </div>
-      </div>
-    </Card>
-  );
-}
-
 // ─── SONIC DNA ────────────────────────────────────────────────────────────────
 function SonicDNA({ stats, onGenreClick }) {
   return (
