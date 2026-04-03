@@ -1319,29 +1319,22 @@ export default function App() {
       .sort((a, b) => b.count - a.count);
   }, [concerts, manualGenres]);
 
-  // --- 3. APP STARTUP (The Fixed useEffect) ---
- // --- APP INITIALIZATION ---
+  // --- 3. APP STARTUP (Secure Environment Variables) ---
   useEffect(() => {
     const initApp = async () => {
-      // 1. Try to login using Environment Variables (Secrets)
       const adminEmail = process.env.REACT_APP_ADMIN_EMAIL;
       const adminPw = process.env.REACT_APP_ADMIN_PASSWORD;
 
       if (adminEmail && adminPw) {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { data } = await supabase.auth.signInWithPassword({
           email: adminEmail,
           password: adminPw,
         });
-        
-        if (data?.session) {
-          console.log("Welcome back, Admin 🤘 (Authenticated via Secrets)");
-        } else {
-          console.log("Guest Mode: Admin credentials not accepted.");
-        }
+        if (data?.session) console.log("Welcome back, Admin 🤘");
       } else {
-        console.log("Running in Guest Mode (No Secrets Found)");
+        console.log("Running in Guest Mode (Secrets missing)");
       }
-
+      
       fetchConcerts();
       fetchUpcoming();
     };
@@ -1349,9 +1342,7 @@ export default function App() {
     initApp();
   }, []);
 
-    initApp();
-  }, []);
-
+  // --- 4. DATABASE FUNCTIONS ---
   // --- 4. DATABASE FUNCTIONS ---
   
   async function fetchConcerts() {
