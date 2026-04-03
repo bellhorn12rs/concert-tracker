@@ -6,6 +6,37 @@ import {
   ResponsiveContainer, Cell, PieChart, Pie
 } from 'recharts';
 
+// --- MARQUEE THEATER STYLES ---
+const MarqueeStyles = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Monoton&family=Bebas+Neue&family=Space+Mono&display=swap');
+
+    @keyframes bulb-flicker {
+      0%, 100% { opacity: 1; text-shadow: 0 0 5px #fff, 0 0 10px #ffcc00; }
+      50% { opacity: 0.7; text-shadow: none; }
+    }
+
+    @keyframes marquee-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .marquee-text {
+      display: inline-block;
+      white-space: nowrap;
+      animation: marquee-scroll 20s linear infinite;
+    }
+
+    .marquee-letter {
+      font-family: 'Monoton', cursive;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: #ffcc00;
+      text-shadow: 0 0 10px rgba(255, 204, 0, 0.6);
+    }
+  `}</style>
+);
+
 // ─── THEME ────────────────────────────────────────────────────────────────────
 const C = {
   bg:        '#0a0a0f',
@@ -1616,7 +1647,7 @@ export default function App() {
   const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const totalPages = Math.ceil(filteredSets.length / PER_PAGE);
   const handleSort = col => { if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortCol(col); setSortDir('asc'); } setPage(1); };
-  // ── LOADING ────────────────────────────────────────────────────────────────
+ // ── LOADING ────────────────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center' }}>
@@ -1629,6 +1660,8 @@ export default function App() {
   // ── RENDER ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ background: C.bg, minHeight: '100vh', paddingBottom: 60 }}>
+      
+      <MarqueeStyles /> {/* <─── PASTE THIS LINE HERE */}
 
       {shareCard && (
         <ShareCard
