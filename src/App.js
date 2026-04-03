@@ -1599,32 +1599,33 @@ export default function App() {
 
   // --- 5. RENDER LOGIC BELOW ---
 
-  // --- 5. RENDER LOGIC BELOW ---
- // ── DERIVED ────────────────────────────────────────────────────────────────
+ // --- 5. RENDER LOGIC BELOW ---
+  
+  // ── DERIVED ────────────────────────────────────────────────────────────────
   const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
 
-  const sets = useMemo(() => {
+  const allSetsList = useMemo(() => {
     const r = [];
     concerts.forEach(c => (c.bands || []).forEach(band => r.push({ ...c, artist: band })));
     return r;
   }, [concerts]);
 
-  const stats = useMemo(() => {
+  // WE RENAMED THIS FROM 'stats' TO 'headerStats' TO STOP THE CRASH
+  const headerStats = useMemo(() => {
     const ac = {}, venues = new Set();
-    sets.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
+    allSetsList.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
     concerts.forEach(c => { if (c.venue) venues.add(c.venue); });
+    
     return {
       totalShows: concerts.length, 
-      totalSets: sets.length,
+      totalSets: allSetsList.length,
       uniqueArtists: Object.keys(ac).length, 
       venueCount: venues.size,
       topArtist: Object.entries(ac).sort((a, b) => b[1] - a[1])[0] || ['—', 0],
       festDays: concerts.filter(c => c.is_festival).length,
-      // UPDATED: Counts if checkbox is TRUE OR if the text field has content
       setlistCount: concerts.filter(c => c.has_setlist || (c.has_setlist_names && c.has_setlist_names.trim() !== '')).length,
     };
-  }, [concerts, sets]);
-
+  }, [concerts, allSetsList]);
   const artistCounts = useMemo(() => {
     const m = {};
     sets.forEach(s => { m[s.artist] = (m[s.artist] || 0) + 1; });
