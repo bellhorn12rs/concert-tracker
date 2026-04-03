@@ -1667,7 +1667,16 @@ export default function App() {
     } catch (err) { console.error(err.message); }
   }
 
-  // --- 6. RENDER DATA (DERIVED) ---
+// --- 6. RENDER DATA (DERIVED) ---
+
+  // 1. MUST BE FIRST: Define the flat list that all other charts depend on
+  const allSetsList = useMemo(() => {
+    const r = [];
+    concerts.forEach(c => (c.bands || []).forEach(band => r.push({ ...c, artist: band })));
+    return r;
+  }, [concerts]);
+
+  // 2. Define the basic timeline arrays
   const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
 
   const artistCounts = useMemo(() => {
@@ -1682,6 +1691,7 @@ export default function App() {
     return Object.entries(m).sort((a, b) => +a[0] - +b[0]).map(([year, count]) => ({ year: String(year).slice(2), count, fullYear: +year }));
   }, [allSetsList]);
 
+  // 3. Festival & Location logic
   const festBreakdown = useMemo(() => {
     const m = {};
     concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { m[c.festival_name] = (m[c.festival_name] || 0) + 1; });
@@ -1715,6 +1725,7 @@ export default function App() {
     return Object.values(m).sort((a, b) => Object.values(b.years).flat().length - Object.values(a.years).flat().length);
   }, [concerts]);
 
+  // 4. Filtering & Pagination logic
   const applyFilters = (list, isSet = false) => {
     let d = list;
     if (yearFilter !== 'all') d = d.filter(r => getYear(r.date) === +yearFilter);
@@ -1745,15 +1756,9 @@ export default function App() {
   }, [allSetsList, yearFilter, festFilter, search, sortCol, sortDir]);
 
   const dayGroups = useMemo(() => applyFilters(concerts).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [concerts, yearFilter, festFilter, search]);
+  
   const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const totalPages = Math.ceil(filteredSets.length / PER_PAGE);
-  const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
-
-  const allSetsList = useMemo(() => {
-    const r = [];
-    concerts.forEach(c => (c.bands || []).forEach(band => r.push({ ...c, artist: band })));
-    return r;
-  }, [concerts]);
 
   // --- LOGIC CALCULATIONS ---
   const headerStats = useMemo(() => {
