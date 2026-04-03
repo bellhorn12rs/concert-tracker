@@ -13,7 +13,7 @@ const MarqueeStyles = () => (
 
     @keyframes bulb-flicker {
       0%, 100% { opacity: 1; text-shadow: 0 0 5px #fff, 0 0 10px #ffcc00; }
-      50% { opacity: 0.7; text-shadow: none; }
+      50% { opacity: 0.3; text-shadow: none; }
     }
 
     @keyframes marquee-scroll {
@@ -21,10 +21,16 @@ const MarqueeStyles = () => (
       100% { transform: translateX(-50%); }
     }
 
-    .marquee-text {
-      display: inline-block;
+    .marquee-container {
+      overflow: hidden;
+      display: flex;
       white-space: nowrap;
-      animation: marquee-scroll 20s linear infinite;
+      width: 100%;
+    }
+
+    .marquee-inner {
+      display: inline-block;
+      animation: marquee-scroll 30s linear infinite;
     }
 
     .marquee-letter {
@@ -33,6 +39,11 @@ const MarqueeStyles = () => (
       letter-spacing: 3px;
       color: #ffcc00;
       text-shadow: 0 0 10px rgba(255, 204, 0, 0.6);
+    }
+    
+    .bulb {
+      animation: bulb-flicker 1.5s infinite;
+      margin: 0 10px;
     }
   `}</style>
 );
