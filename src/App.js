@@ -1271,7 +1271,7 @@ function TimelineCard({ item, isLeft, marginTop, onTeleport }) {
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 const TABS = [
   ['dashboard', '⚡ Dashboard'],
-  ['timeline',     '⏳ Timeline'],
+  ['timeline',  '⏳ Timeline'],
   ['byDay',     '📅 By Day'],
   ['byFest',    '🎪 By Festival'],
   ['browse',    '🔍 Browse'],
@@ -1282,164 +1282,148 @@ const TABS = [
 const PER_PAGE = 40;
 
 export default function App() {
-  const [concerts, setConcerts]     = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [activeTab, setActiveTab]   = useState('dashboard');
-  const [search, setSearch]         = useState('');
-  const [manualGenres, setManualGenres] = React.useState(GENRE_MAP);
+  // --- 1. STATE ---
+  const [concerts, setConcerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [search, setSearch] = useState('');
+  const [manualGenres, setManualGenres] = useState(GENRE_MAP);
   const [yearFilter, setYearFilter] = useState('all');
   const [festFilter, setFestFilter] = useState('all');
   const [browseView, setBrowseView] = useState('shows');
-  const [sortCol, setSortCol]       = useState('date');
-  const [sortDir, setSortDir]       = useState('desc');
-  const [page, setPage]             = useState(1);
+  const [sortCol, setSortCol] = useState('date');
+  const [sortDir, setSortDir] = useState('desc');
+  const [page, setPage] = useState(1);
   const [editTarget, setEditTarget] = useState(null);
-  const [shareCard, setShareCard] = useState(null); 
+  const [shareCard, setShareCard] = useState(null);
+
   // --- UPCOMING COMMAND CENTER STATE ---
   const [upcoming, setUpcoming] = useState([]);
   const [newUpcoming, setNewUpcoming] = useState({ artist: '', venue: '', date: '', status: 'TICKETS' });
 
-  // --- DASHBOARD GENRE LOGIC ---
-const genreStats = React.useMemo(() => {
-  if (!concerts || concerts.length === 0) return [];
-  const counts = {};
-  
-  concerts.forEach(c => {
-    // Check the manualGenres state for the artist, default to "Other"
-    const artistName = Array.isArray(c.bands) ? c.bands[0] : c.artist;
-    const g = manualGenres[artistName] || "Other";
-    counts[g] = (counts[g] || 0) + 1;
-  });
+  // --- 2. LOGIC / MEMO ---
+  const genreStats = useMemo(() => {
+    if (!concerts || concerts.length === 0) return [];
+    const counts = {};
+    concerts.forEach(c => {
+      const artistName = Array.isArray(c.bands) ? c.bands[0] : c.artist;
+      const g = manualGenres[artistName] || "Other";
+      counts[g] = (counts[g] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({
+        name,
+        count,
+        color: GENRE_COLORS[name] || "#444"
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [concerts, manualGenres]);
 
-  return Object.entries(counts)
-    .map(([name, count]) => ({ 
-      name, 
-      count, 
-      color: GENRE_COLORS[name] || "#444" 
-    }))
-    .sort((a, b) => b.count - a.count);
-}, [concerts, manualGenres]);
-  // --- AUTOMATIC ADMIN LOGIN ---
+  // --- 3. APP STARTUP (The Fixed useEffect) ---
   useEffect(() => {
-  const checkSession = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) console.log("Welcome back, Admin 🤘");
-  };
+    const initApp = async () => {
+      // Check for existing admin session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        console.log("Welcome back, Admin 🤘");
+      } else {
+        console.log("Running in Guest Mode");
+      }
+      
+      // Load all data
+      fetchConcerts();
+      fetchUpcoming();
+    };
 
-  checkSession();
-  fetchConcerts(); // Loads your history
-  fetchUpcoming(); // Loads your marquee (the new line)
-}, []);
+    initApp();
+  }, []);
 
-  checkSession();
+  // --- 4. DATABASE FUNCTIONS ---
   
-  // 2. Fetch the data normally
-  fetchConcerts(); 
-}, []);
-async function updateArtistGenre(artistName, newGenre) {
-  console.log(`📡 Sending to Supabase: ${artistName} -> ${newGenre}`);
-
-  const { data, error } = await supabase
-    .from('concerts')
-    .update({ genre: newGenre })
-    // We use .contains because 'bands' is an array [ "Blink 182", "etc" ]
-    .contains('bands', [artistName]) 
-    .select();
-
-  if (error) {
-    console.error("❌ Supabase Error:", error.message);
-  } else {
-    console.log(`✅ Success! Updated ${data?.length || 0} rows for ${artistName}`);
-  }
-}
   async function fetchConcerts() {
-  try {
-    const { data, error } = await supabase
-      .from('concerts')
-      .select('*')
-      .order('date', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('concerts')
+        .select('*')
+        .order('date', { ascending: false });
 
-    if (error) throw error;
-    
-    if (data) {
-      setConcerts(data);
-
-      // --- THE SYNC LOGIC ---
-      // This builds a fresh map of all your manual "stamps" from the DB
-      const dbGenres = {};
-      data.forEach(show => {
-        if (show.genre) {
-          // Identify the headliner (first band in the array)
-          const headliner = show.bands?.[0];
-          if (headliner) {
-            dbGenres[headliner] = show.genre;
+      if (error) throw error;
+      if (data) {
+        setConcerts(data);
+        // Sync manual genre stamps from DB to App Memory
+        const dbGenres = {};
+        data.forEach(show => {
+          if (show.genre) {
+            const headliner = show.bands?.[0] || show.artist;
+            if (headliner) dbGenres[headliner] = show.genre;
           }
-        }
-      });
-
-      // Update the App's "Memory" (State) with the DB values
-      setManualGenres(prev => ({
-        ...GENRE_MAP, // Keep your hardcoded defaults
-        ...dbGenres   // Overwrite with whatever you stamped in Supabase
-      }));
+        });
+        setManualGenres(prev => ({ ...GENRE_MAP, ...dbGenres }));
+      }
+    } catch (err) {
+      console.error("Fetch Error:", err.message);
+    } finally {
+      setLoading(false);
     }
-  } catch (err) { 
-    console.error("Fetch Error:", err.message); 
-  } finally { 
-    setLoading(false); 
   }
-}
 
-const fetchUpcoming = async () => {
+  async function fetchUpcoming() {
     const { data, error } = await supabase
       .from('upcoming_concerts')
       .select('*')
       .order('date', { ascending: true });
     if (data) setUpcoming(data);
     if (error) console.error("Error fetching upcoming:", error.message);
-  };
+  }
 
-  const addUpcomingShow = async () => {
+  async function addUpcomingShow() {
     if (!newUpcoming.artist) return;
     const { error } = await supabase.from('upcoming_concerts').insert([newUpcoming]);
     if (error) {
       alert("Error adding show: " + error.message);
     } else {
       setNewUpcoming({ artist: '', venue: '', date: '', status: 'TICKETS' });
-      fetchUpcoming(); // Refresh the marquee immediately
+      fetchUpcoming();
     }
-  };
+  }
 
- async function handleSave(id, payload) {
+  async function updateArtistGenre(artistName, newGenre) {
+    console.log(`📡 Sending to Supabase: ${artistName} -> ${newGenre}`);
+    const { data, error } = await supabase
+      .from('concerts')
+      .update({ genre: newGenre })
+      .contains('bands', [artistName])
+      .select();
+
+    if (error) {
+      console.error("❌ Supabase Error:", error.message);
+    } else {
+      console.log(`✅ Success! Updated ${data?.length || 0} rows for ${artistName}`);
+      fetchConcerts(); // Refresh to show changes
+    }
+  }
+
+  async function handleSave(id, payload) {
     try {
       let result;
       if (id) {
-        // Update existing
         result = await supabase.from('concerts').update(payload).eq('id', id).select();
       } else {
-        // Insert new
         result = await supabase.from('concerts').insert([payload]).select();
       }
-
       if (result.error) throw result.error;
-      
-      // Check if anything actually changed in the database
-      if (!result.data || result.data.length === 0) {
-        throw new Error("Database accepted the request but 0 rows were updated. Check your Row Level Security (RLS) policies.");
-      }
+      if (!result.data || result.data.length === 0) throw new Error("Check RLS policies.");
 
-      // Success! Update the screen
       if (id) {
         setConcerts(p => p.map(c => c.id === id ? { ...c, ...payload } : c));
       } else {
         setConcerts(p => [result.data[0], ...p]);
       }
-      
-      alert("✅ SAVED TO DATABASE SUCCESSFULLY");
+      alert("✅ SAVED TO DATABASE");
       setEditTarget(null);
-    } catch (err) { 
-      console.error("FULL ERROR:", err);
-      alert('❌ SAVE FAILED: ' + err.message); 
+    } catch (err) {
+      console.error("SAVE ERROR:", err);
+      alert('❌ SAVE FAILED: ' + err.message);
     }
   }
 
@@ -1461,6 +1445,7 @@ const fetchUpcoming = async () => {
     } catch (err) { console.error(err.message); }
   }
 
+  // --- 5. RENDER LOGIC BELOW ---
  // ── DERIVED ────────────────────────────────────────────────────────────────
   const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
 
