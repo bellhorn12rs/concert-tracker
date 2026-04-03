@@ -1376,23 +1376,24 @@ export default function App() {
     if (error) console.error("Error fetching upcoming:", error.message);
   }
 
-  async function addUpcomingShow() {
-    if (!newUpcoming.artist) return;
-    const { error } = await supabase.from('upcoming_concerts').insert([newUpcoming]);
-    if (error) {
-      alert("Error adding show: " + error.message);
-    } else {
-      setNewUpcoming({ artist: '', venue: '', date: '', status: 'TICKETS' });
-      fetchUpcoming();
-    }
+ const addUpcomingShow = async () => {
+  // 1. Check if the user (you) actually picked a date and typed a name
+  if (!newUpcoming.artist || !newUpcoming.date) {
+    alert("Please enter at least an Artist and a Date! 📅");
+    return;
   }
-const addUpcomingShow = async () => {
-    // 1. Check if the user (you) actually picked a date and typed a name
-    if (!newUpcoming.artist || !newUpcoming.date) {
-      alert("Please enter at least an Artist and a Date! 📅");
-      return;
-    }
-    
+  
+  // 2. Send it to Supabase
+  const { error } = await supabase.from('upcoming_concerts').insert([newUpcoming]);
+  
+  if (error) {
+    alert("Error adding show: " + error.message);
+  } else {
+    // 3. Reset the form back to empty and refresh the marquee
+    setNewUpcoming({ artist: '', venue: '', date: '', status: 'TICKETS' });
+    fetchUpcoming(); 
+  }
+};
     // 2. Send it to Supabase
     const { error } = await supabase.from('upcoming_concerts').insert([newUpcoming]);
     
