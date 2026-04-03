@@ -2107,292 +2107,123 @@ export default function App() {
       })}
   </div>
 )}
-{/* ── BROWSE ── */}
-{activeTab === 'browse' && (
-  <div style={{ padding: '24px 0' }} className="fade-in">
-    {/* --- SEARCH & FILTERS BAR --- */}
-    <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
-      <input style={{ ...inputSt, flex: 1, minWidth: 160 }} placeholder="Search artist, venue, city, festival..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
-      <select style={inputSt} value={yearFilter} onChange={e => { setYearFilter(e.target.value); setPage(1); }}>
-        <option value="all">All Years</option>
-        {years.map(y => <option key={y} value={y}>{y}</option>)}
-      </select>
-      <select style={inputSt} value={festFilter} onChange={e => { setFestFilter(e.target.value); setPage(1); }}>
-        <option value="all">All Shows</option>
-        <option value="fest">Festival Only</option>
-        <option value="solo">Standalone Only</option>
-      </select>
-      <div style={{ display: 'flex', border: `1px solid ${C.border}`, borderRadius: 4, overflow: 'hidden' }}>
-        {[['shows', 'By Set'], ['artists', 'By Artist']].map(([v, l]) => (
-          <button key={v} style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', background: browseView === v ? C.teal : C.bgCard, color: browseView === v ? C.bg : C.gray, border: 'none', padding: '7px 12px', cursor: 'pointer' }} onClick={() => setBrowseView(v)}>{l}</button>
-        ))}
-      </div>
-      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, marginLeft: 'auto' }}>
-        {browseView === 'shows' ? `${filteredSets.length} sets` : `${artistRows.length} artists`}
-      </span>
-    </div>
-
-    {/* --- BY SET VIEW (TABLE) --- */}
-    {browseView === 'shows' && (
-      <>
-        <div style={{ overflowX: 'auto', borderRadius: 8, border: `1px solid ${C.border}` }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
-            <thead>
-              <tr style={{ background: C.bgCardAlt }}>
-                {[['date','Date'],['artist','Artist'],['venue','Venue'],['city','City'],['state','ST'],['is_festival','Type'],['festival_day','Festival'],['has_setlist','📋']].map(([col, lbl]) => (
-                  <th key={col} style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', padding: '10px 12px', textAlign: 'left', color: C.tealDim, borderBottom: `1px solid ${C.border}`, cursor: 'pointer', whiteSpace: 'nowrap', userSelect: 'none' }} onClick={() => handleSort(col)}>
-                    {lbl}{sortCol === col ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
-                  </th>
-                ))}
-                <th style={{ padding: '10px 12px', borderBottom: `1px solid ${C.border}` }} />
-              </tr>
-            </thead>
-            <tbody>
-              {paged.map((s, i) => {
-                const gColor = GENRE_COLORS[manualGenres[s.artist] || "Other"];
-                return (
-                  <tr key={`${s.id}-${s.artist}`} className="row-hover" style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 1 ? C.bgCardAlt : 'transparent' }} onClick={() => setEditTarget(s)}>
-                    <td style={{ padding: '8px 12px', fontFamily: "'Space Mono', monospace", fontSize: '0.7rem', color: C.gray, whiteSpace: 'nowrap' }}>{fmtDate(s.date)}</td>
-                    <td style={{ padding: '8px 12px', color: C.white, fontWeight: 500 }}>
-                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{ width: 6, height: 6, borderRadius: '50%', background: gColor }} />
-                          {s.artist}
-                       </div>
-                    </td>
-                    <td style={{ padding: '8px 12px', color: C.gray }}>{s.venue || '—'}</td>
-                    <td style={{ padding: '8px 12px', color: C.gray }}>{s.city || '—'}</td>
-                    <td style={{ padding: '8px 12px', color: C.gray }}>{s.state || '—'}</td>
-                    <td style={{ padding: '8px 12px' }}>{s.is_festival ? <Badge color={C.teal}>Fest</Badge> : <Badge color={C.grayDim} bg="transparent">Solo</Badge>}</td>
-                    <td style={{ padding: '8px 12px', fontStyle: 'italic', fontSize: '0.72rem', color: C.tealDim }}>{s.festival_day || '—'}</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'center' }}>
-                      <span style={{ fontSize: 16, opacity: s.has_setlist ? 1 : 0.1, color: '#ffcc00' }}>{s.has_setlist ? '✓' : '📋'}</span>
-                    </td>
-                    <td style={{ padding: '8px 12px', color: C.tealDim, fontSize: 12 }}>✎</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        {totalPages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 14 }}>
-            <button style={{ background: C.bgCard, color: C.white, border: `1px solid ${C.border}`, padding: '5px 10px', borderRadius: 4, cursor: 'pointer' }} onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>←</button>
-            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.gray, alignSelf: 'center' }}>pg {page} / {totalPages}</span>
-            <button style={{ background: C.bgCard, color: C.white, border: `1px solid ${C.border}`, padding: '5px 10px', borderRadius: 4, cursor: 'pointer' }} onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>→</button>
-          </div>
-        )}
-      </>
-    )}
-
-    {/* --- BY ARTIST VIEW (GENRE COMMAND CENTER) --- */}
-    {browseView === 'artists' && (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
-        {artistRows.map(({ artist, shows }) => {
-          const fc = shows.filter(s => s.is_festival).length;
-          const slCount = shows.filter(s => s.has_setlist).length;
-          
-          // Use the 'manualGenres' state to drive the color fill
-          const currentGenre = manualGenres[artist] || "Other";
-          const gColor = GENRE_COLORS[currentGenre] || "#444";
-
-          return (
-            <div key={artist} style={{ 
-              background: hexToRgba(gColor, 0.05),
-              border: `1px solid ${hexToRgba(gColor, 0.2)}`, 
-              borderLeft: `5px solid ${gColor}`,
-              borderRadius: 8, padding: '16px', position: 'relative',
-              transition: 'all 0.2s ease'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: C.white }}>{artist}</div>
-                
-                {/* --- GENRE PICKER --- */}
-                <select 
-                  style={{ 
-                    background: '#000', color: gColor, border: `1px solid ${gColor}66`,
-                    fontSize: 9, fontFamily: "'Space Mono'", padding: '3px 6px', borderRadius: 4, cursor: 'pointer'
-                  }}
-                  value={currentGenre}
-                  onChange={async (e) => {
-  const val = e.target.value;
-  // Local UI Update
-  setManualGenres(prev => ({ ...prev, [artist]: val }));
-  // Database Update
-  await updateArtistGenre(artist, val);
-}}
-                >
-                  {Object.keys(GENRE_COLORS).map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray, display: 'flex', gap: 14 }}>
-                  <span>Seen <strong style={{ color: gColor }}>{shows.length}×</strong></span>
-                  <span>Fest <strong style={{ color: gColor }}>{fc}</strong></span>
-                  {slCount > 0 && <span style={{ color: '#ffcc00' }}>{slCount} ✓</span>}
-                </div>
-                <button onClick={() => setShareCard({ artist, shows })} style={{ background: 'none', border: 'none', color: C.tealDim, fontSize: 10, cursor: 'pointer' }}>SHARE ↗</button>
-              </div>
-
-              {/* Show Tag Cloud */}
-              <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                {shows.slice(0, 8).map((s, i) => (
-                  <span key={i} style={{ fontSize: '0.65rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 3, padding: '2px 5px', color: '#888' }}>
-                    {new Date(s.date + 'T12:00:00').getFullYear()}
-                  </span>
-                ))}
-                {shows.length > 8 && <span style={{ fontSize: '0.65rem', color: '#444' }}>+{shows.length - 8} more</span>}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    )}
-  </div>
-)}
-        {/* ── HALL OF FAME ── */}
-        {activeTab === 'hof' && (
-          <HallOfFame 
-            sets={sets} 
-            concerts={concerts} // Pass concerts to HOF for setlist check
-            onShare={(artist, shows) => setShareCard({ artist, shows })} 
-          />
-        )}
-
-        {/* ── SETLIST VAULT (NEW) ── */}
-        {activeTab === 'setlist_vault' && (
+{/* ── BROWSE TAB ── */}
+        {activeTab === 'browse' && (
           <div style={{ padding: '24px 0' }} className="fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <div>
-                <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.gold, margin: 0, lineHeight: 1 }}>THE SETLIST VAULT</h2>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginTop: 4 }}>
-                  {stats.setlistCount} PHYSICAL ITEMS RECOVERED
-                </div>
-              </div>
-              <button 
-                onClick={() => setActiveTab('dashboard')}
-                style={{ background: 'none', border: `1px solid ${C.border}`, color: C.gray, padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 }}
-              >
-                ← DASHBOARD
-              </button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-              {concerts
-                .filter(c => c.has_setlist || (c.has_setlist_names && c.has_setlist_names.trim() !== ''))
-                .sort((a, b) => b.date.localeCompare(a.date))
-                .map(c => (
-                  <div 
-                    key={c.id} 
-                    onClick={() => { setEditTarget(c); }}
-                    className="setlist-card"
-                    style={{ 
-                      background: C.bgCard, border: `1px solid ${C.gold}33`, borderRadius: 10, padding: 20, 
-                      cursor: 'pointer', position: 'relative', overflow: 'hidden', transition: 'transform 0.2s' 
-                    }}
-                  >
-                    <div style={{ fontSize: 9, color: C.gold, fontFamily: "'Space Mono'", marginBottom: 10, letterSpacing: '0.1em' }}>{fmtDate(c.date)}</div>
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: C.white, marginBottom: 4, lineHeight: 1 }}>
-                      {c.has_setlist_names || "VERIFIED SETLIST"}
-                    </div>
-                    <div style={{ fontSize: 11, color: C.gray, fontFamily: "'Space Mono'" }}>{c.venue} • {c.city}</div>
-                    <div style={{ position: 'absolute', right: -10, bottom: -10, opacity: 0.1, fontSize: '4rem', transform: 'rotate(-15deg)' }}>📋</div>
-                  </div>
+            <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
+              <input style={{ ...inputSt, flex: 1, minWidth: 160 }} placeholder="Search artist, venue, city, festival..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+              <select style={inputSt} value={yearFilter} onChange={e => { setYearFilter(e.target.value); setPage(1); }}>
+                <option value="all">All Years</option>
+                {years.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+              <select style={inputSt} value={festFilter} onChange={e => { setFestFilter(e.target.value); setPage(1); }}>
+                <option value="all">All Shows</option>
+                <option value="fest">Festival Only</option>
+                <option value="solo">Standalone Only</option>
+              </select>
+              <div style={{ display: 'flex', border: `1px solid ${C.border}`, borderRadius: 4, overflow: 'hidden' }}>
+                {[['shows', 'By Set'], ['artists', 'By Artist']].map(([v, l]) => (
+                  <button key={v} style={{ fontFamily: "'Space Mono'", fontSize: 9, textTransform: 'uppercase', background: browseView === v ? C.teal : C.bgCard, color: browseView === v ? C.bg : C.gray, border: 'none', padding: '7px 12px', cursor: 'pointer' }} onClick={() => setBrowseView(v)}>{l}</button>
                 ))}
+              </div>
             </div>
-          </div>
-        )}
 
-        {/* ── PASSPORT ── */}
-        {activeTab === 'passport' && (
-          <div style={{ padding: '24px 0' }} className="fade-in">
-            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: C.gray, marginBottom: 18 }}>
-              {passport.length} festivals · {stats.festDays} total days
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
-              {passport.map(f => (
-                <div 
-                  key={f.name} 
-                  className="stamp-card" 
-                  onClick={() => {
-                    setActiveTab('byFest');
-                    setTimeout(() => {
-                      const el = document.getElementById(`fest-${f.name.replace(/\s+/g, '-')}`);
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    }, 100);
-                  }}
-                  style={{ 
-                    background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, 
-                    padding: 14, textAlign: 'center', position: 'relative', 
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.4)', cursor: 'pointer' 
-                  }}
-                >
-                  <div style={{ position: 'absolute', inset: 5, border: `1px dashed ${C.teal}33`, borderRadius: 5, pointerEvents: 'none' }} />
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', letterSpacing: '0.06em', color: C.white, marginBottom: 5, lineHeight: 1.2, position: 'relative', zIndex: 1 }}>{f.name}</div>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, textShadow: `0 0 10px ${C.teal}55`, margin: '4px 0', position: 'relative', zIndex: 1 }}>{f.days}</div>
-                  <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.18em', textTransform: 'uppercase', color: C.gray, position: 'relative', zIndex: 1 }}>{f.days === 1 ? 'day' : 'days'}</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, justifyContent: 'center', marginTop: 8, position: 'relative', zIndex: 1 }}>
-                    {f.years.map(y => (
-                      <span key={y} style={{ fontFamily: "'Space Mono', monospace", fontSize: 7, background: `${C.teal}22`, color: C.teal, border: `1px solid ${C.teal}44`, padding: '2px 5px', borderRadius: 3 }}>{y}</span>
+            {browseView === 'shows' && (
+              <div style={{ overflowX: 'auto', borderRadius: 8, border: `1px solid ${C.border}` }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                  <thead>
+                    <tr style={{ background: C.bgCardAlt }}>
+                      {[['date','Date'],['artist','Artist'],['venue','Venue'],['city','City']].map(([col, lbl]) => (
+                        <th key={col} style={{ padding: '10px 12px', textAlign: 'left', color: C.tealDim, borderBottom: `1px solid ${C.border}` }}>{lbl}</th>
+                      ))}
+                      <th style={{ padding: '10px 12px', borderBottom: `1px solid ${C.border}` }} />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paged.map((s, i) => (
+                      <tr key={`${s.id}-${s.artist}`} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 1 ? C.bgCardAlt : 'transparent' }} onClick={() => setEditTarget(s)}>
+                        <td style={{ padding: '8px 12px', color: C.gray }}>{s.date}</td>
+                        <td style={{ padding: '8px 12px', color: C.white, fontWeight: 600 }}>{s.artist}</td>
+                        <td style={{ padding: '8px 12px', color: C.gray }}>{s.venue}</td>
+                        <td style={{ padding: '8px 12px', color: C.gray }}>{s.city}</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'center' }}>{s.has_setlist ? '📋' : ''}</td>
+                      </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {browseView === 'artists' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
+                {artistRows.map(({ artist, shows }) => (
+                  <div key={artist} style={{ background: C.bgCard, borderLeft: `5px solid ${C.teal}`, borderRadius: 8, padding: '16px' }}>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 700, color: C.white }}>{artist}</div>
+                    <div style={{ fontSize: 10, color: C.gray }}>Seen {shows.length}×</div>
                   </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── HALL OF FAME TAB ── */}
+        {activeTab === 'hof' && (
+          <HallOfFame sets={sets} concerts={concerts} onShare={(artist, shows) => setShareCard({ artist, shows })} />
+        )}
+
+        {/* ── SETLIST VAULT TAB ── */}
+        {activeTab === 'setlist_vault' && (
+          <div style={{ padding: '24px 0' }}>
+            <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.gold }}>THE VAULT</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 16 }}>
+              {concerts.filter(c => c.has_setlist).map(c => (
+                <div key={c.id} style={{ background: C.bgCard, border: `1px solid ${C.gold}33`, padding: 20, borderRadius: 10 }}>
+                  <div style={{ color: C.gold, fontSize: 10 }}>{c.date}</div>
+                  <div style={{ fontSize: '1.5rem', color: '#fff' }}>{c.artist}</div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* ── MANAGE ── */}
+        {/* ── PASSPORT TAB ── */}
+        {activeTab === 'passport' && (
+          <div style={{ padding: '24px 0' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
+              {passport.map(f => (
+                <div key={f.name} style={{ background: C.bgCard, border: `1px solid ${C.border}`, padding: 15, textAlign: 'center', borderRadius: 8 }}>
+                  <div style={{ fontSize: '1.5rem', color: C.teal }}>{f.days}</div>
+                  <div style={{ fontSize: 10, color: '#fff' }}>{f.name}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── MANAGE TAB ── */}
         {activeTab === 'manage' && (
           <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} />
         )}
 
-      </div>
-    </div>
-  );
-}
-{/* ─── END OF MAIN LAYOUT ─── */}
-    </main>
-  );
-} // <--- THIS CLOSES THE MAIN APP FUNCTION
+      </main> {/* CLOSES MAIN */}
+    </div> // CLOSES MAIN DIV
+  ); // CLOSES RETURN
+} // CLOSES APP FUNCTION
 
-// ─── THE FOLLOWING COMPONENTS LIVE OUTSIDE OF APP ───
+// ─── EXTERNAL COMPONENTS (OUTSIDE APP) ───
 
-// --- SONIC DNA COMPONENT ---
 function SonicDNA({ stats }) {
   if (!stats || stats.length === 0) return null;
   const maxCount = stats[0].count;
-
   return (
-    <div style={{ 
-      background: 'rgba(255,255,255,0.02)', 
-      border: '1px solid rgba(255,255,255,0.08)', 
-      borderRadius: '12px', 
-      padding: '24px',
-      marginBottom: '24px'
-    }}>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', marginBottom: '15px', letterSpacing: '1px' }}>
-        SONIC DNA // GENRE DISTRIBUTION
-      </div>
+    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', marginBottom: '15px' }}>SONIC DNA</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {stats.map((g) => (
-          <div key={g.name}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '10px', fontFamily: "'Space Mono'" }}>
-              <span style={{ color: g.color }}>{g.name.toUpperCase()}</span>
-              <span style={{ color: '#888' }}>{g.count} SETS</span>
-            </div>
-            <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px' }}>
-              <div style={{ 
-                width: `${(g.count / maxCount) * 100}%`, 
-                height: '100%', 
-                background: g.color, 
-                boxShadow: `0 0 10px ${g.color}66`, 
-                transition: 'width 1s ease',
-                borderRadius: '2px'
-              }} />
-            </div>
+          <div key={g.name} style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: g.color, fontSize: 10 }}>{g.name.toUpperCase()}</span>
+            <span style={{ color: '#888', fontSize: 10 }}>{g.count} SETS</span>
           </div>
         ))}
       </div>
@@ -2400,11 +2231,8 @@ function SonicDNA({ stats }) {
   );
 }
 
-// Helper for card colors
 function hexToRgba(hex, alpha) {
-  if (!hex) return `rgba(255,255,255,${alpha})`;
-  const r = parseInt(hex.slice(1, 3), 16),
-        g = parseInt(hex.slice(3, 5), 16),
-        b = parseInt(hex.slice(5, 7), 16);
+  if (!hex || typeof hex !== 'string') return `rgba(255,255,255,${alpha})`;
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
