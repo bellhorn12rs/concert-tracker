@@ -1498,21 +1498,6 @@ export default function App() {
   };
 
   // ==========================================
-  // --- 6. RENDER DATA (DERIVED) ---
-  // ==========================================
-
-  // 1. FOUNDATION: Flat list of every performance
-  const allSetsList = useMemo(() => {
-    const sets = [];
-    concerts.forEach(c => {
-      if (c.bands && Array.isArray(c.bands)) {
-        c.bands.forEach(b => sets.push({ ...c, artist: b }));
-      } else if (c.artist) {
-        sets.push({ ...c, artist: c.artist });
-      }
-    });
-    return sets;
-  }, [concerts]);
 
   // 2. DASHBOARD STATS (Grid Cards)
   const dashboardStats = useMemo(() => {
