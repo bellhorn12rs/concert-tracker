@@ -2110,7 +2110,7 @@ export default function App() {
 {/* ─── MAIN TABS CONTAINER ─── */}
         <div style={{ padding: '24px 0' }}>
           
-          {/* BROWSE */}
+          {/* 1. BROWSE TAB */}
           {activeTab === 'browse' && (
             <div className="fade-in">
               <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
@@ -2120,7 +2120,8 @@ export default function App() {
                   <button style={{ padding: '8px 12px', background: browseView === 'artists' ? C.teal : 'transparent', color: browseView === 'artists' ? C.bg : C.gray, border: 'none', cursor: 'pointer', fontSize: 10 }} onClick={() => setBrowseView('artists')}>ARTISTS</button>
                 </div>
               </div>
-              {browseView === 'shows' ? (
+
+              {browseView === 'shows' && (
                 <div style={{ border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                     <thead style={{ background: C.bgCardAlt, color: C.tealDim }}>
@@ -2141,7 +2142,9 @@ export default function App() {
                     </tbody>
                   </table>
                 </div>
-              ) : (
+              )}
+
+              {browseView === 'artists' && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 12 }}>
                   {artistRows.slice(0, 50).map(a => (
                     <div key={a.artist} style={{ background: C.bgCard, padding: 15, borderRadius: 8, borderLeft: `4px solid ${C.teal}` }}>
@@ -2154,12 +2157,16 @@ export default function App() {
             </div>
           )}
 
-          {/* HOF */}
-          {activeTab === 'hof' && <HallOfFame sets={sets} concerts={concerts} onShare={(artist, shows) => setShareCard({ artist, shows })} />}
+          {/* 2. HALL OF FAME TAB */}
+          {activeTab === 'hof' && (
+            <div className="fade-in">
+              <HallOfFame sets={sets} concerts={concerts} onShare={(artist, shows) => setShareCard({ artist, shows })} />
+            </div>
+          )}
 
-          {/* VAULT */}
+          {/* 3. SETLIST VAULT TAB */}
           {activeTab === 'setlist_vault' && (
-            <div>
+            <div className="fade-in">
               <h2 style={{ fontFamily: "'Bebas Neue'", color: C.gold, fontSize: '2rem' }}>THE VAULT</h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 15 }}>
                 {concerts.filter(c => c.has_setlist).map(c => (
@@ -2172,20 +2179,26 @@ export default function App() {
             </div>
           )}
 
-          {/* PASSPORT */}
+          {/* 4. PASSPORT TAB */}
           {activeTab === 'passport' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
-              {passport.map(f => (
-                <div key={f.name} style={{ background: C.bgCard, padding: 15, borderRadius: 8, textAlign: 'center', border: `1px solid ${C.border}` }}>
-                  <div style={{ fontSize: '1.5rem', color: C.teal }}>{f.days}</div>
-                  <div style={{ fontSize: 9, color: '#fff' }}>{f.name}</div>
-                </div>
-              ))}
+            <div className="fade-in">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
+                {passport.map(f => (
+                  <div key={f.name} style={{ background: C.bgCard, padding: 15, borderRadius: 8, textAlign: 'center', border: `1px solid ${C.border}` }}>
+                    <div style={{ fontSize: '1.5rem', color: C.teal }}>{f.days}</div>
+                    <div style={{ fontSize: 9, color: '#fff' }}>{f.name}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* MANAGE */}
-          {activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} />}
+          {/* 5. MANAGE TAB */}
+          {activeTab === 'manage' && (
+            <div className="fade-in">
+              <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} />
+            </div>
+          )}
 
         </div> {/* END OF TAB PADDING DIV */}
       </main> {/* END OF MAIN WRAPPER */}
@@ -2193,7 +2206,7 @@ export default function App() {
   );
 }
 
-// ─── HELPER COMPONENTS (OUTSIDE APP) ───
+// ─── HELPER COMPONENTS (STRICTLY OUTSIDE APP) ───
 
 function SonicDNA({ stats }) {
   if (!stats || stats.length === 0) return null;
