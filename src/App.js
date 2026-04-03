@@ -88,18 +88,7 @@ const GENRE_COLORS = {
   "Other":        "#444444"  // Gray
 };
 
-// HELPER: Creates the "Color Fill" alpha versions for card backgrounds
-const hexToRgba = (hex, alpha) => {
-  if (!hex || hex === 'transparent' || hex === 'none') return `rgba(255,255,255,${alpha})`;
-  try {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  } catch (e) {
-    return `rgba(255,255,255,${alpha})`;
-  }
-};
+
 
 // STATIC DEFAULTS (Will be overridden by your 'manualGenres' state)
 const GENRE_MAP = {
