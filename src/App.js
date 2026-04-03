@@ -1386,7 +1386,24 @@ export default function App() {
       fetchUpcoming();
     }
   }
-
+const addUpcomingShow = async () => {
+    // 1. Check if the user (you) actually picked a date and typed a name
+    if (!newUpcoming.artist || !newUpcoming.date) {
+      alert("Please enter at least an Artist and a Date! 📅");
+      return;
+    }
+    
+    // 2. Send it to Supabase
+    const { error } = await supabase.from('upcoming_concerts').insert([newUpcoming]);
+    
+    if (error) {
+      alert("Error adding show: " + error.message);
+    } else {
+      // 3. Reset the form back to empty and refresh the marquee
+      setNewUpcoming({ artist: '', venue: '', date: '', status: 'TICKETS' });
+      fetchUpcoming(); 
+    }
+  };
   async function updateArtistGenre(artistName, newGenre) {
     console.log(`📡 Sending to Supabase: ${artistName} -> ${newGenre}`);
     const { data, error } = await supabase
@@ -1766,44 +1783,42 @@ export default function App() {
       </Card>
 
       {/* 3. CENTER STAGE: THE MARQUEE & TICKET BOOTH */}
-      <div style={{ 
-        gridColumn: 'span 2', 
-        background: '#050505', 
-        border: '2px solid #ffcc00', 
-        borderRadius: 8, 
-        position: 'relative', 
-        overflow: 'hidden', 
-        boxShadow: '0 0 20px rgba(255, 204, 0, 0.2)'
-      }}>
-        {/* Animated Marquee Header */}
-        <div style={{ background: '#ffcc00', color: '#000', padding: '3px 0', overflow: 'hidden', borderBottom: '1px solid #000' }}>
-          <div className="marquee-text" style={{ fontFamily: "'Space Mono'", fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase' }}>
-            UPCOMING SPOTLIGHT • UPCOMING SPOTLIGHT • UPCOMING SPOTLIGHT • UPCOMING SPOTLIGHT • UPCOMING SPOTLIGHT •
-          </div>
-        </div>
-
-        <div style={{ padding: '15px' }}>
-          {/* THE TICKET BOOTH (Admin Inputs) */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 15 }}>
-            <input 
-              placeholder="Artist" 
-              value={newUpcoming.artist}
-              onChange={e => setNewUpcoming({...newUpcoming, artist: e.target.value})}
-              style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '6px', flex: 2, borderRadius: 4, outline: 'none' }}
-            />
-            <input 
-              placeholder="Venue" 
-              value={newUpcoming.venue}
-              onChange={e => setNewUpcoming({...newUpcoming, venue: e.target.value})}
-              style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '6px', flex: 1, borderRadius: 4, outline: 'none' }}
-            />
-            <button 
-              onClick={addUpcomingShow}
-              style={{ background: '#ffcc00', color: '#000', border: 'none', fontSize: 9, fontWeight: '900', padding: '0 15px', cursor: 'pointer', borderRadius: 4, transition: 'all 0.2s' }}
-            >
-              ADD
-            </button>
-          </div>
+      {/* THE TICKET BOOTH (Updated with Date & Status) */}
+<div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 15 }}>
+  <input 
+    placeholder="Artist" 
+    value={newUpcoming.artist}
+    onChange={e => setNewUpcoming({...newUpcoming, artist: e.target.value})}
+    style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '6px', flex: '2 1 120px', borderRadius: 4 }}
+  />
+  <input 
+    placeholder="Venue" 
+    value={newUpcoming.venue}
+    onChange={e => setNewUpcoming({...newUpcoming, venue: e.target.value})}
+    style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '6px', flex: '1 1 100px', borderRadius: 4 }}
+  />
+  <input 
+    type="date"
+    value={newUpcoming.date}
+    onChange={e => setNewUpcoming({...newUpcoming, date: e.target.value})}
+    style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '5px', flex: '1 1 100px', borderRadius: 4, colorScheme: 'dark' }}
+  />
+  <select
+    value={newUpcoming.status}
+    onChange={e => setNewUpcoming({...newUpcoming, status: e.target.value})}
+    style={{ background: '#111', border: '1px solid #333', color: '#ffcc00', fontSize: 10, padding: '6px', borderRadius: 4 }}
+  >
+    <option value="TICKETS">TICKETS</option>
+    <option value="CONFIRMED">CONFIRMED</option>
+    <option value="DREAMING">DREAMING</option>
+  </select>
+  <button 
+    onClick={addUpcomingShow}
+    style={{ background: '#ffcc00', color: '#000', border: 'none', fontSize: 9, fontWeight: '900', padding: '0 15px', cursor: 'pointer', borderRadius: 4, flex: '0 0 auto' }}
+  >
+    ADD
+  </button>
+</div>
 
           {/* THE LIVE SCROLLING LIST */}
           <div style={{ maxHeight: '75px', overflowY: 'auto', pr: 5 }}>
@@ -1811,13 +1826,17 @@ export default function App() {
               <div style={{ color: '#444', fontSize: 10, textAlign: 'center', marginTop: 10, fontFamily: "'Space Mono'" }}>NO UPCOMING SHOWS STAGED...</div>
             ) : (
               upcoming.map((show, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid #1a1a1a' }}>
-                  <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 'bold', fontFamily: "'Inter', sans-serif" }}>{show.artist}</div>
-                  <div style={{ color: '#ffcc00', fontFamily: "'Space Mono'", fontSize: 9, textAlign: 'right' }}>
-                    {show.venue} {show.date ? `// ${show.date}` : ''}
-                  </div>
-                </div>
-              ))
+  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid #1a1a1a' }}>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 'bold' }}>{show.artist}</div>
+      <div style={{ color: '#555', fontSize: 8, textTransform: 'uppercase' }}>{show.venue}</div>
+    </div>
+    <div style={{ textAlign: 'right' }}>
+      <div style={{ color: '#ffcc00', fontFamily: "'Space Mono'", fontSize: 9 }}>{show.date}</div>
+      <div style={{ color: show.status === 'DREAMING' ? '#555' : '#ffcc00', fontSize: 7, fontWeight: 'bold' }}>{show.status}</div>
+    </div>
+  </div>
+))
             )}
           </div>
         </div>
