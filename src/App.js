@@ -1476,6 +1476,7 @@ function PassportTab({ passport, onNavigateToFest }) {
 }
 
 // ─── BROWSE TAB ───────────────────────────────────────────────────────────────
+// ─── BROWSE TAB (Fixed for Artist Genres) ─────────────────────────────────────
 function BrowseTab({ browseView, setBrowseView, search, setSearch, yearFilter, setYearFilter, festFilter, setFestFilter, sortCol, setSortCol, sortDir, setSortDir, paged, page, setPage, totalPages, artistRows, years, onShare, onEdit, onSetGenre, genreMap, genreFilter, setGenreFilter }) {
   return (
     <div style={{ marginTop:20 }} className="fade-in">
@@ -1484,7 +1485,6 @@ function BrowseTab({ browseView, setBrowseView, search, setSearch, yearFilter, s
         <select value={yearFilter} onChange={e=>setYearFilter(e.target.value)} style={{ ...inputSt, minWidth:100 }}><option value="all">All Years</option>{years.map(y=><option key={y} value={y}>{y}</option>)}</select>
         <select value={festFilter} onChange={e=>setFestFilter(e.target.value)} style={{ ...inputSt, minWidth:130 }}><option value="all">All Types</option><option value="fest">Festival Only</option><option value="solo">Standalone Only</option></select>
         <select value={genreFilter} onChange={e=>setGenreFilter(e.target.value)} style={{ ...inputSt, minWidth:130 }}><option value="all">All Genres</option>{GENRES.map(g=><option key={g} value={g}>{g}</option>)}</select>
-        {genreFilter!=='all' && <button onClick={()=>setGenreFilter('all')} style={{ ...inputSt, background:GENRE_COLORS[genreFilter]+'22', color:GENRE_COLORS[genreFilter], border:`1px solid ${GENRE_COLORS[genreFilter]}44`, cursor:'pointer', fontSize:9, fontFamily:"'Space Mono'" }}>✕ {genreFilter}</button>}
         <div style={{ display:'flex', background:C.bgCardAlt, borderRadius:4, padding:2, border:`1px solid ${C.border}` }}>
           {['shows','artists'].map(v=><button key={v} onClick={()=>setBrowseView(v)} style={{ padding:'6px 14px', fontSize:10, fontFamily:"'Space Mono'", letterSpacing:'0.1em', textTransform:'uppercase', background:browseView===v?C.teal:'transparent', color:browseView===v?C.bg:C.gray, border:'none', cursor:'pointer', borderRadius:3, transition:'0.15s' }}>{v}</button>)}
         </div>
@@ -1505,18 +1505,21 @@ function BrowseTab({ browseView, setBrowseView, search, setSearch, yearFilter, s
                 </tr>
               </thead>
               <tbody>
-                {paged.map((s,i) => (
-                  <tr key={`${s.id}-${s.artist}`} className="row-hover" onClick={()=>onEdit(s)} style={{ borderBottom:`1px solid ${C.border}`, background:i%2===1?C.bgCardAlt:'transparent' }}>
-                    <td style={{ padding:'9px 12px', fontFamily:"'Space Mono',monospace", fontSize:'0.7rem', color:C.gray, whiteSpace:'nowrap' }}>{fmtDate(s.date)}</td>
-                    <td style={{ padding:'9px 12px', color:C.teal, fontWeight:600 }}>{s.artist}</td>
-                    <td style={{ padding:'9px 12px', color:C.gray }}>{s.venue||'—'}</td>
-                    <td style={{ padding:'9px 12px', color:C.gray }}>{s.city||'—'}{s.state?`, ${s.state}`:''}</td>
-                    <td style={{ padding:'9px 12px' }}>{s.genre?<GenreBadge genre={s.genre} color={GENRE_COLORS[s.genre]} small />:<span style={{ color:C.grayDim, fontSize:8 }}>—</span>}</td>
-                    <td style={{ padding:'9px 12px', textAlign:'center' }}>{(s.has_setlist||(s.has_setlist_names?.trim()))?<a href={`https://www.setlist.fm/search?query=${encodeURIComponent(s.artist)}`} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ textDecoration:'none', fontSize:12, filter:'drop-shadow(0 0 3px gold)' }} title="setlist.fm">📋</a>:<span style={{ color:C.grayDim }}>—</span>}</td>
-                    <td style={{ padding:'9px 12px' }}>{s.is_festival?<Badge color={C.teal}>Fest</Badge>:<Badge color={C.grayDim} bg="transparent">Solo</Badge>}</td>
-                  </tr>
-                ))}
-                {!paged.length && <tr><td colSpan={7} style={{ textAlign:'center', color:C.gray, padding:40 }}>No results.</td></tr>}
+                {paged.map((s,i) => {
+                  // HERE IS THE FIX: Pull genre from the artist-specific map
+                  const artistGenre = genreMap[s.artist] || null;
+                  return (
+                    <tr key={`${s.id}-${s.artist}`} className="row-hover" onClick={()=>onEdit(s)} style={{ borderBottom:`1px solid ${C.border}`, background:i%2===1?C.bgCardAlt:'transparent' }}>
+                      <td style={{ padding:'9px 12px', fontFamily:"'Space Mono',monospace", fontSize:'0.7rem', color:C.gray, whiteSpace:'nowrap' }}>{fmtDate(s.date)}</td>
+                      <td style={{ padding:'9px 12px', color:C.teal, fontWeight:600 }}>{s.artist}</td>
+                      <td style={{ padding:'9px 12px', color:C.gray }}>{s.venue||'—'}</td>
+                      <td style={{ padding:'9px 12px', color:C.gray }}>{s.city||'—'}{s.state?`, ${s.state}`:''}</td>
+                      <td style={{ padding:'9px 12px' }}>{artistGenre ? <GenreBadge genre={artistGenre} color={GENRE_COLORS[artistGenre]} small /> : <span style={{ color:C.grayDim, fontSize:8 }}>—</span>}</td>
+                      <td style={{ padding:'9px 12px', textAlign:'center' }}>{(s.has_setlist||(s.has_setlist_names?.trim()))?<a href={`https://www.setlist.fm/search?query=${encodeURIComponent(s.artist)}`} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ textDecoration:'none', fontSize:12, filter:'drop-shadow(0 0 3px gold)' }} title="setlist.fm">📋</a>:<span style={{ color:C.grayDim }}>—</span>}</td>
+                      <td style={{ padding:'9px 12px' }}>{s.is_festival?<Badge color={C.teal}>Fest</Badge>:<Badge color={C.grayDim} bg="transparent">Solo</Badge>}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -1533,22 +1536,18 @@ function BrowseTab({ browseView, setBrowseView, search, setSearch, yearFilter, s
       {browseView==='artists' && (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:12 }}>
           {artistRows.map(row => {
-            const genre=genreMap[row.artist]||null;
-            const gc=genre?(GENRE_COLORS[genre]||null):null;
-            const hasSetlist=row.shows.some(s=>s.has_setlist||(s.has_setlist_names?.trim()));
+            const genre = genreMap[row.artist] || null;
+            const gc = genre ? (GENRE_COLORS[genre] || null) : null;
             return (
               <div key={row.artist} style={{ background:gc?`linear-gradient(135deg,${C.bgCard},${hexToRgba(gc,0.1)})`:C.bgCard, border:`1px solid ${gc?hexToRgba(gc,0.5):C.border}`, boxShadow:gc?`0 0 12px ${hexToRgba(gc,0.2)}`:'none', borderRadius:8, padding:'14px 16px', position:'relative' }}>
-                {hasSetlist && <div style={{ position:'absolute', top:10, right:10, fontSize:12 }}>📋</div>}
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
                   <div>
                     <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.2rem', color:gc||C.teal, marginBottom:4, cursor:'pointer' }} onClick={()=>onShare(row.artist,row.shows)}>{row.artist}</div>
-                    <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray }}>{row.shows.length} shows · {[...new Set(row.shows.map(s=>getYear(s.date)).filter(Boolean))].sort().join(', ')}</div>
+                    <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray }}>{row.shows.length} shows</div>
                   </div>
-                  <button onClick={()=>onShare(row.artist,row.shows)} style={{ background:'none', border:`1px solid ${C.border}`, color:C.gray, fontSize:8, borderRadius:3, padding:'2px 6px', cursor:'pointer', fontFamily:"'Space Mono'" }}>📤</button>
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:10, paddingTop:10, borderTop:`1px solid ${C.border}` }}>
-                  <span style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:C.grayDim, textTransform:'uppercase', letterSpacing:'0.1em', flexShrink:0 }}>Genre:</span>
-                  <select value={genre||''} onChange={e=>onSetGenre(row.artist,e.target.value||null)} style={{ flex:1, background:gc?hexToRgba(gc,0.15):C.bgCardAlt, border:`1px solid ${gc?hexToRgba(gc,0.4):C.border}`, borderRadius:4, color:gc||C.gray, fontSize:9, padding:'3px 6px', fontFamily:"'Space Mono'", cursor:'pointer' }}>
+                  <select value={genre||''} onChange={e=>onSetGenre(row.artist, e.target.value||null)} style={{ flex:1, background:gc?hexToRgba(gc,0.15):C.bgCardAlt, border:`1px solid ${gc?hexToRgba(gc,0.4):C.border}`, borderRadius:4, color:gc||C.gray, fontSize:9, padding:'3px 6px', fontFamily:"'Space Mono'", cursor:'pointer' }}>
                     <option value="">— unset —</option>
                     {GENRES.map(g=><option key={g} value={g}>{g}</option>)}
                   </select>
@@ -1556,7 +1555,6 @@ function BrowseTab({ browseView, setBrowseView, search, setSearch, yearFilter, s
               </div>
             );
           })}
-          {!artistRows.length && <div style={{ color:C.gray, textAlign:'center', gridColumn:'1/-1', padding:40 }}>No artists match your filters.</div>}
         </div>
       )}
     </div>
@@ -1982,131 +1980,166 @@ export default function App() {
   const [page, setPage]             = useState(1);
 
   // ── DERIVED DATA ────────────────────────────────────────────────────────────
-  const genreMap = useMemo(() => buildGenreMap(concerts), [concerts]);
+  // ── DERIVED DATA ────────────────────────────────────────────────────────────
+  // This now pulls from the dedicated artist_genres table instead of concert rows
+  const genreMap = useMemo(() => artistGenres, [artistGenres]);
 
   const allSetsList = useMemo(() => {
     const r = [];
-    concerts.forEach(c => { const bands=Array.isArray(c.bands)?c.bands:[c.artist].filter(Boolean); bands.forEach(band=>{ if(band)r.push({...c,artist:band}); }); });
+    concerts.forEach(c => { 
+      const bands = Array.isArray(c.bands) ? c.bands : [c.artist].filter(Boolean); 
+      bands.forEach(band => { if (band) r.push({ ...c, artist: band }); }); 
+    });
     return r;
   }, [concerts]);
 
-  const years = useMemo(() => [...new Set(concerts.map(c=>getYear(c.date)).filter(Boolean))].sort(), [concerts]);
-  const stateCounts = useMemo(() => { const m={}; concerts.forEach(c=>{ if(c.state)m[c.state]=(m[c.state]||0)+1; }); return Object.entries(m).sort((a,b)=>b[1]-a[1]); }, [concerts]);
+  const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
+  const stateCounts = useMemo(() => { const m = {}; concerts.forEach(c => { if (c.state) m[c.state] = (m[c.state] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); }, [concerts]);
 
   const headerStats = useMemo(() => ({
     totalShows: concerts.length,
     totalSets: allSetsList.length,
-    uniqueArtists: new Set(allSetsList.map(s=>s.artist)).size,
-    festDays: concerts.filter(c=>c.is_festival).length,
-    setlistCount: concerts.filter(c=>c.has_setlist||c.has_setlist_names).length,
+    uniqueArtists: new Set(allSetsList.map(s => s.artist)).size,
+    festDays: concerts.filter(c => c.is_festival).length,
+    setlistCount: concerts.filter(c => c.has_setlist || c.has_setlist_names).length,
   }), [concerts, allSetsList]);
 
-  const dashboardStats = useMemo(() => {
-    if (!concerts.length) return { topBand:'None', topCount:0, stateCount:0, venueCount:0, newDiscoveries:0 };
-    const ac={}; allSetsList.forEach(s=>{ ac[s.artist]=(ac[s.artist]||0)+1; });
-    const top=Object.entries(ac).sort((a,b)=>b[1]-a[1])[0];
-    const states=new Set(concerts.map(c=>c.state).filter(Boolean));
-    const venues=new Set(concerts.map(c=>c.venue).filter(Boolean));
-    const recentBands=new Set(concerts.filter(c=>c.date>='2025').flatMap(c=>Array.isArray(c.bands)?c.bands:[c.artist]));
-    const oldBands=new Set(concerts.filter(c=>c.date<'2025').flatMap(c=>Array.isArray(c.bands)?c.bands:[c.artist]));
-    return { topBand:top?top[0]:'None', topCount:top?top[1]:0, stateCount:states.size, venueCount:venues.size, newDiscoveries:[...recentBands].filter(b=>!oldBands.has(b)).length };
-  }, [concerts, allSetsList]);
-
-  // Per-band genre counts
+  // Per-band genre counts (Now using the dedicated genre table)
   const genreStats = useMemo(() => {
-    const counts={};
-    allSetsList.forEach(s=>{ const g=genreMap[s.artist]||s.genre||'Other'; counts[g]=(counts[g]||0)+1; });
-    return Object.entries(counts).map(([name,count])=>({name,count,color:GENRE_COLORS[name]||GENRE_COLORS['Other']})).sort((a,b)=>b.count-a.count);
-  }, [allSetsList, genreMap]);
+    const counts = {};
+    allSetsList.forEach(s => { 
+      const g = artistGenres[s.artist] || 'Other'; 
+      counts[g] = (counts[g] || 0) + 1; 
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count, color: GENRE_COLORS[name] || GENRE_COLORS['Other'] }))
+      .sort((a, b) => b.count - a.count);
+  }, [allSetsList, artistGenres]);
 
   const timelineData = useMemo(() => {
-    const m={};
-    allSetsList.forEach(s=>{ const y=getYear(s.date); if(y)m[y]=(m[y]||0)+1; });
-    return Object.entries(m).sort((a,b)=>+a[0]-+b[0]).map(([year,count])=>({year:String(year).slice(2),count,fullYear:+year}));
+    const m = {};
+    allSetsList.forEach(s => { const y = getYear(s.date); if (y) m[y] = (m[y] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => +a[0] - +b[0]).map(([year, count]) => ({ year: String(year).slice(2), count, fullYear: +year }));
   }, [allSetsList]);
 
   const artistCounts = useMemo(() => {
-    const m={};
-    allSetsList.forEach(s=>{ m[s.artist]=(m[s.artist]||0)+1; });
-    return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([name,count])=>({name,count}));
+    const m = {};
+    allSetsList.forEach(s => { m[s.artist] = (m[s.artist] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
   }, [allSetsList]);
 
   const festBreakdown = useMemo(() => {
-    const m={};
-    concerts.filter(c=>c.is_festival&&c.festival_name).forEach(c=>{ m[c.festival_name]=(m[c.festival_name]||0)+1; });
-    return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+    const m = {};
+    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { m[c.festival_name] = (m[c.festival_name] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
   }, [concerts]);
 
   const passport = useMemo(() => {
-    const m={};
-    concerts.filter(c=>c.is_festival&&c.festival_name).forEach(c=>{ if(!m[c.festival_name])m[c.festival_name]={name:c.festival_name,days:0,years:new Set()}; m[c.festival_name].days++; const y=getYear(c.date); if(y)m[c.festival_name].years.add(y); });
-    return Object.values(m).map(f=>({...f,years:[...f.years].sort()})).sort((a,b)=>b.days-a.days);
+    const m = {};
+    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { if (!m[c.festival_name]) m[c.festival_name] = { name: c.festival_name, days: 0, years: new Set() }; m[c.festival_name].days++; const y = getYear(c.date); if (y) m[c.festival_name].years.add(y); });
+    return Object.values(m).map(f => ({ ...f, years: [...f.years].sort() })).sort((a, b) => b.days - a.days);
   }, [concerts]);
 
   const festGroupings = useMemo(() => {
-    const m={};
-    concerts.filter(c=>c.is_festival&&c.festival_name).forEach(c=>{ const yr=getYear(c.date)||'Unknown'; if(!m[c.festival_name])m[c.festival_name]={name:c.festival_name,years:{}}; if(!m[c.festival_name].years[yr])m[c.festival_name].years[yr]=[]; m[c.festival_name].years[yr].push(c); });
-    return Object.values(m).sort((a,b)=>Object.values(b.years).flat().length-Object.values(a.years).flat().length);
+    const m = {};
+    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { const yr = getYear(c.date) || 'Unknown'; if (!m[c.festival_name]) m[c.festival_name] = { name: c.festival_name, years: {} }; if (!m[c.festival_name].years[yr]) m[c.festival_name].years[yr] = []; m[c.festival_name].years[yr].push(c); });
+    return Object.values(m).sort((a, b) => Object.values(b.years).flat().length - Object.values(a.years).flat().length);
   }, [concerts]);
 
-  const applyFilters = useCallback((list, isSet=false) => {
-    let d=list;
-    if(yearFilter!=='all') d=d.filter(r=>getYear(r.date)===+yearFilter);
-    if(festFilter==='fest') d=d.filter(r=>r.is_festival);
-    if(festFilter==='solo') d=d.filter(r=>!r.is_festival);
-    if(genreFilter!=='all') d=d.filter(r=>{ const g=isSet?(genreMap[r.artist]||r.genre):(r.genre); return g===genreFilter; });
-    if(search){ const q=search.toLowerCase(); d=d.filter(r=>{ const bands=isSet?[r.artist]:(r.bands||[]); return bands.some(b=>b.toLowerCase().includes(q))||(r.venue||'').toLowerCase().includes(q)||(r.city||'').toLowerCase().includes(q)||(r.festival_name||'').toLowerCase().includes(q); }); }
+  const applyFilters = useCallback((list, isSet = false) => {
+    let d = list;
+    if (yearFilter !== 'all') d = d.filter(r => getYear(r.date) === +yearFilter);
+    if (festFilter === 'fest') d = d.filter(r => r.is_festival);
+    if (festFilter === 'solo') d = d.filter(r => !r.is_festival);
+    if (genreFilter !== 'all') d = d.filter(r => { const g = isSet ? (artistGenres[r.artist]) : (r.genre); return g === genreFilter; });
+    if (search) {
+      const q = search.toLowerCase();
+      d = d.filter(r => {
+        const bands = isSet ? [r.artist] : (r.bands || []);
+        return bands.some(b => b.toLowerCase().includes(q)) || (r.venue || '').toLowerCase().includes(q) || (r.city || '').toLowerCase().includes(q) || (r.festival_name || '').toLowerCase().includes(q);
+      });
+    }
     return d;
-  }, [yearFilter, festFilter, genreFilter, search, genreMap]);
+  }, [yearFilter, festFilter, genreFilter, search, artistGenres]);
 
   const filteredSets = useMemo(() => {
-    const d=applyFilters(allSetsList,true);
-    return [...d].sort((a,b)=>{ const av=sortCol==='artist'?(a.artist||'').toLowerCase():(String(a[sortCol]||'')).toLowerCase(); const bv=sortCol==='artist'?(b.artist||'').toLowerCase():(String(b[sortCol]||'')).toLowerCase(); if(sortCol==='date')return sortDir==='asc'?av.localeCompare(bv):bv.localeCompare(av); if(av<bv)return sortDir==='asc'?-1:1; if(av>bv)return sortDir==='asc'?1:-1; return 0; });
+    const d = applyFilters(allSetsList, true);
+    return [...d].sort((a, b) => { const av = sortCol === 'artist' ? (a.artist || '').toLowerCase() : (String(a[sortCol] || '')).toLowerCase(); const bv = sortCol === 'artist' ? (b.artist || '').toLowerCase() : (String(b[sortCol] || '')).toLowerCase(); if (sortCol === 'date') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av); if (av < bv) return sortDir === 'asc' ? -1 : 1; if (av > bv) return sortDir === 'asc' ? 1 : -1; return 0; });
   }, [allSetsList, applyFilters, sortCol, sortDir]);
 
   const artistRows = useMemo(() => {
-    if(browseView!=='artists') return [];
-    const m={};
-    applyFilters(allSetsList,true).forEach(s=>{ if(!m[s.artist])m[s.artist]={artist:s.artist,shows:[]}; m[s.artist].shows.push(s); });
-    return Object.values(m).sort((a,b)=>b.shows.length-a.shows.length);
+    if (browseView !== 'artists') return [];
+    const m = {};
+    applyFilters(allSetsList, true).forEach(s => { if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; m[s.artist].shows.push(s); });
+    return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
   }, [allSetsList, applyFilters, browseView]);
 
-  const dayGroups = useMemo(() => applyFilters(concerts).sort((a,b)=>(b.date||'').localeCompare(a.date||'')), [concerts, applyFilters]);
-
-  const paged=filteredSets.slice((page-1)*PER_PAGE,page*PER_PAGE), totalPages=Math.ceil(filteredSets.length/PER_PAGE);
+  const dayGroups = useMemo(() => applyFilters(concerts).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [concerts, applyFilters]);
+  const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE), totalPages = Math.ceil(filteredSets.length / PER_PAGE);
 
   // ── DB ACTIONS ──────────────────────────────────────────────────────────────
-  useEffect(() => { fetchConcerts(); fetchUpcoming(); }, []);
+  useEffect(() => { fetchInitialData(); }, []);
 
-  async function fetchConcerts() { const { data }=await supabase.from('concerts').select('*').order('date',{ascending:false}); if(data)setConcerts(data); setLoading(false); }
-  async function fetchUpcoming() { const { data }=await supabase.from('upcoming_concerts').select('*').order('date',{ascending:true}); if(data)setUpcoming(data); }
+  async function fetchInitialData() {
+    setLoading(true);
+    await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]);
+    setLoading(false);
+  }
+
+  async function fetchConcerts() {
+    const { data } = await supabase.from('concerts').select('*').order('date', { ascending: false });
+    if (data) setConcerts(data);
+  }
+
+  async function fetchGenres() {
+    const { data } = await supabase.from('artist_genres').select('*');
+    if (data) {
+      const gMap = {};
+      data.forEach(row => { gMap[row.artist_name] = row.genre; });
+      setArtistGenres(gMap);
+    }
+  }
+
+  async function fetchUpcoming() {
+    const { data } = await supabase.from('upcoming_concerts').select('*').order('date', { ascending: true });
+    if (data) setUpcoming(data);
+  }
 
   async function handleSave(id, payload) {
-    if(id) await supabase.from('concerts').update(payload).eq('id',id);
-    else    await supabase.from('concerts').insert([payload]);
+    if (id) await supabase.from('concerts').update(payload).eq('id', id);
+    else await supabase.from('concerts').insert([payload]);
     fetchConcerts(); setEditTarget(null);
   }
-  async function handleDelete(id) { if(window.confirm('Delete show?')){ await supabase.from('concerts').delete().eq('id',id); fetchConcerts(); setEditTarget(null); } }
+
+  async function handleDelete(id) { if (window.confirm('Delete show?')) { await supabase.from('concerts').delete().eq('id', id); fetchConcerts(); setEditTarget(null); } }
 
   async function handleSetGenre(artist, genre) {
-    // Only update concerts where this artist is in the bands array
-    const ids=concerts.filter(c=>(c.bands||[]).includes(artist)).map(c=>c.id);
-    if(!ids.length) return;
-    await supabase.from('concerts').update({genre:genre||null}).in('id',ids);
-    fetchConcerts();
+    if (!artist) return;
+    // Upsert into the dedicated artist_genres table
+    const { error } = await supabase
+      .from('artist_genres')
+      .upsert({ artist_name: artist, genre: genre }, { onConflict: 'artist_name' });
+
+    if (error) {
+      console.error("Genre error:", error);
+    } else {
+      // Snappy local update
+      setArtistGenres(prev => ({ ...prev, [artist]: genre }));
+    }
   }
 
   async function handleUpcomingSave(id, payload) {
-    if(id) await supabase.from('upcoming_concerts').update(payload).eq('id',id);
-    else   await supabase.from('upcoming_concerts').insert([payload]);
+    if (id) await supabase.from('upcoming_concerts').update(payload).eq('id', id);
+    else await supabase.from('upcoming_concerts').insert([payload]);
     await fetchUpcoming();
     setUpcomingModal(null);
   }
-  async function handleUpcomingDelete(id) { if(window.confirm('Delete?')){ await supabase.from('upcoming_concerts').delete().eq('id',id); fetchUpcoming(); setUpcomingModal(null); } }
+
+  async function handleUpcomingDelete(id) { if (window.confirm('Delete?')) { await supabase.from('upcoming_concerts').delete().eq('id', id); fetchUpcoming(); setUpcomingModal(null); } }
 
   async function handleDuplicate(concert) {
     const { id, created_at, ...rest } = concert;
-    await supabase.from('concerts').insert([{ ...rest, date:'', festival_day:'' }]);
+    await supabase.from('concerts').insert([{ ...rest, date: '', festival_day: '' }]);
     fetchConcerts();
     alert('Duplicated! Find it in Manage and update the date.');
   }
@@ -2117,253 +2150,228 @@ export default function App() {
     setActiveTab('browse');
   };
 
-  if (loading) return <div style={{ background:C.bg,minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center' }}><div style={{ fontFamily:"'Bebas Neue'",fontSize:'2rem',color:C.teal,letterSpacing:'0.15em' }}>LOADING</div></div>;
+  if (loading) return <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING</div></div>;
 
   return (
     <ThemeContext.Provider value={themeCtx}>
-    <div key={themeId} style={{ background:C.bg, minHeight:'100vh', paddingBottom:60 }}>
-      <MarqueeStyles />
+      <div key={themeId} style={{ background: C.bg, minHeight: '100vh', paddingBottom: 60 }}>
+        <MarqueeStyles />
 
-      {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={()=>setShareCard(null)} />}
-      {editTarget && <EditModal concert={editTarget==='new'?null:editTarget} onClose={()=>setEditTarget(null)} onSave={handleSave} onDelete={handleDelete} />}
-      {upcomingModal!==null && <UpcomingModal show={upcomingModal==='new'?null:upcomingModal} onClose={()=>setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
+        {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
+        {editTarget && <EditModal concert={editTarget === 'new' ? null : editTarget} onClose={() => setEditTarget(null)} onSave={handleSave} onDelete={handleDelete} />}
+        {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
 
-      {/* ── HERO HEADER ── */}
-      <div style={{ background:`linear-gradient(180deg,#050508 0%,${C.bgCard} 100%)`, borderBottom:`1px solid ${C.teal}22`, padding:'36px 24px 0', textAlign:'center' }}>
-        <div style={{ maxWidth:1200, margin:'0 auto' }}>
-          <h1 style={{ fontFamily:"'Bebas Neue'", fontSize:'clamp(3rem,8vw,6rem)', color:C.white, margin:'0 0 8px', lineHeight:1, letterSpacing:'0.04em' }}>
-            🎸 LIVE <span style={{ color:C.gray, fontSize:'0.7em' }}>//</span> <span style={{ color:C.teal }}>IN CONCERT</span>
-          </h1>
-          <div style={{ fontFamily:"'Space Mono',monospace", fontSize:'0.75rem', color:C.gray, display:'flex', justifyContent:'center', gap:20, flexWrap:'wrap', marginBottom:28 }}>
-            <span>{years.length>0?`${years[years.length-1]-years[0]} YEARS`:'0 YEARS'}</span>
-            <span style={{ color:C.grayDim }}>·</span>
-            <span>{stateCounts.length} STATES</span>
-            <span style={{ color:C.grayDim }}>·</span>
-            <span style={{ color:C.white, fontWeight:700 }}>{headerStats.totalSets.toLocaleString()} SETS 🤘</span>
-          </div>
-
-          {/* Neon stat tiles */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:0, borderTop:`1px solid ${C.border}`, marginTop:0 }}>
-            {[
-              { value:headerStats.totalSets, label:'TOTAL SETS', sub:'individual performances', color:C.teal, icon:'🎵' },
-              { value:headerStats.uniqueArtists, label:'UNIQUE ARTISTS', sub:'bands & performers', color:C.cyan, icon:'🎤' },
-              { value:headerStats.totalShows, label:'SHOW DAYS', sub:`${headerStats.festDays} fest · ${headerStats.totalShows-headerStats.festDays} solo`, color:C.purple, icon:'📅' },
-              { value:headerStats.setlistCount, label:'SETLISTS', sub:'click to view vault', color:C.gold, icon:'📋', onClick:()=>setActiveTab('vault') },
-            ].map((s,i) => (
-              <div key={s.label} onClick={s.onClick}
-                style={{ padding:'20px 16px', borderRight:i<3?`1px solid ${C.border}`:'none', textAlign:'center', cursor:s.onClick?'pointer':'default', position:'relative', overflow:'hidden', transition:'background 0.2s' }}
-                onMouseEnter={e=>{ if(s.onClick)e.currentTarget.style.background=hexToRgba(s.color,0.06); }}
-                onMouseLeave={e=>{ e.currentTarget.style.background='transparent'; }}>
-                {/* Neon glow line at bottom */}
-                <div style={{ position:'absolute', bottom:0, left:'10%', right:'10%', height:2, background:s.color, boxShadow:`0 0 8px ${s.color}, 0 0 16px ${s.color}`, borderRadius:2 }} />
-                <div style={{ fontSize:'1.2rem', marginBottom:4 }}>{s.icon}</div>
-                <CountUpStat value={s.value} label={s.label} sub={s.sub} color={s.color} />
-                {s.onClick && <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:s.color, letterSpacing:'0.15em', marginTop:4, opacity:0.7 }}>↗ VIEW VAULT</div>}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-     {/* ── NAV ── */}
-      <nav style={{ background: C.bgCard, borderBottom: `1px solid ${C.teal}22`, display: 'flex', position: 'sticky', top: 0, zIndex: 200 }}>
-        
-        {/* 1. Main Tabs (Scrollable on mobile) */}
-        <div style={{ display: 'flex', flex: 1, overflowX: 'auto', scrollbarWidth: 'none' }}>
-          {TABS.filter(([,,g]) => g !== 'right').map(([id, label, group, color]) => {
-            const isActive = activeTab === id;
-            const isFestGroup = group === 'fest';
-            return (
-              <button key={id} onClick={() => setActiveTab(id)}
-                style={{ 
-                  fontFamily: "'Space Mono'", fontSize: 10, color: isActive ? color : C.gray, 
-                  background: isFestGroup ? 'rgba(255,204,0,0.04)' : 'none', border: 'none', 
-                  borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent', 
-                  padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, 
-                  position: 'relative', transition: 'color 0.2s' 
-                }}>
-                {label}
-                {isActive && <div className="tab-active" style={{ '--tab-color': color }} />}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 2. Admin/Search Tools (Locked to the right) */}
-        <div style={{ display: 'flex', borderLeft: `1px solid ${C.border}`, background: C.bgCard }}>
-          {TABS.filter(([,,g]) => g === 'right').map(([id, label,, color]) => {
-            const isActive = activeTab === id;
-            return (
-              <button key={id} onClick={() => setActiveTab(id)}
-                style={{ 
-                  fontFamily: "'Space Mono'", fontSize: 10, color: isActive ? color : C.grayDim, 
-                  background: 'none', border: 'none', 
-                  borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent', 
-                  padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 
-                }}>
-                {label}
-              </button>
-            );
-          })}
-          <ThemeSwitcher />
-        </div>
-      </nav>
-
-      {/* ── THE MAIN STAGE (Frosted Glass & Bordering) ── */}
-      <main style={{ 
-        maxWidth: 1300, 
-        margin: '20px auto', 
-        padding: '24px', 
-        background: hexToRgba(C.bgCard, 0.6), 
-        border: `1px solid ${C.border}`, 
-        borderRadius: '12px',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(10px)',
-        position: 'relative',
-        zIndex: 1,
-        minHeight: '80vh'
-      }}>
-        {/* Add this "Decoration" element to fill space visually */}
-        <div style={{ 
-          position: 'absolute', 
-          top: 0, right: 0, 
-          width: '300px', height: '300px', 
-          background: `radial-gradient(circle at top right, ${hexToRgba(C.teal, 0.03)}, transparent 70%)`,
-          pointerEvents: 'none'
-        }} />
-
-        {/* ════ DASHBOARD ════ */}
-        {activeTab === 'dashboard' && (
-          <div className="fade-in">
-            <OnThisDay concerts={concerts} />
-
-            {/* Row 1: Insights | Theater Marquee | Random */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 16, marginBottom: 16, marginTop: 8 }}>
-              <ArtistInsights concerts={concerts} />
-              <TheaterMarquee upcoming={upcoming} onAdd={() => setUpcomingModal('new')} onEdit={setUpcomingModal} />
-              <RandomShow concerts={concerts} />
+        {/* ── HERO HEADER ── */}
+        <div style={{ background: `linear-gradient(180deg,#050508 0%,${C.bgCard} 100%)`, borderBottom: `1px solid ${C.teal}22`, padding: '36px 24px 0', textAlign: 'center' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+            <h1 style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(3rem,8vw,6rem)', color: C.white, margin: '0 0 8px', lineHeight: 1, letterSpacing: '0.04em' }}>
+              🎸 LIVE <span style={{ color: C.gray, fontSize: '0.7em' }}>//</span> <span style={{ color: C.teal }}>IN CONCERT</span>
+            </h1>
+            <div style={{ fontFamily: "'Space Mono',monospace", fontSize: '0.75rem', color: C.gray, display: 'flex', justifyContent: 'center', gap: 20, flexWrap: 'wrap', marginBottom: 28 }}>
+              <span>{years.length > 0 ? `${years[years.length - 1] - years[0]} YEARS` : '0 YEARS'}</span>
+              <span style={{ color: C.grayDim }}>·</span>
+              <span>{stateCounts.length} STATES</span>
+              <span style={{ color: C.grayDim }}>·</span>
+              <span style={{ color: C.white, fontWeight: 700 }}>{headerStats.totalSets.toLocaleString()} SETS 🤘</span>
             </div>
 
-            {/* Row 2: Sonic DNA + Bar Chart */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: 16, marginBottom: 16 }}>
-              <SonicDNA stats={genreStats} onGenreClick={handleGenreClick} />
-              <Card neon>
-                <CardTitle>Sets Per Year — click a bar to jump to that year</CardTitle>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={timelineData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }} onClick={data => { if (data?.activePayload?.[0]?.payload?.fullYear) { setActiveTab('timeline'); } }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                    <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
-                    <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
-                    <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10 }} cursor={{ fill: 'rgba(0,229,204,0.08)' }} />
-                    <Bar dataKey="count" radius={[4, 4, 0, 0]} style={{ cursor: 'pointer' }}>
-                      {timelineData.map((entry, index) => <Cell key={`cell-${index}`} fill={C.teal} />)}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
-            </div>
-
-            {/* Row 3: Stats Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
-              <Card neon><CardTitle>Fest vs Standalone</CardTitle><DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} /></Card>
-              <Card neon><CardTitle>Top Festivals</CardTitle><TopFestBlocks festBreakdown={festBreakdown} /></Card>
-              <Card neon>
-                <CardTitle>By Decade</CardTitle>
-                <DecadeBlocks sets={allSetsList} />
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
-                  <FerrisWheel size={90} />
+            {/* Neon stat tiles */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 0, borderTop: `1px solid ${C.border}`, marginTop: 0 }}>
+              {[
+                { value: headerStats.totalSets, label: 'TOTAL SETS', sub: 'individual performances', color: C.teal, icon: '🎵' },
+                { value: headerStats.uniqueArtists, label: 'UNIQUE ARTISTS', sub: 'bands & performers', color: C.cyan, icon: '🎤' },
+                { value: headerStats.totalShows, label: 'SHOW DAYS', sub: `${headerStats.festDays} fest · ${headerStats.totalShows - headerStats.festDays} solo`, color: C.purple, icon: '📅' },
+                { value: headerStats.setlistCount, label: 'SETLISTS', sub: 'click to view vault', color: C.gold, icon: '📋', onClick: () => setActiveTab('vault') },
+              ].map((s, i) => (
+                <div key={s.label} onClick={s.onClick}
+                  style={{ padding: '20px 16px', borderRight: i < 3 ? `1px solid ${C.border}` : 'none', textAlign: 'center', cursor: s.onClick ? 'pointer' : 'default', position: 'relative', overflow: 'hidden', transition: 'background 0.2s' }}
+                  onMouseEnter={e => { if (s.onClick) e.currentTarget.style.background = hexToRgba(s.color, 0.06); }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                  <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2, background: s.color, boxShadow: `0 0 8px ${s.color}, 0 0 16px ${s.color}`, borderRadius: 2 }} />
+                  <div style={{ fontSize: '1.2rem', marginBottom: 4 }}>{s.icon}</div>
+                  <CountUpStat value={s.value} label={s.label} sub={s.sub} color={s.color} />
+                  {s.onClick && <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: s.color, letterSpacing: '0.15em', marginTop: 4, opacity: 0.7 }}>↗ VIEW VAULT</div>}
                 </div>
-              </Card>
+              ))}
             </div>
+          </div>
+        </div>
 
-            {/* Row 4: Leaders */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <Card neon>
-                <CardTitle>Most Seen Artists</CardTitle>
-                <div style={{ display: 'grid', gap: 10 }}>
-                  {artistCounts.slice(0, 6).map((a, i) => {
-                    const gc = genreMap[a.name] ? GENRE_COLORS[genreMap[a.name]] : null;
-                    const MEDALS = ['🥇', '🥈', '🥉', '🏅', '🏅', '🏅'];
-                    const pct = Math.round((a.count / (artistCounts[0]?.count || 1)) * 100);
-                    return (
-                      <div key={a.name} style={{ marginBottom: 2, padding: '10px 12px', background: gc ? hexToRgba(gc, 0.06) : C.bgCardAlt, borderRadius: 6, border: `1px solid ${gc ? hexToRgba(gc, 0.25) : C.border}`, position: 'relative', overflow: 'hidden' }}>
-                        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: gc ? hexToRgba(gc, 0.1) : 'rgba(255,255,255,0.03)', borderRadius: 6, transition: 'width 1s ease' }} />
-                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>{MEDALS[i]}</span>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: gc || C.white, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.name}</div>
-                            {genreMap[a.name] && <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: gc, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 1 }}>{genreMap[a.name]}</div>}
-                          </div>
-                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <span style={{ color: C.gold, fontFamily: "'Bebas Neue'", fontSize: '1.6rem', lineHeight: 1 }}>{a.count}</span>
-                            <span style={{ color: C.grayDim, fontFamily: "'Space Mono',monospace", fontSize: 8, marginLeft: 2 }}>×</span>
+        {/* ── NAV ── */}
+        <nav style={{ background: C.bgCard, borderBottom: `1px solid ${C.teal}22`, display: 'flex', position: 'sticky', top: 0, zIndex: 200 }}>
+          <div style={{ display: 'flex', flex: 1, overflowX: 'auto', scrollbarWidth: 'none' }}>
+            {TABS.filter(([,, g]) => g !== 'right').map(([id, label, group, color]) => {
+              const isActive = activeTab === id;
+              const isFestGroup = group === 'fest';
+              return (
+                <button key={id} onClick={() => setActiveTab(id)}
+                  style={{
+                    fontFamily: "'Space Mono'", fontSize: 10, color: isActive ? color : C.gray,
+                    background: isFestGroup ? 'rgba(255,204,0,0.04)' : 'none', border: 'none',
+                    borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
+                    padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                    position: 'relative', transition: 'color 0.2s'
+                  }}>
+                  {label}
+                  {isActive && <div className="tab-active" style={{ '--tab-color': color }} />}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', borderLeft: `1px solid ${C.border}`, background: C.bgCard }}>
+            {TABS.filter(([,, g]) => g === 'right').map(([id, label,, color]) => {
+              const isActive = activeTab === id;
+              return (
+                <button key={id} onClick={() => setActiveTab(id)}
+                  style={{
+                    fontFamily: "'Space Mono'", fontSize: 10, color: isActive ? color : C.grayDim,
+                    background: 'none', border: 'none',
+                    borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
+                    padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
+                  }}>
+                  {label}
+                </button>
+              );
+            })}
+            <ThemeSwitcher />
+          </div>
+        </nav>
+
+        {/* ── THE MAIN STAGE ── */}
+        <main style={{
+          maxWidth: 1300,
+          margin: '20px auto',
+          padding: '24px',
+          background: `linear-gradient(180deg, ${hexToRgba(C.bgCard, 0.7)} 0%, ${hexToRgba(C.bg, 0.9)} 100%)`,
+          border: `1px solid ${C.border}`,
+          borderRadius: '16px',
+          boxShadow: '0 30px 100px rgba(0,0,0,0.8)',
+          backdropFilter: 'blur(12px)',
+          position: 'relative',
+          zIndex: 1,
+          minHeight: '80vh'
+        }}>
+          <div style={{
+            position: 'absolute',
+            top: 0, right: 0,
+            width: '300px', height: '300px',
+            background: `radial-gradient(circle at top right, ${hexToRgba(C.teal, 0.03)}, transparent 70%)`,
+            pointerEvents: 'none'
+          }} />
+
+          {/* ════ DASHBOARD ════ */}
+          {activeTab === 'dashboard' && (
+            <div className="fade-in">
+              <OnThisDay concerts={concerts} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 16, marginBottom: 16, marginTop: 8 }}>
+                <ArtistInsights concerts={concerts} />
+                <TheaterMarquee upcoming={upcoming} onAdd={() => setUpcomingModal('new')} onEdit={setUpcomingModal} />
+                <RandomShow concerts={concerts} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: 16, marginBottom: 16 }}>
+                <SonicDNA stats={genreStats} onGenreClick={handleGenreClick} />
+                <Card neon>
+                  <CardTitle>Sets Per Year — click a bar to jump to that year</CardTitle>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={timelineData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }} onClick={data => { if (data?.activePayload?.[0]?.payload?.fullYear) { setActiveTab('timeline'); } }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+                      <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                      <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                      <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10 }} cursor={{ fill: 'rgba(0,229,204,0.08)' }} />
+                      <Bar dataKey="count" radius={[4, 4, 0, 0]} style={{ cursor: 'pointer' }}>
+                        {timelineData.map((entry, index) => <Cell key={`cell-${index}`} fill={C.teal} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Card>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+                <Card neon><CardTitle>Fest vs Standalone</CardTitle><DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} /></Card>
+                <Card neon><CardTitle>Top Festivals</CardTitle><TopFestBlocks festBreakdown={festBreakdown} /></Card>
+                <Card neon>
+                  <CardTitle>By Decade</CardTitle>
+                  <DecadeBlocks sets={allSetsList} />
+                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+                    <FerrisWheel size={90} />
+                  </div>
+                </Card>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <Card neon>
+                  <CardTitle>Most Seen Artists</CardTitle>
+                  <div style={{ display: 'grid', gap: 10 }}>
+                    {artistCounts.slice(0, 6).map((a, i) => {
+                      const gc = artistGenres[a.name] ? GENRE_COLORS[artistGenres[a.name]] : null;
+                      const MEDALS = ['🥇', '🥈', '🥉', '🏅', '🏅', '🏅'];
+                      const pct = Math.round((a.count / (artistCounts[0]?.count || 1)) * 100);
+                      return (
+                        <div key={a.name} style={{ marginBottom: 2, padding: '10px 12px', background: gc ? hexToRgba(gc, 0.06) : C.bgCardAlt, borderRadius: 6, border: `1px solid ${gc ? hexToRgba(gc, 0.25) : C.border}`, position: 'relative', overflow: 'hidden' }}>
+                          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: gc ? hexToRgba(gc, 0.1) : 'rgba(255,255,255,0.03)', borderRadius: 6, transition: 'width 1s ease' }} />
+                          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>{MEDALS[i]}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: gc || C.white, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.name}</div>
+                              {artistGenres[a.name] && <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: gc, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 1 }}>{artistGenres[a.name]}</div>}
+                            </div>
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                              <span style={{ color: C.gold, fontFamily: "'Bebas Neue'", fontSize: '1.6rem', lineHeight: 1 }}>{a.count}</span>
+                              <span style={{ color: C.grayDim, fontFamily: "'Space Mono',monospace", fontSize: 8, marginLeft: 2 }}>×</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-              <Card neon style={{ display: 'flex', flexDirection: 'column' }}>
-                <CardTitle>Setlist Spotlight 📋</CardTitle>
-                <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
-              </Card>
+                      );
+                    })}
+                  </div>
+                </Card>
+                <Card neon style={{ display: 'flex', flexDirection: 'column' }}>
+                  <CardTitle>Setlist Spotlight 📋</CardTitle>
+                  <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
+                </Card>
+              </div>
+              <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
             </div>
+          )}
 
-            <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
-          </div>
-        )}
+          {/* ════ TIMELINE ════ */}
+          {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
 
-        {/* ════ TIMELINE ════ */}
-        {activeTab === 'timeline' && (
-          <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={genreMap} />
-        )}
-
-        {/* ════ BY DAY (Filtered View) ════ */}
-        {activeTab === 'byDay' && (
-          <div className="fade-in">
-            <div style={{ display: 'flex', gap: 10, marginTop: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-              <select value={yearFilter} onChange={e => setYearFilter(e.target.value)} style={{ ...inputSt, minWidth: 100 }}><option value="all">All Years</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
-              <select value={festFilter} onChange={e => setFestFilter(e.target.value)} style={{ ...inputSt, minWidth: 140 }}><option value="all">All Types</option><option value="fest">Festival Only</option><option value="solo">Standalone Only</option></select>
+          {/* ════ BY DAY ════ */}
+          {activeTab === 'byDay' && (
+            <div className="fade-in">
+              <div style={{ display: 'flex', gap: 10, marginTop: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+                <select value={yearFilter} onChange={e => setYearFilter(e.target.value)} style={{ ...inputSt, minWidth: 100 }}><option value="all">All Years</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                <select value={festFilter} onChange={e => setFestFilter(e.target.value)} style={{ ...inputSt, minWidth: 140 }}><option value="all">All Types</option><option value="fest">Festival Only</option><option value="solo">Standalone Only</option></select>
+              </div>
+              <ByDayTab
+                dayGroups={dayGroups}
+                onEdit={setEditTarget}
+                genreMap={artistGenres}
+                search={search}
+                setSearch={setSearch}
+                yearFilter={yearFilter}
+                setYearFilter={setYearFilter}
+                festFilter={festFilter}
+                setFestFilter={setFestFilter}
+                genreFilter={genreFilter}
+                setGenreFilter={setGenreFilter}
+                concerts={concerts}
+              />
             </div>
-            {/* INJECTED PROPS: search, filters, and setters ensure the Reset button works */}
-            <ByDayTab 
-              dayGroups={dayGroups} 
-              onEdit={setEditTarget} 
-              genreMap={genreMap}
-              search={search}
-              setSearch={setSearch}
-              yearFilter={yearFilter}
-              setYearFilter={setYearFilter}
-              festFilter={festFilter}
-              setFestFilter={setFestFilter}
-              genreFilter={genreFilter}
-              setGenreFilter={setGenreFilter}
-              concerts={concerts}
-            />
-          </div>
-        )}
+          )}
 
-        {/* ════ PASSPORT & FESTIVALS ════ */}
-        {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={genreMap} />}
-        {activeTab === 'passport' && <PassportTab passport={passport} onNavigateToFest={name => { setActiveTab('byFest'); setTimeout(() => { const el = document.getElementById(`fest-${name.replace(/\s+/g, '-')}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); }} />}
+          {/* ════ OTHER TABS ════ */}
+          {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} />}
+          {activeTab === 'passport' && <PassportTab passport={passport} onNavigateToFest={name => { setActiveTab('byFest'); setTimeout(() => { const el = document.getElementById(`fest-${name.replace(/\s+/g, '-')}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); }} />}
+          {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
+          {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} />}
+          {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
+          {activeTab === 'browse' && (
+            <BrowseTab browseView={browseView} setBrowseView={setBrowseView} search={search} setSearch={setSearch} yearFilter={yearFilter} setYearFilter={setYearFilter} festFilter={festFilter} setFestFilter={setFestFilter} genreFilter={genreFilter} setGenreFilter={setGenreFilter} sortCol={sortCol} setSortCol={setSortCol} sortDir={sortDir} setSortDir={setSortDir} paged={paged} page={page} setPage={setPage} totalPages={totalPages} artistRows={artistRows} years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} onEdit={setEditTarget} onSetGenre={handleSetGenre} genreMap={artistGenres} />
+          )}
+          {activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} onDuplicate={handleDuplicate} />}
 
-        {/* ════ ARCHIVES ════ */}
-        {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={genreMap} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
-        {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} />}
-        {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={genreMap} allSetsList={allSetsList} />}
-
-        {/* ════ ADMIN & BROWSE ════ */}
-        {activeTab === 'browse' && (
-          <BrowseTab browseView={browseView} setBrowseView={setBrowseView} search={search} setSearch={setSearch} yearFilter={yearFilter} setYearFilter={setYearFilter} festFilter={festFilter} setFestFilter={setFestFilter} genreFilter={genreFilter} setGenreFilter={setGenreFilter} sortCol={sortCol} setSortCol={setSortCol} sortDir={sortDir} setSortDir={setSortDir} paged={paged} page={page} setPage={setPage} totalPages={totalPages} artistRows={artistRows} years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} onEdit={setEditTarget} onSetGenre={handleSetGenre} genreMap={genreMap} />
-        )}
-
-        {activeTab === 'manage' && (
-          <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} onDuplicate={handleDuplicate} />
-        )}
-
-      </main> {/* Closing the Frosted Glass Main Stage */}
-    </div> {/* Closing the main theme ID div */}
+        </main>
+      </div>
     </ThemeContext.Provider>
   );
 }
