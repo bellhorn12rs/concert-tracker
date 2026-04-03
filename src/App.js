@@ -1320,20 +1320,34 @@ export default function App() {
   }, [concerts, manualGenres]);
 
   // --- 3. APP STARTUP (The Fixed useEffect) ---
+ // --- APP INITIALIZATION ---
   useEffect(() => {
     const initApp = async () => {
-      // Check for existing admin session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        console.log("Welcome back, Admin 🤘");
+      // 1. Try to login using Environment Variables (Secrets)
+      const adminEmail = process.env.REACT_APP_ADMIN_EMAIL;
+      const adminPw = process.env.REACT_APP_ADMIN_PASSWORD;
+
+      if (adminEmail && adminPw) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: adminEmail,
+          password: adminPw,
+        });
+        
+        if (data?.session) {
+          console.log("Welcome back, Admin 🤘 (Authenticated via Secrets)");
+        } else {
+          console.log("Guest Mode: Admin credentials not accepted.");
+        }
       } else {
-        console.log("Running in Guest Mode");
+        console.log("Running in Guest Mode (No Secrets Found)");
       }
-      
-      // Load all data
+
       fetchConcerts();
       fetchUpcoming();
     };
+
+    initApp();
+  }, []);
 
     initApp();
   }, []);
