@@ -1360,6 +1360,48 @@ export default function App() {
       }))
       .sort((a, b) => b.count - a.count);
   }, [concerts, manualGenres]);
+// --- ADDITIONAL DASHBOARD CALCULATIONS ---
+  const stats = useMemo(() => {
+    if (!concerts.length) return {};
+
+    // 1. All-time Headliners & Sets
+    const allBands = concerts.flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]);
+    const bandCounts = {};
+    allBands.forEach(b => bandCounts[b] = (bandCounts[b] || 0) + 1);
+    
+    // 2. Heavy Rotation (Most Seen)
+    const topEntry = Object.entries(bandCounts).sort((a, b) => b[1] - a[1])[0];
+    
+    // 3. Location Mastery
+    const states = [...new Set(concerts.map(c => c.state).filter(Boolean))];
+    const cities = [...new Set(concerts.map(c => c.city).filter(Boolean))];
+    const venues = [...new Set(concerts.map(c => c.venue).filter(Boolean))];
+
+    // 4. "New Discovery" (Bands seen for the first time in 2025/2026)
+    const recentShows = concerts.filter(c => c.date.startsWith('2025') || c.date.startsWith('2026'));
+    const recentBands = new Set(recentShows.flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
+    const oldBands = new Set(concerts
+      .filter(c => !c.date.startsWith('2025') && !c.date.startsWith('2026'))
+      .flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
+    const newDiscoveries = [...recentBands].filter(b => !oldBands.has(b)).length;
+
+    // 5. Time Span
+    const years = concerts.map(c => new Date(c.date).getFullYear()).sort();
+    const activeSpan = years[years.length - 1] - years[0];
+
+    return {
+      topBand: topEntry ? topEntry[0] : 'None',
+      topCount: topEntry ? topEntry[1] : 0,
+      totalSets: allBands.length,
+      uniqueBands: Object.keys(bandCounts).length,
+      stateCount: states.length,
+      cityCount: cities.length,
+      venueCount: venues.length,
+      newDiscoveries,
+      activeSpan,
+      avgPerYear: (concerts.length / (activeSpan || 1)).toFixed(1)
+    };
+  }, [concerts]);
 
   // --- 3. APP STARTUP (Secure Environment Variables) ---
   useEffect(() => {
@@ -1807,28 +1849,48 @@ export default function App() {
     </div>
 
     {/* ── COMMAND CENTER GRID (Replaces old Milestones) ── */}
-    <div style={{ 
-      display: 'grid', 
-      gridTemplateColumns: '1fr 1fr 2fr 1fr 1fr', 
-      gap: 12, 
-      marginBottom: 20 
-    }}>
-      
-      {/* 1. CURRENT ERA */}
-      <Card neon color="#00e5ff">
-        <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>🎧</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.tealDim, textTransform: 'uppercase' }}>Current Era</div>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', lineHeight: 1 }}>Indie</div>
-        <div style={{ fontSize: '0.7rem', color: C.gray, marginTop: 4 }}>Dominating '26</div>
-      </Card>
+    {/* --- COMMAND CENTER: 10 GLOBAL STATS --- */}
+<div style={{ 
+  display: 'grid', 
+  gridTemplateColumns: 'repeat(5, 1fr)', 
+  gap: 12, 
+  marginBottom: 20 
+}}>
+  {/* Row 1 */}
+  <Card neon color="#00e5ff">
+    <div style={{ fontSize: '1.2rem' }}>🔁</div>
+    <div style={{ fontSize: 8, color: C.tealDim }}>HEAVY ROTATION</div>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{stats.topBand}</div>
+    <div style={{ fontSize: 7, color: C.gray }}>SEEN {stats.topCount} TIMES</div>
+  </Card>
 
-      {/* 2. RARE STREAK */}
-      <Card neon color="#ff00ff">
-        <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>⏳</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.tealDim, textTransform: 'uppercase' }}>Rare Streak</div>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', lineHeight: 1 }}>22 YRS</div>
-        <div style={{ fontSize: '0.7rem', color: C.gray, marginTop: 4 }}>Blink-182 ('99–'21)</div>
-      </Card>
+  <Card neon color="#ff00ff">
+    <div style={{ fontSize: '1.2rem' }}>✈️</div>
+    <div style={{ fontSize: 8, color: C.tealDim }}>TRAVELER</div>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{stats.stateCount} STATES</div>
+    <div style={{ fontSize: 7, color: C.gray }}>{stats.cityCount} CITIES Visited</div>
+  </Card>
+
+  <Card neon color="#ffcc00">
+    <div style={{ fontSize: '1.2rem' }}>🏟️</div>
+    <div style={{ fontSize: 8, color: C.tealDim }}>VENUE MASTERY</div>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{stats.venueCount} STAGES</div>
+    <div style={{ fontSize: 7, color: C.gray }}>LIFETIME VENUES</div>
+  </Card>
+
+  <Card neon color="#00ffab">
+    <div style={{ fontSize: '1.2rem' }}>🆕</div>
+    <div style={{ fontSize: 8, color: C.tealDim }}>NEW DISCOVERIES</div>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{stats.newDiscoveries}</div>
+    <div style={{ fontSize: 7, color: C.gray }}>FIRST SEEN '25/'26</div>
+  </Card>
+
+  <Card neon color="#7000ff">
+    <div style={{ fontSize: '1.2rem' }}>🔊</div>
+    <div style={{ fontSize: 8, color: C.tealDim }}>TOTAL VOLUME</div>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{stats.totalSets} BANDS</div>
+    <div style={{ fontSize: 7, color: C.gray }}>TOTAL INDIVIDUAL SETS</div>
+  </Card>
 
       {/* 3. CENTER STAGE: THE NEON MARQUEE */}
       <div style={{ 
@@ -1906,29 +1968,41 @@ export default function App() {
               <div style={{ color: '#333', fontSize: 10, textAlign: 'center', marginTop: 10 }}>MARQUEE IS DARK... ADD A SHOW</div>
             ) : (
               upcoming.map((show, i) => (
-                <div key={i} style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  marginBottom: 10, 
-                  paddingBottom: 6, 
-                  borderBottom: '1px solid #1a1a1a' 
-                }}>
-                  <div>
-                    <div className="marquee-letter" style={{ fontSize: '1.2rem', lineHeight: 1 }}>{show.artist}</div>
-                    <div style={{ color: '#555', fontSize: 8, textTransform: 'uppercase', marginTop: 3 }}>@{show.venue || 'Unknown Venue'}</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ color: '#fff', fontFamily: "'Space Mono'", fontSize: 9 }}>{show.date}</div>
-                    <div style={{ 
-                      fontSize: 7, 
-                      fontWeight: 'bold', 
-                      color: show.status === 'TICKETS BOUGHT' ? '#00ffab' : '#ffcc00' 
-                    }}>
-                      {show.status}
-                    </div>
-                  </div>
-                </div>
+               {/* Inside upcoming.map... */}
+<div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid #1a1a1a' }}>
+  <div 
+    onClick={async () => {
+      const newArtist = prompt("Edit Artist:", show.artist);
+      if (newArtist) {
+        await supabase.from('upcoming_concerts').update({ artist: newArtist }).eq('id', show.id);
+        fetchUpcoming();
+      }
+    }}
+    style={{ cursor: 'pointer' }}
+  >
+    <div className="marquee-letter" style={{ fontSize: '1.2rem', lineHeight: 1 }}>{show.artist}</div>
+    <div style={{ color: '#666', fontSize: 9, textTransform: 'uppercase', marginTop: 4 }}>@{show.venue || 'TBA'}</div>
+  </div>
+  
+  <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 10 }}>
+    <div>
+      <div style={{ color: '#fff', fontSize: 10 }}>{show.date}</div>
+      <div style={{ fontSize: 8, color: '#ffcc00' }}>{show.status}</div>
+    </div>
+    {/* TRASH CAN TO DELETE */}
+    <button 
+      onClick={async () => {
+        if(confirm("Delete this entry?")) {
+          await supabase.from('upcoming_concerts').delete().eq('id', show.id);
+          fetchUpcoming();
+        }
+      }}
+      style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer', fontSize: '12px' }}
+    >
+      ✕
+    </button>
+  </div>
+</div>
               ))
             )}
           </div>
