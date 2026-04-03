@@ -1792,69 +1792,72 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── NAV ── */}
-<nav style={{ background: C.bgCard, borderBottom: `1px solid ${C.teal}22`, display: 'flex', position: 'sticky', top: 0, zIndex: 200 }}>
-  
-  {/* 1. This DIV handles the scrolling tabs */}
-  <div style={{ display: 'flex', flex: 1, overflowX: 'auto', scrollbarWidth: 'none' }}>
-    {TABS.filter(([,,g]) => g !== 'right').map(([id, label, group, color]) => {
-      const isActive = activeTab === id;
-      const isFestGroup = group === 'fest';
-      return (
-        <button key={id} onClick={() => setActiveTab(id)}
-          style={{ 
-            fontFamily: "'Space Mono'", fontSize: 10, color: isActive ? color : C.gray, 
-            background: isFestGroup ? 'rgba(255,204,0,0.04)' : 'none', border: 'none', 
-            borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent', 
-            padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, 
-            position: 'relative', transition: 'color 0.2s' 
-          }}>
-          {label}
-        </button>
-      );
-    })}
-  </div> {/* <-- Closes scrolling tabs DIV */}
-  
-  {/* 2. This DIV handles the right-side tools */}
-  <div style={{ display: 'flex', borderLeft: `1px solid ${C.border}`, background: C.bgCard }}>
-    {TABS.filter(([,,g]) => g === 'right').map(([id, label,, color]) => {
-      const isActive = activeTab === id;
-      return (
-        <button key={id} onClick={() => setActiveTab(id)}
-          style={{ fontFamily: "'Space Mono'", fontSize: 10, color: isActive ? color : C.grayDim, background: 'none', border: 'none', borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent', padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
-          {label}
-        </button>
-      );
-    })}
-    <ThemeSwitcher />
-  </div> {/* <-- Closes tools DIV */}
+     {/* ── NAV ── */}
+      <nav style={{ background: C.bgCard, borderBottom: `1px solid ${C.teal}22`, display: 'flex', position: 'sticky', top: 0, zIndex: 200 }}>
+        
+        {/* 1. This DIV handles the scrolling tabs */}
+        <div style={{ display: 'flex', flex: 1, overflowX: 'auto', scrollbarWidth: 'none' }}>
+          {TABS.filter(([,,g]) => g !== 'right').map(([id, label, group, color]) => {
+            const isActive = activeTab === id;
+            const isFestGroup = group === 'fest';
+            return (
+              <button key={id} onClick={() => setActiveTab(id)}
+                style={{ 
+                  fontFamily: "'Space Mono'", fontSize: 10, color: isActive ? color : C.gray, 
+                  background: isFestGroup ? 'rgba(255,204,0,0.04)' : 'none', border: 'none', 
+                  borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent', 
+                  padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, 
+                  position: 'relative', transition: 'color 0.2s' 
+                }}>
+                {label}
+              </button>
+            );
+          })}
+        </div>
 
-</nav> {/* <-- Closes the NAV itself */}/nav>
+        {/* 2. This DIV handles the right-side tools */}
+        <div style={{ display: 'flex', borderLeft: `1px solid ${C.border}`, background: C.bgCard }}>
+          {TABS.filter(([,,g]) => g === 'right').map(([id, label,, color]) => {
+            const isActive = activeTab === id;
+            return (
+              <button key={id} onClick={() => setActiveTab(id)}
+                style={{ fontFamily: "'Space Mono'", fontSize: 10, color: isActive ? color : C.grayDim, background: 'none', border: 'none', borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent', padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                {label}
+              </button>
+            );
+          })}
+          <ThemeSwitcher />
+        </div>
+      </nav>
+
+      {/* THIS IS THE OPENING TAG THAT WAS MISSING */}
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
+
         {/* ════ DASHBOARD ════ */}
-        {activeTab==='dashboard' && (
+        {activeTab === 'dashboard' && (
           <>
             <OnThisDay concerts={concerts} />
 
             {/* Row 1: Insights | Theater Marquee | Random */}
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr 1fr', gap:16, marginBottom:16, marginTop:8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 16, marginBottom: 16, marginTop: 8 }}>
               <ArtistInsights concerts={concerts} />
-              <TheaterMarquee upcoming={upcoming} onAdd={()=>setUpcomingModal('new')} onEdit={setUpcomingModal} />
+              <TheaterMarquee upcoming={upcoming} onAdd={() => setUpcomingModal('new')} onEdit={setUpcomingModal} />
               <RandomShow concerts={concerts} />
             </div>
 
             {/* Row 2: Sonic DNA + Bar Chart */}
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 2.5fr', gap:16, marginBottom:16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: 16, marginBottom: 16 }}>
               <SonicDNA stats={genreStats} onGenreClick={handleGenreClick} />
               <Card neon>
                 <CardTitle>Sets Per Year — click a bar to jump to that year</CardTitle>
                 <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={timelineData} margin={{ top:10,right:10,bottom:0,left:-20 }} onClick={data=>{ if(data?.activePayload?.[0]?.payload?.fullYear){ setActiveTab('timeline'); } }}>
+                  <BarChart data={timelineData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }} onClick={data => { if (data?.activePayload?.[0]?.payload?.fullYear) { setActiveTab('timeline'); } }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                    <XAxis dataKey="year" tick={{ fontSize:8,fontFamily:"'Space Mono'",fill:C.gray }} />
-                    <YAxis tick={{ fontSize:8,fontFamily:"'Space Mono'",fill:C.gray }} />
-                    <Tooltip contentStyle={{ background:C.bgCard,border:`1px solid ${C.teal}`,fontSize:10 }} cursor={{ fill:'rgba(0,229,204,0.08)' }} />
-                    <Bar dataKey="count" radius={[4,4,0,0]} style={{ cursor:'pointer' }}>
-                      {timelineData.map((entry,index) => <Cell key={`cell-${index}`} fill={C.teal} />)}
+                    <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                    <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                    <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10 }} cursor={{ fill: 'rgba(0,229,204,0.08)' }} />
+                    <Bar dataKey="count" radius={[4, 4, 0, 0]} style={{ cursor: 'pointer' }}>
+                      {timelineData.map((entry, index) => <Cell key={`cell-${index}`} fill={C.teal} />)}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -1862,84 +1865,82 @@ export default function App() {
             </div>
 
             {/* Row 3: Donut | Fests | Decade + Ferris Wheel */}
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:16, marginBottom:16 }}>
-              <Card neon><CardTitle>Fest vs Standalone</CardTitle><DonutChart fest={headerStats.festDays} solo={headerStats.totalShows-headerStats.festDays} /></Card>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+              <Card neon><CardTitle>Fest vs Standalone</CardTitle><DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} /></Card>
               <Card neon><CardTitle>Top Festivals</CardTitle><TopFestBlocks festBreakdown={festBreakdown} /></Card>
               <Card neon>
                 <CardTitle>By Decade</CardTitle>
                 <DecadeBlocks sets={allSetsList} />
-                <div style={{ display:'flex', justifyContent:'center', marginTop:12 }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
                   <FerrisWheel size={90} />
                 </div>
               </Card>
             </div>
 
             {/* Row 4: Most Seen | Setlist Spotlight */}
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:0 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 0 }}>
               <Card neon>
                 <CardTitle>Most Seen Artists</CardTitle>
-                {artistCounts.slice(0,6).map((a,i) => {
+                {artistCounts.slice(0, 6).map((a, i) => {
                   const gc = genreMap[a.name] ? GENRE_COLORS[genreMap[a.name]] : null;
-                  const MEDALS = ['🥇','🥈','🥉','🏅','🏅','🏅'];
-                  const pct = Math.round((a.count / (artistCounts[0]?.count||1)) * 100);
+                  const MEDALS = ['🥇', '🥈', '🥉', '🏅', '🏅', '🏅'];
+                  const pct = Math.round((a.count / (artistCounts[0]?.count || 1)) * 100);
                   return (
-                    <div key={a.name} style={{ marginBottom:10, padding:'10px 12px', background:gc?hexToRgba(gc,0.06):C.bgCardAlt, borderRadius:6, border:`1px solid ${gc?hexToRgba(gc,0.25):C.border}`, position:'relative', overflow:'hidden' }}>
-                      {/* Fill bar */}
-                      <div style={{ position:'absolute', left:0, top:0, bottom:0, width:`${pct}%`, background:gc?hexToRgba(gc,0.1):'rgba(255,255,255,0.03)', borderRadius:6, transition:'width 1s ease' }} />
-                      <div style={{ position:'relative', display:'flex', alignItems:'center', gap:10 }}>
-                        <span style={{ fontSize:'1.1rem', flexShrink:0 }}>{MEDALS[i]}</span>
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontSize:'0.9rem', fontWeight:700, color:gc||C.white, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{a.name}</div>
-                          {genreMap[a.name] && <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:gc, textTransform:'uppercase', letterSpacing:'0.08em', marginTop:1 }}>{genreMap[a.name]}</div>}
+                    <div key={a.name} style={{ marginBottom: 10, padding: '10px 12px', background: gc ? hexToRgba(gc, 0.06) : C.bgCardAlt, borderRadius: 6, border: `1px solid ${gc ? hexToRgba(gc, 0.25) : C.border}`, position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: gc ? hexToRgba(gc, 0.1) : 'rgba(255,255,255,0.03)', borderRadius: 6, transition: 'width 1s ease' }} />
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>{MEDALS[i]}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '0.9rem', fontWeight: 700, color: gc || C.white, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.name}</div>
+                          {genreMap[a.name] && <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: gc, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 1 }}>{genreMap[a.name]}</div>}
                         </div>
-                        <div style={{ textAlign:'right', flexShrink:0 }}>
-                          <span style={{ color:C.gold, fontFamily:"'Bebas Neue'", fontSize:'1.6rem', lineHeight:1 }}>{a.count}</span>
-                          <span style={{ color:C.grayDim, fontFamily:"'Space Mono',monospace", fontSize:8, marginLeft:2 }}>×</span>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <span style={{ color: C.gold, fontFamily: "'Bebas Neue'", fontSize: '1.6rem', lineHeight: 1 }}>{a.count}</span>
+                          <span style={{ color: C.grayDim, fontFamily: "'Space Mono',monospace", fontSize: 8, marginLeft: 2 }}>×</span>
                         </div>
                       </div>
                     </div>
                   );
                 })}
               </Card>
-              <Card neon style={{ display:'flex', flexDirection:'column' }}>
+              <Card neon style={{ display: 'flex', flexDirection: 'column' }}>
                 <CardTitle>Setlist Spotlight 📋</CardTitle>
-                <SetlistSpotlight concerts={concerts} onVault={()=>setActiveTab('vault')} />
+                <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
               </Card>
             </div>
 
-            {/* News ticker — big, slow, bright */}
             <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
           </>
         )}
 
         {/* ════ OTHER TABS ════ */}
-        {activeTab==='timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={genreMap} />}
+        {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={genreMap} />}
 
-        {activeTab==='byDay' && (
+        {activeTab === 'byDay' && (
           <>
-            <div style={{ display:'flex', gap:10, marginTop:20, marginBottom:16, flexWrap:'wrap' }}>
-              <select value={yearFilter} onChange={e=>setYearFilter(e.target.value)} style={{ ...inputSt,minWidth:100 }}><option value="all">All Years</option>{years.map(y=><option key={y} value={y}>{y}</option>)}</select>
-              <select value={festFilter} onChange={e=>setFestFilter(e.target.value)} style={{ ...inputSt,minWidth:140 }}><option value="all">All Types</option><option value="fest">Festival Only</option><option value="solo">Standalone Only</option></select>
+            <div style={{ display: 'flex', gap: 10, marginTop: 20, marginBottom: 16, flexWrap: 'wrap' }}>
+              <select value={yearFilter} onChange={e => setYearFilter(e.target.value)} style={{ ...inputSt, minWidth: 100 }}><option value="all">All Years</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
+              <select value={festFilter} onChange={e => setFestFilter(e.target.value)} style={{ ...inputSt, minWidth: 140 }}><option value="all">All Types</option><option value="fest">Festival Only</option><option value="solo">Standalone Only</option></select>
             </div>
             <ByDayTab dayGroups={dayGroups} onEdit={setEditTarget} genreMap={genreMap} />
           </>
         )}
 
-        {activeTab==='byFest' && <ByFestTab festGroupings={festGroupings} genreMap={genreMap} />}
+        {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={genreMap} />}
 
-        {activeTab==='passport' && <PassportTab passport={passport} onNavigateToFest={name=>{ setActiveTab('byFest'); setTimeout(()=>{ const el=document.getElementById(`fest-${name.replace(/\s+/g,'-')}`); if(el)el.scrollIntoView({behavior:'smooth',block:'start'}); },150); }} />}
+        {activeTab === 'passport' && <PassportTab passport={passport} onNavigateToFest={name => { setActiveTab('byFest'); setTimeout(() => { const el = document.getElementById(`fest-${name.replace(/\s+/g, '-')}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); }} />}
 
-        {activeTab==='hof' && <HallOfFame sets={allSetsList} genreMap={genreMap} onShare={(a,s)=>setShareCard({artist:a,shows:s})} />}
+        {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={genreMap} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
 
-        {activeTab==='vault' && <SetlistVaultTab concerts={concerts} />}
+        {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} />}
 
-        {activeTab==='poster' && <PosterGeneratorTab concerts={concerts} genreMap={genreMap} allSetsList={allSetsList} />}
+        {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={genreMap} allSetsList={allSetsList} />}
 
-        {activeTab==='browse' && (
-          <BrowseTab browseView={browseView} setBrowseView={setBrowseView} search={search} setSearch={setSearch} yearFilter={yearFilter} setYearFilter={setYearFilter} festFilter={festFilter} setFestFilter={setFestFilter} genreFilter={genreFilter} setGenreFilter={setGenreFilter} sortCol={sortCol} setSortCol={setSortCol} sortDir={sortDir} setSortDir={setSortDir} paged={paged} page={page} setPage={setPage} totalPages={totalPages} artistRows={artistRows} years={years} onShare={(a,s)=>setShareCard({artist:a,shows:s})} onEdit={setEditTarget} onSetGenre={handleSetGenre} genreMap={genreMap} />
+        {activeTab === 'browse' && (
+          <BrowseTab browseView={browseView} setBrowseView={setBrowseView} search={search} setSearch={setSearch} yearFilter={yearFilter} setYearFilter={setYearFilter} festFilter={festFilter} setFestFilter={setFestFilter} genreFilter={genreFilter} setGenreFilter={setGenreFilter} sortCol={sortCol} setSortCol={setSortCol} sortDir={sortDir} setSortDir={setSortDir} paged={paged} page={page} setPage={setPage} totalPages={totalPages} artistRows={artistRows} years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} onEdit={setEditTarget} onSetGenre={handleSetGenre} genreMap={genreMap} />
         )}
 
-        {activeTab==='manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={()=>setEditTarget('new')} onDuplicate={handleDuplicate} />}
+        {activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} onDuplicate={handleDuplicate} />}
 
       </main>
     </div>
