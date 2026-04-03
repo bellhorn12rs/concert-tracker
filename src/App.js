@@ -1666,7 +1666,9 @@ async function toggleSetlist(concert) {
     } catch (err) { console.error(err.message); }
   }
 
+  // ==========================================
   // --- 6. RENDER DATA (DERIVED) ---
+  // ==========================================
 
   const allSetsList = useMemo(() => {
     const r = [];
@@ -1674,14 +1676,30 @@ async function toggleSetlist(concert) {
     return r;
   }, [concerts]);
 
-  // 1. Foundation: This must be first
-  const allSetsList = useMemo(() => {
-    const r = [];
-    concerts.forEach(c => (c.bands || []).forEach(band => r.push({ ...c, artist: band })));
-    return r;
-  }, [concerts]);
+  const dashboardStats = useMemo(() => {
+    if (!concerts || concerts.length === 0) return {
+      topBand: 'None', topCount: 0, totalSets: 0, uniqueBands: 0, 
+      stateCount: 0, cityCount: 0, venueCount: 0, newDiscoveries: 0, 
+      activeSpan: 0, avgPerYear: 0
+    };
+    const bandCounts = {};
+    allSetsList.forEach(s => { if(s.artist) bandCounts[s.artist] = (bandCounts[s.artist] || 0) + 1; });
+    const topEntry = Object.entries(bandCounts).sort((a, b) => b[1] - a[1])[0];
+    const states = [...new Set(concerts.map(c => c.state).filter(Boolean))];
+    const venues = [...new Set(concerts.map(c => c.venue).filter(Boolean))];
+    const recentBands = new Set(concerts.filter(c => c.date.startsWith('2025') || c.date.startsWith('2026')).flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
+    const historicalBands = new Set(concerts.filter(c => !c.date.startsWith('2025') && !c.date.startsWith('2026')).flatMap(c => Array.isArray(c.bands) ? c.bands : [c.artist]));
+    const newDiscoveries = [...recentBands].filter(b => !historicalBands.has(b)).length;
+    return {
+      topBand: topEntry ? topEntry[0] : 'None',
+      topCount: topEntry ? topEntry[1] : 0,
+      totalSets: allSetsList.length,
+      stateCount: states.length,
+      venueCount: venues.length,
+      newDiscoveries
+    };
+  }, [concerts, allSetsList]);
 
-  // 2. Global Header Stats
   const headerStats = useMemo(() => {
     const ac = {}, venues = new Set();
     allSetsList.forEach(s => { ac[s.artist] = (ac[s.artist] || 0) + 1; });
@@ -1696,7 +1714,6 @@ async function toggleSetlist(concert) {
       setlistCount: concerts.filter(c => c.has_setlist || (c.has_setlist_names && c.has_setlist_names.trim() !== '')).length,
     };
   }, [concerts, allSetsList]);
-
   // 3. Dashboard Logic
   const dashboardStats = useMemo(() => {
     const bandCounts = {};
