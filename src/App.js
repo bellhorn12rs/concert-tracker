@@ -1350,7 +1350,6 @@ export default function App() {
       if (error) throw error;
       if (data) {
         setConcerts(data);
-        // Sync manual genre stamps from DB to App Memory
         const dbGenres = {};
         data.forEach(show => {
           if (show.genre) {
@@ -1376,35 +1375,22 @@ export default function App() {
     if (error) console.error("Error fetching upcoming:", error.message);
   }
 
- const addUpcomingShow = async () => {
-  // 1. Check if the user (you) actually picked a date and typed a name
-  if (!newUpcoming.artist || !newUpcoming.date) {
-    alert("Please enter at least an Artist and a Date! 📅");
-    return;
-  }
-  
-  // 2. Send it to Supabase
-  const { error } = await supabase.from('upcoming_concerts').insert([newUpcoming]);
-  
-  if (error) {
-    alert("Error adding show: " + error.message);
-  } else {
-    // 3. Reset the form back to empty and refresh the marquee
-    setNewUpcoming({ artist: '', venue: '', date: '', status: 'TICKETS' });
-    fetchUpcoming(); 
-  }
-};
-    // 2. Send it to Supabase
+  const addUpcomingShow = async () => {
+    if (!newUpcoming.artist || !newUpcoming.date) {
+      alert("Please enter at least an Artist and a Date! 📅");
+      return;
+    }
+    
     const { error } = await supabase.from('upcoming_concerts').insert([newUpcoming]);
     
     if (error) {
       alert("Error adding show: " + error.message);
     } else {
-      // 3. Reset the form back to empty and refresh the marquee
       setNewUpcoming({ artist: '', venue: '', date: '', status: 'TICKETS' });
       fetchUpcoming(); 
     }
   };
+
   async function updateArtistGenre(artistName, newGenre) {
     console.log(`📡 Sending to Supabase: ${artistName} -> ${newGenre}`);
     const { data, error } = await supabase
@@ -1417,7 +1403,7 @@ export default function App() {
       console.error("❌ Supabase Error:", error.message);
     } else {
       console.log(`✅ Success! Updated ${data?.length || 0} rows for ${artistName}`);
-      fetchConcerts(); // Refresh to show changes
+      fetchConcerts(); 
     }
   }
 
