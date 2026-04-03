@@ -1295,6 +1295,9 @@ export default function App() {
   const [page, setPage]             = useState(1);
   const [editTarget, setEditTarget] = useState(null);
   const [shareCard, setShareCard] = useState(null); 
+  // --- UPCOMING COMMAND CENTER STATE ---
+  const [upcoming, setUpcoming] = useState([]);
+  const [newUpcoming, setNewUpcoming] = useState({ artist: '', venue: '', date: '', status: 'TICKETS' });
 
   // --- DASHBOARD GENRE LOGIC ---
 const genreStats = React.useMemo(() => {
@@ -1318,15 +1321,15 @@ const genreStats = React.useMemo(() => {
 }, [concerts, manualGenres]);
   // --- AUTOMATIC ADMIN LOGIN ---
   useEffect(() => {
-  // 1. Supabase automatically checks for an existing session in LocalStorage
   const checkSession = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      console.log("Welcome back, Admin 🤘");
-    } else {
-      console.log("Running in Guest Mode");
-    }
+    if (session) console.log("Welcome back, Admin 🤘");
   };
+
+  checkSession();
+  fetchConcerts(); // Loads your history
+  fetchUpcoming(); // Loads your marquee (the new line)
+}, []);
 
   checkSession();
   
@@ -1386,6 +1389,26 @@ async function updateArtistGenre(artistName, newGenre) {
     setLoading(false); 
   }
 }
+
+const fetchUpcoming = async () => {
+    const { data, error } = await supabase
+      .from('upcoming_concerts')
+      .select('*')
+      .order('date', { ascending: true });
+    if (data) setUpcoming(data);
+    if (error) console.error("Error fetching upcoming:", error.message);
+  };
+
+  const addUpcomingShow = async () => {
+    if (!newUpcoming.artist) return;
+    const { error } = await supabase.from('upcoming_concerts').insert([newUpcoming]);
+    if (error) {
+      alert("Error adding show: " + error.message);
+    } else {
+      setNewUpcoming({ artist: '', venue: '', date: '', status: 'TICKETS' });
+      fetchUpcoming(); // Refresh the marquee immediately
+    }
+  };
 
  async function handleSave(id, payload) {
     try {
@@ -1727,31 +1750,115 @@ async function updateArtistGenre(artistName, newGenre) {
   <div style={{ padding: '24px 0' }} className="fade-in">
     <OnThisDay concerts={concerts} />
 
-    {/* You Were There + Random Show row */}
-   {/* Artist Insights + Random Show row */}
-<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-  <ArtistInsights concerts={concerts} />
-  <RandomShow concerts={concerts} />
-</div>
+    {/* Artist Insights + Random Show row */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <ArtistInsights concerts={concerts} />
+      <RandomShow concerts={concerts} />
+    </div>
 
-    {/* Milestones */}
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
-      {milestones.map((m, i) => (
-        <Card key={i} glow={i === 0} neon>
-          <div style={{ fontSize: '1.4rem', marginBottom: 6 }}>{m.icon}</div>
-          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 }}>{m.label}</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', letterSpacing: '0.06em', color: C.white, lineHeight: 1.2 }}>{m.value}</div>
-          <div style={{ fontSize: '0.72rem', color: C.gray, marginTop: 3, fontStyle: 'italic' }}>{m.sub}</div>
-        </Card>
-      ))}
+    {/* ── COMMAND CENTER GRID (Replaces old Milestones) ── */}
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: '1fr 1fr 2fr 1fr 1fr', 
+      gap: 12, 
+      marginBottom: 20 
+    }}>
+      
+      {/* 1. CURRENT ERA */}
+      <Card neon color="#00e5ff">
+        <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>🎧</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.tealDim, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Current Era</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', lineHeight: 1 }}>Indie</div>
+        <div style={{ fontSize: '0.7rem', color: C.gray, marginTop: 4 }}>Dominating '26</div>
+      </Card>
+
+      {/* 2. RARE STREAK */}
+      <Card neon color="#ff00ff">
+        <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>⏳</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.tealDim, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Rare Streak</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', lineHeight: 1 }}>22 YRS</div>
+        <div style={{ fontSize: '0.7rem', color: C.gray, marginTop: 4 }}>Blink-182 ('99–'21)</div>
+      </Card>
+
+      {/* 3. CENTER STAGE: THE MARQUEE & TICKET BOOTH */}
+      <div style={{ 
+        gridColumn: 'span 2', 
+        background: '#050505', 
+        border: '2px solid #ffcc00', 
+        borderRadius: 8, 
+        position: 'relative', 
+        overflow: 'hidden', 
+        boxShadow: '0 0 20px rgba(255, 204, 0, 0.2)'
+      }}>
+        {/* Animated Marquee Header */}
+        <div style={{ background: '#ffcc00', color: '#000', padding: '3px 0', overflow: 'hidden', borderBottom: '1px solid #000' }}>
+          <div className="marquee-text" style={{ fontFamily: "'Space Mono'", fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase' }}>
+            UPCOMING SPOTLIGHT • UPCOMING SPOTLIGHT • UPCOMING SPOTLIGHT • UPCOMING SPOTLIGHT • UPCOMING SPOTLIGHT •
+          </div>
+        </div>
+
+        <div style={{ padding: '15px' }}>
+          {/* THE TICKET BOOTH (Admin Inputs) */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 15 }}>
+            <input 
+              placeholder="Artist" 
+              value={newUpcoming.artist}
+              onChange={e => setNewUpcoming({...newUpcoming, artist: e.target.value})}
+              style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '6px', flex: 2, borderRadius: 4, outline: 'none' }}
+            />
+            <input 
+              placeholder="Venue" 
+              value={newUpcoming.venue}
+              onChange={e => setNewUpcoming({...newUpcoming, venue: e.target.value})}
+              style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '6px', flex: 1, borderRadius: 4, outline: 'none' }}
+            />
+            <button 
+              onClick={addUpcomingShow}
+              style={{ background: '#ffcc00', color: '#000', border: 'none', fontSize: 9, fontWeight: '900', padding: '0 15px', cursor: 'pointer', borderRadius: 4, transition: 'all 0.2s' }}
+            >
+              ADD
+            </button>
+          </div>
+
+          {/* THE LIVE SCROLLING LIST */}
+          <div style={{ maxHeight: '75px', overflowY: 'auto', pr: 5 }}>
+            {upcoming.length === 0 ? (
+              <div style={{ color: '#444', fontSize: 10, textAlign: 'center', marginTop: 10, fontFamily: "'Space Mono'" }}>NO UPCOMING SHOWS STAGED...</div>
+            ) : (
+              upcoming.map((show, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid #1a1a1a' }}>
+                  <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 'bold', fontFamily: "'Inter', sans-serif" }}>{show.artist}</div>
+                  <div style={{ color: '#ffcc00', fontFamily: "'Space Mono'", fontSize: 9, textAlign: 'right' }}>
+                    {show.venue} {show.date ? `// ${show.date}` : ''}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 4. LEGENDARY RUNS */}
+      <Card neon color="#7000ff">
+        <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>🍺</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.tealDim, textTransform: 'uppercase', letterSpacing: '0.1em' }}>3-Night Runs</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', lineHeight: 1 }}>8</div>
+        <div style={{ fontSize: '0.7rem', color: C.gray, marginTop: 4 }}>Deer Creek '22...</div>
+      </Card>
+
+      {/* 5. GENRE SPECIALIST */}
+      <Card neon color="#00ffab">
+        <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>🏆</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.tealDim, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Rank: Elite</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', lineHeight: 1 }}>1%</div>
+        <div style={{ fontSize: '0.7rem', color: C.gray, marginTop: 4 }}>Indie Rock Fan</div>
+      </Card>
     </div>
 
     <SonicDNA stats={genreStats} />
 
-    {/* ── ROW 1: Artist podium + Archive Completion (balanced) ── */}
+    {/* ── ROW 1: Artist podium + Archive Completion ── */}
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-
-      {/* Artist podium — top 5 */}
       <Card neon>
         <CardTitle>Most Seen Artists</CardTitle>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1769,25 +1876,15 @@ async function updateArtistGenre(artistName, newGenre) {
         </div>
       </Card>
 
-      {/* ── SETLIST SPOTLIGHT WIDGET ── */}
       <Card neon>
         <CardTitle>Setlist Spotlight 📋</CardTitle>
-        <div style={{ 
-          height: '100%', 
-          minHeight: '140px', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'center', 
-          padding: '0 10px' 
-        }}>
-          <SetlistSpotlight 
-            concerts={concerts} 
-            onVault={() => setActiveTab('setlist_vault')} 
-          />
+        <div style={{ height: '100%', minHeight: '140px', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 10px' }}>
+          <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('setlist_vault')} />
         </div>
       </Card>
     </div>
-    {/* ── ROW 2: Sets Per Year (Full Width) ── */}
+
+    {/* ── ROW 2: Sets Per Year ── */}
     <Card neon style={{ marginBottom: 16 }}>
       <CardTitle>Sets Per Year</CardTitle>
       <ResponsiveContainer width="100%" height={220}>
@@ -1827,7 +1924,7 @@ async function updateArtistGenre(artistName, newGenre) {
       </Card>
     </div>
 
-   {/* ── ROW 4: City bubbles (full width) ── */}
+    {/* ── ROW 4: City bubbles ── */}
     <Card neon>
       <CardTitle>Cities — Bubble = Show Count</CardTitle>
       <CityBubbles cityCounts={cityCounts} />
