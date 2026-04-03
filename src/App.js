@@ -1758,7 +1758,7 @@ export default function App() {
       {/* 1. CURRENT ERA */}
       <Card neon color="#00e5ff">
         <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>🎧</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.tealDim, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Current Era</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.tealDim, textTransform: 'uppercase' }}>Current Era</div>
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', lineHeight: 1 }}>Indie</div>
         <div style={{ fontSize: '0.7rem', color: C.gray, marginTop: 4 }}>Dominating '26</div>
       </Card>
@@ -1766,64 +1766,57 @@ export default function App() {
       {/* 2. RARE STREAK */}
       <Card neon color="#ff00ff">
         <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>⏳</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.tealDim, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Rare Streak</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.tealDim, textTransform: 'uppercase' }}>Rare Streak</div>
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', lineHeight: 1 }}>22 YRS</div>
         <div style={{ fontSize: '0.7rem', color: C.gray, marginTop: 4 }}>Blink-182 ('99–'21)</div>
       </Card>
 
       {/* 3. CENTER STAGE: THE MARQUEE & TICKET BOOTH */}
-      {/* THE TICKET BOOTH (Updated with Date & Status) */}
-<div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 15 }}>
-  <input 
-    placeholder="Artist" 
-    value={newUpcoming.artist}
-    onChange={e => setNewUpcoming({...newUpcoming, artist: e.target.value})}
-    style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '6px', flex: '2 1 120px', borderRadius: 4 }}
-  />
-  <input 
-    placeholder="Venue" 
-    value={newUpcoming.venue}
-    onChange={e => setNewUpcoming({...newUpcoming, venue: e.target.value})}
-    style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '6px', flex: '1 1 100px', borderRadius: 4 }}
-  />
-  <input 
-    type="date"
-    value={newUpcoming.date}
-    onChange={e => setNewUpcoming({...newUpcoming, date: e.target.value})}
-    style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '5px', flex: '1 1 100px', borderRadius: 4, colorScheme: 'dark' }}
-  />
-  <select
-    value={newUpcoming.status}
-    onChange={e => setNewUpcoming({...newUpcoming, status: e.target.value})}
-    style={{ background: '#111', border: '1px solid #333', color: '#ffcc00', fontSize: 10, padding: '6px', borderRadius: 4 }}
-  >
-    <option value="TICKETS">TICKETS</option>
-    <option value="CONFIRMED">CONFIRMED</option>
-    <option value="DREAMING">DREAMING</option>
-  </select>
-  <button 
-    onClick={addUpcomingShow}
-    style={{ background: '#ffcc00', color: '#000', border: 'none', fontSize: 9, fontWeight: '900', padding: '0 15px', cursor: 'pointer', borderRadius: 4, flex: '0 0 auto' }}
-  >
-    ADD
-  </button>
-</div>
+      <div style={{ 
+        gridColumn: 'span 2', 
+        background: '#050505', 
+        border: '2px solid #ffcc00', 
+        borderRadius: 8, 
+        position: 'relative', 
+        overflow: 'hidden', 
+        boxShadow: '0 0 20px rgba(255, 204, 0, 0.2)'
+      }}>
+        <div style={{ background: '#ffcc00', color: '#000', padding: '3px 0', overflow: 'hidden' }}>
+          <div className="marquee-text" style={{ fontFamily: "'Space Mono'", fontSize: 9, fontWeight: 'bold' }}>
+            UPCOMING SPOTLIGHT • UPCOMING SPOTLIGHT • UPCOMING SPOTLIGHT • UPCOMING SPOTLIGHT •
+          </div>
+        </div>
 
-          {/* THE LIVE SCROLLING LIST */}
-          <div style={{ maxHeight: '75px', overflowY: 'auto', paddingRight: 5 }}>
+        <div style={{ padding: '15px' }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 15 }}>
+            <input 
+              placeholder="Artist" 
+              value={newUpcoming.artist}
+              onChange={e => setNewUpcoming({...newUpcoming, artist: e.target.value})}
+              style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '6px', flex: 2, borderRadius: 4 }}
+            />
+            <input 
+              type="date"
+              value={newUpcoming.date}
+              onChange={e => setNewUpcoming({...newUpcoming, date: e.target.value})}
+              style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '5px', flex: 1, borderRadius: 4, colorScheme: 'dark' }}
+            />
+            <button 
+              onClick={addUpcomingShow}
+              style={{ background: '#ffcc00', color: '#000', border: 'none', fontSize: 9, fontWeight: '900', padding: '0 15px', cursor: 'pointer', borderRadius: 4 }}
+            >
+              ADD
+            </button>
+          </div>
+
+          <div style={{ maxHeight: '75px', overflowY: 'auto' }}>
             {upcoming.length === 0 ? (
-              <div style={{ color: '#444', fontSize: 10, textAlign: 'center', marginTop: 10, fontFamily: "'Space Mono'" }}>NO UPCOMING SHOWS STAGED...</div>
+              <div style={{ color: '#444', fontSize: 10, textAlign: 'center', marginTop: 10 }}>NO SHOWS STAGED...</div>
             ) : (
               upcoming.map((show, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid #1a1a1a' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 'bold' }}>{show.artist}</div>
-                    <div style={{ color: '#555', fontSize: 8, textTransform: 'uppercase' }}>{show.venue}</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ color: '#ffcc00', fontFamily: "'Space Mono'", fontSize: 9 }}>{show.date}</div>
-                    <div style={{ color: show.status === 'DREAMING' ? '#555' : '#ffcc00', fontSize: 7, fontWeight: 'bold' }}>{show.status}</div>
-                  </div>
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid #1a1a1a' }}>
+                  <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 'bold' }}>{show.artist}</div>
+                  <div style={{ color: '#ffcc00', fontFamily: "'Space Mono'", fontSize: 9 }}>{show.date}</div>
                 </div>
               ))
             )}
@@ -1834,17 +1827,15 @@ export default function App() {
       {/* 4. LEGENDARY RUNS */}
       <Card neon color="#7000ff">
         <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>🍺</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.tealDim, textTransform: 'uppercase', letterSpacing: '0.1em' }}>3-Night Runs</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.tealDim, textTransform: 'uppercase' }}>3-Night Runs</div>
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', lineHeight: 1 }}>8</div>
-        <div style={{ fontSize: '0.7rem', color: C.gray, marginTop: 4 }}>Deer Creek '22...</div>
       </Card>
 
       {/* 5. GENRE SPECIALIST */}
       <Card neon color="#00ffab">
         <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>🏆</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.tealDim, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Rank: Elite</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.tealDim, textTransform: 'uppercase' }}>Rank: Elite</div>
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', lineHeight: 1 }}>1%</div>
-        <div style={{ fontSize: '0.7rem', color: C.gray, marginTop: 4 }}>Indie Rock Fan</div>
       </Card>
     </div>
 
