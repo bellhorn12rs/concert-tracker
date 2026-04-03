@@ -1819,52 +1819,104 @@ export default function App() {
         <div style={{ fontSize: '0.7rem', color: C.gray, marginTop: 4 }}>Blink-182 ('99–'21)</div>
       </Card>
 
-      {/* 3. CENTER STAGE: THE MARQUEE & TICKET BOOTH */}
+      {/* 3. CENTER STAGE: THE NEON MARQUEE */}
       <div style={{ 
         gridColumn: 'span 2', 
-        background: '#050505', 
-        border: '2px solid #ffcc00', 
-        borderRadius: 8, 
+        background: '#0a0a0a', 
+        border: '3px solid #222', 
+        borderRadius: 12, 
         position: 'relative', 
         overflow: 'hidden', 
-        boxShadow: '0 0 20px rgba(255, 204, 0, 0.2)'
+        boxShadow: '0 0 30px rgba(255, 204, 0, 0.15), inset 0 0 20px #000'
       }}>
-        <div style={{ background: '#ffcc00', color: '#000', padding: '3px 0', overflow: 'hidden' }}>
-          <div className="marquee-text" style={{ fontFamily: "'Space Mono'", fontSize: 9, fontWeight: 'bold' }}>
-            UPCOMING SPOTLIGHT • UPCOMING SPOTLIGHT • UPCOMING SPOTLIGHT • UPCOMING SPOTLIGHT •
+        {/* Blinking Bulb Header */}
+        <div style={{ 
+          background: '#ffcc00', 
+          color: '#000', 
+          padding: '4px 0', 
+          overflow: 'hidden',
+          display: 'flex',
+          borderBottom: '2px solid #000'
+        }}>
+          {/* We repeat the text twice so the loop is seamless */}
+          <div className="marquee-text" style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 10, 
+            fontWeight: '900', 
+            whiteSpace: 'nowrap',
+            letterSpacing: '1px'
+          }}>
+            FOR YOUR CONSIDERATION • STAGING THE VIBE • TICKETS SECURED? • TOUR BUS INBOUND •&nbsp;
+            FOR YOUR CONSIDERATION • STAGING THE VIBE • TICKETS SECURED? • TOUR BUS INBOUND •&nbsp;
           </div>
         </div>
 
-        <div style={{ padding: '15px' }}>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 15 }}>
+        <div style={{ padding: '20px' }}>
+          {/* THE TICKET BOOTH INPUTS */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 15 }}>
             <input 
               placeholder="Artist" 
               value={newUpcoming.artist}
               onChange={e => setNewUpcoming({...newUpcoming, artist: e.target.value})}
-              style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '6px', flex: 2, borderRadius: 4 }}
+              style={{ background: '#111', border: '1px solid #333', color: '#ffcc00', fontSize: 10, padding: '8px', flex: '2 1 120px', borderRadius: 4, fontFamily: "'Space Mono'" }}
+            />
+            <input 
+              placeholder="Venue" 
+              value={newUpcoming.venue}
+              onChange={e => setNewUpcoming({...newUpcoming, venue: e.target.value})}
+              style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '8px', flex: '1 1 100px', borderRadius: 4 }}
             />
             <input 
               type="date"
               value={newUpcoming.date}
               onChange={e => setNewUpcoming({...newUpcoming, date: e.target.value})}
-              style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '5px', flex: 1, borderRadius: 4, colorScheme: 'dark' }}
+              style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '7px', flex: '1 1 110px', borderRadius: 4, colorScheme: 'dark' }}
             />
+            <select
+              value={newUpcoming.status}
+              onChange={e => setNewUpcoming({...newUpcoming, status: e.target.value})}
+              style={{ background: '#111', border: '1px solid #333', color: '#ffcc00', fontSize: 10, padding: '8px', borderRadius: 4, cursor: 'pointer' }}
+            >
+              <option value="TICKETS BOUGHT">TICKETS BOUGHT</option>
+              <option value="PENDING">PENDING</option>
+              <option value="DREAMING">DREAMING</option>
+            </select>
             <button 
               onClick={addUpcomingShow}
-              style={{ background: '#ffcc00', color: '#000', border: 'none', fontSize: 9, fontWeight: '900', padding: '0 15px', cursor: 'pointer', borderRadius: 4 }}
+              style={{ background: '#ffcc00', color: '#000', border: 'none', fontSize: 9, fontWeight: '900', padding: '0 15px', cursor: 'pointer', borderRadius: 4, flex: '1 1 50px' }}
             >
-              ADD
+              STAMP IT
             </button>
           </div>
 
-          <div style={{ maxHeight: '75px', overflowY: 'auto' }}>
+          {/* THE CINEMATIC LIST */}
+          <div style={{ maxHeight: '100px', overflowY: 'auto' }}>
             {upcoming.length === 0 ? (
-              <div style={{ color: '#444', fontSize: 10, textAlign: 'center', marginTop: 10 }}>NO SHOWS STAGED...</div>
+              <div style={{ color: '#333', fontSize: 10, textAlign: 'center', marginTop: 10 }}>MARQUEE IS DARK... ADD A SHOW</div>
             ) : (
               upcoming.map((show, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid #1a1a1a' }}>
-                  <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 'bold' }}>{show.artist}</div>
-                  <div style={{ color: '#ffcc00', fontFamily: "'Space Mono'", fontSize: 9 }}>{show.date}</div>
+                <div key={i} style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  marginBottom: 10, 
+                  paddingBottom: 6, 
+                  borderBottom: '1px solid #1a1a1a' 
+                }}>
+                  <div>
+                    <div className="marquee-letter" style={{ fontSize: '1.2rem', lineHeight: 1 }}>{show.artist}</div>
+                    <div style={{ color: '#555', fontSize: 8, textTransform: 'uppercase', marginTop: 3 }}>@{show.venue || 'Unknown Venue'}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ color: '#fff', fontFamily: "'Space Mono'", fontSize: 9 }}>{show.date}</div>
+                    <div style={{ 
+                      fontSize: 7, 
+                      fontWeight: 'bold', 
+                      color: show.status === 'TICKETS BOUGHT' ? '#00ffab' : '#ffcc00' 
+                    }}>
+                      {show.status}
+                    </div>
+                  </div>
                 </div>
               ))
             )}
