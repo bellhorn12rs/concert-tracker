@@ -1442,6 +1442,13 @@ export default function App() {
     return r;
   }, [concerts]);
 
+  const dashboardStats = useMemo(() => {
+    if (!concerts || concerts.length === 0) return {
+      topBand: 'None', topCount: 0, totalSets: 0, uniqueBands: 0, 
+      stateCount: 0, cityCount: 0, venueCount: 0, newDiscoveries: 0, 
+      activeSpan: 0, avgPerYear: 0
+    };
+
   // --- 2. DASHBOARD CALCULATIONS ---
   const dashboardStats = useMemo(() => {
     if (!concerts || concerts.length === 0) return {
