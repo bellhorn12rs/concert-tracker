@@ -1770,6 +1770,7 @@ export default function App() {
       </nav>
 
 <main style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
+        {/* ── DASHBOARD TAB ── */}
         {activeTab === 'dashboard' && (
           <>
             {/* 1. TOP GLOBAL STATS GRID */}
@@ -1782,22 +1783,26 @@ export default function App() {
               <Card neon color="#ff00ff">
                 <div style={{ fontSize: 8, color: C.tealDim }}>TRAVELER</div>
                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{dashboardStats.stateCount} STATES</div>
+                <div style={{ fontSize: 7, color: C.gray }}>COAST TO COAST</div>
               </Card>
               <Card neon color="#ffcc00">
                 <div style={{ fontSize: 8, color: C.tealDim }}>VENUE MASTERY</div>
                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{dashboardStats.venueCount} STAGES</div>
+                <div style={{ fontSize: 7, color: C.gray }}>LIFETIME VENUES</div>
               </Card>
               <Card neon color="#00ffab">
-                <div style={{ fontSize: 8, color: C.tealDim }}>NEW DISCOVERIES</div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{dashboardStats.newDiscoveries}</div>
+                <div style={{ fontSize: 8, color: C.tealDim }}>FRESH BLOOD</div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{dashboardStats.newDiscoveries} NEW ACTS</div>
+                <div style={{ fontSize: 7, color: C.gray }}>FIRST SEEN IN '25/'26</div>
               </Card>
               <Card neon color="#7000ff">
                 <div style={{ fontSize: 8, color: C.tealDim }}>TOTAL VOLUME</div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{dashboardStats.totalSets} BANDS</div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{dashboardStats.totalSets} SETS</div>
+                <div style={{ fontSize: 7, color: C.gray }}>LIFETIME ARCHIVE</div>
               </Card>
             </div>
 
-            {/* 2. CENTER ROW: MARQUEE RESTORED */}
+            {/* 2. CENTER ROW: MARQUEE & INSIGHTS */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 15, marginBottom: 20 }}>
               <ArtistInsights concerts={concerts} />
               
@@ -1810,44 +1815,18 @@ export default function App() {
                 </div>
 
                 <div style={{ padding: '20px' }}>
-                   {/* FULL INPUT ROW RESTORED */}
                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 15 }}>
-                     <input 
-                       placeholder="Artist" 
-                       value={newUpcoming.artist}
-                       onChange={e => setNewUpcoming({...newUpcoming, artist: e.target.value})}
-                       style={{ background: '#111', border: '1px solid #333', color: '#ffcc00', fontSize: 10, padding: '8px', flex: '2 1 120px', borderRadius: 4, fontFamily: "'Space Mono'" }}
-                     />
-                     <input 
-                       placeholder="Venue" 
-                       value={newUpcoming.venue}
-                       onChange={e => setNewUpcoming({...newUpcoming, venue: e.target.value})}
-                       style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '8px', flex: '1 1 100px', borderRadius: 4 }}
-                     />
-                     <input 
-                       type="date"
-                       value={newUpcoming.date}
-                       onChange={e => setNewUpcoming({...newUpcoming, date: e.target.value})}
-                       style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '7px', flex: '1 1 110px', borderRadius: 4, colorScheme: 'dark' }}
-                     />
-                     <select
-                       value={newUpcoming.status}
-                       onChange={e => setNewUpcoming({...newUpcoming, status: e.target.value})}
-                       style={{ background: '#111', border: '1px solid #333', color: '#ffcc00', fontSize: 10, padding: '8px', borderRadius: 4, cursor: 'pointer' }}
-                     >
+                     <input placeholder="Artist" value={newUpcoming.artist} onChange={e => setNewUpcoming({...newUpcoming, artist: e.target.value})} style={{ background: '#111', border: '1px solid #333', color: '#ffcc00', fontSize: 10, padding: '8px', flex: '2 1 120px', borderRadius: 4, fontFamily: "'Space Mono'" }} />
+                     <input placeholder="Venue" value={newUpcoming.venue} onChange={e => setNewUpcoming({...newUpcoming, venue: e.target.value})} style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '8px', flex: '1 1 100px', borderRadius: 4 }} />
+                     <input type="date" value={newUpcoming.date} onChange={e => setNewUpcoming({...newUpcoming, date: e.target.value})} style={{ background: '#111', border: '1px solid #333', color: '#fff', fontSize: 10, padding: '7px', flex: '1 1 110px', borderRadius: 4, colorScheme: 'dark' }} />
+                     <select value={newUpcoming.status} onChange={e => setNewUpcoming({...newUpcoming, status: e.target.value})} style={{ background: '#111', border: '1px solid #333', color: '#ffcc00', fontSize: 10, padding: '8px', borderRadius: 4, cursor: 'pointer' }}>
                        <option value="TICKETS BOUGHT">TICKETS BOUGHT</option>
                        <option value="PENDING">PENDING</option>
                        <option value="DREAMING">DREAMING</option>
                      </select>
-                     <button 
-                       onClick={addUpcomingShow}
-                       style={{ background: '#ffcc00', color: '#000', border: 'none', fontSize: 9, fontWeight: '900', padding: '0 15px', cursor: 'pointer', borderRadius: 4, flex: '1 1 50px' }}
-                     >
-                       STAMP IT
-                     </button>
+                     <button onClick={addUpcomingShow} style={{ background: '#ffcc00', color: '#000', border: 'none', fontSize: 9, fontWeight: '900', padding: '0 15px', cursor: 'pointer', borderRadius: 4 }}>STAMP IT</button>
                    </div>
 
-                   {/* FULL LIST DISPLAY RESTORED */}
                    <div style={{ maxHeight: '100px', overflowY: 'auto' }}>
                      {upcoming.length === 0 ? (
                        <div style={{ color: '#333', fontSize: 10, textAlign: 'center', marginTop: 10 }}>MARQUEE IS DARK... ADD A SHOW</div>
@@ -1858,16 +1837,12 @@ export default function App() {
                              <div className="marquee-letter" style={{ fontSize: '1.2rem', lineHeight: 1 }}>{show.artist}</div>
                              <div style={{ color: '#666', fontSize: 8, textTransform: 'uppercase', marginTop: 4 }}>@{show.venue || 'TBA'}</div>
                            </div>
-                           
                            <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 10 }}>
                              <div>
                                <div style={{ color: '#fff', fontSize: 10 }}>{show.date}</div>
                                <div style={{ fontSize: 8, color: '#ffcc00' }}>{show.status}</div>
                              </div>
-                             <button 
-                               onClick={async () => { if(window.confirm("Delete?")) { await supabase.from('upcoming_concerts').delete().eq('id', show.id); fetchUpcoming(); } }}
-                               style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer' }}
-                             >✕</button>
+                             <button onClick={async () => { if(window.confirm("Delete?")) { await supabase.from('upcoming_concerts').delete().eq('id', show.id); fetchUpcoming(); } }} style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer' }}>✕</button>
                            </div>
                          </div>
                        ))
@@ -1879,24 +1854,62 @@ export default function App() {
               <RandomShow concerts={concerts} />
             </div>
 
-            <GenreDNA concerts={concerts} />
-            
+            {/* 3. GENRE DNA & SETS PER YEAR */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: 16, marginBottom: 16 }}>
+              <SonicDNA stats={genreStats} />
+              <Card neon>
+                <CardTitle>Sets Per Year</CardTitle>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={timelineData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+                    <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                    <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                    <Tooltip 
+                      cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                      contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, borderRadius: 8, fontSize: 10 }} 
+                    />
+                    <Bar dataKey="count" fill={C.teal} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Card>
+            </div>
+
+            {/* 4. ANALYTICS TRIO */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+              <Card neon>
+                <CardTitle>Festival vs Standalone</CardTitle>
+                <DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} />
+              </Card>
+              <Card neon>
+                <CardTitle>Top Festivals</CardTitle>
+                <TopFestBlocks festBreakdown={festBreakdown} />
+              </Card>
+              <Card neon>
+                <CardTitle>By Decade</CardTitle>
+                <DecadeBlocks sets={allSetsList} />
+              </Card>
+            </div>
+
+            {/* 5. ARTISTS & SPOTLIGHT */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 20 }}>
-              <Card neon><CardTitle>Most Seen Artists</CardTitle>
-                {artistCounts.slice(0, 5).map(a => (
-                  <div key={a.name} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
-                    <span style={{ color: '#fff' }}>{a.name}</span>
-                    <span style={{ color: C.gold }}>{a.count}×</span>
+              <Card neon>
+                <CardTitle>Most Seen Artists</CardTitle>
+                {artistCounts.slice(0, 5).map((a, i) => (
+                  <div key={a.name} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: i < 4 ? `1px solid ${C.border}` : 'none' }}>
+                    <span style={{ color: '#fff', fontSize: '0.9rem' }}>{a.name}</span>
+                    <span style={{ fontFamily: "'Bebas Neue'", color: C.gold, fontSize: '1.4rem', lineHeight: 1 }}>{a.count}×</span>
                   </div>
                 ))}
               </Card>
-              <Card neon><CardTitle>Setlist Spotlight 📋</CardTitle>
-                <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('setlist_vault')} />
+              <Card neon>
+                <CardTitle>Setlist Spotlight 📋</CardTitle>
+                <div style={{ height: '100%', display: 'flex', alignItems: 'center' }}>
+                  <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('setlist_vault')} />
+                </div>
               </Card>
             </div>
           </>
         )}
-
         {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} />}
         
         {activeTab === 'browse' && (
