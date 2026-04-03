@@ -1810,22 +1810,22 @@ export default function App() {
 </div>
 
           {/* THE LIVE SCROLLING LIST */}
-          <div style={{ maxHeight: '75px', overflowY: 'auto', pr: 5 }}>
+          <div style={{ maxHeight: '75px', overflowY: 'auto', paddingRight: 5 }}>
             {upcoming.length === 0 ? (
               <div style={{ color: '#444', fontSize: 10, textAlign: 'center', marginTop: 10, fontFamily: "'Space Mono'" }}>NO UPCOMING SHOWS STAGED...</div>
             ) : (
               upcoming.map((show, i) => (
-  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid #1a1a1a' }}>
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 'bold' }}>{show.artist}</div>
-      <div style={{ color: '#555', fontSize: 8, textTransform: 'uppercase' }}>{show.venue}</div>
-    </div>
-    <div style={{ textAlign: 'right' }}>
-      <div style={{ color: '#ffcc00', fontFamily: "'Space Mono'", fontSize: 9 }}>{show.date}</div>
-      <div style={{ color: show.status === 'DREAMING' ? '#555' : '#ffcc00', fontSize: 7, fontWeight: 'bold' }}>{show.status}</div>
-    </div>
-  </div>
-))
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid #1a1a1a' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 'bold' }}>{show.artist}</div>
+                    <div style={{ color: '#555', fontSize: 8, textTransform: 'uppercase' }}>{show.venue}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ color: '#ffcc00', fontFamily: "'Space Mono'", fontSize: 9 }}>{show.date}</div>
+                    <div style={{ color: show.status === 'DREAMING' ? '#555' : '#ffcc00', fontSize: 7, fontWeight: 'bold' }}>{show.status}</div>
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </div>
