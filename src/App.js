@@ -278,12 +278,11 @@ function CountUpStat({ value, label, sub, color = C.white }) {
     </div>
   );
 }
-
-// ─── RETRO THEATER MARQUEE ────────────────────────────────────────────────────
+//Theater Marquee
 function TheaterMarquee({ upcoming, onAdd, onEdit }) {
   const BULB_COUNT = 28;
   const text = upcoming.length
-    ? upcoming.map(s => `NOW STAGING: ${s.artist.toUpperCase()} • ${fmtDateShort(s.date).toUpperCase()} • ${(s.venue||'TBA').toUpperCase()} • ${(s.status||'TICKETS BOUGHT').toUpperCase()}`).join('   ★   ')
+    ? upcoming.map(s => `NOW STAGING: ${s.artist.toUpperCase()} • ${fmtDateShort(s.date).toUpperCase()} • ${(s.venue||'TBA').toUpperCase()} • ${(s.status||'TICKETS').toUpperCase()}`).join('   ★   ')
     : 'LOUD & LIVE • ALL AGES • GIG POSTER INBOUND • TONIGHT ONLY • SOLD OUT • NOW STAGING YOUR NEXT MEMORY';
 
   return (
@@ -291,7 +290,7 @@ function TheaterMarquee({ upcoming, onAdd, onEdit }) {
       {/* Top bulb rail */}
       <div style={{ background:'#111', padding:'6px 12px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         {Array.from({ length: BULB_COUNT }).map((_, i) => (
-          <div key={i} style={{ width:8, height:8, borderRadius:'50%', background:'#ffdd88', boxShadow:'0 0 6px #ffdd88, 0 0 12px #ffaa00', animation:`chasing-bulb ${1.5}s ease-in-out ${(i * 1.5/BULB_COUNT).toFixed(2)}s infinite` }} />
+          <div key={i} style={{ width:8, height:8, borderRadius:'50%', background:'#ffdd88', boxShadow:'0 0 6px #ffdd88, 0 0 12px #ffaa00', animation:`chasing-bulb 1.5s ease-in-out ${(i * 1.5/BULB_COUNT).toFixed(2)}s infinite` }} />
         ))}
       </div>
 
@@ -302,8 +301,8 @@ function TheaterMarquee({ upcoming, onAdd, onEdit }) {
         </div>
       </div>
 
-      {/* Bottom rail + show list */}
-      <div style={{ background:'#111', padding:'6px 12px', display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:0 }}>
+      {/* Bottom bulb rail */}
+      <div style={{ background:'#111', padding:'6px 12px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         {Array.from({ length: BULB_COUNT }).map((_, i) => (
           <div key={i} style={{ width:8, height:8, borderRadius:'50%', background:'#ffdd88', boxShadow:'0 0 6px #ffdd88, 0 0 12px #ffaa00', animation:`chasing-bulb 1.5s ease-in-out ${((BULB_COUNT - i) * 1.5/BULB_COUNT).toFixed(2)}s infinite` }} />
         ))}
@@ -315,50 +314,25 @@ function TheaterMarquee({ upcoming, onAdd, onEdit }) {
           <button onClick={onAdd} style={{ background:C.gold, color:'#000', border:'none', fontSize:9, fontWeight:'900', padding:'6px 14px', cursor:'pointer', borderRadius:4, fontFamily:"'Space Mono'", letterSpacing:'0.1em' }}>+ ADD SHOW</button>
         </div>
         <div style={{ maxHeight:190, overflowY:'auto' }}>
-          {upcoming.sort((a,b)=>a.date.localeCompare(b.date)).map((show,i) => (
-            <div key={show.id||i} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto auto', alignItems:'center', gap:12, padding:'10px 0', borderBottom:`1px solid #1a1a1a` }}>
+          {upcoming.sort((a,b) => a.date.localeCompare(b.date)).map((show, i) => (
+            <div key={show.id||i} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto auto', alignItems:'center', gap:12, padding:'10px 0', borderBottom:'1px solid #1a1a1a' }}>
               <div style={{ fontFamily:"'Space Mono'", fontSize:9, color:'#888', whiteSpace:'nowrap' }}>{fmtDateShort(show.date)}</div>
               <div style={{ textAlign:'center' }}>
                 <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.15rem', color:C.gold, letterSpacing:'0.06em', lineHeight:1 }}>{show.artist}</div>
                 {show.venue && <div style={{ fontFamily:"'Space Mono'", fontSize:7, color:'#555', marginTop:1 }}>{show.venue}</div>}
               </div>
-              <span style={{ 
-              fontFamily: "'Space Mono'", 
-              fontSize: 7, 
-              color: C.gold, 
-              background: 'rgba(255,204,0,0.12)', 
-              border: '1px solid rgba(255,204,0,0.3)', 
-              padding: '2px 6px', 
-              borderRadius: 3, 
-              whiteSpace: 'nowrap' 
-            }}>
-              {show.status || 'TICKETS BOUGHT'}
-            </span>
-            
-            <button 
-              onClick={() => onEdit(show)} 
-              style={{ 
-                background: 'none', 
-                border: `1px solid #333`, 
-                color: '#888', 
-                cursor: 'pointer', 
-                fontSize: 9, 
-                borderRadius: 3, 
-                padding: '3px 8px', 
-                fontFamily: "'Space Mono'",
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = C.gold;
-                e.currentTarget.style.color = C.gold;
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = '#333';
-                e.currentTarget.style.color = '#888';
-              }}
-            >
-              EDIT
-            </button></div>
+              <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:C.gold, background:'rgba(255,204,0,0.12)', border:'1px solid rgba(255,204,0,0.3)', padding:'2px 6px', borderRadius:3, whiteSpace:'nowrap' }}>
+                {show.status || 'TICKETS'}
+              </span>
+              <button
+                onClick={() => onEdit(show)}
+                style={{ background:'none', border:'1px solid #333', color:'#888', cursor:'pointer', fontSize:9, borderRadius:3, padding:'3px 8px', fontFamily:"'Space Mono'", transition:'all 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = C.gold; e.currentTarget.style.color = C.gold; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#888'; }}
+              >
+                EDIT
+              </button>
+            </div>
           ))}
           {!upcoming.length && <div style={{ color:'#333', fontFamily:"'Space Mono'", fontSize:9, textAlign:'center', padding:20 }}>NO SHOWS QUEUED</div>}
         </div>
@@ -366,7 +340,6 @@ function TheaterMarquee({ upcoming, onAdd, onEdit }) {
     </div>
   );
 }
-
 // ─── FERRIS WHEEL ─────────────────────────────────────────────────────────────
 function FerrisWheel({ size = 120 }) {
   const cx = size / 2, cy = size / 2, R = size * 0.38, r = size * 0.06;
