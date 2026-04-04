@@ -509,17 +509,16 @@ function OnThisDay({ concerts }) {
 function SetlistSpotlight({ concerts, onVault }) {
   const [topIdx, setTopIdx] = useState(0);
   const [botIdx, setBotIdx] = useState(1);
+  const intervalsSet = useRef(false);
 
   const vault = useMemo(() => concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()), [concerts]);
   const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
 
-  const slidesRef = useRef([]);
   const slides = useMemo(() => {
     if (!vault.length) return [];
-    if (slidesRef.current.length > 0) return slidesRef.current;
     const sorted = [...vault].sort((a, b) => b.date.localeCompare(a.date));
     const randomPool = [...vault].sort(() => 0.5 - Math.random());
-    const result = [sorted[0], ...randomPool.slice(0, 19)].map(s => ({
+    return [sorted[0], ...randomPool.slice(0, 19)].map(s => ({
       id: s.id,
       band: s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0] || '?',
       date: s.date,
@@ -528,33 +527,39 @@ function SetlistSpotlight({ concerts, onVault }) {
       festival_name: s.festival_name,
       sfmUrl: `https://www.setlist.fm/search?query=${encodeURIComponent(s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0])}+${encodeURIComponent(s.date)}`
     }));
-    slidesRef.current = result;
-    return result;
   }, [vault]);
-  // Top card: fires every 6 seconds starting immediately
-  useEffect(() => {
-    if (slides.length < 2) return;
-    const interval = setInterval(() => {
-      setTopIdx(i => (i + 2) % slides.length);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [slides.length]);
 
-  // Bottom card: fires every 6 seconds but starts 3 seconds late
+  const slidesLen = slides.length;
+
   useEffect(() => {
-    if (slides.length < 2) return;
-    let interval;
-    const delay = setTimeout(() => {
-      setBotIdx(i => (i + 2) % slides.length);
-      interval = setInterval(() => {
-        setBotIdx(i => (i + 2) % slides.length);
+    if (slidesLen < 2 || intervalsSet.current) return;
+    intervalsSet.current = true;
+
+    // Top fires immediately then every 6s
+    const topInterval = setInterval(() => {
+      setTopIdx(i => (i + 2) % slidesLen);
+    }, 6000);
+
+    // Bottom fires after 3s then every 6s
+    const bottomDelay = setTimeout(() => {
+      setTopIdx(i => i); // no-op just to confirm timing
+      setBotIdx(i => (i + 2) % slidesLen);
+      const botInterval = setInterval(() => {
+        setBotIdx(i => (i + 2) % slidesLen);
       }, 6000);
+      // store ref so we can clean up
+      intervalsSet.current = { topInterval, botInterval };
     }, 3000);
+
     return () => {
-      clearTimeout(delay);
-      if (interval) clearInterval(interval);
+      clearInterval(topInterval);
+      clearTimeout(bottomDelay);
+      if (typeof intervalsSet.current === 'object') {
+        clearInterval(intervalsSet.current.botInterval);
+      }
+      intervalsSet.current = false;
     };
-  }, [slides.length]);
+  }, [slidesLen]);
 
   if (!slides.length) return null;
 
