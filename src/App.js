@@ -593,7 +593,9 @@ function SetlistSpotlight({ concerts, onVault }) {
             </div>
           </div>
           
-            href={data.sfmUrl} target="_blank" rel="noopener noreferrer"
+            href={data.sfmUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={e => e.stopPropagation()}
             style={{
               alignSelf: 'flex-end', background: 'rgba(0,0,0,0.08)', color: '#1a1a2e',
