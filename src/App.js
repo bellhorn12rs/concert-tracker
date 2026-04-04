@@ -502,11 +502,10 @@ function OnThisDay({ concerts }) {
   );
 }
 
-// ─── SETLIST SPOTLIGHT (HEARTBEAT STAGGER EDITION) ───────────────────────────
+// ─── SETLIST SPOTLIGHT (HARD STAGGER EDITION) ────────────────────────────────
 function SetlistSpotlight({ concerts, onVault }) {
   const [topIdx, setTopIdx] = useState(0);
   const [botIdx, setBotIdx] = useState(1);
-  const [beat, setBeat] = useState(0);
 
   const vault = useMemo(() => concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()), [concerts]);
   const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
@@ -515,10 +514,8 @@ function SetlistSpotlight({ concerts, onVault }) {
     if (!vault.length) return [];
     const sorted = [...vault].sort((a, b) => b.date.localeCompare(a.date));
     const randomPool = [...vault].sort(() => 0.5 - Math.random());
-    // Create a deep pool so they don't repeat for a long time
-    const combined = [sorted[0], ...randomPool.slice(0, 20)];
-    
-    return combined.map(s => ({
+    // Create a large unique pool
+    return [sorted[0], ...randomPool].map(s => ({
       id: s.id,
       band: s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0] || '?',
       date: s.date,
@@ -527,91 +524,95 @@ function SetlistSpotlight({ concerts, onVault }) {
     }));
   }, [vault]);
 
-  // ── THE HEARTBEAT LOGIC ──
+  // ── HARD STAGGER TIMER LOGIC ──
   useEffect(() => {
     if (slides.length <= 2) return;
 
-    const interval = setInterval(() => {
-      setBeat(currentBeat => {
-        const nextBeat = currentBeat + 1;
-        
-        if (nextBeat % 2 === 0) {
-          // EVEN BEAT: Update Top card (using a jump of 2 to avoid showing what Bottom just had)
-          setTopIdx(prev => (prev + 2) % slides.length);
-        } else {
-          // ODD BEAT: Update Bottom card
-          setBotIdx(prev => (prev + 2) % slides.length);
-        }
-        
-        return nextBeat;
-      });
-    }, 5000); // A card flips every 5 seconds. Each card stays for 10 seconds.
+    // 1. Start TOP timer immediately (updates every 10 seconds)
+    const topTimer = setInterval(() => {
+      setTopIdx(prev => (prev + 2) % slides.length);
+    }, 10000);
 
-    return () => clearInterval(interval);
+    // 2. Wait 5 seconds, then start BOTTOM timer (updates every 10 seconds)
+    let botTimer;
+    const offsetTimeout = setTimeout(() => {
+      botTimer = setInterval(() => {
+        setBotIdx(prev => (prev + 2) % slides.length);
+      }, 10000);
+    }, 5000);
+
+    return () => {
+      clearInterval(topTimer);
+      clearTimeout(offsetTimeout);
+      if (botTimer) clearInterval(botTimer);
+    };
   }, [slides.length]);
 
   if (!slides.length) return null;
 
-  const Scrap = ({ data, index, isTop }) => {
-    const tapeColor = TAPE_COLORS[index % TAPE_COLORS.length];
-    // Create a messy "thrown" look with deterministic but varied rotations
-    const rotations = isTop ? ['-2.5deg', '-1deg', '-3.2deg', '-1.8deg'] : ['2.2deg', '1.5deg', '3.5deg', '1.2deg'];
-    const r = rotations[index % rotations.length];
+  const Scrap = ({ data, isTop }) => {
+    const tapeColor = TAPE_COLORS[Math.abs(data.id?.charCodeAt(0) || 0) % TAPE_COLORS.length];
+    
+    // Generate a unique messy rotation based on the specific show ID
+    const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
+    const randomRot = (charCode % 5) - 2.5; // Results in anything between -2.5deg and +2.5deg
+    const r = isTop ? randomRot - 1 : randomRot + 1;
 
     return (
       <div 
-        key={data.id} // The ID as a key ensures the CSS animation re-runs every refresh
+        key={`${isTop ? 'top' : 'bot'}-${data.id}`} // Unique key per slot
         style={{ 
           flex: 1, 
           position: 'relative', 
-          '--r': r,
-          animation: 'peel-and-stick 0.9s cubic-bezier(0.23, 1, 0.32, 1) forwards',
-          marginBottom: isTop ? 28 : 0,
+          '--r': `${r}deg`,
+          animation: 'peel-and-stick 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards',
+          marginBottom: isTop ? 30 : 0,
           zIndex: isTop ? 2 : 1
         }}
       >
-        {/* The Tape piece with delayed "Slam" animation */}
+        {/* The Tape Slam */}
         <div style={{ 
-          position: 'absolute', top: -10, left: '50%', 
-          width: 48, height: 16, 
+          position: 'absolute', top: -12, left: '50%', 
+          width: 44, height: 16, 
           background: tapeColor, 
-          opacity: 0.8, 
+          opacity: 0.7, 
           borderRadius: 1, 
           zIndex: 10, 
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-          animation: 'tape-slam 0.4s 0.7s both' 
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          animation: 'tape-slam 0.4s 0.6s both' 
         }} />
         
         <div className="scrap-paper" style={{ 
-          padding: '14px 16px', 
-          boxShadow: '2px 8px 20px rgba(0,0,0,0.6)',
+          padding: '12px 15px', 
+          boxShadow: '3px 6px 18px rgba(0,0,0,0.5)',
           position: 'relative',
           overflow: 'hidden',
-          minHeight: 110,
+          minHeight: 105,
           display: 'flex',
           flexDirection: 'column',
-          border: '1px solid rgba(0,0,0,0.08)'
+          border: '1px solid rgba(0,0,0,0.05)',
+          transformOrigin: 'center center'
         }}>
-          {/* Faint Red Margin Line */}
-          <div style={{ position: 'absolute', left: 30, top: 0, bottom: 0, width: 1, background: 'rgba(220,60,60,0.2)' }} />
+          {/* Notebook Margin Line */}
+          <div style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1, background: 'rgba(220,60,60,0.15)', zIndex: 0 }} />
           
-          <div style={{ paddingLeft: 12, flex: 1, position: 'relative', zIndex: 1 }}>
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.45rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1.1, marginBottom: 2 }}>
+          <div style={{ paddingLeft: 10, flex: 1, position: 'relative', zIndex: 1 }}>
+            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.35rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1.1, marginBottom: 2 }}>
               {data.band}
             </div>
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.9rem', color: '#4a4a6e', opacity: 0.9 }}>
+            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.85rem', color: '#4a4a6e', opacity: 0.8, lineHeight: 1.2 }}>
               {fmtDateShort(data.date)}<br/>
-              {data.venue?.toUpperCase()}
+              {data.venue?.toUpperCase() || 'UNKNOWN VENUE'}
             </div>
           </div>
 
           <a 
             href={data.sfmUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
             style={{ 
-              alignSelf: 'flex-end', background: '#1a1a2e', color: '#fff', 
-              fontSize: 6, fontFamily: "'Space Mono'", padding: '4px 8px', 
-              borderRadius: 3, textDecoration: 'none', letterSpacing: '0.05em',
-              zIndex: 5, boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+              alignSelf: 'flex-end', background: 'rgba(0,0,0,0.05)', color: '#1a1a2e', 
+              fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 6px', 
+              borderRadius: 2, textDecoration: 'none', letterSpacing: '0.05em',
+              border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700
             }}
           >
             SETLIST ↗
@@ -622,24 +623,20 @@ function SetlistSpotlight({ concerts, onVault }) {
   };
 
   return (
-    <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column', padding: '5px 0' }} onClick={onVault}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 22, textTransform: 'uppercase', textAlign: 'center', opacity: 0.5 }}>
-        📜 PHYSICAL ARCHIVE
+    <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 20, textTransform: 'uppercase', textAlign: 'center', opacity: 0.4 }}>
+        📋 LIVE ARCHIVE
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 8px' }}>
-        <Scrap data={slides[topIdx % slides.length]} index={topIdx} isTop={true} />
-        <Scrap data={slides[botIdx % slides.length]} index={botIdx} isTop={false} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 5px' }}>
+        <Scrap data={slides[topIdx % slides.length]} isTop={true} />
+        <Scrap data={slides[botIdx % slides.length]} isTop={false} />
       </div>
 
-      {/* Progress dots */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 15 }}>
-        {[0,1,2,3,4].map(i => (
-          <div key={i} style={{ 
-            width: 3, height: 3, borderRadius: '50%', 
-            background: (Math.floor(beat/2) % 5 === i) ? C.gold : C.grayDim,
-            transition: '0.5s' 
-          }} />
+      {/* Visual filler / Bottom detail */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 3, marginTop: 15 }}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} style={{ width: 2, height: 2, borderRadius: '50%', background: C.grayDim, opacity: 0.3 }} />
         ))}
       </div>
     </div>
