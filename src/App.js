@@ -502,11 +502,11 @@ function OnThisDay({ concerts }) {
   );
 }
 
-// ─── SETLIST SPOTLIGHT (PHYSICAL ARCHIVE EDITION) ───────────────────────────
+// ─── SETLIST SPOTLIGHT (HEARTBEAT STAGGER EDITION) ───────────────────────────
 function SetlistSpotlight({ concerts, onVault }) {
   const [topIdx, setTopIdx] = useState(0);
   const [botIdx, setBotIdx] = useState(1);
-  const [step, setStep] = useState(0);
+  const [beat, setBeat] = useState(0);
 
   const vault = useMemo(() => concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()), [concerts]);
   const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
@@ -515,7 +515,8 @@ function SetlistSpotlight({ concerts, onVault }) {
     if (!vault.length) return [];
     const sorted = [...vault].sort((a, b) => b.date.localeCompare(a.date));
     const randomPool = [...vault].sort(() => 0.5 - Math.random());
-    const combined = [sorted[0], ...randomPool.slice(0, 19)];
+    // Create a deep pool so they don't repeat for a long time
+    const combined = [sorted[0], ...randomPool.slice(0, 20)];
     
     return combined.map(s => ({
       id: s.id,
@@ -526,20 +527,26 @@ function SetlistSpotlight({ concerts, onVault }) {
     }));
   }, [vault]);
 
-  // ALTERNATING CADENCE LOGIC
+  // ── THE HEARTBEAT LOGIC ──
   useEffect(() => {
     if (slides.length <= 2) return;
+
     const interval = setInterval(() => {
-      setStep(s => {
-        const nextStep = s + 1;
-        if (nextStep % 2 === 1) {
+      setBeat(currentBeat => {
+        const nextBeat = currentBeat + 1;
+        
+        if (nextBeat % 2 === 0) {
+          // EVEN BEAT: Update Top card (using a jump of 2 to avoid showing what Bottom just had)
           setTopIdx(prev => (prev + 2) % slides.length);
         } else {
+          // ODD BEAT: Update Bottom card
           setBotIdx(prev => (prev + 2) % slides.length);
         }
-        return nextStep;
+        
+        return nextBeat;
       });
-    }, 6000); // 6s gap between ANY movement (12s total life per card)
+    }, 5000); // A card flips every 5 seconds. Each card stays for 10 seconds.
+
     return () => clearInterval(interval);
   }, [slides.length]);
 
@@ -547,53 +554,52 @@ function SetlistSpotlight({ concerts, onVault }) {
 
   const Scrap = ({ data, index, isTop }) => {
     const tapeColor = TAPE_COLORS[index % TAPE_COLORS.length];
-    // Slightly different rotations for each card to look "messy"
-    const rotations = isTop ? ['-2deg', '-3deg', '-1.5deg'] : ['1.5deg', '3deg', '2.5deg'];
-    const r = rotations[index % 3];
+    // Create a messy "thrown" look with deterministic but varied rotations
+    const rotations = isTop ? ['-2.5deg', '-1deg', '-3.2deg', '-1.8deg'] : ['2.2deg', '1.5deg', '3.5deg', '1.2deg'];
+    const r = rotations[index % rotations.length];
 
     return (
       <div 
-        key={data.id} // Key change triggers animation
+        key={data.id} // The ID as a key ensures the CSS animation re-runs every refresh
         style={{ 
           flex: 1, 
           position: 'relative', 
           '--r': r,
-          animation: 'peel-and-stick 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards',
-          marginBottom: isTop ? 25 : 0,
+          animation: 'peel-and-stick 0.9s cubic-bezier(0.23, 1, 0.32, 1) forwards',
+          marginBottom: isTop ? 28 : 0,
           zIndex: isTop ? 2 : 1
         }}
       >
-        {/* The Tape - Staggered entry */}
+        {/* The Tape piece with delayed "Slam" animation */}
         <div style={{ 
           position: 'absolute', top: -10, left: '50%', 
-          transform: 'translateX(-50%)', 
-          width: 45, height: 16, 
+          width: 48, height: 16, 
           background: tapeColor, 
           opacity: 0.8, 
           borderRadius: 1, 
           zIndex: 10, 
           boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-          animation: 'tape-slam 0.4s 0.6s both' // Slams down after the paper arrives
+          animation: 'tape-slam 0.4s 0.7s both' 
         }} />
         
         <div className="scrap-paper" style={{ 
           padding: '14px 16px', 
-          boxShadow: '2px 5px 15px rgba(0,0,0,0.5)',
+          boxShadow: '2px 8px 20px rgba(0,0,0,0.6)',
           position: 'relative',
           overflow: 'hidden',
-          minHeight: 115,
+          minHeight: 110,
           display: 'flex',
           flexDirection: 'column',
-          border: '1px solid rgba(0,0,0,0.05)'
+          border: '1px solid rgba(0,0,0,0.08)'
         }}>
-          {/* Red margin line */}
-          <div style={{ position: 'absolute', left: 32, top: 0, bottom: 0, width: 1, background: 'rgba(220,60,60,0.2)' }} />
+          {/* Faint Red Margin Line */}
+          <div style={{ position: 'absolute', left: 30, top: 0, bottom: 0, width: 1, background: 'rgba(220,60,60,0.2)' }} />
           
-          <div style={{ paddingLeft: 10, flex: 1 }}>
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.4rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 2 }}>
+          <div style={{ paddingLeft: 12, flex: 1, position: 'relative', zIndex: 1 }}>
+            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.45rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1.1, marginBottom: 2 }}>
               {data.band}
             </div>
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.85rem', color: '#4a4a6e', opacity: 0.8 }}>
+            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.9rem', color: '#4a4a6e', opacity: 0.9 }}>
               {fmtDateShort(data.date)}<br/>
               {data.venue?.toUpperCase()}
             </div>
@@ -602,9 +608,10 @@ function SetlistSpotlight({ concerts, onVault }) {
           <a 
             href={data.sfmUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
             style={{ 
-              alignSelf: 'flex-end', background: 'rgba(0,0,0,0.7)', color: '#fff', 
-              fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px', 
-              borderRadius: 2, textDecoration: 'none', letterSpacing: '0.05em' 
+              alignSelf: 'flex-end', background: '#1a1a2e', color: '#fff', 
+              fontSize: 6, fontFamily: "'Space Mono'", padding: '4px 8px', 
+              borderRadius: 3, textDecoration: 'none', letterSpacing: '0.05em',
+              zIndex: 5, boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
             }}
           >
             SETLIST ↗
@@ -615,22 +622,22 @@ function SetlistSpotlight({ concerts, onVault }) {
   };
 
   return (
-    <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 20, textTransform: 'uppercase', textAlign: 'center', opacity: 0.5 }}>
+    <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column', padding: '5px 0' }} onClick={onVault}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 22, textTransform: 'uppercase', textAlign: 'center', opacity: 0.5 }}>
         📜 PHYSICAL ARCHIVE
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 10px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 8px' }}>
         <Scrap data={slides[topIdx % slides.length]} index={topIdx} isTop={true} />
         <Scrap data={slides[botIdx % slides.length]} index={botIdx} isTop={false} />
       </div>
 
-      {/* Modern Page Indicator */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 15 }}>
-        {[0,1,2,3].map(i => (
+      {/* Progress dots */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 15 }}>
+        {[0,1,2,3,4].map(i => (
           <div key={i} style={{ 
-            width: 12, height: 2, borderRadius: 1, 
-            background: (Math.floor(topIdx/2) % 4 === i) ? C.gold : C.grayDim,
+            width: 3, height: 3, borderRadius: '50%', 
+            background: (Math.floor(beat/2) % 5 === i) ? C.gold : C.grayDim,
             transition: '0.5s' 
           }} />
         ))}
