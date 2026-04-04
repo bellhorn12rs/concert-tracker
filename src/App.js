@@ -509,7 +509,8 @@ function OnThisDay({ concerts }) {
 function SetlistSpotlight({ concerts, onVault }) {
   const [topIdx, setTopIdx] = useState(0);
   const [botIdx, setBotIdx] = useState(1);
-  const tickRef = useRef(0);
+  const lenRef = useRef(0);
+  const startedRef = useRef(false);
 
   const vault = useMemo(() => concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()), [concerts]);
   const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
@@ -530,19 +531,28 @@ function SetlistSpotlight({ concerts, onVault }) {
   }, [vault]);
 
   useEffect(() => {
-    if (slides.length < 2) return;
-    const len = slides.length;
-    const interval = setInterval(() => {
-      tickRef.current += 1;
-      if (tickRef.current % 2 === 1) {
-        // odd ticks: top moves
-        setTopIdx(i => (i + 1) % len);
-      } else {
-        // even ticks: bottom moves
-        setBotIdx(i => (i + 1) % len);
-      }
+    lenRef.current = slides.length;
+  }, [slides.length]);
+
+  useEffect(() => {
+    if (slides.length < 2 || startedRef.current) return;
+    startedRef.current = true;
+
+    const topInterval = setInterval(() => {
+      setTopIdx(i => (i + 2) % lenRef.current);
+    }, 6000);
+
+    const botTimeout = setTimeout(() => {
+      setBotIdx(i => (i + 2) % lenRef.current);
+      setInterval(() => {
+        setBotIdx(i => (i + 2) % lenRef.current);
+      }, 6000);
     }, 3000);
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(topInterval);
+      clearTimeout(botTimeout);
+    };
   }, [slides.length]);
 
   if (!slides.length) return null;
