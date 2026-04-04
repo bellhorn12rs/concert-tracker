@@ -506,6 +506,92 @@ function OnThisDay({ concerts }) {
 }
 
 // ─── SETLIST SPOTLIGHT (THE SYNC-KILLER EDITION) ─────────────────────────────
+// ─── SETLIST SPOTLIGHT ATOMS ────────────────────────────────────────────────
+const Scrap = ({ data, isTop, TAPE_COLORS }) => {
+  const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
+  const r = isTop ? (charCode % 4) - 3 : (charCode % 4) + 1;
+  const tapeColor = TAPE_COLORS[charCode % TAPE_COLORS.length];
+  const doodles = ['♪', '✦', '★', '♡', '✌', '⚡', '♫', '◈'];
+  const doodle = doodles[charCode % doodles.length];
+
+  return (
+    <div style={{
+      flex: 1,
+      position: 'relative',
+      marginBottom: isTop ? 28 : 0,
+      zIndex: isTop ? 2 : 1,
+      transform: `rotate(${r}deg)`,
+      transition: 'transform 0.3s ease'
+    }}>
+      {/* Tape Slam Animation */}
+      <div style={{
+        position: 'absolute', top: -10, left: '50%',
+        transform: 'translateX(-50%)',
+        width: 46, height: 16,
+        background: tapeColor,
+        opacity: 0.75, borderRadius: 1, zIndex: 10,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+        animation: 'tape-slam 0.4s 0.6s both'
+      }} />
+
+      <div className="scrap-paper" style={{
+        background: 'linear-gradient(160deg,#f5f0e8,#e8e0cc)',
+        padding: '22px 16px 14px',
+        boxShadow: '4px 8px 20px rgba(0,0,0,0.5)',
+        position: 'relative',
+        overflow: 'hidden',
+        minHeight: 115,
+        display: 'flex',
+        flexDirection: 'column',
+        border: '1px solid rgba(0,0,0,0.06)',
+        borderRadius: 3
+      }}>
+        {/* Ruled Notebook Detail */}
+        {[0, 1, 2, 3].map(j => (
+          <div key={j} style={{ position: 'absolute', left: 32, right: 8, top: 44 + j * 22, height: 1, background: 'rgba(150,180,220,0.45)' }} />
+        ))}
+        <div style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1.5, background: 'rgba(220,60,60,0.25)' }} />
+        <div style={{ position: 'absolute', left: 8, top: '40%', width: 10, height: 10, borderRadius: '50%', background: 'rgba(0,0,0,0.08)', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.15)' }} />
+
+        {/* Subtle Doodle */}
+        <div style={{ position: 'absolute', bottom: 8, right: 10, fontFamily: "'Caveat',cursive", fontSize: '1.4rem', color: 'rgba(0,0,0,0.12)', transform: 'rotate(15deg)', userSelect: 'none' }}>{doodle}</div>
+
+        <div style={{ paddingLeft: 14, flex: 1, position: 'relative', zIndex: 1 }}>
+          <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.8rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 4 }}>
+            {data.band}
+          </div>
+
+          <svg height="6" width="100%" style={{ marginBottom: 8, overflow: 'visible' }}>
+            <path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.2" fill="none" strokeOpacity="0.15" strokeLinecap="round" />
+          </svg>
+
+          <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.85rem', color: '#3a3a6e', lineHeight: 1.2 }}>
+            {fmtDateShort(data.date)}
+          </div>
+          <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.8rem', color: '#5a5a7e', lineHeight: 1.2 }}>
+            {data.venue?.toUpperCase() || 'UNKNOWN VENUE'}
+          </div>
+          {data.is_festival && (
+            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.75rem', color: '#886644', marginTop: 4 }}>
+              ✎ {data.festival_name}
+            </div>
+          )}
+        </div>
+
+        <a href={data.sfmUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+          style={{
+            alignSelf: 'flex-end', background: 'rgba(0,0,0,0.06)', color: '#1a1a2e',
+            fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px',
+            borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700
+          }}>
+          SETLIST ↗
+        </a>
+      </div>
+    </div>
+  );
+};
+
+// ─── SETLIST SPOTLIGHT (THE SYNC-KILLER MAIN) ─────────────────────────────────
 function SetlistSpotlight({ concerts, onVault }) {
   const [topIdx, setTopIdx] = useState(0);
   const [botIdx, setBotIdx] = useState(1);
@@ -528,124 +614,35 @@ function SetlistSpotlight({ concerts, onVault }) {
     }));
   }, [vault]);
 
-  // ── THE RECURSIVE STAGGER (Guarantees they never refresh together) ──
+  // The recursive hand-off timer
   useEffect(() => {
     if (slides.length < 2) return;
     let timer;
 
     const flipTop = () => {
       setTopIdx(prev => (prev + 2) % slides.length);
-      timer = setTimeout(flipBot, 4000); // Wait 4s, then flip bottom
+      timer = setTimeout(flipBot, 4500); 
     };
 
     const flipBot = () => {
       setBotIdx(prev => (prev + 2) % slides.length);
-      timer = setTimeout(flipTop, 4000); // Wait 4s, then flip top
+      timer = setTimeout(flipTop, 4500); 
     };
 
-    timer = setTimeout(flipTop, 2000); // Initial start offset
+    timer = setTimeout(flipTop, 2000); 
     return () => clearTimeout(timer);
   }, [slides.length]);
 
   if (!slides.length) return null;
 
-  // INTERNAL COMPONENT: The individual scrap paper
-  const Scrap = ({ data, isTop }) => {
-    const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
-    const r = isTop ? (charCode % 4) - 3 : (charCode % 4) + 1;
-    const tapeColor = TAPE_COLORS[charCode % TAPE_COLORS.length];
-    const doodles = ['♪', '✦', '★', '♡', '✌', '⚡', '♫', '◈'];
-    const doodle = doodles[charCode % doodles.length];
-
-    return (
-      <div style={{
-        flex: 1,
-        position: 'relative',
-        marginBottom: isTop ? 28 : 0,
-        zIndex: isTop ? 2 : 1,
-        transform: `rotate(${r}deg)`,
-        transition: 'transform 0.3s ease'
-      }}>
-        {/* Tape Slam Animation */}
-        <div style={{
-          position: 'absolute', top: -10, left: '50%',
-          transform: 'translateX(-50%)',
-          width: 46, height: 16,
-          background: tapeColor,
-          opacity: 0.75, borderRadius: 1, zIndex: 10,
-          boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-          animation: 'tape-slam 0.4s 0.6s both'
-        }} />
-
-        <div className="scrap-paper" style={{
-          background: 'linear-gradient(160deg,#f5f0e8,#e8e0cc)',
-          padding: '22px 16px 14px',
-          boxShadow: '4px 8px 20px rgba(0,0,0,0.5)',
-          position: 'relative',
-          overflow: 'hidden',
-          minHeight: 110,
-          display: 'flex',
-          flexDirection: 'column',
-          border: '1px solid rgba(0,0,0,0.06)',
-          borderRadius: 3
-        }}>
-          {/* Notebook ruled lines */}
-          {[0,1,2,3].map(j => (
-            <div key={j} style={{ position:'absolute', left:32, right:8, top:44+j*22, height:1, background:'rgba(150,180,220,0.45)' }} />
-          ))}
-          
-          {/* Red margin and Hole punch */}
-          <div style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1.5, background: 'rgba(220,60,60,0.25)' }} />
-          <div style={{ position:'absolute', left:8, top:'40%', width:10, height:10, borderRadius:'50%', background:'rgba(0,0,0,0.08)', boxShadow:'inset 0 1px 2px rgba(0,0,0,0.15)' }} />
-          
-          {/* Hand-drawn Doodle */}
-          <div style={{ position:'absolute', bottom:8, right:10, fontFamily:"'Caveat',cursive", fontSize:'1.4rem', color:'rgba(0,0,0,0.12)', transform:'rotate(15deg)', userSelect:'none' }}>{doodle}</div>
-
-          <div style={{ paddingLeft: 14, flex: 1, position: 'relative', zIndex: 1 }}>
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.8rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 4 }}>
-              {data.band}
-            </div>
-
-            {/* Wavy Underline */}
-            <svg height="6" width="100%" style={{ marginBottom: 8, overflow:'visible' }}>
-              <path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.2" fill="none" strokeOpacity="0.15" strokeLinecap="round"/>
-            </svg>
-
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.85rem', color: '#3a3a6e', lineHeight: 1.2 }}>
-              {fmtDateShort(data.date)}
-            </div>
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.8rem', color: '#5a5a7e', lineHeight: 1.2 }}>
-              {data.venue?.toUpperCase() || 'UNKNOWN VENUE'}
-            </div>
-            {data.is_festival && (
-              <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.75rem', color:'#886644', marginTop:4 }}>
-                ✎ {data.festival_name}
-              </div>
-            )}
-          </div>
-
-          <a href={data.sfmUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-            style={{
-              alignSelf: 'flex-end', background: 'rgba(0,0,0,0.06)', color: '#1a1a2e',
-              fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px',
-              borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700
-            }}>
-            SETLIST ↗
-          </a>
-        </div>
-      </div>
-    );
-  };
-
-  // ── THE MAIN RETURN ──
   return (
     <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
       <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 20, textTransform: 'uppercase', textAlign: 'center', opacity: 0.4 }}>
         📋 BACKSTAGE LOG
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 8px' }}>
-        <Scrap data={slides[topIdx % slides.length]} isTop={true} />
-        <Scrap data={slides[botIdx % slides.length]} isTop={false} />
+        <Scrap data={slides[topIdx % slides.length]} isTop={true} TAPE_COLORS={TAPE_COLORS} />
+        <Scrap data={slides[botIdx % slides.length]} isTop={false} TAPE_COLORS={TAPE_COLORS} />
       </div>
     </div>
   );
