@@ -543,13 +543,13 @@ function SetlistSpotlight({ concerts, onVault }) {
       timer = setTimeout(flipTop, 4000); // Wait 4s, then flip top
     };
 
-    timer = setTimeout(flipTop, 2000); // Initial start
+    timer = setTimeout(flipTop, 2000); // Initial start offset
     return () => clearTimeout(timer);
   }, [slides.length]);
 
   if (!slides.length) return null;
 
-  // Internal component for the Scrap UI
+  // INTERNAL COMPONENT: The individual scrap paper
   const Scrap = ({ data, isTop }) => {
     const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
     const r = isTop ? (charCode % 4) - 3 : (charCode % 4) + 1;
@@ -589,14 +589,16 @@ function SetlistSpotlight({ concerts, onVault }) {
           border: '1px solid rgba(0,0,0,0.06)',
           borderRadius: 3
         }}>
-          {/* Ruled Notebook Detail */}
+          {/* Notebook ruled lines */}
           {[0,1,2,3].map(j => (
             <div key={j} style={{ position:'absolute', left:32, right:8, top:44+j*22, height:1, background:'rgba(150,180,220,0.45)' }} />
           ))}
+          
+          {/* Red margin and Hole punch */}
           <div style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1.5, background: 'rgba(220,60,60,0.25)' }} />
           <div style={{ position:'absolute', left:8, top:'40%', width:10, height:10, borderRadius:'50%', background:'rgba(0,0,0,0.08)', boxShadow:'inset 0 1px 2px rgba(0,0,0,0.15)' }} />
           
-          {/* Subtle Doodle */}
+          {/* Hand-drawn Doodle */}
           <div style={{ position:'absolute', bottom:8, right:10, fontFamily:"'Caveat',cursive", fontSize:'1.4rem', color:'rgba(0,0,0,0.12)', transform:'rotate(15deg)', userSelect:'none' }}>{doodle}</div>
 
           <div style={{ paddingLeft: 14, flex: 1, position: 'relative', zIndex: 1 }}>
@@ -604,6 +606,7 @@ function SetlistSpotlight({ concerts, onVault }) {
               {data.band}
             </div>
 
+            {/* Wavy Underline */}
             <svg height="6" width="100%" style={{ marginBottom: 8, overflow:'visible' }}>
               <path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.2" fill="none" strokeOpacity="0.15" strokeLinecap="round"/>
             </svg>
@@ -634,7 +637,7 @@ function SetlistSpotlight({ concerts, onVault }) {
     );
   };
 
-  // ── FINAL RETURN ──
+  // ── THE MAIN RETURN ──
   return (
     <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
       <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 20, textTransform: 'uppercase', textAlign: 'center', opacity: 0.4 }}>
