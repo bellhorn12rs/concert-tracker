@@ -583,28 +583,33 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
           )}
 
           {/* 🖼️ GIG PHOTO / POSTER RENDER */}
-          {data.image_url && (
+          {data.image_url && data.image_url.trim() !== "" && (
             <div style={{ 
               marginTop: 12, 
-              marginBottom: 4, 
+              marginBottom: 8, 
               padding: '4px', 
               background: '#fff', 
               boxShadow: '0 2px 8px rgba(0,0,0,0.2)', 
               transform: `rotate(${(charCode % 4) - 2}deg)`,
               border: '1px solid #ddd',
-              alignSelf: 'center'
+              alignSelf: 'center',
+              width: 'fit-content', // Fixes the "white line" issue
+              maxWidth: '90%'
             }}>
               <img 
                 src={data.image_url} 
                 alt="Concert Memory" 
                 style={{ 
+                  display: 'block',
                   width: '100%', 
-                  maxHeight: '100px', 
-                  display: 'block', 
-                  objectFit: 'cover',
+                  maxHeight: '150px', 
+                  objectFit: 'contain',
                   borderRadius: '1px'
                 }} 
-                onError={(e) => e.target.style.display = 'none'} 
+                onError={(e) => {
+                  // If image fails to load, hide the entire white polaroid frame
+                  e.target.parentElement.style.display = 'none'; 
+                }} 
               />
             </div>
           )}
@@ -1247,17 +1252,18 @@ function SetlistVaultTab({ concerts, genreMap }) {
             )}
 
             {/* Polaroid setlist photo */}
-            {s.setlist_image_url && (
-              <div style={{ margin:'10px 0 12px', display:'inline-block', transform:'rotate(-1deg)', position:'relative' }}>
-                <div style={{ background:'#fff', padding:'5px 5px 16px 5px', boxShadow:'2px 3px 10px rgba(0,0,0,0.3)' }}>
-                  <img
-                    src={s.setlist_image_url}
-                    alt={`${s.band} setlist`}
-                    style={{ display:'block', width:'100%', maxWidth:180, height:'auto', filter:'contrast(1.05) sepia(0.08)' }}
-                  />
-                </div>
-              </div>
-            )}
+{s.image_url && (
+  <div style={{ margin: '10px 0 12px', display: 'inline-block', transform: 'rotate(-1deg)', position: 'relative' }}>
+    <div style={{ background: '#fff', padding: '5px 5px 16px 5px', boxShadow: '2px 3px 10px rgba(0,0,0,0.3)' }}>
+      <img
+        src={s.image_url}
+        alt={`${s.band} setlist`}
+        style={{ display: 'block', width: '100%', maxWidth: '200px', height: 'auto', filter: 'contrast(1.05) sepia(0.08)' }}
+        onError={(e) => e.target.parentElement.parentElement.style.display = 'none'}
+      />
+    </div>
+  </div>
+)}
 
             <a
               href={sfmUrl}
