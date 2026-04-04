@@ -1009,6 +1009,7 @@ function WristbandCard({ event, genreMap, compact = false }) {
   );
 }
 
+```jsx
 // ─── SETLIST VAULT ────────────────────────────────────────────────────────────
 function SetlistVaultTab({ concerts }) {
   const setlists = useMemo(() => {
@@ -1034,7 +1035,7 @@ function SetlistVaultTab({ concerts }) {
     </div>
   );
 
-const cols = [[],[],[]];
+  const cols = [[],[],[]];
   setlists.forEach((s,i) => cols[i%3].push({...s, colIdx:i}));
 
   const PaperCard = ({ s, i }) => {
@@ -1104,6 +1105,7 @@ const cols = [[],[],[]];
     </div>
   );
 }
+
 // ─── TIMELINE ─────────────────────────────────────────────────────────────────
 function GenreLegend() {
   return (
@@ -2252,7 +2254,6 @@ export default function App() {
   const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE), totalPages = Math.ceil(filteredSets.length / PER_PAGE);
 
   // ── DB ACTIONS ──────────────────────────────────────────────────────────────
-  useEffect(() => { fetchInitialData(); }, []);
 
   async function fetchInitialData() {
     setLoading(true);
