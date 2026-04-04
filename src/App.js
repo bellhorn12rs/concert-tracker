@@ -560,23 +560,23 @@ function SetlistSpotlight({ concerts, onVault }) {
     const doodle = doodles[charCode % doodles.length];
 
     return (
-      <div style={{
+      <div key={data.id} style={{
         flex: 1,
         position: 'relative',
         marginBottom: isTop ? 28 : 0,
         zIndex: isTop ? 2 : 1,
-        transform: `rotate(${r}deg)`,
-        transition: 'transform 0.3s ease'
+        animation: 'scrap-fall 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards',
       }}>
-        {/* Tape Slam */}
+        {/* Tape — delayed so it hits after the card lands */}
         <div style={{
           position: 'absolute', top: -10, left: '50%',
           transform: 'translateX(-50%)',
           width: 46, height: 16,
           background: tapeColor,
-          opacity: 0.75, borderRadius: 1, zIndex: 10,
+          opacity: 0,
+          borderRadius: 1, zIndex: 10,
           boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-          animation: 'tape-slam 0.4s 0.6s both'
+          animation: 'tape-drop 0.25s ease-out 0.45s forwards'
         }} />
 
         <div className="scrap-paper" style={{
@@ -588,7 +588,8 @@ function SetlistSpotlight({ concerts, onVault }) {
           display: 'flex',
           flexDirection: 'column',
           border: '1px solid rgba(0,0,0,0.06)',
-          borderRadius: 3
+          borderRadius: 3,
+          transform: `rotate(${r}deg)`
         }}>
           {/* Ruled lines */}
           {[0,1,2,3].map(j => (
@@ -605,7 +606,7 @@ function SetlistSpotlight({ concerts, onVault }) {
             <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.8rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 4 }}>
               {data.band}
             </div>
-            
+
             <svg height="6" width="100%" style={{ marginBottom: 8, overflow:'visible' }}>
               <path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.2" fill="none" strokeOpacity="0.15" strokeLinecap="round"/>
             </svg>
@@ -616,26 +617,30 @@ function SetlistSpotlight({ concerts, onVault }) {
             <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.8rem', color: '#5a5a7e', lineHeight: 1.2 }}>
               {data.venue?.toUpperCase() || 'UNKNOWN VENUE'}
             </div>
-            {data.is_festival && (
+            {data.is_festival && data.festival_name && (
               <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.75rem', color:'#886644', marginTop:4 }}>
                 ✎ {data.festival_name}
               </div>
             )}
           </div>
 
-          <a href={data.sfmUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+          <a
+            href={data.sfmUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
             style={{
               alignSelf: 'flex-end', background: 'rgba(0,0,0,0.06)', color: '#1a1a2e',
               fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px',
               borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700
-            }}>
+            }}
+          >
             SETLIST ↗
           </a>
         </div>
       </div>
     );
   };
-
   // THIS WAS MISSING: The actual return for the main component
   return (
     <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
