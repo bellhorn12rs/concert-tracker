@@ -119,7 +119,6 @@ const MarqueeStyles = () => (
 
     body {
       background-color: #050508;
-      /* Triple Texture: Scanlines + Chromatic Aberration + Dot Grid */
       background-image: 
         linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
         linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02)),
@@ -128,7 +127,6 @@ const MarqueeStyles = () => (
       background-attachment: fixed;
     }
 
-    /* Ambient Corner Glows */
     body::before {
       content: "";
       position: fixed;
@@ -144,7 +142,6 @@ const MarqueeStyles = () => (
       pointer-events: none; z-index: -1;
     }
 
-    /* The "Filler" Textures */
     .card-texture {
       background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.03) 1px, transparent 0);
       background-size: 8px 8px;
@@ -175,11 +172,22 @@ const MarqueeStyles = () => (
       100% { transform: scale(1) translateY(0) translateX(-50%); opacity: 0.8; }
     }
 
+    @keyframes scrap-fall {
+      0% { transform: translateY(-40px) rotate(var(--r, 0deg)); opacity: 0; }
+      65% { transform: translateY(5px) rotate(var(--r, 0deg)); opacity: 1; }
+      100% { transform: translateY(0) rotate(var(--r, 0deg)); opacity: 1; }
+    }
+
+    @keyframes tape-drop {
+      0% { transform: translateX(-50%) translateY(-10px) scaleX(0.5); opacity: 0; }
+      70% { transform: translateX(-50%) translateY(2px) scaleX(1.06); opacity: 0.9; }
+      100% { transform: translateX(-50%) translateY(0) scaleX(1); opacity: 0.75; }
+    }
+
     .scrap-paper {
       background-image: 
         repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(0,0,0,0.01) 20px, rgba(0,0,0,0.01) 21px),
         linear-gradient(160deg, #f5f0e8 0%, #e8e0cc 100%) !important;
-      /* "Dirty" hand-cut edges */
       border-radius: 2px 5px 3px 6px / 4px 2px 5px 3px !important;
       filter: contrast(1.05) sepia(0.15);
       position: relative;
@@ -194,7 +202,6 @@ const MarqueeStyles = () => (
       background: url("https://www.transparenttextures.com/patterns/stardust.png");
     }
 
-    /* Slot Machine / UI Animations */
     @keyframes slot-machine {
       0% { transform: translateY(0); opacity: 1; }
       20% { transform: translateY(-10px); opacity: 0.5; }
@@ -209,7 +216,6 @@ const MarqueeStyles = () => (
     @keyframes ferris-rotate { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
     @keyframes flicker { 0%,98%,100%{opacity:1} 99%{opacity:0.8} }
 
-    /* Component Classes */
     .fade-in { animation: fade-in-kf 0.4s ease both; }
     @keyframes fade-in-kf { from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
 
@@ -220,7 +226,6 @@ const MarqueeStyles = () => (
     .marquee-flicker { animation: flicker 6s infinite; }
     .ferris-wheel-ring { animation: ferris-rotate 20s linear infinite; transform-origin: center; }
 
-    /* Tab & Timeline UI */
     .tab-active { position: relative; }
     .tab-active::after { 
       content: ''; position: absolute; bottom: 0; left: 15%; right: 15%; height: 2px; 
@@ -241,11 +246,9 @@ const MarqueeStyles = () => (
       pointer-events: none;
     }
 
-    /* Ticket Details */
     .perf-edge { background-image: radial-gradient(circle at 0 50%, transparent 8px, #111118 8px); background-size: 1px 20px; }
     .wristband { background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px); }
     
-    /* Scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
@@ -565,18 +568,25 @@ function SetlistSpotlight({ concerts, onVault }) {
         position: 'relative',
         marginBottom: isTop ? 28 : 0,
         zIndex: isTop ? 2 : 1,
-        animation: 'scrap-fall 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards',
+        transform: `rotate(${r}deg)`,
+        animationName: 'scrap-fall',
+        animationDuration: '0.5s',
+        animationTimingFunction: 'cubic-bezier(0.23, 1, 0.32, 1)',
+        animationFillMode: 'both',
       }}>
-        {/* Tape — delayed so it hits after the card lands */}
+        {/* Tape — slaps down after card lands */}
         <div style={{
           position: 'absolute', top: -10, left: '50%',
           transform: 'translateX(-50%)',
           width: 46, height: 16,
           background: tapeColor,
-          opacity: 0,
           borderRadius: 1, zIndex: 10,
           boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-          animation: 'tape-drop 0.25s ease-out 0.45s forwards'
+          animationName: 'tape-drop',
+          animationDuration: '0.25s',
+          animationDelay: '0.45s',
+          animationTimingFunction: 'ease-out',
+          animationFillMode: 'both',
         }} />
 
         <div className="scrap-paper" style={{
@@ -589,28 +599,21 @@ function SetlistSpotlight({ concerts, onVault }) {
           flexDirection: 'column',
           border: '1px solid rgba(0,0,0,0.06)',
           borderRadius: 3,
-          transform: `rotate(${r}deg)`
         }}>
-          {/* Ruled lines */}
           {[0,1,2,3].map(j => (
             <div key={j} style={{ position:'absolute', left:32, right:8, top:44+j*22, height:1, background:'rgba(150,180,220,0.45)' }} />
           ))}
-          {/* Margin line */}
           <div style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1.5, background: 'rgba(220,60,60,0.25)' }} />
-          {/* Hole punch */}
           <div style={{ position:'absolute', left:8, top:'40%', width:10, height:10, borderRadius:'50%', background:'rgba(0,0,0,0.08)', boxShadow:'inset 0 1px 2px rgba(0,0,0,0.15)' }} />
-          {/* Corner doodle */}
           <div style={{ position:'absolute', bottom:8, right:10, fontFamily:"'Caveat',cursive", fontSize:'1.4rem', color:'rgba(0,0,0,0.12)', transform:'rotate(15deg)', userSelect:'none' }}>{doodle}</div>
 
           <div style={{ paddingLeft: 14, flex: 1, position: 'relative', zIndex: 1 }}>
             <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.8rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 4 }}>
               {data.band}
             </div>
-
             <svg height="6" width="100%" style={{ marginBottom: 8, overflow:'visible' }}>
               <path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.2" fill="none" strokeOpacity="0.15" strokeLinecap="round"/>
             </svg>
-
             <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.85rem', color: '#3a3a6e', lineHeight: 1.2 }}>
               {fmtDateShort(data.date)}
             </div>
