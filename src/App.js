@@ -519,6 +519,8 @@ function SetlistSpotlight({ concerts, onVault }) {
       band: s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0] || '?',
       date: s.date,
       venue: s.venue,
+      is_festival: s.is_festival,
+      festival_name: s.festival_name,
       sfmUrl: `https://www.setlist.fm/search?query=${encodeURIComponent(s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0])}+${encodeURIComponent(s.date)}`
     }));
   }, [vault]);
@@ -535,24 +537,25 @@ function SetlistSpotlight({ concerts, onVault }) {
   // Bottom card: fires every 6 seconds but starts 3 seconds late
   useEffect(() => {
     if (slides.length < 2) return;
+    let interval;
     const delay = setTimeout(() => {
       setBotIdx(i => (i + 2) % slides.length);
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         setBotIdx(i => (i + 2) % slides.length);
       }, 6000);
-      // store interval ref for cleanup
-      return () => clearInterval(interval);
     }, 3000);
-    return () => clearTimeout(delay);
+    return () => {
+      clearTimeout(delay);
+      if (interval) clearInterval(interval);
+    };
   }, [slides.length]);
 
   if (!slides.length) return null;
-  //SCRAP PAPER
-const Scrap = ({ data, isTop }) => {
+
+  const Scrap = ({ data, isTop }) => {
     const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
     const r = isTop ? (charCode % 4) - 3 : (charCode % 4) + 1;
     const tapeColor = TAPE_COLORS[charCode % TAPE_COLORS.length];
-
     const doodles = ['♪', '✦', '★', '♡', '✌', '⚡', '♫', '◈'];
     const doodle = doodles[charCode % doodles.length];
 
@@ -565,23 +568,23 @@ const Scrap = ({ data, isTop }) => {
         transform: `rotate(${r}deg)`,
         transition: 'transform 0.3s ease'
       }}>
-        {/* Tape */}
+        {/* Tape Slam */}
         <div style={{
           position: 'absolute', top: -10, left: '50%',
           transform: 'translateX(-50%)',
           width: 46, height: 16,
           background: tapeColor,
           opacity: 0.75, borderRadius: 1, zIndex: 10,
-          boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
+          boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+          animation: 'tape-slam 0.4s 0.6s both'
         }} />
 
-        <div style={{
-          background: 'linear-gradient(160deg,#f5f0e8,#e8e0cc)',
+        <div className="scrap-paper" style={{
           padding: '22px 16px 14px',
           boxShadow: '4px 8px 20px rgba(0,0,0,0.5)',
           position: 'relative',
           overflow: 'hidden',
-          minHeight: 110,
+          minHeight: 115,
           display: 'flex',
           flexDirection: 'column',
           border: '1px solid rgba(0,0,0,0.06)',
@@ -591,7 +594,7 @@ const Scrap = ({ data, isTop }) => {
           {[0,1,2,3].map(j => (
             <div key={j} style={{ position:'absolute', left:32, right:8, top:44+j*22, height:1, background:'rgba(150,180,220,0.45)' }} />
           ))}
-          {/* Red margin line */}
+          {/* Margin line */}
           <div style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1.5, background: 'rgba(220,60,60,0.25)' }} />
           {/* Hole punch */}
           <div style={{ position:'absolute', left:8, top:'40%', width:10, height:10, borderRadius:'50%', background:'rgba(0,0,0,0.08)', boxShadow:'inset 0 1px 2px rgba(0,0,0,0.15)' }} />
@@ -599,48 +602,53 @@ const Scrap = ({ data, isTop }) => {
           <div style={{ position:'absolute', bottom:8, right:10, fontFamily:"'Caveat',cursive", fontSize:'1.4rem', color:'rgba(0,0,0,0.12)', transform:'rotate(15deg)', userSelect:'none' }}>{doodle}</div>
 
           <div style={{ paddingLeft: 14, flex: 1, position: 'relative', zIndex: 1 }}>
-            {/* Big band name */}
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.9rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 6 }}>
+            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.8rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 4 }}>
               {data.band}
             </div>
-
-            {/* Hand-drawn underline SVG */}
+            
             <svg height="6" width="100%" style={{ marginBottom: 8, overflow:'visible' }}>
-              <path d={`M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4`} stroke="#1a1a2e" strokeWidth="1.5" fill="none" strokeOpacity="0.2" strokeLinecap="round"/>
+              <path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.2" fill="none" strokeOpacity="0.15" strokeLinecap="round"/>
             </svg>
 
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.9rem', color: '#3a3a6e', lineHeight: 1.3 }}>
+            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.85rem', color: '#3a3a6e', lineHeight: 1.2 }}>
               {fmtDateShort(data.date)}
             </div>
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.85rem', color: '#5a5a7e', lineHeight: 1.3 }}>
+            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.8rem', color: '#5a5a7e', lineHeight: 1.2 }}>
               {data.venue?.toUpperCase() || 'UNKNOWN VENUE'}
             </div>
-            {/* Handwritten note if festival */}
-            {data.is_festival && data.festival_name && (
-              <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.8rem', color:'#886644', marginTop:4, fontStyle:'italic' }}>
+            {data.is_festival && (
+              <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.75rem', color:'#886644', marginTop:4 }}>
                 ✎ {data.festival_name}
               </div>
             )}
           </div>
 
-          <a
-            href={data.sfmUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={e => e.stopPropagation()}
+          <a href={data.sfmUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
             style={{
-              alignSelf: 'flex-end', background: 'rgba(0,0,0,0.08)', color: '#1a1a2e',
+              alignSelf: 'flex-end', background: 'rgba(0,0,0,0.06)', color: '#1a1a2e',
               fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px',
-              borderRadius: 2, textDecoration: 'none', letterSpacing: '0.05em',
-              border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700
-            }}
-          >
+              borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700
+            }}>
             SETLIST ↗
           </a>
         </div>
       </div>
     );
   };
+
+  // THIS WAS MISSING: The actual return for the main component
+  return (
+    <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 20, textTransform: 'uppercase', textAlign: 'center', opacity: 0.4 }}>
+        📋 BACKSTAGE LOG
+      </div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 8px' }}>
+        <Scrap data={slides[topIdx % slides.length]} isTop={true} />
+        <Scrap data={slides[botIdx % slides.length]} isTop={false} />
+      </div>
+    </div>
+  );
+} // FINAL CLOSING BRACKET
 // ─── ARTIST INSIGHTS (POSTER EDITION) ─────────────────────────────────────────
 function ArtistInsights({ concerts }) {
   const [index, setIndex] = useState(0);
