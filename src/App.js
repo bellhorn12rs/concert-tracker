@@ -513,11 +513,13 @@ function SetlistSpotlight({ concerts, onVault }) {
   const vault = useMemo(() => concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()), [concerts]);
   const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
 
+  const slidesRef = useRef([]);
   const slides = useMemo(() => {
     if (!vault.length) return [];
+    if (slidesRef.current.length > 0) return slidesRef.current;
     const sorted = [...vault].sort((a, b) => b.date.localeCompare(a.date));
     const randomPool = [...vault].sort(() => 0.5 - Math.random());
-    return [sorted[0], ...randomPool.slice(0, 19)].map(s => ({
+    const result = [sorted[0], ...randomPool.slice(0, 19)].map(s => ({
       id: s.id,
       band: s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0] || '?',
       date: s.date,
@@ -526,8 +528,9 @@ function SetlistSpotlight({ concerts, onVault }) {
       festival_name: s.festival_name,
       sfmUrl: `https://www.setlist.fm/search?query=${encodeURIComponent(s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0])}+${encodeURIComponent(s.date)}`
     }));
+    slidesRef.current = result;
+    return result;
   }, [vault]);
-
   // Top card: fires every 6 seconds starting immediately
   useEffect(() => {
     if (slides.length < 2) return;
