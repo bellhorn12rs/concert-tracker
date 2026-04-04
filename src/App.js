@@ -647,7 +647,7 @@ function SetlistSpotlight({ concerts, onVault }) {
       venue: s.venue,
       is_festival: s.is_festival,
       festival_name: s.festival_name,
-      // ADD THIS LINE
+      // FIX: Ensure this is pulling from the database column 'image_url'
       image_url: s.image_url, 
       sfmUrl: `https://www.setlist.fm/search?query=${encodeURIComponent(s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0])}+${encodeURIComponent(s.date)}`
     }));
@@ -2173,34 +2173,92 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
 }
 
 function EditModal({ concert, onClose, onSave, onDelete }) {
-  const [form, setForm]=useState({ date:concert?.date||'', bands:(concert?.bands||[]).join(', '), venue:concert?.venue||'', city:concert?.city||'', state:concert?.state||'', is_festival:concert?.is_festival||false, festival_name:concert?.festival_name||'', festival_day:concert?.festival_day||'', has_setlist_names:concert?.has_setlist_names||'', genre:concert?.genre||'', setlist_image_url:concert?.setlist_image_url||'' });
-  const [saving,setSaving]=useState(false), [confirming,setConfirming]=useState(false);
-  const set=(k,v)=>setForm(f=>({...f,[k]:v}));
-  const handleSave=async()=>{ setSaving(true); const bandList=form.bands.split(',').map(b=>b.trim()).filter(Boolean); await onSave(concert?.id,{...form,bands:bandList,has_setlist:!!(form.has_setlist_names?.trim())}); setSaving(false); };
-  const lbl={ display:'block', fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:C.tealDim, marginBottom:4 };
-  const inp={...inputSt,width:'100%'};
+  const [form, setForm] = useState({ 
+    date: concert?.date || '', 
+    bands: (concert?.bands || []).join(', '), 
+    venue: concert?.venue || '', 
+    city: concert?.city || '', 
+    state: concert?.state || '', 
+    is_festival: concert?.is_festival || false, 
+    festival_name: concert?.festival_name || '', 
+    festival_day: concert?.festival_day || '', 
+    has_setlist_names: concert?.has_setlist_names || '', 
+    genre: concert?.genre || '', 
+    // FIXED: Changed key to 'image_url' to match database column
+    image_url: concert?.image_url || '' 
+  });
+
+  const [saving, setSaving] = useState(false), [confirming, setConfirming] = useState(false);
+  
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSave = async () => { 
+    setSaving(true); 
+    const bandList = form.bands.split(',').map(b => b.trim()).filter(Boolean); 
+    
+    // This sends the updated form (including image_url) to the handleSave in App.js
+    await onSave(concert?.id, {
+      ...form,
+      bands: bandList,
+      has_setlist: !!(form.has_setlist_names?.trim())
+    }); 
+    setSaving(false); 
+  };
+
+  const lbl = { display: 'block', fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 };
+  const inp = { ...inputSt, width: '100%' };
+
   return (
-    <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,0.85)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(4px)' }} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="fade-in" style={{ background:C.bgCard,border:`1px solid ${C.teal}`,borderRadius:10,padding:24,width:'100%',maxWidth:520,maxHeight:'90vh',overflowY:'auto',boxShadow:`0 0 40px ${C.tealGlow}` }}>
-        <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20 }}>
-          <div style={{ fontFamily:"'Bebas Neue'",fontSize:'1.4rem',color:C.teal }}>{concert?.id?'Edit Show':'Add Show'}</div>
-          <button onClick={onClose} style={{ background:'none',border:'none',color:C.gray,fontSize:'1.2rem',cursor:'pointer' }}>✕</button>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(4px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.teal}`, borderRadius: 10, padding: 24, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: `0 0 40px ${C.tealGlow}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: C.teal }}>{concert?.id ? 'Edit Show' : 'Add Show'}</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: C.gray, fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
         </div>
-        <div style={{ marginBottom:14 }}><label style={lbl}>Date</label><input style={inp} type="date" value={form.date} onChange={e=>set('date',e.target.value)} /></div>
-        <div style={{ marginBottom:14 }}><label style={lbl}>Artists (comma separated)</label><input style={inp} value={form.bands} onChange={e=>set('bands',e.target.value)} /></div>
-        <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14 }}>
-          <div><label style={lbl}>Venue</label><input style={inp} value={form.venue} onChange={e=>set('venue',e.target.value)} /></div>
-          <div><label style={lbl}>City</label><input style={inp} value={form.city} onChange={e=>set('city',e.target.value)} /></div>
+        
+        <div style={{ marginBottom: 14 }}><label style={lbl}>Date</label><input style={inp} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
+        <div style={{ marginBottom: 14 }}><label style={lbl}>Artists (comma separated)</label><input style={inp} value={form.bands} onChange={e => set('bands', e.target.value)} /></div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+          <div><label style={lbl}>Venue</label><input style={inp} value={form.venue} onChange={e => set('venue', e.target.value)} /></div>
+          <div><label style={lbl}>City</label><input style={inp} value={form.city} onChange={e => set('city', e.target.value)} /></div>
         </div>
-        <div style={{ marginBottom:14 }}><label style={lbl}>State</label><input style={{...inp,width:80}} value={form.state} onChange={e=>set('state',e.target.value)} maxLength={2} /></div>
-        <div style={{ marginBottom:14 }}><label style={lbl}>Genre</label><select style={inp} value={form.genre} onChange={e=>set('genre',e.target.value)}><option value="">— unset —</option>{GENRES.map(g=><option key={g} value={g}>{g}</option>)}</select></div>
-        <div style={{ marginBottom:14,display:'flex',alignItems:'center',gap:10 }}><input type="checkbox" id="is_fest" checked={form.is_festival} onChange={e=>set('is_festival',e.target.checked)} style={{ accentColor:C.teal,width:16,height:16 }} /><label htmlFor="is_fest" style={{...lbl,marginBottom:0,cursor:'pointer'}}>Festival Day</label></div>
-        {form.is_festival&&(<div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14 }}><div><label style={lbl}>Festival Name</label><input style={inp} value={form.festival_name} onChange={e=>set('festival_name',e.target.value)} /></div><div><label style={lbl}>Day Label</label><input style={inp} value={form.festival_day} onChange={e=>set('festival_day',e.target.value)} /></div></div>)}
-        <div style={{ marginBottom:14 }}><label style={lbl}>Setlists Obtained (band names, comma separated)</label><input style={inp} value={form.has_setlist_names} onChange={e=>set('has_setlist_names',e.target.value)} /></div>
-        <div style={{ marginBottom:14 }}><label style={lbl}>Setlist Photo URL (Imgur etc)</label><input style={inp} value={form.setlist_image_url||''} onChange={e=>set('setlist_image_url',e.target.value)} placeholder="https://i.imgur.com/abc123.jpg" /></div>
-        <div style={{ display:'flex',gap:8,justifyContent:'space-between',marginTop:20 }}>
-          <div style={{ display:'flex',gap:8 }}>{concert?.id&&!confirming&&<Btn variant="danger" onClick={()=>setConfirming(true)}>Delete</Btn>}{confirming&&<><Btn variant="danger" onClick={()=>onDelete(concert.id)}>Confirm</Btn><Btn variant="secondary" onClick={()=>setConfirming(false)}>Cancel</Btn></>}</div>
-          <div style={{ display:'flex',gap:8 }}><Btn variant="secondary" onClick={onClose}>Cancel</Btn><Btn onClick={handleSave} disabled={saving}>{saving?'Saving...':'Save'}</Btn></div>
+        
+        <div style={{ marginBottom: 14 }}><label style={lbl}>State</label><input style={{ ...inp, width: 80 }} value={form.state} onChange={e => set('state', e.target.value)} maxLength={2} /></div>
+        
+        <div style={{ marginBottom: 14 }}><label style={lbl}>Genre</label><select style={inp} value={form.genre} onChange={e => set('genre', e.target.value)}><option value="">— unset —</option>{GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+        
+        <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}><input type="checkbox" id="is_fest" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} style={{ accentColor: C.teal, width: 16, height: 16 }} /><label htmlFor="is_fest" style={{ ...lbl, marginBottom: 0, cursor: 'pointer' }}>Festival Day</label></div>
+        
+        {form.is_festival && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+            <div><label style={lbl}>Festival Name</label><input style={inp} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} /></div>
+            <div><label style={lbl}>Day Label</label><input style={inp} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} /></div>
+          </div>
+        )}
+        
+        <div style={{ marginBottom: 14 }}><label style={lbl}>Setlists Obtained (band names, comma separated)</label><input style={inp} value={form.has_setlist_names} onChange={e => set('has_setlist_names', e.target.value)} /></div>
+        
+        {/* FIXED: Input field now correctly targets image_url */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={lbl}>Gig Photo / Poster URL (Imgur Direct Link)</label>
+          <input 
+            style={inp} 
+            value={form.image_url} 
+            onChange={e => set('image_url', e.target.value)} 
+            placeholder="https://i.imgur.com/abc123.jpg" 
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', marginTop: 20 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {concert?.id && !confirming && <Btn variant="danger" onClick={() => setConfirming(true)}>Delete</Btn>}
+            {confirming && <><Btn variant="danger" onClick={() => onDelete(concert.id)}>Confirm</Btn><Btn variant="secondary" onClick={() => setConfirming(false)}>Cancel</Btn></>}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
+            <Btn onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Btn>
+          </div>
         </div>
       </div>
     </div>
