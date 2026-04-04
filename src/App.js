@@ -563,7 +563,7 @@ function SetlistSpotlight({ concerts, onVault }) {
     const doodle = doodles[charCode % doodles.length];
 
     return (
-      <div key={data.id} style={{
+      <div style={{
         flex: 1,
         position: 'relative',
         marginBottom: isTop ? 28 : 0,
@@ -651,8 +651,8 @@ function SetlistSpotlight({ concerts, onVault }) {
         📋 BACKSTAGE LOG
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 8px' }}>
-        <Scrap data={slides[topIdx % slides.length]} isTop={true} />
-        <Scrap data={slides[botIdx % slides.length]} isTop={false} />
+        <Scrap key={`top-${topIdx}`} data={slides[topIdx % slides.length]} isTop={true} />
+        <Scrap key={`bot-${botIdx}`} data={slides[botIdx % slides.length]} isTop={false} />
       </div>
     </div>
   );
