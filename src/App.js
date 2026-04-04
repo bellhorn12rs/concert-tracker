@@ -471,58 +471,47 @@ function OnThisDay({ concerts }) {
   );
 }
 
-// ─── SETLIST SPOTLIGHT (DUAL-TRACK EDITION) ───────────────────────────────────
+// ─── SETLIST SPOTLIGHT (STAGGERED DUAL EDITION) ──────────────────────────────
 function SetlistSpotlight({ concerts, onVault }) {
   const [topIdx, setTopIdx] = useState(0);
-  const [botIdx, setBotIdx] = useState(1); // Start on a different slide
+  const [botIdx, setBotIdx] = useState(1);
 
   const vault = useMemo(() => concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()), [concerts]);
   const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
 
   const slides = useMemo(() => {
     if (!vault.length) return [];
+    // Combine latest with a randomized pool to keep the dashboard interesting
     const sorted = [...vault].sort((a, b) => b.date.localeCompare(a.date));
-    
-    // Expand the pool: Latest, Randoms, and MVP
-    const items = [];
-    items.push({ label: 'LATEST ADDITION', show: sorted[0] });
-    
-    // Add a few random ones from the vault to keep the cycle fresh
     const randomPool = [...vault].sort(() => 0.5 - Math.random());
-    randomPool.slice(0, 8).forEach(s => {
-      items.push({ label: 'FROM THE VAULT', show: s });
-    });
-
-    return items.map(item => ({
-      label: item.label,
-      band: item.show.has_setlist_names?.split(',')[0]?.trim() || item.show.bands?.[0] || '?',
-      date: item.show.date,
-      venue: item.show.venue,
-      city: item.show.city,
-      genre: item.show.genre
+    
+    const combined = [sorted[0], ...randomPool.slice(0, 14)];
+    
+    return combined.map(s => ({
+      band: s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0] || '?',
+      date: s.date,
+      venue: s.venue,
+      genre: s.genre,
+      // URL for the link button
+      sfmUrl: `https://www.setlist.fm/search?query=${encodeURIComponent(s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0])}+${encodeURIComponent(s.date)}`
     }));
   }, [vault]);
 
-  // STAGGERED CYCLING LOGIC
+  // MASTER STAGGERED TIMER (Every 5s, alternate flips)
   useEffect(() => {
     if (slides.length <= 2) return;
 
-    // Update Top every 6 seconds
-    const topTimer = setInterval(() => {
-      setTopIdx(prev => (prev + 2) % slides.length);
-    }, 6000);
-
-    // Update Bottom every 6 seconds, but offset by 3 seconds
-    const botTimer = setTimeout(() => {
-      setInterval(() => {
+    let toggle = true; // True = Top flips, False = Bottom flips
+    const masterInterval = setInterval(() => {
+      if (toggle) {
+        setTopIdx(prev => (prev + 2) % slides.length);
+      } else {
         setBotIdx(prev => (prev + 2) % slides.length);
-      }, 6000);
-    }, 3000);
+      }
+      toggle = !toggle;
+    }, 5000); // 5 seconds between ANY flip (10s cycle for each card)
 
-    return () => {
-      clearInterval(topTimer);
-      clearTimeout(botTimer);
-    };
+    return () => clearInterval(masterInterval);
   }, [slides.length]);
 
   if (!slides.length) return (
@@ -531,69 +520,88 @@ function SetlistSpotlight({ concerts, onVault }) {
     </div>
   );
 
-  // Mini Card Component for the stack
   const Scrap = ({ data, index, isTop }) => {
     const tapeColor = TAPE_COLORS[index % TAPE_COLORS.length];
-    const rotation = isTop ? '-2deg' : '1.5deg';
+    const rotation = isTop ? '-1.5deg' : '2deg';
     
     return (
       <div className="fade-in" key={`${index}-${isTop}`} style={{ 
         position: 'relative', 
         transform: `rotate(${rotation})`,
-        marginBottom: isTop ? 20 : 0,
-        flex: 1,
-        transition: 'all 0.5s ease'
+        marginBottom: isTop ? 22 : 0,
+        flex: 1
       }}>
-        {/* Tape piece */}
-        <div style={{ position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%) rotate(2deg)', width: 40, height: 14, background: tapeColor, opacity: 0.8, borderRadius: 2, zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
+        {/* Tape */}
+        <div style={{ position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%)', width: 42, height: 14, background: tapeColor, opacity: 0.8, borderRadius: 2, zIndex: 10, boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }} />
         
         <div style={{ 
           background: 'linear-gradient(160deg,#f5f0e8,#e8e0cc)', 
           borderRadius: 4, 
-          padding: '15px 15px 10px 15px', 
-          boxShadow: '0 4px 15px rgba(0,0,0,0.4)',
+          padding: '12px 14px', 
+          boxShadow: '0 5px 15px rgba(0,0,0,0.5)',
           position: 'relative',
           overflow: 'hidden',
-          minHeight: 100
+          minHeight: 110,
+          display: 'flex',
+          flexDirection: 'column'
         }}>
-          {/* Lined paper lines */}
-          <div style={{ position: 'absolute', left: 35, top: 0, bottom: 0, width: 1, background: 'rgba(220,60,60,0.15)' }} />
+          <div style={{ position: 'absolute', left: 32, top: 0, bottom: 0, width: 1, background: 'rgba(220,60,60,0.15)' }} />
           
-          <div style={{ paddingLeft: 10 }}>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 }}>
-              {data.label}
-            </div>
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.2rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 2 }}>
+          <div style={{ paddingLeft: 10, flex: 1 }}>
+            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.25rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1.1, marginBottom: 2 }}>
               {data.band}
             </div>
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.8rem', color: '#4a4a6e' }}>
-              {fmtDateShort(data.date)} // {data.venue}
+            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.8rem', color: '#4a4a6e', marginBottom: 8 }}>
+              {fmtDateShort(data.date)} // {data.venue?.toUpperCase()}
             </div>
           </div>
+
+          {/* Setlist Link Button */}
+          <a 
+            href={data.sfmUrl} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            onClick={e => e.stopPropagation()}
+            style={{ 
+              alignSelf: 'flex-end',
+              background: '#1a1a2e',
+              color: '#fff',
+              fontSize: 7,
+              fontFamily: "'Space Mono'",
+              padding: '4px 8px',
+              borderRadius: 3,
+              textDecoration: 'none',
+              letterSpacing: '0.05em',
+              zIndex: 5,
+              boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+              transition: '0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#444'}
+            onMouseLeave={e => e.currentTarget.style.background = '#1a1a2e'}
+          >
+            SETLIST ↗
+          </a>
         </div>
       </div>
     );
   };
 
   return (
-    <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column', padding: '5px 0' }} onClick={onVault}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 2, marginBottom: 15, textTransform: 'uppercase', textAlign: 'center' }}>
+    <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 2, marginBottom: 15, textTransform: 'uppercase', textAlign: 'center', opacity: 0.6 }}>
         📋 SETLIST ARCHIVE
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-        <Scrap data={slides[topIdx]} index={topIdx} isTop={true} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Scrap data={slides[topIdx % slides.length]} index={topIdx} isTop={true} />
         <Scrap data={slides[botIdx % slides.length]} index={botIdx} isTop={false} />
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginTop: 15 }}>
-        {slides.slice(0, Math.min(slides.length, 10)).map((_, i) => (
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginTop: 12 }}>
+        {slides.slice(0, 8).map((_, i) => (
           <div key={i} style={{ 
-            width: 3, 
-            height: 3, 
-            borderRadius: '50%', 
-            background: (i === topIdx || i === botIdx) ? C.gold : C.grayDim,
-            boxShadow: (i === topIdx || i === botIdx) ? `0 0 5px ${C.gold}` : 'none',
+            width: 3, height: 3, borderRadius: '50%', 
+            background: (i === topIdx % 8 || i === botIdx % 8) ? C.gold : C.grayDim,
             transition: '0.3s' 
           }} />
         ))}
@@ -601,7 +609,6 @@ function SetlistSpotlight({ concerts, onVault }) {
     </div>
   );
 }
-
 // ─── ARTIST INSIGHTS (POSTER EDITION) ─────────────────────────────────────────
 function ArtistInsights({ concerts }) {
   const [index, setIndex] = useState(0);
