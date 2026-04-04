@@ -1076,11 +1076,37 @@ function TicketStubCard({ event, onEdit, genreMap }) {
 
       {/* Main ticket body */}
       <div style={{ flex:1, background:`linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(borderColor,0.08)})`, border:`1px solid ${borderColor}44`, borderRight:'none', borderRadius:'6px 0 0 6px', padding:'12px 16px', position:'relative', overflow:'hidden' }}>
+        
+        {/* 📸 GIG PHOTO PREVIEW (Polaroid Style) */}
+        {event.image_url && (
+          <div style={{
+            position: 'absolute',
+            right: 12,
+            top: '50%',
+            transform: 'translateY(-50%) rotate(3deg)',
+            width: 52,
+            height: 52,
+            padding: '3px 3px 10px 3px',
+            background: '#fff',
+            boxShadow: '0 4px 10px rgba(0,0,0,0.4)',
+            border: '1px solid #ddd',
+            zIndex: 10,
+            pointerEvents: 'none' 
+          }}>
+            <img 
+              src={event.image_url} 
+              alt="Gig" 
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '1px' }} 
+              onError={(e) => e.target.parentElement.style.display = 'none'}
+            />
+          </div>
+        )}
+
         {/* Background watermark */}
         <div style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', fontFamily:"'Bebas Neue'", fontSize:'5rem', color:'rgba(255,255,255,0.02)', lineHeight:1, userSelect:'none', whiteSpace:'nowrap' }}>ADMIT ONE</div>
 
         {/* Top row */}
-        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:8 }}>
+        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:8, position: 'relative', zIndex: 2 }}>
           <div>
             <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.3rem', letterSpacing:'0.08em', color:C.white, lineHeight:1 }}>{fmtDate(event.date)}</div>
             <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, marginTop:2 }}>{[event.venue,event.city,event.state].filter(Boolean).join(' · ')||'No location'}</div>
@@ -1092,7 +1118,7 @@ function TicketStubCard({ event, onEdit, genreMap }) {
         </div>
 
         {/* Artist names */}
-        <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:8 }}>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:8, position: 'relative', zIndex: 2, maxWidth: '85%' }}>
           {bands.map((b,i) => {
             const bg = genreMap[b] ? GENRE_COLORS[genreMap[b]] : null;
             return <span key={i} style={{ fontSize:i===0?'1rem':'0.78rem', fontFamily:i===0?"'Bebas Neue'":"'Space Mono',monospace", color:bg||C.white, letterSpacing:i===0?'0.06em':'0', fontWeight:i===0?900:400 }}>{b}{i<bands.length-1&&i!==0?' •':''}</span>;
@@ -1100,7 +1126,7 @@ function TicketStubCard({ event, onEdit, genreMap }) {
         </div>
 
         {/* Bottom row */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', position: 'relative', zIndex: 2 }}>
           <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:C.grayDim, letterSpacing:'0.1em' }}>#{serial}</div>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             {hasSetlist && (
@@ -1123,7 +1149,6 @@ function TicketStubCard({ event, onEdit, genreMap }) {
     </div>
   );
 }
-
 // ─── FESTIVAL WRISTBAND CARD ───────────────────────────────────────────────────
 function WristbandCard({ event, genreMap, compact = false }) {
   const bands = event.bands||[];
