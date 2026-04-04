@@ -185,7 +185,7 @@ const MarqueeStyles = () => (
     .ticket-hover:hover { transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) scale(1.02); }
     .ticket-hover { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
-    .marquee-text { display:inline-block; padding-left:100%; animation: marquee 55s linear infinite; }
+    .marquee-text {display: inline-block; padding-left: 100%; animation: marquee 75s linear infinite; }
     .marquee-flicker { animation: flicker 6s infinite; }
     .ferris-wheel-ring { animation: ferris-rotate 20s linear infinite; transform-origin: center; }
 
@@ -1008,10 +1008,8 @@ function WristbandCard({ event, genreMap, compact = false }) {
     </div>
   );
 }
-
-```jsx
-// ─── SETLIST VAULT ────────────────────────────────────────────────────────────
-function SetlistVaultTab({ concerts }) {
+// ─── SETLIST VAULT (LINKED EDITION) ───────────────────────────────────────────
+function SetlistVaultTab({ concerts, genreMap }) {
   const setlists = useMemo(() => {
     const results = [];
     concerts.forEach(c => {
@@ -1031,7 +1029,7 @@ function SetlistVaultTab({ concerts }) {
     <div style={{ padding:'80px 0', textAlign:'center' }} className="fade-in">
       <div style={{ fontSize:'4rem', marginBottom:20 }}>📋</div>
       <div style={{ fontFamily:"'Bebas Neue'", fontSize:'2rem', color:C.white, marginBottom:12 }}>VAULT IS EMPTY</div>
-      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:10, color:C.gray }}>Edit a show and add band names to "Setlists Obtained" to start your collection.</div>
+      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:10, color:C.gray }}>Add bands to "Setlists Obtained" to see them here.</div>
     </div>
   );
 
@@ -1042,46 +1040,25 @@ function SetlistVaultTab({ concerts }) {
     const rot = ROTATIONS[i%ROTATIONS.length];
     const dur = DURATIONS[i%DURATIONS.length];
     const tapeColor = TAPE_COLORS[i%TAPE_COLORS.length];
-    const gc = s.genre ? GENRE_COLORS[s.genre] : null;
-    const sfmDate = s.date ? s.date.split('-').reverse().join('-') : '';
-    const sfmUrl = `https://www.setlist.fm/search?query=${encodeURIComponent(s.band + ' ' + sfmDate)}`;
+    const gcName = genreMap[s.band] || s.genre;
+    const gc = gcName ? GENRE_COLORS[gcName] : null;
+    const sfmUrl = `https://www.setlist.fm/search?query=${encodeURIComponent(s.band)}+${getYear(s.date)}`;
+
     return (
       <div className="paper-float" style={{ '--r':`${rot}deg`, '--dur':dur, position:'relative', transform:`rotate(${rot}deg)`, marginBottom:40, zIndex:1 }}>
         <div style={{ position:'absolute', top:-12, left:'50%', transform:'translateX(-50%)', width:56, height:22, background:tapeColor, opacity:0.75, borderRadius:3, zIndex:10, boxShadow:`0 2px 8px ${hexToRgba(tapeColor,0.4)}` }} />
         <div style={{ background:'linear-gradient(160deg,#f5f0e8 0%,#ede8d8 40%,#e8e0cc 100%)', borderRadius:4, padding:'32px 28px 24px', boxShadow:'0 8px 32px rgba(0,0,0,0.5),0 2px 8px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.6)', position:'relative', overflow:'hidden' }}>
           {[0,1,2,3,4].map(j => <div key={j} style={{ position:'absolute', left:60, right:0, top:72+j*26, height:1, background:'rgba(150,180,220,0.35)' }} />)}
           <div style={{ position:'absolute', left:54, top:0, bottom:0, width:1.5, background:'rgba(220,60,60,0.3)' }} />
-          <div style={{ position:'absolute', left:18, top:'28%', width:16, height:16, borderRadius:'50%', background:'rgba(0,0,0,0.12)', boxShadow:'inset 0 1px 3px rgba(0,0,0,0.2)' }} />
-          {gc && <div style={{ position:'absolute', top:0, right:0, background:gc, padding:'3px 10px 3px 14px', borderRadius:'0 4px 0 10px', fontFamily:"'Space Mono',monospace", fontSize:7, color:'#000', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:700 }}>{s.genre}</div>}
+          {gc && <div style={{ position:'absolute', top:0, right:0, background:gc, padding:'3px 10px 3px 14px', borderRadius:'0 4px 0 10px', fontFamily:"'Space Mono',monospace", fontSize:7, color:'#000', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:700 }}>{gcName}</div>}
           <div style={{ paddingLeft:18 }}>
             <div style={{ fontFamily:"'Caveat',cursive", fontSize:'clamp(1.4rem,3vw,1.9rem)', fontWeight:700, color:'#1a1a2e', lineHeight:1.1, marginBottom:12 }}>{s.band}</div>
             <div style={{ fontFamily:"'Caveat',cursive", fontSize:'1rem', color:'#2a2a4e', marginBottom:3 }}>{fmtDate(s.date)}</div>
             <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.9rem', color:'#3a3a5e', marginBottom:2 }}>{s.venue}</div>
-            <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.85rem', color:'#5a5a7e', marginBottom:12 }}>{[s.city,s.state].filter(Boolean).join(', ')}{s.is_festival?` · ${s.festival_name}`:''}</div>
-            
-              href={sfmUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                fontFamily: "'Space Mono',monospace",
-                fontSize: 8,
-                color: '#4444aa',
-                textDecoration: 'none',
-                letterSpacing: '0.08em',
-                padding: '4px 10px',
-                background: 'rgba(68,68,170,0.1)',
-                borderRadius: 4,
-                border: '1px solid rgba(68,68,170,0.35)',
-                transition: 'all 0.15s'
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(68,68,170,0.2)'; e.currentTarget.style.color = '#6666cc'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(68,68,170,0.1)'; e.currentTarget.style.color = '#4444aa'; }}
-            >
-              📋 setlist.fm ↗
+            <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.85rem', color:'#5a5a7e', marginBottom:12 }}>{[s.city,s.state].filter(Boolean).join(', ')}</div>
+            <a href={sfmUrl} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} 
+               style={{ display:'inline-block', background:'#1a1a2e', color:'#fff', padding:'5px 10px', borderRadius:4, textDecoration:'none', fontFamily:"'Space Mono'", fontSize:7, letterSpacing:'0.1em' }}>
+               📋 SETLIST.FM ↗
             </a>
           </div>
         </div>
@@ -1093,7 +1070,7 @@ function SetlistVaultTab({ concerts }) {
     <div style={{ padding:'40px 0 80px' }} className="fade-in">
       <div style={{ textAlign:'center', marginBottom:48 }}>
         <div style={{ fontFamily:"'Bebas Neue'", fontSize:'clamp(2.5rem,6vw,4rem)', color:C.white, letterSpacing:'0.06em', marginBottom:8 }}>📋 SETLIST <span style={{ color:C.teal }}>VAULT</span></div>
-        <div style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:C.gray, letterSpacing:'0.2em', textTransform:'uppercase' }}>{setlists.length} setlist{setlists.length!==1?'s':''} in the archive</div>
+        <div style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:C.gray, letterSpacing:'0.2em', textTransform:'uppercase' }}>{setlists.length} entries in the archive</div>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'0 40px', alignItems:'start' }}>
         {cols.map((col,ci) => (
@@ -1105,7 +1082,6 @@ function SetlistVaultTab({ concerts }) {
     </div>
   );
 }
-
 // ─── TIMELINE ─────────────────────────────────────────────────────────────────
 function GenreLegend() {
   return (
@@ -2577,7 +2553,7 @@ async function handleUpcomingDelete(id) {
           {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} />}
           {activeTab === 'passport' && <PassportTab passport={passport} onNavigateToFest={name => { setActiveTab('byFest'); setTimeout(() => { const el = document.getElementById(`fest-${name.replace(/\s+/g, '-')}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); }} />}
           {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
-          {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} />}
+          {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
           {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
           {activeTab === 'browse' && (
             <BrowseTab browseView={browseView} setBrowseView={setBrowseView} search={search} setSearch={setSearch} yearFilter={yearFilter} setYearFilter={setYearFilter} festFilter={festFilter} setFestFilter={setFestFilter} genreFilter={genreFilter} setGenreFilter={setGenreFilter} sortCol={sortCol} setSortCol={setSortCol} sortDir={sortDir} setSortDir={setSortDir} paged={paged} page={page} setPage={setPage} totalPages={totalPages} artistRows={artistRows} years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} onEdit={setEditTarget} onSetGenre={handleSetGenre} genreMap={artistGenres} />
