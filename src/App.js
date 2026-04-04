@@ -151,17 +151,17 @@ const MarqueeStyles = () => (
     }
 
     .big-watermark {
-      position: absolute;
-      bottom: -15px;
-      right: -10px;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 10rem;
-      color: rgba(255, 255, 255, 0.035);
-      line-height: 0.8;
-      pointer-events: none;
-      z-index: 0;
-      letter-spacing: -0.05em;
-    }
+  position: absolute;
+  bottom: -15px;
+  right: -10px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 10rem;
+  color: rgba(255, 255, 255, 0.12);
+  line-height: 0.8;
+  pointer-events: none;
+  z-index: 0;
+  letter-spacing: -0.05em;
+}
 
     /* Animations */
     @keyframes slot-machine {
@@ -634,7 +634,7 @@ function ArtistInsights({ concerts }) {
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: (active.val?.length || 0) > 8 ? '2.5rem' : '4rem', color: C.white, lineHeight: 0.9, marginBottom: 10, textShadow: `0 0 20px ${hexToRgba(C.teal, 0.3)}` }}>
             {active.val}
           </div>
-          <div style={{ fontSize: '0.95rem', color: C.gray, lineHeight: 1.4, maxWidth: '90%', fontFamily: "'Space Mono'", borderLeft: `2px solid ${C.teal}33`, paddingLeft: 12 }}>
+          <div style={{ fontSize: '0.95rem', color: C.white, lineHeight: 1.4, maxWidth: '90%', fontFamily: "'Space Mono'", borderLeft: `2px solid ${C.teal}33`, paddingLeft: 12 }}>
             {active.sub}
           </div>
         </div>
@@ -682,7 +682,7 @@ function RandomShow({ concerts }) {
           <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.purple, letterSpacing: 2, fontWeight: 700 }}>
             {spinning ? "🧠 RECALLING..." : "🎲 RANDOM RECALL"}
           </div>
-          <button onClick={spin} disabled={spinning} style={{ background: spinning ? C.grayDim : `linear-gradient(45deg, ${C.purple}, #ff00ff)`, border: 'none', color: '#fff', fontSize: 8, padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontWeight: 900 }}>
+          <button onClick={spin} disabled={spinning} style={{ background: spinning ? C.white : `linear-gradient(45deg, ${C.purple}, #ff00ff)`, border: 'none', color: '#fff', fontSize: 8, padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontWeight: 900 }}>
             {spinning ? "•••" : "SPIN"}
           </button>
         </div>
@@ -1882,7 +1882,6 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
   const [form, setForm] = useState({ artist: '', venue: '', date: '', status: 'TICKETS BOUGHT' });
   const [saving, setSaving] = useState(false);
 
-  // THIS FIXES THE "STUCK" DATA: Sync form state when the 'show' prop changes
   useEffect(() => {
     if (show && show.id) {
       setForm({
@@ -1897,71 +1896,91 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
   }, [show]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  
-  const handleSave = async () => { 
-    if (!form.artist || !form.date) return alert('Artist and date required.'); 
-    setSaving(true); 
-    await onSave(show?.id, form); 
-    setSaving(false); 
+
+  const handleSave = async () => {
+    if (!form.artist || !form.date) return alert('Artist and date required.');
+    setSaving(true);
+    await onSave(show?.id, form);
+    setSaving(false);
+  };
+
+  const handleDelete = () => {
+    onDelete(show.id);
   };
 
   const lbl = { display: 'block', fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 };
   const inp = { ...inputSt, width: '100%', marginBottom: 15 };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(10px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="fade-in card-texture" style={{ background: C.bgCard, border: `1px solid ${C.gold}`, borderRadius: 12, padding: 32, width: '100%', maxWidth: 420, boxShadow: `0 0 50px ${hexToRgba(C.gold, 0.2)}`, position: 'relative', overflow: 'hidden' }}>
-        
-        {/* Poster Style Header */}
-        <div style={{ position: 'absolute', top: -10, right: -10, fontFamily: "'Bebas Neue'", fontSize: '6rem', color: 'rgba(255,204,0,0.03)', pointerEvents: 'none' }}>
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(10px)' }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        className="fade-in"
+        style={{ background: C.bgCard, border: `1px solid ${C.gold}`, borderRadius: 12, padding: 32, width: '100%', maxWidth: 420, boxShadow: `0 0 50px ${hexToRgba(C.gold, 0.2)}`, position: 'relative' }}
+      >
+        {/* Watermark */}
+        <div style={{ position: 'absolute', top: -10, right: -10, fontFamily: "'Bebas Neue'", fontSize: '6rem', color: 'rgba(255,204,0,0.03)', pointerEvents: 'none', zIndex: 0 }}>
           {isNew ? 'NEW' : 'EDIT'}
         </div>
 
+        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25, position: 'relative', zIndex: 1 }}>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, letterSpacing: '0.05em' }}>
             {isNew ? 'STAGING NEW SHOW' : 'REVISING SHOW'}
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: C.gray, fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: C.gray, fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1 }}>✕</button>
         </div>
 
+        {/* Form */}
         <div style={{ position: 'relative', zIndex: 1 }}>
           <label style={lbl}>Artist / Band *</label>
           <input style={inp} value={form.artist} onChange={e => set('artist', e.target.value)} placeholder="e.g. Tame Impala" />
-          
+
           <label style={lbl}>Venue</label>
           <input style={inp} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="e.g. Red Rocks" />
-          
+
           <label style={lbl}>Date *</label>
           <input style={{ ...inp, colorScheme: 'dark' }} type="date" value={form.date} onChange={e => set('date', e.target.value)} />
-          
+
           <label style={lbl}>Status</label>
           <select style={inp} value={form.status} onChange={e => set('status', e.target.value)}>
             <option value="TICKETS BOUGHT">TICKETS BOUGHT</option>
             <option value="PENDING">PENDING</option>
             <option value="DREAMING">DREAMING</option>
           </select>
+        </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 10 }}>
-            <div>
-              {!isNew && (
-                <button 
-                  onClick={() => onDelete(show.id)} 
-                  style={{ background: 'none', border: `1px solid ${C.red}`, color: C.red, padding: '10px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9, fontWeight: 700 }}
-                >
-                  DELETE
-                </button>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <Btn variant="secondary" onClick={onClose}>CANCEL</Btn>
-              <button 
-                onClick={handleSave} 
-                disabled={saving} 
-                style={{ background: C.gold, color: '#000', border: 'none', padding: '10px 24px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10, fontWeight: 900, boxShadow: `0 4px 15px ${hexToRgba(C.gold, 0.4)}` }}
+        {/* Buttons — outside the zIndex stacking, plain siblings */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 20 }}>
+          <div>
+            {!isNew && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                style={{ background: 'none', border: `1px solid ${C.red}`, color: C.red, padding: '10px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9, fontWeight: 700, letterSpacing: '0.1em' }}
               >
-                {saving ? 'SAVING...' : 'SAVE SHOW'}
+                DELETE
               </button>
-            </div>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{ background: C.bgCardAlt, border: `1px solid ${C.border}`, color: C.gray, padding: '10px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9, letterSpacing: '0.1em' }}
+            >
+              CANCEL
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              style={{ background: C.gold, color: '#000', border: 'none', padding: '10px 24px', borderRadius: 4, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'Space Mono'", fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', opacity: saving ? 0.7 : 1 }}
+            >
+              {saving ? 'SAVING...' : 'SAVE SHOW'}
+            </button>
           </div>
         </div>
       </div>
