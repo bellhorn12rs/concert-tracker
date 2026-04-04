@@ -1042,7 +1042,7 @@ function SetlistVaultTab({ concerts, genreMap }) {
     const tapeColor = TAPE_COLORS[i%TAPE_COLORS.length];
     const gcName = genreMap[s.band] || s.genre;
     const gc = gcName ? GENRE_COLORS[gcName] : null;
-    const sfmUrl = `https://www.setlist.fm/search?query=${encodeURIComponent(s.band)}+${getYear(s.date)}`;
+    const sfmUrl = `https://www.setlist.fm/search?query=${encodeURIComponent(s.band)}+${encodeURIComponent(s.date)}`;
 
     return (
       <div className="paper-float" style={{ '--r':`${rot}deg`, '--dur':dur, position:'relative', transform:`rotate(${rot}deg)`, marginBottom:40, zIndex:1 }}>
