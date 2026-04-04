@@ -509,7 +509,7 @@ function OnThisDay({ concerts }) {
 function SetlistSpotlight({ concerts, onVault }) {
   const [topIdx, setTopIdx] = useState(0);
   const [botIdx, setBotIdx] = useState(1);
-  const intervalsSet = useRef(false);
+  const tickRef = useRef(0);
 
   const vault = useMemo(() => concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()), [concerts]);
   const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
@@ -529,37 +529,21 @@ function SetlistSpotlight({ concerts, onVault }) {
     }));
   }, [vault]);
 
-  const slidesLen = slides.length;
-
   useEffect(() => {
-    if (slidesLen < 2 || intervalsSet.current) return;
-    intervalsSet.current = true;
-
-    // Top fires immediately then every 6s
-    const topInterval = setInterval(() => {
-      setTopIdx(i => (i + 2) % slidesLen);
-    }, 6000);
-
-    // Bottom fires after 3s then every 6s
-    const bottomDelay = setTimeout(() => {
-      setTopIdx(i => i); // no-op just to confirm timing
-      setBotIdx(i => (i + 2) % slidesLen);
-      const botInterval = setInterval(() => {
-        setBotIdx(i => (i + 2) % slidesLen);
-      }, 6000);
-      // store ref so we can clean up
-      intervalsSet.current = { topInterval, botInterval };
-    }, 3000);
-
-    return () => {
-      clearInterval(topInterval);
-      clearTimeout(bottomDelay);
-      if (typeof intervalsSet.current === 'object') {
-        clearInterval(intervalsSet.current.botInterval);
+    if (slides.length < 2) return;
+    const len = slides.length;
+    const interval = setInterval(() => {
+      tickRef.current += 1;
+      if (tickRef.current % 2 === 1) {
+        // odd ticks: top moves
+        setTopIdx(i => (i + 1) % len);
+      } else {
+        // even ticks: bottom moves
+        setBotIdx(i => (i + 1) % len);
       }
-      intervalsSet.current = false;
-    };
-  }, [slidesLen]);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [slides.length]);
 
   if (!slides.length) return null;
 
