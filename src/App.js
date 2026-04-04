@@ -2267,53 +2267,50 @@ export default function App() {
   async function handleSave(id, payload) {
     if (id) await supabase.from('concerts').update(payload).eq('id', id);
     else await supabase.from('concerts').insert([payload]);
-    fetchConcerts(); setEditTarget(null);
+    fetchConcerts();
+    setEditTarget(null);
   }
 
-  async function handleDelete(id) { if (window.confirm('Delete show?')) { await supabase.from('concerts').delete().eq('id', id); fetchConcerts(); setEditTarget(null); } }
+  async function handleDelete(id) {
+    if (window.confirm('Delete show?')) {
+      await supabase.from('concerts').delete().eq('id', id);
+      fetchConcerts();
+      setEditTarget(null);
+    }
+  }
 
   async function handleSetGenre(artist, genre) {
     if (!artist) return;
-    // Upsert into the dedicated artist_genres table
     const { error } = await supabase
       .from('artist_genres')
       .upsert({ artist_name: artist, genre: genre }, { onConflict: 'artist_name' });
-
     if (error) {
-      console.error("Genre error:", error);
+      console.error('Genre error:', error);
     } else {
-      // Snappy local update
       setArtistGenres(prev => ({ ...prev, [artist]: genre }));
     }
   }
 
-  // Find this function in your main App logic and replace it:
-async function handleUpcomingSave(id, payload) {
-  if (id) {
-    // UPDATING EXISTING SHOW
-    const { error } = await supabase.from('upcoming_concerts').update(payload).eq('id', id);
-    if (error) console.error("Update error:", error);
-  } else {
-    // ADDING NEW SHOW
-    const { error } = await supabase.from('upcoming_concerts').insert([payload]);
-    if (error) console.error("Insert error:", error);
-  }
-  
-  await fetchUpcoming(); // Refresh the marquee data
-  setUpcomingModal(null); // Close the modal
-}
-
-// Ensure Delete works too:
-async function handleUpcomingDelete(id) {
-  if (window.confirm('Remove this show from the marquee?')) {
-    const { error } = await supabase.from('upcoming_concerts').delete().eq('id', id);
-    if (error) console.error("Delete error:", error);
+  async function handleUpcomingSave(id, payload) {
+    if (id) {
+      const { error } = await supabase.from('upcoming_concerts').update(payload).eq('id', id);
+      if (error) console.error('Update error:', error);
+    } else {
+      const { error } = await supabase.from('upcoming_concerts').insert([payload]);
+      if (error) console.error('Insert error:', error);
+    }
     await fetchUpcoming();
     setUpcomingModal(null);
   }
-}
 
-  async function handleUpcomingDelete(id) { if (window.confirm('Delete?')) { await supabase.from('upcoming_concerts').delete().eq('id', id); fetchUpcoming(); setUpcomingModal(null); } }
+  async function handleUpcomingDelete(id) {
+    if (window.confirm('Remove this show?')) {
+      const { error } = await supabase.from('upcoming_concerts').delete().eq('id', id);
+      if (error) console.error('Delete error:', error);
+      await fetchUpcoming();
+      setUpcomingModal(null);
+    }
+  }
 
   async function handleDuplicate(concert) {
     const { id, created_at, ...rest } = concert;
@@ -2328,7 +2325,11 @@ async function handleUpcomingDelete(id) {
     setActiveTab('browse');
   };
 
-  if (loading) return <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING</div></div>;
+  if (loading) return (
+    <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING</div>
+    </div>
+  );
 
   return (
     <ThemeContext.Provider value={themeCtx}>
