@@ -575,9 +575,37 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
           <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.8rem', color: '#5a5a7e', lineHeight: 1.2 }}>
             {data.venue?.toUpperCase() || 'UNKNOWN VENUE'}
           </div>
+          
           {data.is_festival && data.festival_name && (
             <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.75rem', color:'#886644', marginTop:4 }}>
               ✎ {data.festival_name}
+            </div>
+          )}
+
+          {/* 🖼️ GIG PHOTO / POSTER RENDER */}
+          {data.image_url && (
+            <div style={{ 
+              marginTop: 12, 
+              marginBottom: 4, 
+              padding: '4px', 
+              background: '#fff', 
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)', 
+              transform: `rotate(${(charCode % 4) - 2}deg)`,
+              border: '1px solid #ddd',
+              alignSelf: 'center'
+            }}>
+              <img 
+                src={data.image_url} 
+                alt="Concert Memory" 
+                style={{ 
+                  width: '100%', 
+                  maxHeight: '100px', 
+                  display: 'block', 
+                  objectFit: 'cover',
+                  borderRadius: '1px'
+                }} 
+                onError={(e) => e.target.style.display = 'none'} 
+              />
             </div>
           )}
         </div>
@@ -590,7 +618,8 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
           style={{
             alignSelf: 'flex-end', background: 'rgba(0,0,0,0.06)', color: '#1a1a2e',
             fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px',
-            borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700
+            borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700,
+            marginTop: 4, position: 'relative', zIndex: 10
           }}
         >
           SETLIST ↗
@@ -599,7 +628,6 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
     </div>
   );
 };
-
 // ─── MAIN SETLIST SPOTLIGHT COMPONENT ────────────────────────────────────────
 function SetlistSpotlight({ concerts, onVault }) {
   const [topIdx, setTopIdx] = useState(0);
@@ -619,6 +647,8 @@ function SetlistSpotlight({ concerts, onVault }) {
       venue: s.venue,
       is_festival: s.is_festival,
       festival_name: s.festival_name,
+      // ADD THIS LINE
+      image_url: s.image_url, 
       sfmUrl: `https://www.setlist.fm/search?query=${encodeURIComponent(s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0])}+${encodeURIComponent(s.date)}`
     }));
   }, [vault]);
@@ -1139,7 +1169,7 @@ function SetlistVaultTab({ concerts, genreMap }) {
     concerts.forEach(c => {
       if (!c.has_setlist_names?.trim()) return;
       c.has_setlist_names.split(',').map(b=>b.trim()).filter(Boolean).forEach(band => {
-        results.push({ id:`${c.id}-${band}`, band, date:c.date, venue:c.venue, city:c.city, state:c.state, festival_name:c.festival_name, is_festival:c.is_festival, genre:c.genre, setlist_image_url:c.setlist_image_url||null });
+        results.push({ id:`${c.id}-${band}`, band, date:c.date, venue:c.venue, city:c.city, state:c.state, festival_name:c.festival_name, is_festival:c.is_festival, genre:c.genre, image_url: c.image_url||null });
       });
     });
     return results.sort((a,b) => b.date.localeCompare(a.date));
@@ -1166,6 +1196,11 @@ function SetlistVaultTab({ concerts, genreMap }) {
     const tapeColor = TAPE_COLORS[i%TAPE_COLORS.length];
     const gcName = genreMap[s.band] || s.genre;
     const gc = gcName ? GENRE_COLORS[gcName] : null;
+    {s.image_url && (
+  <div style={{ margin: '15px 0', padding: '6px', background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', transform: 'rotate(1deg)' }}>
+    <img src={s.image_url} style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 2 }} />
+  </div>
+)}
     const sfmDate = s.date ? s.date.split('-').reverse().join('-') : '';
     const sfmUrl = `https://www.setlist.fm/search?query=${encodeURIComponent(s.band + ' ' + sfmDate)}`;
     const doodles = ['♪', '✦', '★', '♡', '✌', '⚡', '♫', '◈'];
