@@ -592,7 +592,7 @@ function SetlistSpotlight({ concerts, onVault }) {
               {data.venue?.toUpperCase() || 'UNKNOWN VENUE'}
             </div>
           </div>
-          
+          <a
             href={data.sfmUrl}
             target="_blank"
             rel="noopener noreferrer"
