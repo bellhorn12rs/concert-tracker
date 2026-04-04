@@ -1217,7 +1217,7 @@ function SetlistVaultTab({ concerts, genreMap }) {
               </div>
             )}
 
-            
+            <a
               href={sfmUrl}
               target="_blank"
               rel="noopener noreferrer"
