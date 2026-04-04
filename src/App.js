@@ -185,7 +185,7 @@ const MarqueeStyles = () => (
     .ticket-hover:hover { transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) scale(1.02); }
     .ticket-hover { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
-    .marquee-text { display:inline-block; padding-left:100%; animation: marquee 28s linear infinite; }
+    .marquee-text { display:inline-block; padding-left:100%; animation: marquee 55s linear infinite; }
     .marquee-flicker { animation: flicker 6s infinite; }
     .ferris-wheel-ring { animation: ferris-rotate 20s linear infinite; transform-origin: center; }
 
@@ -1061,7 +1061,7 @@ function SetlistVaultTab({ concerts }) {
     </div>
   );
 
-  const cols = [[],[],[]];
+ const cols = [[],[],[]];
   setlists.forEach((s,i) => cols[i%3].push({...s, colIdx:i}));
 
   const PaperCard = ({ s, i }) => {
@@ -1070,7 +1070,7 @@ function SetlistVaultTab({ concerts }) {
     const tapeColor = TAPE_COLORS[i%TAPE_COLORS.length];
     const gc = s.genre ? GENRE_COLORS[s.genre] : null;
     const sfmDate = s.date ? s.date.split('-').reverse().join('-') : '';
-    const sfmUrl = `https://www.setlist.fm/search?query=${encodeURIComponent(s.band)}&date=${sfmDate}`;
+    const sfmUrl = `https://www.setlist.fm/search?query=${encodeURIComponent(s.band + ' ' + sfmDate)}`;
     return (
       <div className="paper-float" style={{ '--r':`${rot}deg`, '--dur':dur, position:'relative', transform:`rotate(${rot}deg)`, marginBottom:40, zIndex:1 }}>
         <div style={{ position:'absolute', top:-12, left:'50%', transform:'translateX(-50%)', width:56, height:22, background:tapeColor, opacity:0.75, borderRadius:3, zIndex:10, boxShadow:`0 2px 8px ${hexToRgba(tapeColor,0.4)}` }} />
@@ -1083,8 +1083,32 @@ function SetlistVaultTab({ concerts }) {
             <div style={{ fontFamily:"'Caveat',cursive", fontSize:'clamp(1.4rem,3vw,1.9rem)', fontWeight:700, color:'#1a1a2e', lineHeight:1.1, marginBottom:12 }}>{s.band}</div>
             <div style={{ fontFamily:"'Caveat',cursive", fontSize:'1rem', color:'#2a2a4e', marginBottom:3 }}>{fmtDate(s.date)}</div>
             <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.9rem', color:'#3a3a5e', marginBottom:2 }}>{s.venue}</div>
-            <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.85rem', color:'#5a5a7e', marginBottom:8 }}>{[s.city,s.state].filter(Boolean).join(', ')}{s.is_festival?` · ${s.festival_name}`:''}</div>
-            <a href={sfmUrl} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:'#6060a0', textDecoration:'none', letterSpacing:'0.1em', opacity:0.7 }}>setlist.fm ↗</a>
+            <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.85rem', color:'#5a5a7e', marginBottom:12 }}>{[s.city,s.state].filter(Boolean).join(', ')}{s.is_festival?` · ${s.festival_name}`:''}</div>
+            
+              href={sfmUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                fontFamily: "'Space Mono',monospace",
+                fontSize: 8,
+                color: '#4444aa',
+                textDecoration: 'none',
+                letterSpacing: '0.08em',
+                padding: '4px 10px',
+                background: 'rgba(68,68,170,0.1)',
+                borderRadius: 4,
+                border: '1px solid rgba(68,68,170,0.35)',
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(68,68,170,0.2)'; e.currentTarget.style.color = '#6666cc'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(68,68,170,0.1)'; e.currentTarget.style.color = '#4444aa'; }}
+            >
+              📋 setlist.fm ↗
+            </a>
           </div>
         </div>
       </div>
@@ -1946,7 +1970,7 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
 
           <label style={lbl}>Status</label>
           <select style={inp} value={form.status} onChange={e => set('status', e.target.value)}>
-            <option value="TICKETS BOUGHT">TICKETS BOUGHT</option>
+            <option value="TICKETS">TICKETS</option>
             <option value="PENDING">PENDING</option>
             <option value="DREAMING">DREAMING</option>
           </select>
@@ -2311,25 +2335,44 @@ export default function App() {
   }
 
   async function handleUpcomingSave(id, payload) {
-    if (id) {
-      const { error } = await supabase.from('upcoming_concerts').update(payload).eq('id', id);
-      if (error) console.error('Update error:', error);
-    } else {
-      const { error } = await supabase.from('upcoming_concerts').insert([payload]);
-      if (error) console.error('Insert error:', error);
-    }
+  const cleanPayload = {
+    artist: payload.artist,
+    venue: payload.venue,
+    date: payload.date,
+    status: payload.status,
+  };
+  if (id) {
+    const { data, error } = await supabase
+      .from('upcoming_concerts')
+      .update(cleanPayload)
+      .eq('id', id)
+      .select();
+    if (error) alert('Save failed: ' + error.message);
+    console.log('update result:', data, error);
+  } else {
+    const { data, error } = await supabase
+      .from('upcoming_concerts')
+      .insert([cleanPayload])
+      .select();
+    if (error) alert('Insert failed: ' + error.message);
+    console.log('insert result:', data, error);
+  }
+  await fetchUpcoming();
+  setUpcomingModal(null);
+}
+
+async function handleUpcomingDelete(id) {
+  if (window.confirm('Remove this show?')) {
+    const { error } = await supabase
+      .from('upcoming_concerts')
+      .delete()
+      .eq('id', id);
+    if (error) alert('Delete failed: ' + error.message);
+    console.log('delete id:', id, 'error:', error);
     await fetchUpcoming();
     setUpcomingModal(null);
   }
-
-  async function handleUpcomingDelete(id) {
-    if (window.confirm('Remove this show?')) {
-      const { error } = await supabase.from('upcoming_concerts').delete().eq('id', id);
-      if (error) console.error('Delete error:', error);
-      await fetchUpcoming();
-      setUpcomingModal(null);
-    }
-  }
+}
 
   async function handleDuplicate(concert) {
     const { id, created_at, ...rest } = concert;
