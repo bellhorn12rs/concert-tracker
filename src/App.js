@@ -505,9 +505,9 @@ function OnThisDay({ concerts }) {
   );
 }
 
-// ─── SETLIST SPOTLIGHT (THE SYNC-KILLER EDITION) ─────────────────────────────
-// ─── SETLIST SPOTLIGHT ATOMS ────────────────────────────────────────────────
-const Scrap = ({ data, isTop, TAPE_COLORS }) => {
+// ─── SETLIST SPOTLIGHT ATOM (Standalone to prevent scoping/duplicate errors) 
+const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
+  if (!data) return null;
   const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
   const r = isTop ? (charCode % 4) - 3 : (charCode % 4) + 1;
   const tapeColor = TAPE_COLORS[charCode % TAPE_COLORS.length];
@@ -521,9 +521,12 @@ const Scrap = ({ data, isTop, TAPE_COLORS }) => {
       marginBottom: isTop ? 28 : 0,
       zIndex: isTop ? 2 : 1,
       transform: `rotate(${r}deg)`,
-      transition: 'transform 0.3s ease'
+      transition: 'transform 0.3s ease',
+      /* Uses the animation from MarqueeStyles */
+      animation: 'peel-and-stick 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards',
+      '--r': `${r}deg` 
     }}>
-      {/* Tape Slam Animation */}
+      {/* Tape — Slams down after card lands */}
       <div style={{
         position: 'absolute', top: -10, left: '50%',
         transform: 'translateX(-50%)',
@@ -546,23 +549,24 @@ const Scrap = ({ data, isTop, TAPE_COLORS }) => {
         border: '1px solid rgba(0,0,0,0.06)',
         borderRadius: 3
       }}>
-        {/* Ruled Notebook Detail */}
-        {[0, 1, 2, 3].map(j => (
-          <div key={j} style={{ position: 'absolute', left: 32, right: 8, top: 44 + j * 22, height: 1, background: 'rgba(150,180,220,0.45)' }} />
+        {/* Ruled lines */}
+        {[0,1,2,3].map(j => (
+          <div key={j} style={{ position:'absolute', left:32, right:8, top:44+j*22, height:1, background:'rgba(150,180,220,0.45)' }} />
         ))}
+        {/* Margin line */}
         <div style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1.5, background: 'rgba(220,60,60,0.25)' }} />
-        <div style={{ position: 'absolute', left: 8, top: '40%', width: 10, height: 10, borderRadius: '50%', background: 'rgba(0,0,0,0.08)', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.15)' }} />
-
-        {/* Subtle Doodle */}
-        <div style={{ position: 'absolute', bottom: 8, right: 10, fontFamily: "'Caveat',cursive", fontSize: '1.4rem', color: 'rgba(0,0,0,0.12)', transform: 'rotate(15deg)', userSelect: 'none' }}>{doodle}</div>
+        {/* Hole punch */}
+        <div style={{ position:'absolute', left:8, top:'40%', width:10, height:10, borderRadius:'50%', background:'rgba(0,0,0,0.08)', boxShadow:'inset 0 1px 2px rgba(0,0,0,0.15)' }} />
+        {/* Corner doodle */}
+        <div style={{ position:'absolute', bottom:8, right:10, fontFamily:"'Caveat',cursive", fontSize:'1.4rem', color:'rgba(0,0,0,0.12)', transform:'rotate(15deg)', userSelect:'none' }}>{doodle}</div>
 
         <div style={{ paddingLeft: 14, flex: 1, position: 'relative', zIndex: 1 }}>
           <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.8rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 4 }}>
             {data.band}
           </div>
 
-          <svg height="6" width="100%" style={{ marginBottom: 8, overflow: 'visible' }}>
-            <path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.2" fill="none" strokeOpacity="0.15" strokeLinecap="round" />
+          <svg height="6" width="100%" style={{ marginBottom: 8, overflow:'visible' }}>
+            <path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.2" fill="none" strokeOpacity="0.15" strokeLinecap="round"/>
           </svg>
 
           <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.85rem', color: '#3a3a6e', lineHeight: 1.2 }}>
@@ -571,19 +575,24 @@ const Scrap = ({ data, isTop, TAPE_COLORS }) => {
           <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.8rem', color: '#5a5a7e', lineHeight: 1.2 }}>
             {data.venue?.toUpperCase() || 'UNKNOWN VENUE'}
           </div>
-          {data.is_festival && (
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.75rem', color: '#886644', marginTop: 4 }}>
+          {data.is_festival && data.festival_name && (
+            <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.75rem', color:'#886644', marginTop:4 }}>
               ✎ {data.festival_name}
             </div>
           )}
         </div>
 
-        <a href={data.sfmUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+        <a
+          href={data.sfmUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
           style={{
             alignSelf: 'flex-end', background: 'rgba(0,0,0,0.06)', color: '#1a1a2e',
             fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px',
             borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700
-          }}>
+          }}
+        >
           SETLIST ↗
         </a>
       </div>
@@ -591,7 +600,7 @@ const Scrap = ({ data, isTop, TAPE_COLORS }) => {
   );
 };
 
-// ─── SETLIST SPOTLIGHT (THE SYNC-KILLER MAIN) ─────────────────────────────────
+// ─── MAIN SETLIST SPOTLIGHT COMPONENT ────────────────────────────────────────
 function SetlistSpotlight({ concerts, onVault }) {
   const [topIdx, setTopIdx] = useState(0);
   const [botIdx, setBotIdx] = useState(1);
@@ -614,22 +623,22 @@ function SetlistSpotlight({ concerts, onVault }) {
     }));
   }, [vault]);
 
-  // The recursive hand-off timer
+  // ── THE RECURSIVE CHAIN (The Sync Killer) ──
   useEffect(() => {
     if (slides.length < 2) return;
     let timer;
 
     const flipTop = () => {
       setTopIdx(prev => (prev + 2) % slides.length);
-      timer = setTimeout(flipBot, 4500); 
+      timer = setTimeout(flipBot, 5000); // Wait 5s, then flip bottom
     };
 
     const flipBot = () => {
       setBotIdx(prev => (prev + 2) % slides.length);
-      timer = setTimeout(flipTop, 4500); 
+      timer = setTimeout(flipTop, 5000); // Wait 5s, then flip top
     };
 
-    timer = setTimeout(flipTop, 2000); 
+    timer = setTimeout(flipTop, 2000); // Start the chain
     return () => clearTimeout(timer);
   }, [slides.length]);
 
@@ -641,114 +650,12 @@ function SetlistSpotlight({ concerts, onVault }) {
         📋 BACKSTAGE LOG
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 8px' }}>
-        <Scrap data={slides[topIdx % slides.length]} isTop={true} TAPE_COLORS={TAPE_COLORS} />
-        <Scrap data={slides[botIdx % slides.length]} isTop={false} TAPE_COLORS={TAPE_COLORS} />
+        <SpotlightScrap key={`top-${topIdx}`} data={slides[topIdx % slides.length]} isTop={true} TAPE_COLORS={TAPE_COLORS} />
+        <SpotlightScrap key={`bot-${botIdx}`} data={slides[botIdx % slides.length]} isTop={false} TAPE_COLORS={TAPE_COLORS} />
       </div>
     </div>
   );
 }
-  const Scrap = ({ data, isTop }) => {
-    const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
-    const r = isTop ? (charCode % 4) - 3 : (charCode % 4) + 1;
-    const tapeColor = TAPE_COLORS[charCode % TAPE_COLORS.length];
-    const doodles = ['♪', '✦', '★', '♡', '✌', '⚡', '♫', '◈'];
-    const doodle = doodles[charCode % doodles.length];
-
-    return (
-      <div style={{
-        flex: 1,
-        position: 'relative',
-        marginBottom: isTop ? 28 : 0,
-        zIndex: isTop ? 2 : 1,
-        transform: `rotate(${r}deg)`,
-        animationName: 'scrap-fall',
-        animationDuration: '0.5s',
-        animationTimingFunction: 'cubic-bezier(0.23, 1, 0.32, 1)',
-        animationFillMode: 'both',
-      }}>
-        {/* Tape — slaps down after card lands */}
-        <div style={{
-          position: 'absolute', top: -10, left: '50%',
-          transform: 'translateX(-50%)',
-          width: 46, height: 16,
-          background: tapeColor,
-          borderRadius: 1, zIndex: 10,
-          boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-          animationName: 'tape-drop',
-          animationDuration: '0.25s',
-          animationDelay: '0.45s',
-          animationTimingFunction: 'ease-out',
-          animationFillMode: 'both',
-        }} />
-
-        <div className="scrap-paper" style={{
-          padding: '22px 16px 14px',
-          boxShadow: '4px 8px 20px rgba(0,0,0,0.5)',
-          position: 'relative',
-          overflow: 'hidden',
-          minHeight: 115,
-          display: 'flex',
-          flexDirection: 'column',
-          border: '1px solid rgba(0,0,0,0.06)',
-          borderRadius: 3,
-        }}>
-          {[0,1,2,3].map(j => (
-            <div key={j} style={{ position:'absolute', left:32, right:8, top:44+j*22, height:1, background:'rgba(150,180,220,0.45)' }} />
-          ))}
-          <div style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1.5, background: 'rgba(220,60,60,0.25)' }} />
-          <div style={{ position:'absolute', left:8, top:'40%', width:10, height:10, borderRadius:'50%', background:'rgba(0,0,0,0.08)', boxShadow:'inset 0 1px 2px rgba(0,0,0,0.15)' }} />
-          <div style={{ position:'absolute', bottom:8, right:10, fontFamily:"'Caveat',cursive", fontSize:'1.4rem', color:'rgba(0,0,0,0.12)', transform:'rotate(15deg)', userSelect:'none' }}>{doodle}</div>
-
-          <div style={{ paddingLeft: 14, flex: 1, position: 'relative', zIndex: 1 }}>
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.8rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 4 }}>
-              {data.band}
-            </div>
-            <svg height="6" width="100%" style={{ marginBottom: 8, overflow:'visible' }}>
-              <path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.2" fill="none" strokeOpacity="0.15" strokeLinecap="round"/>
-            </svg>
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.85rem', color: '#3a3a6e', lineHeight: 1.2 }}>
-              {fmtDateShort(data.date)}
-            </div>
-            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.8rem', color: '#5a5a7e', lineHeight: 1.2 }}>
-              {data.venue?.toUpperCase() || 'UNKNOWN VENUE'}
-            </div>
-            {data.is_festival && data.festival_name && (
-              <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.75rem', color:'#886644', marginTop:4 }}>
-                ✎ {data.festival_name}
-              </div>
-            )}
-          </div>
-
-          <a
-            href={data.sfmUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={e => e.stopPropagation()}
-            style={{
-              alignSelf: 'flex-end', background: 'rgba(0,0,0,0.06)', color: '#1a1a2e',
-              fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px',
-              borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700
-            }}
-          >
-            SETLIST ↗
-          </a>
-        </div>
-      </div>
-    );
-  };
-  // THIS WAS MISSING: The actual return for the main component
-  return (
-    <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 20, textTransform: 'uppercase', textAlign: 'center', opacity: 0.4 }}>
-        📋 BACKSTAGE LOG
-      </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 8px' }}>
-        <Scrap key={`top-${topIdx}`} data={slides[topIdx % slides.length]} isTop={true} />
-        <Scrap key={`bot-${botIdx}`} data={slides[botIdx % slides.length]} isTop={false} />
-      </div>
-    </div>
-  );
-} // FINAL CLOSING BRACKET
 // ─── ARTIST INSIGHTS (POSTER EDITION) ─────────────────────────────────────────
 function ArtistInsights({ concerts }) {
   const [index, setIndex] = useState(0);
