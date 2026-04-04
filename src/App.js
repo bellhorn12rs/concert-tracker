@@ -1061,7 +1061,7 @@ function SetlistVaultTab({ concerts }) {
     </div>
   );
 
- const cols = [[],[],[]];
+const cols = [[],[],[]];
   setlists.forEach((s,i) => cols[i%3].push({...s, colIdx:i}));
 
   const PaperCard = ({ s, i }) => {
@@ -1131,7 +1131,6 @@ function SetlistVaultTab({ concerts }) {
     </div>
   );
 }
-
 // ─── TIMELINE ─────────────────────────────────────────────────────────────────
 function GenreLegend() {
   return (
