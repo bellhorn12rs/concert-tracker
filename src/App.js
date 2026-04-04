@@ -505,9 +505,10 @@ function OnThisDay({ concerts }) {
   );
 }
 
-// ─── SETLIST SPOTLIGHT (THE METRONOME EDITION) ───────────────────────────────
+// ─── SETLIST SPOTLIGHT (THE SYNC-KILLER EDITION) ─────────────────────────────
 function SetlistSpotlight({ concerts, onVault }) {
-  const [tick, setTick] = useState(0); // The single master clock
+  const [topIdx, setTopIdx] = useState(0);
+  const [botIdx, setBotIdx] = useState(1);
 
   const vault = useMemo(() => concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()), [concerts]);
   const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
@@ -527,22 +528,28 @@ function SetlistSpotlight({ concerts, onVault }) {
     }));
   }, [vault]);
 
-  // THE METRONOME: One flip every 3 seconds
+  // ── THE RECURSIVE STAGGER (Guarantees they never refresh together) ──
   useEffect(() => {
     if (slides.length < 2) return;
-    const interval = setInterval(() => {
-      setTick(t => t + 1);
-    }, 3000); 
-    return () => clearInterval(interval);
+    let timer;
+
+    const flipTop = () => {
+      setTopIdx(prev => (prev + 2) % slides.length);
+      timer = setTimeout(flipBot, 4000); // Wait 4s, then flip bottom
+    };
+
+    const flipBot = () => {
+      setBotIdx(prev => (prev + 2) % slides.length);
+      timer = setTimeout(flipTop, 4000); // Wait 4s, then flip top
+    };
+
+    timer = setTimeout(flipTop, 2000); // Initial start
+    return () => clearTimeout(timer);
   }, [slides.length]);
 
   if (!slides.length) return null;
 
-  // Even ticks update Top, Odd ticks update Bottom
-  const topIdx = Math.floor(tick / 2) % slides.length;
-  const botIdx = Math.floor((tick + 1) / 2) % slides.length;
-
-  // INTERNAL COMPONENT: The individual scrap paper
+  // Internal component for the Scrap UI
   const Scrap = ({ data, isTop }) => {
     const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
     const r = isTop ? (charCode % 4) - 3 : (charCode % 4) + 1;
@@ -551,18 +558,15 @@ function SetlistSpotlight({ concerts, onVault }) {
     const doodle = doodles[charCode % doodles.length];
 
     return (
-      <div 
-        key={data.id} // Key change triggers the CSS entry animation
-        style={{
-          flex: 1,
-          position: 'relative',
-          marginBottom: isTop ? 28 : 0,
-          zIndex: isTop ? 2 : 1,
-          '--r': `${r}deg`,
-          animation: 'peel-and-stick 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards'
-        }}
-      >
-        {/* Tape Slam */}
+      <div style={{
+        flex: 1,
+        position: 'relative',
+        marginBottom: isTop ? 28 : 0,
+        zIndex: isTop ? 2 : 1,
+        transform: `rotate(${r}deg)`,
+        transition: 'transform 0.3s ease'
+      }}>
+        {/* Tape Slam Animation */}
         <div style={{
           position: 'absolute', top: -10, left: '50%',
           transform: 'translateX(-50%)',
@@ -591,6 +595,8 @@ function SetlistSpotlight({ concerts, onVault }) {
           ))}
           <div style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1.5, background: 'rgba(220,60,60,0.25)' }} />
           <div style={{ position:'absolute', left:8, top:'40%', width:10, height:10, borderRadius:'50%', background:'rgba(0,0,0,0.08)', boxShadow:'inset 0 1px 2px rgba(0,0,0,0.15)' }} />
+          
+          {/* Subtle Doodle */}
           <div style={{ position:'absolute', bottom:8, right:10, fontFamily:"'Caveat',cursive", fontSize:'1.4rem', color:'rgba(0,0,0,0.12)', transform:'rotate(15deg)', userSelect:'none' }}>{doodle}</div>
 
           <div style={{ paddingLeft: 14, flex: 1, position: 'relative', zIndex: 1 }}>
@@ -628,14 +634,15 @@ function SetlistSpotlight({ concerts, onVault }) {
     );
   };
 
+  // ── FINAL RETURN ──
   return (
     <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
       <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 20, textTransform: 'uppercase', textAlign: 'center', opacity: 0.4 }}>
         📋 BACKSTAGE LOG
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 8px' }}>
-        <Scrap data={slides[topIdx]} isTop={true} />
-        <Scrap data={slides[botIdx]} isTop={false} />
+        <Scrap data={slides[topIdx % slides.length]} isTop={true} />
+        <Scrap data={slides[botIdx % slides.length]} isTop={false} />
       </div>
     </div>
   );
