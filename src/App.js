@@ -471,62 +471,132 @@ function OnThisDay({ concerts }) {
   );
 }
 
-// ─── SETLIST SPOTLIGHT ────────────────────────────────────────────────────────
+// ─── SETLIST SPOTLIGHT (DUAL-TRACK EDITION) ───────────────────────────────────
 function SetlistSpotlight({ concerts, onVault }) {
-  const [index, setIndex] = useState(0);
+  const [topIdx, setTopIdx] = useState(0);
+  const [botIdx, setBotIdx] = useState(1); // Start on a different slide
+
   const vault = useMemo(() => concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()), [concerts]);
-  const TAPE_COLORS = ['#ffcc00','#00e5cc','#9966ff','#ff4466'];
+  const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
 
   const slides = useMemo(() => {
-    if (!vault.length) return [{ label:'ARCHIVE EMPTY', card:null, sub:'Edit a show to add setlists' }];
-    const sorted = [...vault].sort((a,b) => b.date.localeCompare(a.date));
-    const artCounts = {};
-    vault.forEach(c => (c.has_setlist_names||'').split(',').forEach(n => { const name=n.trim(); if(name) artCounts[name]=(artCounts[name]||0)+1; }));
-    const topArt = Object.entries(artCounts).sort((a,b) => b[1]-a[1])[0];
-    const makeCard = (c, band) => ({ band:band||c.has_setlist_names?.split(',')[0]||'?', date:c.date, venue:c.venue, city:c.city, state:c.state, genre:c.genre });
-    return [
-      { label:'LATEST ADDITION', card:makeCard(sorted[0]), sub:`${fmtDate(sorted[0].date)}` },
-      { label:`${vault.length} SETLISTS COLLECTED`, card:makeCard(sorted[Math.floor(Math.random()*sorted.length)]), sub:'Click to open the vault' },
-      { label:'ARCHIVE MVP', card:topArt ? makeCard(vault.find(c=>(c.has_setlist_names||'').includes(topArt[0]))||vault[0], topArt[0]) : null, sub:topArt?`${topArt[1]} setlists`:'Keep collecting' },
-    ];
+    if (!vault.length) return [];
+    const sorted = [...vault].sort((a, b) => b.date.localeCompare(a.date));
+    
+    // Expand the pool: Latest, Randoms, and MVP
+    const items = [];
+    items.push({ label: 'LATEST ADDITION', show: sorted[0] });
+    
+    // Add a few random ones from the vault to keep the cycle fresh
+    const randomPool = [...vault].sort(() => 0.5 - Math.random());
+    randomPool.slice(0, 8).forEach(s => {
+      items.push({ label: 'FROM THE VAULT', show: s });
+    });
+
+    return items.map(item => ({
+      label: item.label,
+      band: item.show.has_setlist_names?.split(',')[0]?.trim() || item.show.bands?.[0] || '?',
+      date: item.show.date,
+      venue: item.show.venue,
+      city: item.show.city,
+      genre: item.show.genre
+    }));
   }, [vault]);
 
+  // STAGGERED CYCLING LOGIC
   useEffect(() => {
-    if (slides.length <= 1) return;
-    const t = setInterval(() => setIndex(p => (p+1) % slides.length), 5500);
-    return () => clearInterval(t);
+    if (slides.length <= 2) return;
+
+    // Update Top every 6 seconds
+    const topTimer = setInterval(() => {
+      setTopIdx(prev => (prev + 2) % slides.length);
+    }, 6000);
+
+    // Update Bottom every 6 seconds, but offset by 3 seconds
+    const botTimer = setTimeout(() => {
+      setInterval(() => {
+        setBotIdx(prev => (prev + 2) % slides.length);
+      }, 6000);
+    }, 3000);
+
+    return () => {
+      clearInterval(topTimer);
+      clearTimeout(botTimer);
+    };
   }, [slides.length]);
 
-  const s = slides[index];
-  const gc = s.card?.genre ? GENRE_COLORS[s.card.genre] : null;
-  const tapeColor = TAPE_COLORS[index % TAPE_COLORS.length];
+  if (!slides.length) return (
+    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.grayDim, fontFamily: "'Space Mono'" }} onClick={onVault}>
+      VAULT EMPTY
+    </div>
+  );
 
-  return (
-    <div style={{ cursor:'pointer', height:'100%', display:'flex', flexDirection:'column' }} onClick={onVault}>
-      <div style={{ fontFamily:"'Space Mono'", fontSize:8, color:C.gold, letterSpacing:2, marginBottom:12, textTransform:'uppercase' }}>{s.label}</div>
-      {s.card ? (
-        <div className="fade-in" key={index} style={{ flex:1, position:'relative', transform:`rotate(${['-2deg','1.5deg','-1deg'][index%3]})`, marginBottom:12 }}>
-          <div style={{ position:'absolute', top:-10, left:'50%', transform:'translateX(-50%)', width:48, height:18, background:tapeColor, opacity:0.8, borderRadius:2, zIndex:10 }} />
-          <div style={{ background:'linear-gradient(160deg,#f5f0e8,#e8e0cc)', borderRadius:4, padding:'28px 20px 20px', boxShadow:'0 6px 24px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.6)', position:'relative', overflow:'hidden' }}>
-            {[0,1,2,3].map(j => <div key={j} style={{ position:'absolute', left:50, right:0, top:60+j*22, height:1, background:'rgba(150,180,220,0.3)' }} />)}
-            <div style={{ position:'absolute', left:44, top:0, bottom:0, width:1, background:'rgba(220,60,60,0.25)' }} />
-            {gc && <div style={{ position:'absolute', top:0, right:0, background:gc, padding:'2px 8px 2px 12px', borderRadius:'0 4px 0 8px', fontFamily:"'Space Mono',monospace", fontSize:6, color:'#000', textTransform:'uppercase', fontWeight:700 }}>{s.card.genre}</div>}
-            <div style={{ paddingLeft:14 }}>
-              <div style={{ fontFamily:"'Caveat',cursive", fontSize:'1.5rem', fontWeight:700, color:'#1a1a2e', lineHeight:1.1, marginBottom:8 }}>{s.card.band}</div>
-              <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.85rem', color:'#2a2a4e', marginBottom:2 }}>{fmtDate(s.card.date)}</div>
-              <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.8rem', color:'#3a3a5e' }}>{s.card.venue}</div>
-              <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.75rem', color:'#5a5a7e' }}>{[s.card.city, s.card.state].filter(Boolean).join(', ')}</div>
+  // Mini Card Component for the stack
+  const Scrap = ({ data, index, isTop }) => {
+    const tapeColor = TAPE_COLORS[index % TAPE_COLORS.length];
+    const rotation = isTop ? '-2deg' : '1.5deg';
+    
+    return (
+      <div className="fade-in" key={`${index}-${isTop}`} style={{ 
+        position: 'relative', 
+        transform: `rotate(${rotation})`,
+        marginBottom: isTop ? 20 : 0,
+        flex: 1,
+        transition: 'all 0.5s ease'
+      }}>
+        {/* Tape piece */}
+        <div style={{ position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%) rotate(2deg)', width: 40, height: 14, background: tapeColor, opacity: 0.8, borderRadius: 2, zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
+        
+        <div style={{ 
+          background: 'linear-gradient(160deg,#f5f0e8,#e8e0cc)', 
+          borderRadius: 4, 
+          padding: '15px 15px 10px 15px', 
+          boxShadow: '0 4px 15px rgba(0,0,0,0.4)',
+          position: 'relative',
+          overflow: 'hidden',
+          minHeight: 100
+        }}>
+          {/* Lined paper lines */}
+          <div style={{ position: 'absolute', left: 35, top: 0, bottom: 0, width: 1, background: 'rgba(220,60,60,0.15)' }} />
+          
+          <div style={{ paddingLeft: 10 }}>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 }}>
+              {data.label}
+            </div>
+            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.2rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 2 }}>
+              {data.band}
+            </div>
+            <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.8rem', color: '#4a4a6e' }}>
+              {fmtDateShort(data.date)} // {data.venue}
             </div>
           </div>
         </div>
-      ) : (
-        <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <div style={{ fontSize:'3rem' }}>📋</div>
-        </div>
-      )}
-      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, textAlign:'center', marginBottom:4 }}>{s.sub}</div>
-      <div style={{ display:'flex', justifyContent:'center', gap:5, marginTop:'auto', paddingTop:8 }}>
-        {slides.map((_,i) => <div key={i} style={{ width:4, height:4, borderRadius:'50%', background:i===index?C.gold:C.grayDim, transition:'0.3s' }} />)}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column', padding: '5px 0' }} onClick={onVault}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 2, marginBottom: 15, textTransform: 'uppercase', textAlign: 'center' }}>
+        📋 SETLIST ARCHIVE
+      </div>
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <Scrap data={slides[topIdx]} index={topIdx} isTop={true} />
+        <Scrap data={slides[botIdx % slides.length]} index={botIdx} isTop={false} />
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginTop: 15 }}>
+        {slides.slice(0, Math.min(slides.length, 10)).map((_, i) => (
+          <div key={i} style={{ 
+            width: 3, 
+            height: 3, 
+            borderRadius: '50%', 
+            background: (i === topIdx || i === botIdx) ? C.gold : C.grayDim,
+            boxShadow: (i === topIdx || i === botIdx) ? `0 0 5px ${C.gold}` : 'none',
+            transition: '0.3s' 
+          }} />
+        ))}
       </div>
     </div>
   );
