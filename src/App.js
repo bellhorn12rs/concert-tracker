@@ -509,6 +509,7 @@ function OnThisDay({ concerts }) {
 const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
   if (!data) return null;
   const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
+  // Rotation logic: slight variation between left and right cards
   const r = isTop ? (charCode % 4) - 3 : (charCode % 4) + 1;
   const tapeColor = TAPE_COLORS[charCode % TAPE_COLORS.length];
   const doodles = ['♪', '✦', '★', '♡', '✌', '⚡', '♫', '◈'];
@@ -518,11 +519,11 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
     <div style={{
       flex: 1,
       position: 'relative',
-      marginBottom: isTop ? 28 : 0,
+      marginBottom: 0, // Reset for horizontal row layout
       zIndex: isTop ? 2 : 1,
       transform: `rotate(${r}deg)`,
       transition: 'transform 0.3s ease',
-      /* Uses the animation from MarqueeStyles */
+      /* Animation from MarqueeStyles */
       animation: 'peel-and-stick 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards',
       '--r': `${r}deg` 
     }}>
@@ -549,14 +550,14 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
         border: '1px solid rgba(0,0,0,0.06)',
         borderRadius: 3
       }}>
-        {/* Ruled lines */}
+        {/* Ruled Notebook Detail */}
         {[0,1,2,3].map(j => (
           <div key={j} style={{ position:'absolute', left:32, right:8, top:44+j*22, height:1, background:'rgba(150,180,220,0.45)' }} />
         ))}
-        {/* Margin line */}
+        {/* Margin line and Hole punch */}
         <div style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1.5, background: 'rgba(220,60,60,0.25)' }} />
-        {/* Hole punch */}
         <div style={{ position:'absolute', left:8, top:'40%', width:10, height:10, borderRadius:'50%', background:'rgba(0,0,0,0.08)', boxShadow:'inset 0 1px 2px rgba(0,0,0,0.15)' }} />
+        
         {/* Corner doodle */}
         <div style={{ position:'absolute', bottom:8, right:10, fontFamily:"'Caveat',cursive", fontSize:'1.4rem', color:'rgba(0,0,0,0.12)', transform:'rotate(15deg)', userSelect:'none' }}>{doodle}</div>
 
@@ -593,8 +594,8 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
               transform: `rotate(${(charCode % 4) - 2}deg)`,
               border: '1px solid #ddd',
               alignSelf: 'center',
-              width: 'fit-content', // Fixes the "white line" issue
-              maxWidth: '90%'
+              width: 'fit-content',
+              maxWidth: '95%'
             }}>
               <img 
                 src={data.image_url} 
@@ -602,12 +603,11 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
                 style={{ 
                   display: 'block',
                   width: '100%', 
-                  maxHeight: '150px', 
+                  maxHeight: '220px', // Increased height for vertical photos
                   objectFit: 'contain',
                   borderRadius: '1px'
                 }} 
                 onError={(e) => {
-                  // If image fails to load, hide the entire white polaroid frame
                   e.target.parentElement.style.display = 'none'; 
                 }} 
               />
@@ -624,7 +624,7 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
             alignSelf: 'flex-end', background: 'rgba(0,0,0,0.06)', color: '#1a1a2e',
             fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px',
             borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700,
-            marginTop: 4, position: 'relative', zIndex: 10
+            marginTop: 6, position: 'relative', zIndex: 10
           }}
         >
           SETLIST ↗
@@ -633,7 +633,7 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
     </div>
   );
 };
-// ─── MAIN SETLIST SPOTLIGHT COMPONENT ────────────────────────────────────────
+// ─── MAIN SETLIST SPOTLIGHT COMPONENT (HORIZONTAL EDITION) ──────────────────
 function SetlistSpotlight({ concerts, onVault }) {
   const [topIdx, setTopIdx] = useState(0);
   const [botIdx, setBotIdx] = useState(1);
@@ -645,6 +645,7 @@ function SetlistSpotlight({ concerts, onVault }) {
     if (!vault.length) return [];
     const sorted = [...vault].sort((a, b) => b.date.localeCompare(a.date));
     const randomPool = [...vault].sort(() => 0.5 - Math.random());
+    
     return [sorted[0], ...randomPool.slice(0, 19)].map(s => ({
       id: s.id,
       band: s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0] || '?',
@@ -652,28 +653,27 @@ function SetlistSpotlight({ concerts, onVault }) {
       venue: s.venue,
       is_festival: s.is_festival,
       festival_name: s.festival_name,
-      // FIX: Ensure this is pulling from the database column 'image_url'
       image_url: s.image_url, 
       sfmUrl: `https://www.setlist.fm/search?query=${encodeURIComponent(s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0])}+${encodeURIComponent(s.date)}`
     }));
   }, [vault]);
 
-  // ── THE RECURSIVE CHAIN (The Sync Killer) ──
+  // THE RECURSIVE SYNC-KILLER (Logic remains untouched so it doesn't break)
   useEffect(() => {
     if (slides.length < 2) return;
     let timer;
 
     const flipTop = () => {
       setTopIdx(prev => (prev + 2) % slides.length);
-      timer = setTimeout(flipBot, 5000); // Wait 5s, then flip bottom
+      timer = setTimeout(flipBot, 5000); 
     };
 
     const flipBot = () => {
       setBotIdx(prev => (prev + 2) % slides.length);
-      timer = setTimeout(flipTop, 5000); // Wait 5s, then flip top
+      timer = setTimeout(flipTop, 5000); 
     };
 
-    timer = setTimeout(flipTop, 2000); // Start the chain
+    timer = setTimeout(flipTop, 2000); 
     return () => clearTimeout(timer);
   }, [slides.length]);
 
@@ -684,9 +684,28 @@ function SetlistSpotlight({ concerts, onVault }) {
       <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 20, textTransform: 'uppercase', textAlign: 'center', opacity: 0.4 }}>
         📋 BACKSTAGE LOG
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 8px' }}>
-        <SpotlightScrap key={`top-${topIdx}`} data={slides[topIdx % slides.length]} isTop={true} TAPE_COLORS={TAPE_COLORS} />
-        <SpotlightScrap key={`bot-${botIdx}`} data={slides[botIdx % slides.length]} isTop={false} TAPE_COLORS={TAPE_COLORS} />
+      
+      {/* ── CHANGED TO ROW LAYOUT ── */}
+      <div style={{ 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'row', // Horizontal!
+        gap: '12px',         // Space between left and right cards
+        padding: '0 4px',
+        alignItems: 'flex-start' 
+      }}>
+        <SpotlightScrap 
+          key={`left-${topIdx}`} 
+          data={slides[topIdx % slides.length]} 
+          isTop={true} 
+          TAPE_COLORS={TAPE_COLORS} 
+        />
+        <SpotlightScrap 
+          key={`right-${botIdx}`} 
+          data={slides[botIdx % slides.length]} 
+          isTop={false} 
+          TAPE_COLORS={TAPE_COLORS} 
+        />
       </div>
     </div>
   );
