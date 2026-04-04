@@ -1132,7 +1132,7 @@ function SetlistVaultTab({ concerts, genreMap }) {
     concerts.forEach(c => {
       if (!c.has_setlist_names?.trim()) return;
       c.has_setlist_names.split(',').map(b=>b.trim()).filter(Boolean).forEach(band => {
-        results.push({ id:`${c.id}-${band}`, band, date:c.date, venue:c.venue, city:c.city, state:c.state, festival_name:c.festival_name, is_festival:c.is_festival, genre:c.genre });
+        results.push({ id:`${c.id}-${band}`, band, date:c.date, venue:c.venue, city:c.city, state:c.state, festival_name:c.festival_name, is_festival:c.is_festival, genre:c.genre, setlist_image_url:c.setlist_image_url||null });
       });
     });
     return results.sort((a,b) => b.date.localeCompare(a.date));
@@ -1153,7 +1153,7 @@ function SetlistVaultTab({ concerts, genreMap }) {
   const cols = [[],[],[]];
   setlists.forEach((s,i) => cols[i%3].push({...s, colIdx:i}));
 
-  const PaperCard = ({ s, i }) => {
+ const PaperCard = ({ s, i }) => {
     const rot = ROTATIONS[i%ROTATIONS.length];
     const dur = DURATIONS[i%DURATIONS.length];
     const tapeColor = TAPE_COLORS[i%TAPE_COLORS.length];
@@ -1204,7 +1204,20 @@ function SetlistVaultTab({ concerts, genreMap }) {
               </div>
             )}
 
-            <a
+            {/* Polaroid setlist photo */}
+            {s.setlist_image_url && (
+              <div style={{ margin:'10px 0 12px', display:'inline-block', transform:'rotate(-1deg)', position:'relative' }}>
+                <div style={{ background:'#fff', padding:'5px 5px 16px 5px', boxShadow:'2px 3px 10px rgba(0,0,0,0.3)' }}>
+                  <img
+                    src={s.setlist_image_url}
+                    alt={`${s.band} setlist`}
+                    style={{ display:'block', width:'100%', maxWidth:180, height:'auto', filter:'contrast(1.05) sepia(0.08)' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            
               href={sfmUrl}
               target="_blank"
               rel="noopener noreferrer"
@@ -2118,7 +2131,7 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
 }
 
 function EditModal({ concert, onClose, onSave, onDelete }) {
-  const [form, setForm]=useState({ date:concert?.date||'', bands:(concert?.bands||[]).join(', '), venue:concert?.venue||'', city:concert?.city||'', state:concert?.state||'', is_festival:concert?.is_festival||false, festival_name:concert?.festival_name||'', festival_day:concert?.festival_day||'', has_setlist_names:concert?.has_setlist_names||'', genre:concert?.genre||'' });
+  const [form, setForm]=useState({ date:concert?.date||'', bands:(concert?.bands||[]).join(', '), venue:concert?.venue||'', city:concert?.city||'', state:concert?.state||'', is_festival:concert?.is_festival||false, festival_name:concert?.festival_name||'', festival_day:concert?.festival_day||'', has_setlist_names:concert?.has_setlist_names||'', genre:concert?.genre||'', setlist_image_url:concert?.setlist_image_url||'' });
   const [saving,setSaving]=useState(false), [confirming,setConfirming]=useState(false);
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
   const handleSave=async()=>{ setSaving(true); const bandList=form.bands.split(',').map(b=>b.trim()).filter(Boolean); await onSave(concert?.id,{...form,bands:bandList,has_setlist:!!(form.has_setlist_names?.trim())}); setSaving(false); };
@@ -2142,6 +2155,7 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
         <div style={{ marginBottom:14,display:'flex',alignItems:'center',gap:10 }}><input type="checkbox" id="is_fest" checked={form.is_festival} onChange={e=>set('is_festival',e.target.checked)} style={{ accentColor:C.teal,width:16,height:16 }} /><label htmlFor="is_fest" style={{...lbl,marginBottom:0,cursor:'pointer'}}>Festival Day</label></div>
         {form.is_festival&&(<div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14 }}><div><label style={lbl}>Festival Name</label><input style={inp} value={form.festival_name} onChange={e=>set('festival_name',e.target.value)} /></div><div><label style={lbl}>Day Label</label><input style={inp} value={form.festival_day} onChange={e=>set('festival_day',e.target.value)} /></div></div>)}
         <div style={{ marginBottom:14 }}><label style={lbl}>Setlists Obtained (band names, comma separated)</label><input style={inp} value={form.has_setlist_names} onChange={e=>set('has_setlist_names',e.target.value)} /></div>
+        <div style={{ marginBottom:14 }}><label style={lbl}>Setlist Photo URL (Imgur etc)</label><input style={inp} value={form.setlist_image_url||''} onChange={e=>set('setlist_image_url',e.target.value)} placeholder="https://i.imgur.com/abc123.jpg" /></div>
         <div style={{ display:'flex',gap:8,justifyContent:'space-between',marginTop:20 }}>
           <div style={{ display:'flex',gap:8 }}>{concert?.id&&!confirming&&<Btn variant="danger" onClick={()=>setConfirming(true)}>Delete</Btn>}{confirming&&<><Btn variant="danger" onClick={()=>onDelete(concert.id)}>Confirm</Btn><Btn variant="secondary" onClick={()=>setConfirming(false)}>Cancel</Btn></>}</div>
           <div style={{ display:'flex',gap:8 }}><Btn variant="secondary" onClick={onClose}>Cancel</Btn><Btn onClick={handleSave} disabled={saving}>{saving?'Saving...':'Save'}</Btn></div>
