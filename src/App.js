@@ -505,150 +505,116 @@ function OnThisDay({ concerts }) {
   );
 }
 
-// ─── SETLIST SPOTLIGHT ATOM (POSTER EDITION) ──────────────────────────
-// ─── SETLIST SPOTLIGHT ATOM (RESIZED POSTER EDITION) ──────────────────────────
-// ─── SETLIST SPOTLIGHT ATOM (HANDWRITTEN POSTER EDITION) ──────────────────────
-const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
-  if (!data) return null;
-  const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
-  const r = isTop ? (charCode % 4) - 3 : (charCode % 4) + 1;
-  const tapeColor = TAPE_COLORS[charCode % TAPE_COLORS.length];
-  const hasImg = data.image_url && data.image_url.trim() !== "";
 
-  // Helper for the "Notebook Fallback" (Keeps the archive mixed-media)
-  const PaperFallback = () => {
-    const doodle = ['♪', '✦', '★', '♡', '✌', '⚡', '♫', '◈'][charCode % 8];
-    return (
-      <div className="scrap-paper" style={{ background: 'linear-gradient(160deg,#f5f0e8,#e8e0cc)', padding: '22px 16px 14px', boxShadow: '4px 8px 20px rgba(0,0,0,0.5)', position: 'relative', overflow: 'hidden', minHeight: 115, display: 'flex', flexDirection: 'column', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 3 }}>
-        {[0,1,2,3].map(j => <div key={j} style={{ position:'absolute', left:32, right:8, top:44+j*22, height:1, background:'rgba(150,180,220,0.45)' }} />)}
-        <div style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1.5, background: 'rgba(220,60,60,0.25)' }} />
-        <div style={{ position:'absolute', left:8, top:'40%', width:10, height:10, borderRadius:'50%', background:'rgba(0,0,0,0.08)', boxShadow:'inset 0 1px 2px rgba(0,0,0,0.15)' }} />
-        <div style={{ position:'absolute', bottom:8, right:10, fontFamily:"'Caveat',cursive", fontSize:'1.4rem', color:'rgba(0,0,0,0.12)', transform:'rotate(15deg)', userSelect:'none' }}>{doodle}</div>
-        <div style={{ paddingLeft: 14, flex: 1, position: 'relative', zIndex: 1 }}>
-          <div style={{ fontFamily: "'Caveat',cursive", fontSize: '2.2rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 4 }}>{data.band}</div>
-          <svg height="6" width="100%" style={{ marginBottom: 8, overflow:'visible' }}><path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.2" fill="none" strokeOpacity="0.15" strokeLinecap="round"/></svg>
-          <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1rem', color: '#3a3a6e', lineHeight: 1.2 }}>{fmtDateShort(data.date)}</div>
-          <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.9rem', color: '#5a5a7e', lineHeight: 1.2 }}>{data.venue?.toUpperCase()}</div>
-        </div>
-        <a href={data.sfmUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ alignSelf: 'flex-end', background: 'rgba(0,0,0,0.06)', color: '#1a1a2e', fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px', borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700, marginTop: 6 }}>SETLIST ↗</a>
-      </div>
-    );
-  };
-
-  return (
-    <div style={{ flex: 1, position: 'relative', zIndex: isTop ? 2 : 1, transform: `rotate(${r}deg)`, transition: 'transform 0.3s ease', animation: 'peel-and-stick 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards', '--r': `${r}deg` }}>
-      <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 46, height: 16, background: tapeColor, opacity: 0.85, borderRadius: 1, zIndex: 30, boxShadow: '0 2px 4px rgba(0,0,0,0.2)', animation: 'tape-slam 0.4s 0.6s both' }} />
-
-      {hasImg ? (
-        <div style={{ background: '#fff', padding: '5px', boxShadow: '0 12px 40px rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column', borderRadius: 2, border: '1px solid #ddd' }}>
-          {/* HEADER: Handwritten Band Name */}
-          <div style={{ padding: '8px 4px 2px', textAlign: 'center' }}>
-            <div style={{ fontFamily: "'Caveat', cursive", fontSize: '2.4rem', color: '#111', fontWeight: 700, lineHeight: 0.8, letterSpacing: '-0.02em' }}>
-              {data.band}
-            </div>
-          </div>
-
-          {/* IMAGE AREA */}
-          <div style={{ flex: 1, background: '#000', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '8px 0' }}>
-            <img src={data.image_url} alt={data.band} style={{ width: '100%', height: 'auto', maxHeight: '240px', objectFit: 'contain' }} />
-          </div>
-
-          {/* FOOTER: Handwritten Venue/Date */}
-          <div style={{ padding: '4px 8px 10px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-              <div style={{ fontFamily: "'Caveat', cursive", color: '#2a2a4e', lineHeight: 1 }}>
-                <div style={{ fontSize: '1.2rem', fontWeight: 700 }}>{data.venue}</div>
-                <div style={{ fontSize: '1rem', opacity: 0.8 }}>{fmtDateShort(data.date)}</div>
-              </div>
-              <a href={data.sfmUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ background: C.gold, color: '#000', fontSize: 7, fontFamily: "'Space Mono'", padding: '4px 8px', borderRadius: 2, textDecoration: 'none', fontWeight: 900 }}>SETLIST ↗</a>
-            </div>
-            {data.is_festival && (
-              <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.1rem', color: C.teal, marginTop: 4, borderTop: '1px dashed #eee', paddingTop: 4 }}>✎ {data.festival_name}</div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <PaperFallback />
-      )}
-    </div>
-  );
-};
-// ─── MAIN SETLIST SPOTLIGHT COMPONENT (HORIZONTAL EDITION) ──────────────────
 function SetlistSpotlight({ concerts, onVault }) {
-  const [topIdx, setTopIdx] = useState(0);
-  const [botIdx, setBotIdx] = useState(1);
+  const [topIdx, setTopIdx] = useState(0);
+  const [botIdx, setBotIdx] = useState(1);
+  const startedRef = useRef(false);
+  const lenRef = useRef(0);
 
-  const vault = useMemo(() => concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()), [concerts]);
-  const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
+  const vault = useMemo(() => concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()), [concerts]);
+  const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
 
-  const slides = useMemo(() => {
-    if (!vault.length) return [];
-    const sorted = [...vault].sort((a, b) => b.date.localeCompare(a.date));
-    const randomPool = [...vault].sort(() => 0.5 - Math.random());
-    
-    return [sorted[0], ...randomPool.slice(0, 19)].map(s => ({
-      id: s.id,
-      band: s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0] || '?',
-      date: s.date,
-      venue: s.venue,
-      is_festival: s.is_festival,
-      festival_name: s.festival_name,
-      image_url: s.image_url, 
-      sfmUrl: `https://www.setlist.fm/search?query=${encodeURIComponent(s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0])}+${encodeURIComponent(s.date)}`
-    }));
-  }, [vault]);
+  const slides = useMemo(() => {
+    if (!vault.length) return [];
+    const sorted = [...vault].sort((a, b) => b.date.localeCompare(a.date));
+    const randomPool = [...vault].sort(() => 0.5 - Math.random());
+    return [sorted[0], ...randomPool.slice(0, 19)].map(s => ({
+      id: s.id,
+      band: s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0] || '?',
+      date: s.date,
+      venue: s.venue,
+      is_festival: s.is_festival,
+      festival_name: s.festival_name,
+      image_url: s.image_url || null,
+      sfmUrl: `https://www.setlist.fm/search?query=${encodeURIComponent(s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0])}+${encodeURIComponent(s.date)}`
+    }));
+  }, [vault]);
 
-  // THE RECURSIVE SYNC-KILLER (Logic remains untouched so it doesn't break)
-  useEffect(() => {
-    if (slides.length < 2) return;
-    let timer;
+  useEffect(() => {
+    lenRef.current = slides.length;
+  }, [slides.length]);
 
-    const flipTop = () => {
-      setTopIdx(prev => (prev + 2) % slides.length);
-      timer = setTimeout(flipBot, 5000); 
-    };
+  useEffect(() => {
+    if (slides.length < 2 || startedRef.current) return;
+    startedRef.current = true;
+    const topInterval = setInterval(() => {
+      setTopIdx(i => (i + 2) % lenRef.current);
+    }, 6000);
+    const botTimeout = setTimeout(() => {
+      setBotIdx(i => (i + 2) % lenRef.current);
+      setInterval(() => {
+        setBotIdx(i => (i + 2) % lenRef.current);
+      }, 6000);
+    }, 3000);
+    return () => {
+      clearInterval(topInterval);
+      clearTimeout(botTimeout);
+    };
+  }, [slides.length]);
 
-    const flipBot = () => {
-      setBotIdx(prev => (prev + 2) % slides.length);
-      timer = setTimeout(flipTop, 5000); 
-    };
+  if (!slides.length) return null;
 
-    timer = setTimeout(flipTop, 2000); 
-    return () => clearTimeout(timer);
-  }, [slides.length]);
+  const Card = ({ data }) => {
+    const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
+    const tapeColor = TAPE_COLORS[charCode % TAPE_COLORS.length];
+    const hasImg = data.image_url && data.image_url.trim() !== '';
 
-  if (!slides.length) return null;
+    return (
+      <div style={{ position: 'relative', flex: 1 }}>
+        <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 46, height: 16, background: tapeColor, opacity: 0.85, borderRadius: 1, zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.15)' }} />
+        {hasImg ? (
+          <div style={{ background: '#fff', padding: '6px 6px 0 6px', boxShadow: '0 12px 40px rgba(0,0,0,0.6)', borderRadius: 2, border: '1px solid #ddd', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '10px 6px 6px', textAlign: 'center', borderBottom: '1px solid #eee' }}>
+              <div style={{ fontFamily: "'Caveat',cursive", fontSize: '2rem', fontWeight: 700, color: '#111', lineHeight: 1 }}>{data.band}</div>
+            </div>
+            <div style={{ background: '#000', overflow: 'hidden' }}>
+              <img src={data.image_url} alt={data.band} style={{ width: '100%', height: 'auto', display: 'block' }} />
+            </div>
+            <div style={{ padding: '8px 10px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+              <div>
+                <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.1rem', fontWeight: 700, color: '#1a1a2e' }}>{data.venue?.toUpperCase()}</div>
+                <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1rem', color: '#5a5a7e' }}>{fmtDateShort(data.date)}</div>
+                {data.is_festival && data.festival_name && (
+                  <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.85rem', color: '#886644', fontStyle: 'italic' }}>✎ {data.festival_name}</div>
+                )}
+              </div>
+              <a href={data.sfmUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ background: C.gold, color: '#000', fontSize: 7, fontFamily: "'Space Mono'", padding: '4px 8px', borderRadius: 2, textDecoration: 'none', fontWeight: 900, flexShrink: 0 }}>SETLIST ↗</a>
+            </div>
+          </div>
+        ) : (
+          <div className="scrap-paper" style={{ padding: '22px 16px 14px', boxShadow: '4px 8px 20px rgba(0,0,0,0.5)', position: 'relative', overflow: 'hidden', minHeight: 115, display: 'flex', flexDirection: 'column', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 3 }}>
+            {[0,1,2,3].map(j => <div key={j} style={{ position:'absolute', left:32, right:8, top:44+j*22, height:1, background:'rgba(150,180,220,0.45)' }} />)}
+            <div style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1.5, background: 'rgba(220,60,60,0.25)' }} />
+            <div style={{ paddingLeft: 14, flex: 1, position: 'relative', zIndex: 1 }}>
+              <div style={{ fontFamily: "'Caveat',cursive", fontSize: '2.2rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 6 }}>{data.band}</div>
+              <svg height="6" width="100%" style={{ marginBottom: 8, overflow:'visible' }}>
+                <path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.2" fill="none" strokeOpacity="0.15" strokeLinecap="round"/>
+              </svg>
+              <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.1rem', color: '#3a3a6e', lineHeight: 1.3 }}>{fmtDateShort(data.date)}</div>
+              <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1rem', color: '#5a5a7e', lineHeight: 1.3 }}>{data.venue?.toUpperCase() || 'UNKNOWN VENUE'}</div>
+              {data.is_festival && data.festival_name && (
+                <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.9rem', color:'#886644', marginTop:4, fontStyle:'italic' }}>✎ {data.festival_name}</div>
+              )}
+            </div>
+            <a href={data.sfmUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ alignSelf: 'flex-end', background: 'rgba(0,0,0,0.06)', color: '#1a1a2e', fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px', borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700 }}>SETLIST ↗</a>
+          </div>
+        )}
+      </div>
+    );
+  };
 
-  return (
-    <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 20, textTransform: 'uppercase', textAlign: 'center', opacity: 0.4 }}>
-        📋 BACKSTAGE LOG
-      </div>
-      
-      {/* ── CHANGED TO ROW LAYOUT ── */}
-      <div style={{ 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'row', // Horizontal!
-        gap: '12px',         // Space between left and right cards
-        padding: '0 4px',
-        alignItems: 'flex-start' 
-      }}>
-        <SpotlightScrap 
-          key={`left-${topIdx}`} 
-          data={slides[topIdx % slides.length]} 
-          isTop={true} 
-          TAPE_COLORS={TAPE_COLORS} 
-        />
-        <SpotlightScrap 
-          key={`right-${botIdx}`} 
-          data={slides[botIdx % slides.length]} 
-          isTop={false} 
-          TAPE_COLORS={TAPE_COLORS} 
-        />
-      </div>
-    </div>
-  );
+  return (
+    <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 20, textTransform: 'uppercase', textAlign: 'center', opacity: 0.4 }}>
+        📋 BACKSTAGE LOG
+      </div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'row', gap: 12, padding: '0 4px', alignItems: 'flex-start' }}>
+        <Card key={`top-${topIdx}`} data={slides[topIdx % slides.length]} />
+        <Card key={`bot-${botIdx}`} data={slides[botIdx % slides.length]} />
+      </div>
+    </div>
+  );
 }
 // ─── ARTIST INSIGHTS (POSTER EDITION) ─────────────────────────────────────────
 function ArtistInsights({ concerts }) {
