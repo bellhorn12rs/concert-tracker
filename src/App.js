@@ -555,7 +555,7 @@ function SetlistSpotlight({ concerts, onVault }) {
 
   if (!slides.length) return null;
 
-  const Card = ({ data }) => {
+  const SlideCard = ({ data }) => {
     const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
     const tapeColor = TAPE_COLORS[charCode % TAPE_COLORS.length];
     const hasImg = data.image_url && data.image_url.trim() !== '';
@@ -610,8 +610,8 @@ function SetlistSpotlight({ concerts, onVault }) {
         📋 BACKSTAGE LOG
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', gap: 12, padding: '0 4px', alignItems: 'flex-start' }}>
-        <Card key={`top-${topIdx}`} data={slides[topIdx % slides.length]} />
-        <Card key={`bot-${botIdx}`} data={slides[botIdx % slides.length]} />
+        <SlideCard key={`top-${topIdx}`} data={slides[topIdx % slides.length]} />
+<SlideCard key={`bot-${botIdx}`} data={slides[botIdx % slides.length]} />
       </div>
     </div>
   );
