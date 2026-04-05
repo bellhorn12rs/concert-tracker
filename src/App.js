@@ -1363,6 +1363,152 @@ function SetlistVaultTab({ concerts, genreMap }) {
     </div>
   );
 }
+// ─── VENUES TAB (ARCHITECTURAL EDITION) ──────────────────────────────────────
+function VenuesTab({ concerts }) {
+  // 1. Group concerts by Venue Name
+  const venues = useMemo(() => {
+    const groups = {};
+    
+    concerts.forEach(c => {
+      const vName = c.is_festival ? c.festival_name : c.venue;
+      if (!vName) return;
+
+      if (!groups[vName]) {
+        groups[vName] = {
+          name: vName,
+          location: `${c.city}, ${c.state}`,
+          shows: [],
+          isFestival: c.is_festival,
+          // Grab the first available image we find for this venue/fest
+          heroImage: c.image_url || null 
+        };
+      }
+      
+      // Add bands from this specific night to the venue's total list
+      const showBands = c.has_setlist_names?.split(',').map(b => b.trim()) || c.bands || [];
+      groups[vName].shows.push({
+        date: c.date,
+        bands: showBands
+      });
+
+      // Update image if we find a better one later (optional logic)
+      if (!groups[vName].heroImage && c.image_url) {
+        groups[vName].heroImage = c.image_url;
+      }
+    });
+
+    return Object.values(groups).sort((a, b) => b.shows.length - a.shows.length);
+  }, [concerts]);
+
+  const VenueCard = ({ v }) => {
+    const allBandsSeen = [...new Set(v.shows.flatMap(s => s.bands))];
+    const visitCount = v.shows.length;
+
+    return (
+      <div style={{
+        background: '#1a1a1a',
+        borderRadius: 8,
+        overflow: 'hidden',
+        border: '1px solid rgba(255,255,255,0.1)',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'transform 0.2s ease',
+        cursor: 'default'
+      }} className="venue-card-hover">
+        
+        {/* VENUE IMAGE / FESTIVAL STAGE */}
+        <div style={{ 
+          height: 160, 
+          background: v.heroImage ? `url(${v.heroImage}) center/cover` : '#333',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'flex-end',
+          padding: '12px'
+        }}>
+          {/* Overlay for readability */}
+          <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(0,0,0,0.8), transparent)' }} />
+          
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: '#fff', lineHeight: 1 }}>
+              {v.name.toUpperCase()}
+            </div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: '9px', color: C.teal, letterSpacing: 1 }}>
+              {v.location.toUpperCase()}
+            </div>
+          </div>
+
+          {/* Visit Badge */}
+          <div style={{
+            position: 'absolute', top: 12, right: 12,
+            background: C.gold, color: '#000',
+            fontFamily: "'Space Mono'", fontSize: '10px', fontWeight: 900,
+            padding: '4px 8px', borderRadius: 4, boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+          }}>
+            {visitCount} {visitCount === 1 ? 'VISIT' : 'VISITS'}
+          </div>
+        </div>
+
+        {/* ACTS LIST */}
+        <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: '#666', marginBottom: 8, textTransform: 'uppercase' }}>
+            Acts Witnessed:
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            {allBandsSeen.map((band, idx) => (
+              <span key={idx} style={{
+                fontFamily: "'Caveat'",
+                fontSize: '1.1rem',
+                color: '#ddd',
+                background: 'rgba(255,255,255,0.05)',
+                padding: '2px 8px',
+                borderRadius: 4,
+                border: '1px solid rgba(255,255,255,0.05)'
+              }}>
+                {band}
+              </span>
+            ))}
+          </div>
+          
+          {/* FESTIVAL INDICATOR */}
+          {v.isFestival && (
+            <div style={{ 
+              marginTop: 'auto', 
+              paddingTop: 12, 
+              fontFamily: "'Space Mono'", 
+              fontSize: '8px', 
+              color: C.teal, 
+              textAlign: 'right',
+              fontStyle: 'italic'
+            }}>
+              ✦ FESTIVAL GROUNDS
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ padding: '40px 0' }} className="fade-in">
+      <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: '#fff' }}>
+          THE <span style={{ color: C.gold }}>VENUES</span>
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: '#666', letterSpacing: 2 }}>
+          {venues.length} LOCATIONS LOGGED
+        </div>
+      </div>
+
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+        gap: '30px' 
+      }}>
+        {venues.map((v, i) => <VenueCard key={i} v={v} />)}
+      </div>
+    </div>
+  );
+}
 // ─── TIMELINE ─────────────────────────────────────────────────────────────────
 function GenreLegend() {
   return (
@@ -2425,6 +2571,7 @@ const TABS = [
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   // ── THEME ────────────────────────────────────────────────────────────────────
   const [themeId, setThemeIdRaw] = useState(() => localStorage.getItem('concert-theme') || 'neon-noir');
@@ -2441,15 +2588,19 @@ export default function App() {
 
   // ── DATA STATE ───────────────────────────────────────────────────────────────
   const [concerts, setConcerts]         = useState([]);
-  const [artistGenres, setArtistGenres] = useState({}); // <── THIS WAS MISSING
+  const [artistGenres, setArtistGenres] = useState({}); 
   const [upcoming, setUpcoming]         = useState([]);
   const [loading, setLoading]           = useState(true);
   
   // ── UI STATE ─────────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab]       = useState('dashboard');
+  // I KEPT THIS ONE - Pick 'DASHBOARD' or 'dashboard' and use it everywhere
+  const [activeTab, setActiveTab]       = useState('DASHBOARD'); 
+  
   const [editTarget, setEditTarget]     = useState(null);
   const [shareCard, setShareCard]       = useState(null);
   const [upcomingModal, setUpcomingModal] = useState(null);
+
+  // ... rest of your code ...
 
   // ── FILTER STATE ─────────────────────────────────────────────────────────────
   const [search, setSearch]             = useState('');
