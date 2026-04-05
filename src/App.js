@@ -1151,19 +1151,36 @@ function WristbandCard({ event, genreMap, compact = false }) {
     </div>
   );
 }
+// ─── SETLIST VAULT (UNIFIED POSTER GRID) ─────────────────────────────────────
 function SetlistVaultTab({ concerts, genreMap }) {
   const setlists = useMemo(() => {
     const results = [];
     concerts.forEach(c => {
       if (!c.has_setlist_names?.trim()) return;
       c.has_setlist_names.split(',').map(b => b.trim()).filter(Boolean).forEach(band => {
-        results.push({ id: `${c.id}-${band}`, band, date: c.date, venue: c.venue, city: c.city, state: c.state, festival_name: c.festival_name, is_festival: c.is_festival, genre: c.genre, image_url: c.image_url });
+        results.push({ 
+          id: `${c.id}-${band}`, 
+          band, 
+          date: c.date, 
+          venue: c.venue, 
+          city: c.city, 
+          state: c.state, 
+          festival_name: c.festival_name, 
+          is_festival: c.is_festival, 
+          genre: c.genre, 
+          image_url: c.image_url 
+        });
       });
     });
     return results.sort((a, b) => b.date.localeCompare(a.date));
   }, [concerts]);
 
-  if (!setlists.length) return <div style={{ padding: '80px 0', textAlign: 'center' }} className="fade-in"><div style={{ fontSize: '4rem', marginBottom: 20 }}>📋</div><div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white }}>VAULT IS EMPTY</div></div>;
+  if (!setlists.length) return (
+    <div style={{ padding: '80px 0', textAlign: 'center' }} className="fade-in">
+      <div style={{ fontSize: '4rem', marginBottom: 20 }}>📋</div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white }}>VAULT IS EMPTY</div>
+    </div>
+  );
 
   const cols = [[], [], []];
   setlists.forEach((s, i) => cols[i % 3].push({ ...s, colIdx: i }));
@@ -1176,7 +1193,14 @@ function SetlistVaultTab({ concerts, genreMap }) {
     return (
       <div style={{ position: 'relative', transform: `rotate(${rot}deg)`, marginBottom: 50, zIndex: 1 }}>
         {/* Physical Tape */}
-        <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', width: 56, height: 20, background: tapeColor, opacity: 0.85, borderRadius: 2, zIndex: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }} />
+        <div style={{ 
+          position: 'absolute', top: -12, left: '50%', 
+          transform: 'translateX(-50%)', 
+          width: 56, height: 20, 
+          background: tapeColor, 
+          opacity: 0.85, borderRadius: 2, zIndex: 10, 
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)' 
+        }} />
         
         {/* Main Frame */}
         <div style={{ 
@@ -1189,15 +1213,35 @@ function SetlistVaultTab({ concerts, genreMap }) {
           flexDirection: 'column'
         }}>
           
-          {/* Handwritten Header */}
+          {/* Handwritten Header: Band Name */}
           <div style={{ padding: '12px 8px 4px', textAlign: 'center' }}>
-            <div style={{ fontFamily: "'Caveat', cursive", fontSize: '2.8rem', fontWeight: 700, color: '#111', lineHeight: 0.8 }}>{s.band}</div>
+            <div style={{ 
+              fontFamily: "'Caveat', cursive", 
+              fontSize: '2.8rem', 
+              fontWeight: 700, 
+              color: '#111', 
+              lineHeight: 0.8 
+            }}>
+              {s.band}
+            </div>
           </div>
 
-          {/* Image / Content */}
-          <div style={{ background: '#000', margin: '10px 4px', minHeight: hasImg ? 0 : 120, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          {/* Image / Content Area */}
+          <div style={{ 
+            background: '#000', 
+            margin: '10px 4px', 
+            minHeight: hasImg ? 0 : 120, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            overflow: 'hidden' 
+          }}>
             {hasImg ? (
-              <img src={s.image_url} alt={s.band} style={{ width: '100%', height: 'auto', display: 'block' }} />
+              <img 
+                src={s.image_url} 
+                alt={s.band} 
+                style={{ width: '100%', height: 'auto', display: 'block' }} 
+              />
             ) : (
               <div style={{ padding: '40px', textAlign: 'center', opacity: 0.1 }}>
                 <div style={{ fontSize: '3rem' }}>🎸</div>
@@ -1205,16 +1249,35 @@ function SetlistVaultTab({ concerts, genreMap }) {
             )}
           </div>
 
-          {/* Handwritten Footer */}
+          {/* Handwritten Footer: Venue & Date */}
           <div style={{ padding: '4px 10px 12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <div style={{ fontFamily: "'Caveat', cursive", color: '#1a1a2e', lineHeight: 1.1 }}>
                 <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>{s.venue}</div>
                 <div style={{ fontSize: '1.1rem', opacity: 0.7 }}>{fmtDateShort(s.date)}</div>
-                {s.is_festival && <div style={{ fontSize: '1rem', color: C.teal, marginTop: 4 }}>✎ {s.festival_name}</div>}
+                {s.is_festival && s.festival_name && (
+                  <div style={{ fontSize: '1rem', color: C.teal, marginTop: 4 }}>
+                    ✎ {s.festival_name}
+                  </div>
+                )}
               </div>
-              <a href={`https://www.setlist.fm/search?query=${encodeURIComponent(s.band)}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                style={{ background: 'rgba(0,0,0,0.05)', color: '#000', textDecoration: 'none', fontFamily: "'Space Mono'", fontSize: 7, padding: '5px 10px', borderRadius: 4, border: '1px solid #ccc' }}>
+              
+              <a 
+                href={`https://www.setlist.fm/search?query=${encodeURIComponent(s.band)}`} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                onClick={e => e.stopPropagation()}
+                style={{ 
+                  background: 'rgba(0,0,0,0.05)', 
+                  color: '#000', 
+                  textDecoration: 'none', 
+                  fontFamily: "'Space Mono'", 
+                  fontSize: 7, 
+                  padding: '5px 10px', 
+                  borderRadius: 4, 
+                  border: '1px solid #ccc' 
+                }}
+              >
                 SETLIST ↗
               </a>
             </div>
@@ -1226,14 +1289,34 @@ function SetlistVaultTab({ concerts, genreMap }) {
 
   return (
     <div style={{ padding: '40px 0 80px' }} className="fade-in">
+      {/* Page Header */}
       <div style={{ textAlign: 'center', marginBottom: 60 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: C.white, letterSpacing: '0.05em' }}>📋 THE <span style={{ color: C.teal }}>ARCHIVE</span></div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, opacity: 0.5, letterSpacing: 4 }}>{setlists.length} GIG POSTERS COLLECTED</div>
+        <div style={{ 
+          fontFamily: "'Bebas Neue'", 
+          fontSize: '4rem', 
+          color: C.white, 
+          letterSpacing: '0.05em' 
+        }}>
+          📋 THE <span style={{ color: C.teal }}>ARCHIVE</span>
+        </div>
+        <div style={{ 
+          fontFamily: "'Space Mono'", 
+          fontSize: 9, 
+          color: C.gray, 
+          opacity: 0.5, 
+          letterSpacing: 4 
+        }}>
+          {setlists.length} GIG POSTERS COLLECTED
+        </div>
       </div>
+
+      {/* Grid Layout */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0 50px' }}>
         {cols.map((col, ci) => (
           <div key={ci} style={{ display: 'flex', flexDirection: 'column' }}>
-            {col.map((s, idx) => <PosterCard key={s.id} s={s} i={idx + ci} />)}
+            {col.map((s, idx) => (
+              <PosterCard key={s.id} s={s} i={idx + ci} />
+            ))}
           </div>
         ))}
       </div>
