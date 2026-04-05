@@ -1230,7 +1230,7 @@ function WristbandCard({ event, genreMap, compact = false }) {
     </div>
   );
 }
-// ─── SETLIST VAULT (POSTER-POLAROID EDITION) ───────────────────────────────────────────
+// ─── SETLIST VAULT (CLEAN POSTER EDITION) ──────────────────────────────────────
 function SetlistVaultTab({ concerts, genreMap }) {
   const setlists = useMemo(() => {
     const results = [];
@@ -1262,118 +1262,82 @@ function SetlistVaultTab({ concerts, genreMap }) {
     <div style={{ padding:'80px 0', textAlign:'center' }} className="fade-in">
       <div style={{ fontSize:'4rem', marginBottom:20 }}>📋</div>
       <div style={{ fontFamily:"'Bebas Neue'", fontSize:'2rem', color:C.white, marginBottom:12 }}>VAULT IS EMPTY</div>
-      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:10, color:C.gray }}>Add bands to "Setlists Obtained" to see them here.</div>
     </div>
   );
 
   const cols = [[],[],[]];
   setlists.forEach((s,i) => cols[i%3].push({...s, colIdx:i}));
 
-  const PaperCard = ({ s, i }) => {
-    const rot = ROTATIONS[i%ROTATIONS.length];
-    const dur = DURATIONS[i%DURATIONS.length];
-    const tapeColor = TAPE_COLORS[i%TAPE_COLORS.length];
-    const gcName = genreMap[s.band] || s.genre;
-    const gc = gcName ? GENRE_COLORS[gcName] : null;
-    
+  const VaultEntry = ({ s, i }) => {
+    const rot = ROTATIONS[i % ROTATIONS.length];
+    const dur = DURATIONS[i % DURATIONS.length];
+    const tapeColor = TAPE_COLORS[i % TAPE_COLORS.length];
     const sfmDate = s.date ? s.date.split('-').reverse().join('-') : '';
     const sfmUrl = `https://www.setlist.fm/search?query=${encodeURIComponent(s.band + ' ' + sfmDate)}`;
-    const doodles = ['♪', '✦', '★', '♡', '✌', '⚡', '♫', '◈'];
-    const doodle = doodles[i % doodles.length];
 
-    return (
-      <div className="paper-float" style={{ '--r':`${rot}deg`, '--dur':dur, position:'relative', transform:`rotate(${rot}deg)`, marginBottom:40, zIndex:1 }}>
-        {/* Physical Tape */}
-        <div style={{ position:'absolute', top:-12, left:'50%', transform:'translateX(-50%)', width:56, height:22, background:tapeColor, opacity:0.75, borderRadius:3, zIndex:10, boxShadow:`0 2px 8px ${hexToRgba(tapeColor,0.4)}` }} />
-        
-        <div style={{ background:'linear-gradient(160deg,#f5f0e8 0%,#ede8d8 40%,#e8e0cc 100%)', borderRadius:4, padding:'32px 28px 24px', boxShadow:'0 8px 32px rgba(0,0,0,0.5),0 2px 8px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.6)', position:'relative', overflow:'hidden' }}>
+    // ─── OPTION A: THE POSTER (IF IMAGE EXISTS) ───
+    if (s.image_url) {
+      return (
+        <div className="paper-float" style={{ '--r':`${rot}deg`, '--dur':dur, position:'relative', transform:`rotate(${rot}deg)`, marginBottom:50, zIndex:1 }}>
+          {/* Physical Tape */}
+          <div style={{ position:'absolute', top:-10, left:'50%', transform:'translateX(-50%)', width:50, height:18, background:tapeColor, opacity:0.85, borderRadius:2, zIndex:30, boxShadow:'0 2px 4px rgba(0,0,0,0.2)' }} />
+          
+          <div style={{ background: '#fff', padding: '5px', boxShadow: '0 12px 35px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', borderRadius: 2, border: '1px solid #ddd' }}>
+            {/* Header */}
+            <div style={{ padding: '10px 4px 8px', textAlign: 'center', background: '#111', marginBottom: 5 }}>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.08em', lineHeight: 1 }}>
+                {s.band.toUpperCase()}
+              </div>
+            </div>
 
-          {/* Ruled lines */}
-          {[0,1,2,3,4].map(j => <div key={j} style={{ position:'absolute', left:60, right:0, top:72+j*26, height:1, background:'rgba(150,180,220,0.35)' }} />)}
+            {/* Image Box */}
+            <div style={{ background: '#000', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '200px' }}>
+              <img 
+                src={s.image_url} 
+                alt={s.band} 
+                style={{ width: '100%', height: 'auto', maxHeight: '350px', objectFit: 'contain' }} 
+              />
+            </div>
 
-          {/* Red margin line */}
-          <div style={{ position:'absolute', left:54, top:0, bottom:0, width:1.5, background:'rgba(220,60,60,0.3)' }} />
-
-          {/* Hole punch */}
-          <div style={{ position:'absolute', left:18, top:'28%', width:16, height:16, borderRadius:'50%', background:'rgba(0,0,0,0.12)', boxShadow:'inset 0 1px 3px rgba(0,0,0,0.2)' }} />
-
-          {/* Corner doodle */}
-          <div style={{ position:'absolute', bottom:10, right:14, fontFamily:"'Caveat',cursive", fontSize:'1.8rem', color:'rgba(0,0,0,0.1)', transform:'rotate(15deg)', userSelect:'none' }}>{doodle}</div>
-
-          {/* Genre tag */}
-          {gc && <div style={{ position:'absolute', top:0, right:0, background:gc, padding:'3px 10px 3px 14px', borderRadius:'0 4px 0 10px', fontFamily:"'Space Mono',monospace", fontSize:7, color:'#000', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:700 }}>{gcName}</div>}
-
-          <div style={{ paddingLeft:18 }}>
-            {/* Big band name */}
-            <div style={{ fontFamily:"'Caveat',cursive", fontSize:'clamp(1.9rem,3.5vw,2.5rem)', fontWeight:700, color:'#1a1a2e', lineHeight:1, marginBottom:6 }}>{s.band}</div>
-
-            {/* Hand-drawn underline */}
-            <svg height="6" width="100%" style={{ marginBottom:10, overflow:'visible' }}>
-              <path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.5" fill="none" strokeOpacity="0.2" strokeLinecap="round"/>
-            </svg>
-
-            {/* THE NEW POSTER-STYLE IMAGE BLOCK */}
-            {s.image_url && (
-              <div style={{ 
-                margin: '15px 0 20px', 
-                background: '#fff', 
-                padding: '4px', 
-                boxShadow: '0 8px 25px rgba(0,0,0,0.3)', 
-                display: 'flex', 
-                flexDirection: 'column', 
-                borderRadius: 2, 
-                border: '1px solid #ddd',
-                maxWidth: '240px',
-                transform: 'rotate(-1deg)'
-              }}>
-                {/* Poster Header */}
-                <div style={{ padding: '6px 4px', textAlign: 'center', background: '#111', marginBottom: 4 }}>
-                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '0.9rem', color: '#fff', letterSpacing: '0.08em', lineHeight: 1 }}>
-                    {s.band.toUpperCase()}
-                  </div>
-                </div>
-
-                {/* Poster Image Container */}
-                <div style={{ background: '#000', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <img 
-                    src={s.image_url} 
-                    alt={`${s.band} setlist`}
-                    style={{ width: '100%', height: 'auto', maxHeight: '180px', objectFit: 'contain' }}
-                    onError={(e) => e.target.parentElement.parentElement.style.display = 'none'}
-                  />
-                </div>
-
-                {/* Poster Footer */}
-                <div style={{ padding: '6px 4px', borderTop: '1px solid #f0f0f0' }}>
-                  <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '7px', color: '#000', fontWeight: 900, lineHeight: 1 }}>
+            {/* Footer */}
+            <div style={{ padding: '12px 8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div>
+                  <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '10px', color: '#000', fontWeight: 900, lineHeight: 1.2 }}>
                     {s.venue?.toUpperCase() || 'UNKNOWN VENUE'}
                   </div>
-                  <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '6px', color: '#888', marginTop: 2 }}>
-                    {fmtDateShort(s.date).toUpperCase()}
+                  <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '9px', color: '#888', marginTop: 4 }}>
+                    {fmtDateShort(s.date).toUpperCase()} • {[s.city, s.state].filter(Boolean).join(', ').toUpperCase()}
                   </div>
                 </div>
+                
+                <a href={sfmUrl} target="_blank" rel="noopener noreferrer" style={{ background: C.gold, color: '#000', fontSize: 8, fontFamily: "'Space Mono'", padding: '4px 8px', borderRadius: 2, textDecoration: 'none', fontWeight: 900 }}>
+                  SETLIST ↗
+                </a>
               </div>
-            )}
+              {s.is_festival && (
+                <div style={{ fontFamily: "'Caveat', cursive", fontSize: '12px', color: C.teal, marginTop: 6, borderTop: '1px dashed #eee', paddingTop: 4 }}>
+                  ✎ {s.festival_name}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
 
-            <div style={{ fontFamily:"'Caveat',cursive", fontSize:'1rem', color:'#2a2a4e', marginBottom:3 }}>{fmtDate(s.date)}</div>
-            <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.9rem', color:'#3a3a5e', marginBottom:2 }}>{s.venue}</div>
-            <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.85rem', color:'#5a5a7e', marginBottom: s.is_festival ? 4 : 10 }}>{[s.city,s.state].filter(Boolean).join(', ')}</div>
-
-            {s.is_festival && s.festival_name && (
-              <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.85rem', color:'#886644', fontStyle:'italic', marginBottom:10 }}>
-                ✎ {s.festival_name}
-              </div>
-            )}
-
-            <a
-              href={sfmUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              style={{ display:'inline-flex', alignItems:'center', gap:5, fontFamily:"'Space Mono',monospace", fontSize:8, color:'#4444aa', textDecoration:'none', letterSpacing:'0.08em', padding:'4px 10px', background:'rgba(68,68,170,0.1)', borderRadius:4, border:'1px solid rgba(68,68,170,0.35)' }}
-              onMouseEnter={e => { e.currentTarget.style.background='rgba(68,68,170,0.2)'; e.currentTarget.style.color='#6666cc'; }}
-              onMouseLeave={e => { e.currentTarget.style.background='rgba(68,68,170,0.1)'; e.currentTarget.style.color='#4444aa'; }}
-            >
+    // ─── OPTION B: THE NOTEBOOK (IF NO IMAGE) ───
+    return (
+      <div className="paper-float" style={{ '--r':`${rot}deg`, '--dur':dur, position:'relative', transform:`rotate(${rot}deg)`, marginBottom:40 }}>
+        <div style={{ position:'absolute', top:-12, left:'50%', transform:'translateX(-50%)', width:56, height:22, background:tapeColor, opacity:0.75, borderRadius:3, zIndex:10 }} />
+        <div style={{ background:'linear-gradient(160deg,#f5f0e8 0%,#e8e0cc 100%)', borderRadius:4, padding:'32px 28px 24px', boxShadow:'0 8px 32px rgba(0,0,0,0.5)', position:'relative', overflow:'hidden' }}>
+          {[0,1,2,3].map(j => <div key={j} style={{ position:'absolute', left:60, right:0, top:72+j*26, height:1, background:'rgba(150,180,220,0.35)' }} />)}
+          <div style={{ position:'absolute', left:54, top:0, bottom:0, width:1.5, background:'rgba(220,60,60,0.3)' }} />
+          <div style={{ paddingLeft:18 }}>
+            <div style={{ fontFamily:"'Caveat',cursive", fontSize:'2.2rem', fontWeight:700, color:'#1a1a2e', lineHeight:1 }}>{s.band}</div>
+            <div style={{ fontFamily:"'Caveat',cursive", fontSize:'1rem', color:'#2a2a4e', marginTop:8 }}>{fmtDate(s.date)}</div>
+            <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.9rem', color:'#3a3a5e' }}>{s.venue}</div>
+            <a href={sfmUrl} target="_blank" rel="noopener noreferrer" style={{ display:'inline-block', marginTop:15, fontFamily:"'Space Mono'", fontSize:8, color:'#4444aa', textDecoration:'none', padding:'4px 10px', background:'rgba(68,68,170,0.1)', borderRadius:4, border:'1px solid rgba(68,68,170,0.35)' }}>
               📋 setlist.fm ↗
             </a>
           </div>
@@ -1385,13 +1349,14 @@ function SetlistVaultTab({ concerts, genreMap }) {
   return (
     <div style={{ padding:'40px 0 80px' }} className="fade-in">
       <div style={{ textAlign:'center', marginBottom:48 }}>
-        <div style={{ fontFamily:"'Bebas Neue'", fontSize:'clamp(2.5rem,6vw,4rem)', color:C.white, letterSpacing:'0.06em', marginBottom:8 }}>📋 SETLIST <span style={{ color:C.teal }}>VAULT</span></div>
-        <div style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:C.gray, letterSpacing:'0.2em', textTransform:'uppercase' }}>{setlists.length} entries in the archive</div>
+        <div style={{ fontFamily:"'Bebas Neue'", fontSize:'4rem', color:C.white, letterSpacing:'0.06em' }}>
+          📋 SETLIST <span style={{ color:C.teal }}>VAULT</span>
+        </div>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'0 40px', alignItems:'start' }}>
         {cols.map((col,ci) => (
           <div key={ci} style={{ display:'flex', flexDirection:'column' }}>
-            {col.map(s => <PaperCard key={s.id} s={s} i={s.colIdx} />)}
+            {col.map(s => <VaultEntry key={s.id} s={s} i={s.colIdx} />)}
           </div>
         ))}
       </div>
