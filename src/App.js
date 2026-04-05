@@ -505,126 +505,141 @@ function OnThisDay({ concerts }) {
   );
 }
 
-// ─── SETLIST SPOTLIGHT ATOM (Standalone to prevent scoping/duplicate errors) 
+// ─── SETLIST SPOTLIGHT ATOM (POSTER EDITION) ──────────────────────────
 const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
   if (!data) return null;
   const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
-  // Rotation logic: slight variation between left and right cards
   const r = isTop ? (charCode % 4) - 3 : (charCode % 4) + 1;
   const tapeColor = TAPE_COLORS[charCode % TAPE_COLORS.length];
-  const doodles = ['♪', '✦', '★', '♡', '✌', '⚡', '♫', '◈'];
-  const doodle = doodles[charCode % doodles.length];
 
+  // Fallback if no image: A stylized gradient background
+  const hasImg = data.image_url && data.image_url.trim() !== "";
+  
   return (
     <div style={{
       flex: 1,
       position: 'relative',
-      marginBottom: 0, // Reset for horizontal row layout
       zIndex: isTop ? 2 : 1,
       transform: `rotate(${r}deg)`,
       transition: 'transform 0.3s ease',
-      /* Animation from MarqueeStyles */
       animation: 'peel-and-stick 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards',
       '--r': `${r}deg` 
     }}>
-      {/* Tape — Slams down after card lands */}
+      {/* Physical Tape */}
       <div style={{
-        position: 'absolute', top: -10, left: '50%',
+        position: 'absolute', top: -8, left: '50%',
         transform: 'translateX(-50%)',
-        width: 46, height: 16,
+        width: 50, height: 18,
         background: tapeColor,
-        opacity: 0.75, borderRadius: 1, zIndex: 10,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+        opacity: 0.8, borderRadius: 1, zIndex: 20,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
         animation: 'tape-slam 0.4s 0.6s both'
       }} />
 
-      <div className="scrap-paper" style={{
-        background: 'linear-gradient(160deg,#f5f0e8,#e8e0cc)',
-        padding: '22px 16px 14px',
-        boxShadow: '4px 8px 20px rgba(0,0,0,0.5)',
+      {/* Main Poster Frame */}
+      <div className="poster-frame" style={{
+        background: '#111',
+        border: '4px solid #fff', // The white photo border
+        boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
         position: 'relative',
         overflow: 'hidden',
-        minHeight: 115,
+        aspectRatio: '3/4', // Forces a consistent poster shape
         display: 'flex',
         flexDirection: 'column',
-        border: '1px solid rgba(0,0,0,0.06)',
-        borderRadius: 3
+        borderRadius: 2
       }}>
-        {/* Ruled Notebook Detail */}
-        {[0,1,2,3].map(j => (
-          <div key={j} style={{ position:'absolute', left:32, right:8, top:44+j*22, height:1, background:'rgba(150,180,220,0.45)' }} />
-        ))}
-        {/* Margin line and Hole punch */}
-        <div style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1.5, background: 'rgba(220,60,60,0.25)' }} />
-        <div style={{ position:'absolute', left:8, top:'40%', width:10, height:10, borderRadius:'50%', background:'rgba(0,0,0,0.08)', boxShadow:'inset 0 1px 2px rgba(0,0,0,0.15)' }} />
         
-        {/* Corner doodle */}
-        <div style={{ position:'absolute', bottom:8, right:10, fontFamily:"'Caveat',cursive", fontSize:'1.4rem', color:'rgba(0,0,0,0.12)', transform:'rotate(15deg)', userSelect:'none' }}>{doodle}</div>
-
-        <div style={{ paddingLeft: 14, flex: 1, position: 'relative', zIndex: 1 }}>
-          <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.8rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 4 }}>
-            {data.band}
+        {/* HEADER: Band Name */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0,
+          background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)',
+          padding: '12px 10px 25px',
+          zIndex: 10,
+          textAlign: 'center'
+        }}>
+          <div style={{ 
+            fontFamily: "'Bebas Neue', sans-serif", 
+            fontSize: '1.6rem', 
+            color: '#fff', 
+            letterSpacing: '0.05em',
+            lineHeight: 1,
+            textShadow: '0 2px 4px rgba(0,0,0,0.5)' 
+          }}>
+            {data.band.toUpperCase()}
           </div>
+        </div>
 
-          <svg height="6" width="100%" style={{ marginBottom: 8, overflow:'visible' }}>
-            <path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.2" fill="none" strokeOpacity="0.15" strokeLinecap="round"/>
-          </svg>
-
-          <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.85rem', color: '#3a3a6e', lineHeight: 1.2 }}>
-            {fmtDateShort(data.date)}
-          </div>
-          <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.8rem', color: '#5a5a7e', lineHeight: 1.2 }}>
-            {data.venue?.toUpperCase() || 'UNKNOWN VENUE'}
-          </div>
-          
-          {data.is_festival && data.festival_name && (
-            <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.75rem', color:'#886644', marginTop:4 }}>
-              ✎ {data.festival_name}
-            </div>
-          )}
-
-          {/* 🖼️ GIG PHOTO / POSTER RENDER */}
-          {data.image_url && data.image_url.trim() !== "" && (
+        {/* IMAGE / CONTENT */}
+        <div style={{ flex: 1, background: '#0a0a0a', position: 'relative' }}>
+          {hasImg ? (
+            <img 
+              src={data.image_url} 
+              alt={data.band}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            /* Fallback graphic if no photo exists */
             <div style={{ 
-              marginTop: 12, 
-              marginBottom: 8, 
-              padding: '4px', 
-              background: '#fff', 
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)', 
-              transform: `rotate(${(charCode % 4) - 2}deg)`,
-              border: '1px solid #ddd',
-              alignSelf: 'center',
-              width: 'fit-content',
-              maxWidth: '95%'
+              height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: `linear-gradient(45deg, #1a1a1a, ${hexToRgba(tapeColor, 0.1)})`
             }}>
-              <img 
-                src={data.image_url} 
-                alt="Concert Memory" 
-                style={{ 
-                  display: 'block',
-                  width: '100%', 
-                  maxHeight: '220px', // Increased height for vertical photos
-                  objectFit: 'contain',
-                  borderRadius: '1px'
-                }} 
-                onError={(e) => {
-                  e.target.parentElement.style.display = 'none'; 
-                }} 
-              />
+              <span style={{ fontSize: '3rem', opacity: 0.2 }}>🎸</span>
             </div>
           )}
         </div>
 
+        {/* FOOTER: Venue & Date */}
+        <div style={{
+          background: '#fff', // Solid white footer area
+          padding: '8px 10px',
+          zIndex: 10,
+          borderTop: '1px solid #ddd'
+        }}>
+          <div style={{ 
+            fontFamily: "'Space Mono', monospace", 
+            fontSize: '9px', 
+            color: '#000', 
+            fontWeight: 700,
+            lineHeight: 1.2
+          }}>
+            {data.venue?.toUpperCase() || 'UNKNOWN VENUE'}
+          </div>
+          <div style={{ 
+            fontFamily: "'Space Mono', monospace", 
+            fontSize: '8px', 
+            color: '#666',
+            marginTop: 2
+          }}>
+            {fmtDateShort(data.date).toUpperCase()}
+          </div>
+          
+          {/* Handwritten-style Festival Note (if applicable) */}
+          {data.is_festival && (
+            <div style={{ 
+              fontFamily: "'Caveat', cursive", 
+              fontSize: '11px', 
+              color: C.teal, 
+              marginTop: 4,
+              fontWeight: 700
+            }}>
+              ✎ {data.festival_name}
+            </div>
+          )}
+        </div>
+
+        {/* Floating Setlist Link */}
         <a
           href={data.sfmUrl}
           target="_blank"
           rel="noopener noreferrer"
           onClick={e => e.stopPropagation()}
           style={{
-            alignSelf: 'flex-end', background: 'rgba(0,0,0,0.06)', color: '#1a1a2e',
-            fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px',
-            borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700,
-            marginTop: 6, position: 'relative', zIndex: 10
+            position: 'absolute', bottom: 10, right: 10,
+            background: C.gold, color: '#000',
+            fontSize: 7, fontFamily: "'Space Mono'", padding: '3px 6px',
+            borderRadius: 2, textDecoration: 'none', fontWeight: 900,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+            zIndex: 15
           }}
         >
           SETLIST ↗
