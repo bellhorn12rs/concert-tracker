@@ -1230,14 +1230,25 @@ function WristbandCard({ event, genreMap, compact = false }) {
     </div>
   );
 }
-// ─── SETLIST VAULT (LINKED EDITION) ───────────────────────────────────────────
+// ─── SETLIST VAULT (POSTER-POLAROID EDITION) ───────────────────────────────────────────
 function SetlistVaultTab({ concerts, genreMap }) {
   const setlists = useMemo(() => {
     const results = [];
     concerts.forEach(c => {
       if (!c.has_setlist_names?.trim()) return;
       c.has_setlist_names.split(',').map(b=>b.trim()).filter(Boolean).forEach(band => {
-        results.push({ id:`${c.id}-${band}`, band, date:c.date, venue:c.venue, city:c.city, state:c.state, festival_name:c.festival_name, is_festival:c.is_festival, genre:c.genre, image_url: c.image_url||null });
+        results.push({ 
+          id:`${c.id}-${band}`, 
+          band, 
+          date:c.date, 
+          venue:c.venue, 
+          city:c.city, 
+          state:c.state, 
+          festival_name:c.festival_name, 
+          is_festival:c.is_festival, 
+          genre:c.genre, 
+          image_url: c.image_url||null 
+        });
       });
     });
     return results.sort((a,b) => b.date.localeCompare(a.date));
@@ -1258,17 +1269,13 @@ function SetlistVaultTab({ concerts, genreMap }) {
   const cols = [[],[],[]];
   setlists.forEach((s,i) => cols[i%3].push({...s, colIdx:i}));
 
- const PaperCard = ({ s, i }) => {
+  const PaperCard = ({ s, i }) => {
     const rot = ROTATIONS[i%ROTATIONS.length];
     const dur = DURATIONS[i%DURATIONS.length];
     const tapeColor = TAPE_COLORS[i%TAPE_COLORS.length];
     const gcName = genreMap[s.band] || s.genre;
     const gc = gcName ? GENRE_COLORS[gcName] : null;
-    {s.image_url && (
-  <div style={{ margin: '15px 0', padding: '6px', background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', transform: 'rotate(1deg)' }}>
-    <img src={s.image_url} style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 2 }} />
-  </div>
-)}
+    
     const sfmDate = s.date ? s.date.split('-').reverse().join('-') : '';
     const sfmUrl = `https://www.setlist.fm/search?query=${encodeURIComponent(s.band + ' ' + sfmDate)}`;
     const doodles = ['♪', '✦', '★', '♡', '✌', '⚡', '♫', '◈'];
@@ -1276,7 +1283,9 @@ function SetlistVaultTab({ concerts, genreMap }) {
 
     return (
       <div className="paper-float" style={{ '--r':`${rot}deg`, '--dur':dur, position:'relative', transform:`rotate(${rot}deg)`, marginBottom:40, zIndex:1 }}>
+        {/* Physical Tape */}
         <div style={{ position:'absolute', top:-12, left:'50%', transform:'translateX(-50%)', width:56, height:22, background:tapeColor, opacity:0.75, borderRadius:3, zIndex:10, boxShadow:`0 2px 8px ${hexToRgba(tapeColor,0.4)}` }} />
+        
         <div style={{ background:'linear-gradient(160deg,#f5f0e8 0%,#ede8d8 40%,#e8e0cc 100%)', borderRadius:4, padding:'32px 28px 24px', boxShadow:'0 8px 32px rgba(0,0,0,0.5),0 2px 8px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.6)', position:'relative', overflow:'hidden' }}>
 
           {/* Ruled lines */}
@@ -1303,30 +1312,58 @@ function SetlistVaultTab({ concerts, genreMap }) {
               <path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.5" fill="none" strokeOpacity="0.2" strokeLinecap="round"/>
             </svg>
 
+            {/* THE NEW POSTER-STYLE IMAGE BLOCK */}
+            {s.image_url && (
+              <div style={{ 
+                margin: '15px 0 20px', 
+                background: '#fff', 
+                padding: '4px', 
+                boxShadow: '0 8px 25px rgba(0,0,0,0.3)', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                borderRadius: 2, 
+                border: '1px solid #ddd',
+                maxWidth: '240px',
+                transform: 'rotate(-1deg)'
+              }}>
+                {/* Poster Header */}
+                <div style={{ padding: '6px 4px', textAlign: 'center', background: '#111', marginBottom: 4 }}>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '0.9rem', color: '#fff', letterSpacing: '0.08em', lineHeight: 1 }}>
+                    {s.band.toUpperCase()}
+                  </div>
+                </div>
+
+                {/* Poster Image Container */}
+                <div style={{ background: '#000', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img 
+                    src={s.image_url} 
+                    alt={`${s.band} setlist`}
+                    style={{ width: '100%', height: 'auto', maxHeight: '180px', objectFit: 'contain' }}
+                    onError={(e) => e.target.parentElement.parentElement.style.display = 'none'}
+                  />
+                </div>
+
+                {/* Poster Footer */}
+                <div style={{ padding: '6px 4px', borderTop: '1px solid #f0f0f0' }}>
+                  <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '7px', color: '#000', fontWeight: 900, lineHeight: 1 }}>
+                    {s.venue?.toUpperCase() || 'UNKNOWN VENUE'}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '6px', color: '#888', marginTop: 2 }}>
+                    {fmtDateShort(s.date).toUpperCase()}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div style={{ fontFamily:"'Caveat',cursive", fontSize:'1rem', color:'#2a2a4e', marginBottom:3 }}>{fmtDate(s.date)}</div>
             <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.9rem', color:'#3a3a5e', marginBottom:2 }}>{s.venue}</div>
             <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.85rem', color:'#5a5a7e', marginBottom: s.is_festival ? 4 : 10 }}>{[s.city,s.state].filter(Boolean).join(', ')}</div>
 
-            {/* Handwritten festival note */}
             {s.is_festival && s.festival_name && (
               <div style={{ fontFamily:"'Caveat',cursive", fontSize:'0.85rem', color:'#886644', fontStyle:'italic', marginBottom:10 }}>
                 ✎ {s.festival_name}
               </div>
             )}
-
-            {/* Polaroid setlist photo */}
-{s.image_url && (
-  <div style={{ margin: '10px 0 12px', display: 'inline-block', transform: 'rotate(-1deg)', position: 'relative' }}>
-    <div style={{ background: '#fff', padding: '5px 5px 16px 5px', boxShadow: '2px 3px 10px rgba(0,0,0,0.3)' }}>
-      <img
-        src={s.image_url}
-        alt={`${s.band} setlist`}
-        style={{ display: 'block', width: '100%', maxWidth: '200px', height: 'auto', filter: 'contrast(1.05) sepia(0.08)' }}
-        onError={(e) => e.target.parentElement.parentElement.style.display = 'none'}
-      />
-    </div>
-  </div>
-)}
 
             <a
               href={sfmUrl}
