@@ -506,15 +506,35 @@ function OnThisDay({ concerts }) {
 }
 
 // ─── SETLIST SPOTLIGHT ATOM (POSTER EDITION) ──────────────────────────
+// ─── SETLIST SPOTLIGHT ATOM (RESIZED POSTER EDITION) ──────────────────────────
 const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
   if (!data) return null;
   const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
   const r = isTop ? (charCode % 4) - 3 : (charCode % 4) + 1;
   const tapeColor = TAPE_COLORS[charCode % TAPE_COLORS.length];
-
-  // Fallback if no image: A stylized gradient background
   const hasImg = data.image_url && data.image_url.trim() !== "";
-  
+
+  // Helper for the "Notebook Fallback" (to keep things clean)
+  const PaperFallback = () => {
+    const doodles = ['♪', '✦', '★', '♡', '✌', '⚡', '♫', '◈'];
+    const doodle = doodles[charCode % doodles.length];
+    return (
+      <div className="scrap-paper" style={{ background: 'linear-gradient(160deg,#f5f0e8,#e8e0cc)', padding: '22px 16px 14px', boxShadow: '4px 8px 20px rgba(0,0,0,0.5)', position: 'relative', overflow: 'hidden', minHeight: 115, display: 'flex', flexDirection: 'column', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 3 }}>
+        {[0,1,2,3].map(j => <div key={j} style={{ position:'absolute', left:32, right:8, top:44+j*22, height:1, background:'rgba(150,180,220,0.45)' }} />)}
+        <div style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1.5, background: 'rgba(220,60,60,0.25)' }} />
+        <div style={{ position:'absolute', left:8, top:'40%', width:10, height:10, borderRadius:'50%', background:'rgba(0,0,0,0.08)', boxShadow:'inset 0 1px 2px rgba(0,0,0,0.15)' }} />
+        <div style={{ position:'absolute', bottom:8, right:10, fontFamily:"'Caveat',cursive", fontSize:'1.4rem', color:'rgba(0,0,0,0.12)', transform:'rotate(15deg)', userSelect:'none' }}>{doodle}</div>
+        <div style={{ paddingLeft: 14, flex: 1, position: 'relative', zIndex: 1 }}>
+          <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.8rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 4 }}>{data.band}</div>
+          <svg height="6" width="100%" style={{ marginBottom: 8, overflow:'visible' }}><path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.2" fill="none" strokeOpacity="0.15" strokeLinecap="round"/></svg>
+          <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.85rem', color: '#3a3a6e', lineHeight: 1.2 }}>{fmtDateShort(data.date)}</div>
+          <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.8rem', color: '#5a5a7e', lineHeight: 1.2 }}>{data.venue?.toUpperCase()}</div>
+        </div>
+        <a href={data.sfmUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ alignSelf: 'flex-end', background: 'rgba(0,0,0,0.06)', color: '#1a1a2e', fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px', borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700, marginTop: 6 }}>SETLIST ↗</a>
+      </div>
+    );
+  };
+
   return (
     <div style={{
       flex: 1,
@@ -527,124 +547,108 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
     }}>
       {/* Physical Tape */}
       <div style={{
-        position: 'absolute', top: -8, left: '50%',
+        position: 'absolute', top: -10, left: '50%',
         transform: 'translateX(-50%)',
-        width: 50, height: 18,
+        width: 46, height: 16,
         background: tapeColor,
-        opacity: 0.8, borderRadius: 1, zIndex: 20,
+        opacity: 0.85, borderRadius: 1, zIndex: 30,
         boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
         animation: 'tape-slam 0.4s 0.6s both'
       }} />
 
-      {/* Main Poster Frame */}
-      <div className="poster-frame" style={{
-        background: '#111',
-        border: '4px solid #fff', // The white photo border
-        boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
-        position: 'relative',
-        overflow: 'hidden',
-        aspectRatio: '3/4', // Forces a consistent poster shape
-        display: 'flex',
-        flexDirection: 'column',
-        borderRadius: 2
-      }}>
-        
-        {/* HEADER: Band Name */}
+      {hasImg ? (
+        /* THE POSTER STACK */
         <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0,
-          background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)',
-          padding: '12px 10px 25px',
-          zIndex: 10,
-          textAlign: 'center'
+          background: '#fff',
+          padding: '4px',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 2,
+          border: '1px solid #ddd',
+          minHeight: 320
         }}>
+          {/* HEADER: Dedicated space for the band */}
           <div style={{ 
-            fontFamily: "'Bebas Neue', sans-serif", 
-            fontSize: '1.6rem', 
-            color: '#fff', 
-            letterSpacing: '0.05em',
-            lineHeight: 1,
-            textShadow: '0 2px 4px rgba(0,0,0,0.5)' 
+            padding: '10px 4px 8px', 
+            textAlign: 'center',
+            background: '#111', // High contrast black header
+            marginBottom: 4
           }}>
-            {data.band.toUpperCase()}
+            <div style={{ 
+              fontFamily: "'Bebas Neue', sans-serif", 
+              fontSize: '1.4rem', 
+              color: '#fff', 
+              letterSpacing: '0.08em',
+              lineHeight: 1
+            }}>
+              {data.band.toUpperCase()}
+            </div>
           </div>
-        </div>
 
-        {/* IMAGE / CONTENT */}
-        <div style={{ flex: 1, background: '#0a0a0a', position: 'relative' }}>
-          {hasImg ? (
+          {/* IMAGE: Constrained to its own box */}
+          <div style={{ 
+            flex: 1, 
+            background: '#000', 
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
             <img 
               src={data.image_url} 
               alt={data.band}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ 
+                width: '100%', 
+                height: 'auto', 
+                maxHeight: '220px', 
+                objectFit: 'contain' // Contain ensures the full setlist text is visible
+              }}
             />
-          ) : (
-            /* Fallback graphic if no photo exists */
-            <div style={{ 
-              height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: `linear-gradient(45deg, #1a1a1a, ${hexToRgba(tapeColor, 0.1)})`
-            }}>
-              <span style={{ fontSize: '3rem', opacity: 0.2 }}>🎸</span>
-            </div>
-          )}
-        </div>
-
-        {/* FOOTER: Venue & Date */}
-        <div style={{
-          background: '#fff', // Solid white footer area
-          padding: '8px 10px',
-          zIndex: 10,
-          borderTop: '1px solid #ddd'
-        }}>
-          <div style={{ 
-            fontFamily: "'Space Mono', monospace", 
-            fontSize: '9px', 
-            color: '#000', 
-            fontWeight: 700,
-            lineHeight: 1.2
-          }}>
-            {data.venue?.toUpperCase() || 'UNKNOWN VENUE'}
           </div>
-          <div style={{ 
-            fontFamily: "'Space Mono', monospace", 
-            fontSize: '8px', 
-            color: '#666',
-            marginTop: 2
-          }}>
-            {fmtDateShort(data.date).toUpperCase()}
-          </div>
-          
-          {/* Handwritten-style Festival Note (if applicable) */}
-          {data.is_festival && (
-            <div style={{ 
-              fontFamily: "'Caveat', cursive", 
-              fontSize: '11px', 
-              color: C.teal, 
-              marginTop: 4,
-              fontWeight: 700
-            }}>
-              ✎ {data.festival_name}
-            </div>
-          )}
-        </div>
 
-        {/* Floating Setlist Link */}
-        <a
-          href={data.sfmUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={e => e.stopPropagation()}
-          style={{
-            position: 'absolute', bottom: 10, right: 10,
-            background: C.gold, color: '#000',
-            fontSize: 7, fontFamily: "'Space Mono'", padding: '3px 6px',
-            borderRadius: 2, textDecoration: 'none', fontWeight: 900,
-            boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-            zIndex: 15
-          }}
-        >
-          SETLIST ↗
-        </a>
-      </div>
+          {/* FOOTER: White-out info area */}
+          <div style={{
+            padding: '8px 6px',
+            borderTop: '2px solid #f0f0f0'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+              <div>
+                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '9px', color: '#000', fontWeight: 900, lineHeight: 1 }}>
+                  {data.venue?.toUpperCase() || 'UNKNOWN VENUE'}
+                </div>
+                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '8px', color: '#888', marginTop: 3 }}>
+                  {fmtDateShort(data.date).toUpperCase()}
+                </div>
+              </div>
+              
+              <a
+                href={data.sfmUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                style={{
+                  background: C.gold, color: '#000',
+                  fontSize: 7, fontFamily: "'Space Mono'", padding: '3px 7px',
+                  borderRadius: 2, textDecoration: 'none', fontWeight: 900,
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                }}
+              >
+                SETLIST ↗
+              </a>
+            </div>
+            
+            {data.is_festival && (
+              <div style={{ fontFamily: "'Caveat', cursive", fontSize: '11px', color: C.teal, marginTop: 4, borderTop: '1px dashed #eee', paddingTop: 3 }}>
+                ✎ {data.festival_name}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Fallback to Notebook if no image */
+        <PaperFallback />
+      )}
     </div>
   );
 };
