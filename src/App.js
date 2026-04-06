@@ -1761,22 +1761,18 @@ function GenreLegend() {
   );
 }
 
-// ─── 1. HORIZONTAL TIMELINE CARD (FIXED FOR 400+ DAYS) ───────────────────────
 // ─── 1. TIMELINE DOT ────────────────────────────────────────────────────────
-// ─── 1. TIMELINE DOT ────────────────────────────────────────────────────────
-function TimelineDot({ item, globalIndex, onTeleport, genreMap, xOverride, showLabel }) {
+function TimelineDot({ item, globalIndex, onTeleport, genreMap, xPos }) {
   const [isHovered, setIsHovered] = useState(false);
   const gi = getConcertGenreInfo(item, genreMap);
   const themeColor = gi.mixed ? '#9d00ff' : (gi.color || C.teal);
   const bands = item.bands || [];
 
-  // 20-lane stagger — every dot gets a unique vertical position
+  // Vertical position — 20 lanes, dots spread above and below rail
   const laneIndex = globalIndex % 20;
   const isUp = laneIndex < 10;
   const lane = isUp ? laneIndex : laneIndex - 10;
-  const connectorHeight = 24 + lane * 22;
-
-  const xPos = xOverride !== undefined ? xOverride : globalIndex * 100;
+  const verticalOffset = 16 + lane * 24; // px from center rail
 
   return (
     <div
@@ -1785,89 +1781,28 @@ function TimelineDot({ item, globalIndex, onTeleport, genreMap, xOverride, showL
       onClick={onTeleport}
       style={{
         position: 'absolute',
-        left: xPos - 10,
-        width: 20,
-        top: 0,
-        bottom: 0,
+        left: xPos - 6,
+        top: `calc(50% ${isUp ? '-' : '+'} ${verticalOffset}px)`,
+        width: 12,
+        height: 12,
+        zIndex: isHovered ? 1000 : 20,
+        cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: isHovered ? 1000 : 20,
-        cursor: 'pointer',
       }}
     >
-      {/* Connector line — always rendered for every dot */}
       <div style={{
-        position: 'absolute',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        ...(isUp ? { bottom: 'calc(50% + 3px)' } : { top: 'calc(50% + 3px)' }),
-        width: isHovered ? 2 : 1,
-        height: connectorHeight,
-        background: themeColor,
-        boxShadow: isHovered ? `0 0 8px ${themeColor}` : 'none',
-        opacity: isHovered ? 1 : 0.35,
-        transition: 'all 0.2s',
-        pointerEvents: 'none',
-      }} />
-
-      {/* Dot — always rendered */}
-      <div style={{
-        position: 'absolute',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        ...(isUp
-          ? { bottom: `calc(50% + ${connectorHeight + 3}px)` }
-          : { top: `calc(50% + ${connectorHeight + 3}px)` }),
-        width: isHovered ? 11 : 7,
-        height: isHovered ? 11 : 7,
+        width: isHovered ? 12 : 7,
+        height: isHovered ? 12 : 7,
         borderRadius: '50%',
         background: themeColor,
-        border: `1.5px solid ${isHovered ? '#fff' : hexToRgba(themeColor, 0.5)}`,
+        border: `1.5px solid ${isHovered ? '#fff' : hexToRgba(themeColor, 0.6)}`,
         boxShadow: isHovered
-          ? `0 0 12px ${themeColor}, 0 0 24px ${hexToRgba(themeColor, 0.5)}`
-          : `0 0 3px ${hexToRgba(themeColor, 0.5)}`,
-        zIndex: 100,
+          ? `0 0 14px ${themeColor}, 0 0 28px ${hexToRgba(themeColor, 0.5)}`
+          : `0 0 4px ${hexToRgba(themeColor, 0.5)}`,
         transition: 'all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
       }} />
-
-      {/* Label — only for labeled shows, not on hover */}
-      {showLabel && !isHovered && (
-        <div style={{
-          position: 'absolute',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          ...(isUp
-            ? { bottom: `calc(50% + ${connectorHeight + 16}px)` }
-            : { top: `calc(50% + ${connectorHeight + 16}px)` }),
-          textAlign: 'center',
-          pointerEvents: 'none',
-          width: 88,
-          zIndex: 50,
-        }}>
-          <div style={{
-            fontFamily: "'Bebas Neue'",
-            fontSize: '0.75rem',
-            color: C.white,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            letterSpacing: '0.04em',
-            textShadow: '0 1px 4px #000, 0 0 8px #000',
-          }}>
-            {bands[0]?.toUpperCase() || '—'}
-          </div>
-          <div style={{
-            fontFamily: "'Space Mono'",
-            fontSize: 6,
-            color: themeColor,
-            opacity: 0.85,
-            marginTop: 1,
-          }}>
-            {item.date?.slice(5).replace('-', '.')}
-          </div>
-        </div>
-      )}
 
       {/* Hover card */}
       {isHovered && (
@@ -1921,80 +1856,74 @@ function TimelineDot({ item, globalIndex, onTeleport, genreMap, xOverride, showL
     </div>
   );
 }
-// ─── 2. PANORAMIC TIMELINE TAB ───────────────────────────────────────────────
+
 // ─── 2. PANORAMIC TIMELINE TAB ───────────────────────────────────────────────
 function TimelineTab({ concerts, setActiveTab, genreMap }) {
   const scrollRef = useRef(null);
   const [currentYear, setCurrentYear] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(null);
 
-  const { sortedShows, years, monthMarkers, totalWidth, showXPos } = useMemo(() => {
-    if (!concerts || concerts.length === 0) return { sortedShows: [], years: [], monthMarkers: [], totalWidth: 0, showXPos: () => 0 };
+  const DOT_SPACING = 28; // px per show — tight but distinct
+  const YEAR_PADDING = 80; // extra gap between years
+
+  const { sortedShows, yearBlocks, monthMarkers, totalWidth } = useMemo(() => {
+    if (!concerts || concerts.length === 0) return { sortedShows: [], yearBlocks: [], monthMarkers: [], totalWidth: 0 };
 
     const sorted = [...concerts].sort((a, b) => a.date.localeCompare(b.date));
-    const withIndex = sorted.map((s, i) => ({ ...s, globalIndex: i }));
 
     // Group by year
     const yearMap = {};
-    withIndex.forEach(s => {
-      const yr = getYear(s.date);
+    sorted.forEach(s => {
+      const yr = String(getYear(s.date));
       if (!yearMap[yr]) yearMap[yr] = [];
       yearMap[yr].push(s);
     });
-    const years = Object.entries(yearMap).sort((a, b) => +a[0] - +b[0]);
+    const yearEntries = Object.entries(yearMap).sort((a, b) => +a[0] - +b[0]);
 
-    // Each year gets a 60px buffer before it starts
-    // Build cumulative offsets per year
-    const yearStartOffset = {};
-    let runningOffset = 40;
-    years.forEach(([yr, shows]) => {
-      yearStartOffset[yr] = runningOffset;
-      runningOffset += shows.length * 100 + 60;
+    // Assign absolute x position to every show
+    // Each year block starts after previous year's shows + YEAR_PADDING
+    let cursor = 60;
+    const yearBlocks = [];
+    const allShows = [];
+
+    yearEntries.forEach(([yr, shows]) => {
+      const blockStart = cursor;
+      shows.forEach((s, i) => {
+        allShows.push({ ...s, globalIndex: allShows.length, xPos: cursor });
+        cursor += DOT_SPACING;
+      });
+      yearBlocks.push({ year: yr, startX: blockStart, endX: cursor, count: shows.length });
+      cursor += YEAR_PADDING;
     });
 
-    // showXPos = yearStartOffset[year] + (indexWithinYear * 100)
-    const showXPos = (show) => {
-      const yr = String(getYear(show.date));
-      const yearShows = yearMap[yr] || [];
-      const idxInYear = yearShows.findIndex(s => s.id === show.id);
-      return yearStartOffset[yr] + idxInYear * 100;
-    };
+    const totalWidth = cursor + 60;
 
-    const totalWidth = runningOffset + 100;
-
-    // Month markers — find first show of each month
+    // Month markers — first show of each month
     const seenMonths = new Set();
     const monthMarkers = [];
-    withIndex.forEach(show => {
-      const key = show.date?.slice(0, 7); // YYYY-MM
+    allShows.forEach(show => {
+      const key = show.date?.slice(0, 7);
       if (key && !seenMonths.has(key)) {
         seenMonths.add(key);
-        const [yr, mo] = key.split('-');
-        const monthNames = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-        monthMarkers.push({
-          x: showXPos(show),
-          label: monthNames[parseInt(mo) - 1],
-          year: yr,
-          month: mo,
-        });
+        const mo = parseInt(key.split('-')[1]) - 1;
+        const MONTH_NAMES = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        monthMarkers.push({ x: show.xPos, label: MONTH_NAMES[mo], key });
       }
     });
 
-    return { sortedShows: withIndex, years, monthMarkers, totalWidth, showXPos };
+    return { sortedShows: allShows, yearBlocks, monthMarkers, totalWidth };
   }, [concerts]);
-  // Track scroll to update floating year/month indicator
+
+  // Scroll tracker
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     const onScroll = () => {
-      const scrollX = el.scrollLeft + el.clientWidth / 2;
-      let closest = null;
-      let minDist = Infinity;
-      sortedShows.forEach(show => {
-        const x = showXPos(show);
-        const dist = Math.abs(x - scrollX);
-        if (dist < minDist) { minDist = dist; closest = show; }
-      });
+      const cx = el.scrollLeft + el.clientWidth / 2;
+      const closest = sortedShows.reduce((best, s) => {
+        const d = Math.abs(s.xPos - cx);
+        return d < best.d ? { s, d } : best;
+      }, { s: null, d: Infinity }).s;
       if (closest) {
         setCurrentYear(String(getYear(closest.date)));
         setCurrentMonth(closest.date?.slice(0, 7));
@@ -2003,7 +1932,7 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
     el.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => el.removeEventListener('scroll', onScroll);
-  }, [sortedShows, showXPos]);
+  }, [sortedShows]);
 
   const teleport = (date) => {
     setActiveTab('byDay');
@@ -2024,20 +1953,18 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
     <div style={{ padding: '16px 0 0' }} className="fade-in">
       <GenreLegend />
 
-      {/* Floating year/month HUD */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 12 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.teal, lineHeight: 1, textShadow: `0 0 20px ${C.teal}`, letterSpacing: '0.05em', transition: 'all 0.3s ease' }}>
+      {/* HUD */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 12 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.teal, lineHeight: 1, textShadow: `0 0 20px ${C.teal}`, transition: 'all 0.3s' }}>
           {currentYear || '—'}
         </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: '1rem', color: C.purple, textShadow: `0 0 10px ${C.purple}`, letterSpacing: '0.2em', transition: 'all 0.3s ease' }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '1rem', color: C.purple, textShadow: `0 0 10px ${C.purple}`, letterSpacing: '0.2em', transition: 'all 0.3s' }}>
           {currentMonthName || '—'}
         </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, letterSpacing: '0.15em' }}>
-          ← SCROLL →
-        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, letterSpacing: '0.15em' }}>← SCROLL →</div>
       </div>
 
-      {/* Scrollable track */}
+      {/* Track */}
       <div
         ref={scrollRef}
         style={{ width: '100%', height: '68vh', overflowX: 'auto', overflowY: 'hidden', background: 'rgba(0,0,0,0.35)', border: `1px solid ${C.border}`, borderRadius: 8, position: 'relative', cursor: 'grab' }}
@@ -2045,55 +1972,54 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
         <div style={{ width: totalWidth, height: '100%', position: 'relative' }}>
 
           {/* Center rail */}
-          <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 1, background: `linear-gradient(90deg, transparent, ${C.teal}33, ${C.purple}33, ${C.gold}33, transparent)`, transform: 'translateY(-50%)', zIndex: 1 }} />
+          <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 1, background: `linear-gradient(90deg, transparent, ${C.teal}22, ${C.purple}22, ${C.gold}22, transparent)`, transform: 'translateY(-50%)', zIndex: 1 }} />
 
-          {/* Month markers */}
-          {monthMarkers.map((m, mi) => {
-            const showTop = mi % 2 === 0;
-            return (
-              <div key={`${m.year}-${m.month}`} style={{ position: 'absolute', left: m.x, top: '50%', transform: 'translateX(-50%)', zIndex: 3, pointerEvents: 'none' }}>
-                <div style={{ position: 'absolute', left: '50%', ...(showTop ? { bottom: 0 } : { top: 0 }), transform: 'translateX(-50%)', width: 1, height: 14, background: C.grayDim, opacity: 0.5 }} />
-                <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', ...(showTop ? { bottom: 18 } : { top: 18 }), fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, whiteSpace: 'nowrap', letterSpacing: '0.1em', opacity: 0.7 }}>
-                  {m.label}
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Year dividers — alternating top/bottom */}
-          {years.map(([year, shows], yi) => {
+          {/* Year blocks */}
+          {yearBlocks.map((yb, yi) => {
             const color = yi % 2 === 0 ? C.teal : C.purple;
             const showAtTop = yi % 2 === 0;
-            const firstX = showXPos(shows[0]);
             return (
-              <div key={year} style={{ position: 'absolute', left: firstX - 30, top: 0, bottom: 0, zIndex: 4, pointerEvents: 'none' }}>
-                <div style={{ position: 'absolute', left: 30, top: 0, bottom: 0, width: 1, background: `linear-gradient(to bottom, transparent, ${hexToRgba(color, 0.3)}, transparent)` }} />
-                <div style={{ position: 'absolute', left: 4, ...(showAtTop ? { top: 12 } : { bottom: 12 }) }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color, background: `${C.bg}ee`, padding: '3px 10px', borderRadius: 4, border: `1.5px solid ${color}`, boxShadow: `0 0 12px ${hexToRgba(color, 0.5)}`, textShadow: `0 0 6px ${color}`, whiteSpace: 'nowrap' }}>
-                    {year}
+              <div key={yb.year} style={{ position: 'absolute', left: yb.startX, top: 0, bottom: 0, width: yb.endX - yb.startX, zIndex: 3, pointerEvents: 'none' }}>
+                {/* Year divider line */}
+                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 1, background: `linear-gradient(to bottom, transparent, ${hexToRgba(color, 0.25)}, transparent)` }} />
+                {/* Year badge — alternates top/bottom */}
+                <div style={{ position: 'absolute', left: 6, ...(showAtTop ? { top: 10 } : { bottom: 10 }) }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color, background: `${C.bg}ee`, padding: '2px 10px', borderRadius: 4, border: `1.5px solid ${color}`, boxShadow: `0 0 10px ${hexToRgba(color, 0.4)}`, whiteSpace: 'nowrap' }}>
+                    {yb.year}
+                    <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: hexToRgba(color, 0.5), marginLeft: 6 }}>{yb.count}</span>
                   </div>
                 </div>
               </div>
             );
           })}
 
-          {/* All 426 dots — label only every 4th show to avoid collision */}
-          {sortedShows.map((show, idx) => (
+          {/* Month markers */}
+          {monthMarkers.map((m, mi) => (
+            <div key={m.key} style={{ position: 'absolute', left: m.x, top: '50%', transform: 'translateX(-50%) translateY(-50%)', zIndex: 2, pointerEvents: 'none' }}>
+              <div style={{ width: 1, height: 10, background: C.grayDim, opacity: 0.3, margin: '0 auto' }} />
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, opacity: 0.5, whiteSpace: 'nowrap', textAlign: 'center', marginTop: 2 }}>
+                {m.label}
+              </div>
+            </div>
+          ))}
+
+          {/* All 426 dots */}
+          {sortedShows.map((show) => (
             <TimelineDot
               key={show.id}
               item={show}
               globalIndex={show.globalIndex}
+              xPos={show.xPos}
               onTeleport={() => teleport(show.date)}
               genreMap={genreMap}
-              xOverride={showXPos(show)}
-              showLabel={idx % 4 === 0}
             />
           ))}
+
         </div>
       </div>
 
       <div style={{ textAlign: 'center', marginTop: 10, fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, letterSpacing: '0.3em' }}>
-        {sortedShows.length} SHOWS · {years.length} YEARS
+        {sortedShows.length} SHOWS · {yearBlocks.length} YEARS · HOVER ANY DOT
       </div>
     </div>
   );
