@@ -1762,9 +1762,9 @@ function GenreLegend() {
 }
 
 // ─── 1. TIMELINE DOT ────────────────────────────────────────────────────────
+// ─── 1. TIMELINE DOT (Final Hover Logic) ───────────────────────────────────
 function TimelineDot({ item, onTeleport, genreMap, xPos }) {
   const [isHovered, setIsHovered] = useState(false);
-  
   if (!item || !item.date) return null;
 
   const gi = getConcertGenreInfo(item, genreMap);
@@ -1783,7 +1783,7 @@ function TimelineDot({ item, onTeleport, genreMap, xPos }) {
         transform: 'translateY(-50%)',
         width: 10,
         height: 10,
-        zIndex: isHovered ? 1000 : 20,
+        zIndex: isHovered ? 1000 : 50, // Higher than background years (5)
         cursor: 'pointer',
       }}
     >
@@ -1793,271 +1793,161 @@ function TimelineDot({ item, onTeleport, genreMap, xPos }) {
         borderRadius: '50%',
         background: themeColor,
         border: `1.5px solid ${isHovered ? '#fff' : hexToRgba(themeColor, 0.7)}`,
-        boxShadow: isHovered
-          ? `0 0 14px ${themeColor}, 0 0 28px ${hexToRgba(themeColor, 0.6)}`
-          : `0 0 5px ${hexToRgba(themeColor, 0.5)}`,
+        boxShadow: `0 0 ${isHovered ? 20 : 5}px ${themeColor}`,
         transition: 'all 0.15s ease',
         position: 'relative',
         top: '50%',
         transform: 'translateY(-50%)',
       }} />
 
-      {/* 🔴 THE HOVER CARD */}
       {isHovered && (
         <div className="fade-in" style={{
           position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
           width: 380, padding: 20, background: C.bgCard, borderRadius: 12,
-          border: `2px solid ${themeColor}`, boxShadow: `0 0 60px rgba(0,0,0,0.95)`,
+          border: `2px solid ${themeColor}`, boxShadow: `0 0 80px rgba(0,0,0,1)`,
           zIndex: 9999, pointerEvents: 'none',
         }}>
-          
           {item.is_festival ? (
-            /* FESTIVAL VIEW: The WristbandCard (compact={false}) shows the full grid. 
-               We don't need to add anything else below it! */
-            <div style={{ marginBottom: 0 }}>
-              <WristbandCard event={item} genreMap={genreMap} compact={false} />
-              <div style={{ marginTop: 12, borderTop: `1px dashed ${C.border}`, paddingTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray }}>{item.venue?.toUpperCase()}</div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: themeColor, letterSpacing: '0.1em' }}>{fmtDateShort(item.date)}</div>
-              </div>
-            </div>
+            <WristbandCard event={item} genreMap={genreMap} compact={false} />
           ) : (
-            /* SOLO SHOW VIEW: Shows the ticket and a clean text block */
-            <div>
-              <div style={{ background: '#e8dfa0', borderRadius: 3, overflow: 'hidden', fontFamily: "'Courier New', monospace", color: '#1a1a1a', marginBottom: 15 }}>
-                <div style={{ background: '#8b0000', height: 6 }} />
-                <div style={{ padding: '8px 12px' }}>
-                  <div style={{ fontSize: 7, fontWeight: 900, letterSpacing: '0.15em', color: '#8b0000', marginBottom: 2 }}>ADMIT ONE</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', lineHeight: 1 }}>{bands[0] || 'CONCERT'}</div>
-                  <div style={{ fontSize: 8, opacity: 0.7, marginTop: 4 }}>{item.venue?.toUpperCase()}</div>
-                </div>
-              </div>
-              
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ flex: 1 }}>
-                   <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: C.white, lineHeight: 1 }}>
-                     {bands[0]?.toUpperCase()}
-                   </div>
-                   {bands.length > 1 && (
-                     <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 4 }}>
-                       w/ {bands.slice(1, 3).join(' & ')}
-                     </div>
-                   )}
-                </div>
-                <GenreBadge genre={gi.genre} color={gi.color} small />
-              </div>
+            <div style={{ background: '#e8dfa0', borderRadius: 3, overflow: 'hidden', color: '#1a1a1a', marginBottom: 15 }}>
+               <div style={{ background: '#8b0000', height: 6 }} />
+               <div style={{ padding: '8px 12px', fontFamily: "'Courier New', monospace" }}>
+                 <div style={{ fontSize: 7, fontWeight: 900, color: '#8b0000' }}>ADMIT ONE</div>
+                 <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase' }}>{bands[0]}</div>
+               </div>
             </div>
           )}
-          
-          <div style={{ marginTop: 15, fontFamily: "'Space Mono'", fontSize: 7, color: themeColor, letterSpacing: '0.2em', textAlign: 'center', opacity: 0.5 }}>
-            CLICK TO VIEW SETLIST
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+            <div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: '#fff' }}>{bands[0]?.toUpperCase()}</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray }}>{item.venue?.toUpperCase()}</div>
+            </div>
+            <GenreBadge genre={gi.genre} color={gi.color} small />
           </div>
         </div>
       )}
     </div>
   );
 }
-// ─── 2. PANORAMIC TIMELINE TAB (Maximum Highlight Density) ──────────────────
+
+// ─── 2. PANORAMIC TIMELINE TAB (Final Geometry) ─────────────────────────────
 function TimelineTab({ concerts, setActiveTab, genreMap }) {
   const scrollRef = useRef(null);
   const [currentYear, setCurrentYear] = useState(null);
-  const PX_PER_DAY = 3;
+  const PX_PER_DAY = 3.5; // Slightly more air between shows
 
   const data = useMemo(() => {
-    if (!concerts?.length) return { sortedShows: [], yearMarkers: [], monthMarkers: [], highlights: [], totalWidth: 0 };
+    if (!concerts?.length) return { sortedShows: [], yearMarkers: [], highlights: [], totalWidth: 0 };
 
     const sorted = [...concerts].filter(c => c && c.date).sort((a, b) => a.date.localeCompare(b.date));
-    const firstDate = new Date(sorted[0].date + 'T12:00:00');
-    const lastDate = new Date(sorted[sorted.length - 1].date + 'T12:00:00');
-    const minTs = firstDate.getTime();
-    const maxTs = lastDate.getTime();
+    const minTs = new Date(sorted[0].date + 'T12:00:00').getTime();
+    const maxTs = new Date(sorted[sorted.length - 1].date + 'T12:00:00').getTime();
     const MS_PER_DAY = 86400000;
-    const PADDING = 250; 
+    const PADDING = 300;
 
-    const dateToX = (dateStr) => {
-      try {
-        const ts = new Date(dateStr + 'T12:00:00').getTime();
-        return PADDING + Math.round((ts - minTs) / MS_PER_DAY) * PX_PER_DAY;
-      } catch(e) { return PADDING; }
-    };
-
+    const dateToX = (dateStr) => (PADDING + Math.round((new Date(dateStr + 'T12:00:00').getTime() - minTs) / MS_PER_DAY) * PX_PER_DAY);
     const totalWidth = PADDING * 2 + Math.round((maxTs - minTs) / MS_PER_DAY) * PX_PER_DAY;
     const withX = sorted.map((s, i) => ({ ...s, globalIndex: i, xPos: dateToX(s.date) }));
 
-    // ─── 🟢 GREEDY HIGHLIGHT LOGIC (Mountain Range) ───
+    // ─── STACKED HIGHLIGHTS ───
     const highlights = [];
-    const upLaneLastX = [-500, -500, -500, -500];
-    const downLaneLastX = [-500, -500, -500, -500];
-    const MIN_LABEL_GAP = 130; // Min pixels between labels in the SAME lane
+    const laneLastX = { up: [-1000,-1000,-1000,-1000], down: [-1000,-1000,-1000,-1000] };
+    const MIN_GAP = 140;
 
-    // 1. Group Festivals (High Priority)
+    // Festivals First
     const festGroups = [];
     withX.forEach(s => {
-      if (s.is_festival && s.festival_name) {
-        const lastGroup = festGroups[festGroups.length - 1];
-        if (lastGroup && lastGroup.name === s.festival_name && getYear(lastGroup.date) === getYear(s.date)) {
-          lastGroup.shows.push(s);
-        } else {
-          festGroups.push({ name: s.festival_name, date: s.date, shows: [s] });
+      if (s.is_festival) {
+        const last = festGroups[festGroups.length-1];
+        if (last && last.name === s.festival_name && getYear(last.date) === getYear(s.date)) last.shows.push(s);
+        else festGroups.push({ name: s.festival_name, date: s.date, shows: [s] });
+      }
+    });
+
+    festGroups.forEach((fg, i) => {
+      const x = fg.shows.reduce((a, s) => a + s.xPos, 0) / fg.shows.length;
+      const side = i % 2 === 0 ? 'up' : 'down';
+      for (let l=0; l<4; l++) {
+        if (x - laneLastX[side][l] > MIN_GAP) {
+          highlights.push({ label: fg.name, x, date: fg.date, color: C.gold, side, lane: l });
+          laneLastX[side][l] = x + 40; break;
         }
       }
     });
 
-    festGroups.forEach((fg, idx) => {
-      const centerX = fg.shows.reduce((acc, s) => acc + (s.xPos || 0), 0) / (fg.shows.length || 1);
-      const side = idx % 2 === 0 ? 'up' : 'down';
-      const laneArr = side === 'up' ? upLaneLastX : downLaneLastX;
-      
-      // Assign to first open lane
-      for (let l = 0; l < 4; l++) {
-        if (centerX - laneArr[l] > MIN_LABEL_GAP) {
-          highlights.push({ type: 'FEST', label: fg.name, x: centerX, date: fg.date, color: C.gold, side, lane: l });
-          laneArr[l] = centerX + 40; // Add buffer
-          break;
-        }
-      }
-    });
-
-    // 2. Solo Shows (Fill the Gaps)
+    // Greedy Solo Shows
     withX.forEach((s, i) => {
       if (s.is_festival) return;
-
-      const sides = i % 2 === 0 ? ['up', 'down'] : ['down', 'up'];
-      let placed = false;
-
-      for (const side of sides) {
-        const laneArr = side === 'up' ? upLaneLastX : downLaneLastX;
-        for (let l = 0; l < 4; l++) {
-          if (s.xPos - laneArr[l] > MIN_LABEL_GAP) {
-            highlights.push({ 
-              type: 'SOLO', 
-              label: (s.bands || ['ACT'])[0], 
-              x: s.xPos, 
-              date: s.date, 
-              color: getConcertGenreInfo(s, genreMap).color || C.teal,
-              side, 
-              lane: l 
-            });
-            laneArr[l] = s.xPos;
-            placed = true;
-            break;
-          }
+      const side = i % 2 === 0 ? 'up' : 'down';
+      for (let l=0; l<4; l++) {
+        if (s.xPos - laneLastX[side][l] > MIN_GAP) {
+          highlights.push({ label: (s.bands||[''])[0], x: s.xPos, date: s.date, color: getConcertGenreInfo(s, genreMap).color || C.teal, side, lane: l });
+          laneLastX[side][l] = s.xPos; break;
         }
-        if (placed) break;
       }
     });
 
-    // ─── Markers ───
-    const minYear = firstDate.getFullYear();
-    const maxYear = lastDate.getFullYear();
+    // Years
     const yearMarkers = [];
-    for (let yr = minYear; yr <= maxYear; yr++) {
-      yearMarkers.push({ year: yr, x: dateToX(`${yr}-01-01`), isAlt: (yr - minYear) % 2 === 1 });
+    for (let yr = new Date(minTs).getFullYear(); yr <= new Date(maxTs).getFullYear(); yr++) {
+      yearMarkers.push({ year: yr, x: dateToX(`${yr}-01-01`), isAlt: yr % 2 === 1 });
     }
 
-    const monthMarkers = [];
-    const MONTH_NAMES = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    for (let yr = minYear; yr <= maxYear; yr++) {
-      for (let mo = 0; mo < 12; mo++) {
-        const x = dateToX(`${yr}-${String(mo + 1).padStart(2,'0')}-01`);
-        if (x >= PADDING && x <= totalWidth - PADDING) monthMarkers.push({ x, label: MONTH_NAMES[mo], key: `${yr}-${mo}` });
-      }
-    }
-
-    return { sortedShows: withX, yearMarkers, monthMarkers, highlights, totalWidth };
+    return { sortedShows: withX, yearMarkers, highlights, totalWidth };
   }, [concerts, genreMap]);
-
-  // Year Tracker
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el || !data.sortedShows.length) return;
-    const onScroll = () => {
-      const cx = el.scrollLeft + el.clientWidth / 2;
-      const closest = data.sortedShows.reduce((best, s) => {
-        const d = Math.abs(s.xPos - cx);
-        return d < best.d ? { s, d } : best;
-      }, { s: null, d: Infinity }).s;
-      if (closest) setCurrentYear(getYear(closest.date));
-    };
-    el.addEventListener('scroll', onScroll);
-    return () => el.removeEventListener('scroll', onScroll);
-  }, [data.sortedShows]);
 
   return (
     <div style={{ padding: '20px 0' }} className="fade-in">
       <GenreLegend />
 
-      {/* HUD */}
-      <div style={{ textAlign: 'center', marginBottom: 20 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3.5rem', color: C.teal, textShadow: `0 0 20px ${C.teal}` }}>{currentYear || '—'}</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, letterSpacing: '0.3em' }}>← PANORAMIC HISTORY →</div>
-      </div>
-
       <div ref={scrollRef} style={{ 
-        width: '100%', height: '700px', 
-        overflowX: 'auto', overflowY: 'hidden', 
-        background: 'rgba(0,0,0,0.45)', border: `1px solid ${C.border}`, borderRadius: 12, 
-        position: 'relative' 
+        width: '100%', height: '750px', overflowX: 'auto', overflowY: 'hidden', 
+        background: 'rgba(0,0,0,0.4)', border: `1px solid ${C.border}`, borderRadius: 16, position: 'relative' 
       }}>
         <div style={{ width: data.totalWidth, height: '100%', position: 'relative' }}>
 
           {/* 🛤 RAIL */}
-          <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 2, background: `linear-gradient(90deg, transparent, ${C.teal}33, ${C.purple}33, transparent)`, transform: 'translateY(-50%)', zIndex: 1 }} />
+          <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 2, background: `linear-gradient(90deg, transparent, ${C.teal}33, ${C.purple}33, transparent)`, zIndex: 10 }} />
 
-          {/* 🔦 STACKED NEON HIGHLIGHTS (8 Lanes Total) */}
-          {data.highlights.map((h, i) => {
-            const laneHeight = 42 - (h.lane * 9); // Tiered heights: 42%, 33%, 24%, 15%
-            const topPos = h.side === 'up' ? (50 - laneHeight) : 50;
-            
-            return (
-              <div key={i} style={{ 
-                position: 'absolute', left: h.x, top: `${topPos}%`, height: `${laneHeight}%`, 
-                zIndex: 2, pointerEvents: 'none' 
+          {/* 📅 BACKGROUND YEARS: Closer to center & sent to back */}
+          {data.yearMarkers.map(ym => (
+            <div key={ym.year} style={{ position: 'absolute', left: ym.x, top: 0, bottom: 0, zIndex: 5, pointerEvents: 'none' }}>
+              <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: `${ym.isAlt ? C.purple : C.teal}22` }} />
+              <div style={{ 
+                position: 'sticky', left: 20, 
+                // Moves years closer to the rail
+                top: ym.isAlt ? 'calc(50% + 120px)' : 'calc(50% - 160px)', 
+                width: 0, overflow: 'visible' 
               }}>
-                {/* The Vertical Line */}
                 <div style={{ 
-                  width: 2, height: '100%', 
-                  background: `linear-gradient(${h.side === 'up' ? 'to top' : 'to bottom'}, ${h.color}, transparent)`, 
-                  boxShadow: `0 0 15px ${h.color}`, opacity: 0.8 
-                }} />
-                
-                {/* The Label (Positioned at the end of the line) */}
-                <div style={{ 
-                  position: 'absolute', left: 12, 
-                  [h.side === 'up' ? 'top' : 'bottom']: -15, 
-                  whiteSpace: 'nowrap' 
-                }}>
-                  <div style={{ 
-                    fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.white, 
-                    lineHeight: 1, textShadow: '2px 2px 4px #000' 
-                  }}>
-                    {h.label?.toUpperCase()}
-                  </div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: h.color, opacity: 0.9, fontWeight: 900 }}>
-                    {fmtDateShort(h.date)}
-                  </div>
+                  fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: `${ym.isAlt ? C.purple : C.teal}33`, // Low opacity year
+                  background: 'transparent', whiteSpace: 'nowrap', textShadow: `0 0 10px ${ym.isAlt ? C.purple : C.teal}22` 
+                }}>{ym.year}</div>
+              </div>
+            </div>
+          ))}
+
+          {/* 🔦 STACKED HIGHLIGHTS: Layered OVER the years */}
+          {data.highlights.map((h, i) => {
+            const laneH = 40 - (h.lane * 8); 
+            return (
+              <div key={i} style={{ position: 'absolute', left: h.x, top: h.side === 'up' ? `${50 - laneH}%` : '50%', height: `${laneH}%`, zIndex: 100, pointerEvents: 'none' }}>
+                <div style={{ width: 2, height: '100%', background: `linear-gradient(${h.side === 'up' ? 'to top' : 'to bottom'}, ${h.color}, transparent)`, boxShadow: `0 0 15px ${h.color}`, opacity: 0.8 }} />
+                <div style={{ position: 'absolute', left: 12, [h.side === 'up' ? 'top' : 'bottom']: -15, whiteSpace: 'nowrap' }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff', textShadow: '2px 2px 4px #000' }}>{h.label?.toUpperCase()}</div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: h.color, fontWeight: 900 }}>{fmtDateShort(h.date)}</div>
                 </div>
               </div>
             );
           })}
 
-          {/* YEARS & MONTHS */}
-          {data.yearMarkers.map(ym => (
-            <div key={ym.year} style={{ position: 'absolute', left: ym.x, top: 0, bottom: 0, zIndex: 3, pointerEvents: 'none' }}>
-              <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: `linear-gradient(to bottom, transparent, ${hexToRgba(ym.isAlt ? C.purple : C.teal, 0.15)}, transparent)` }} />
-              <div style={{ position: 'absolute', left: 5, ...(ym.isAlt ? { bottom: 30 } : { top: 30 }), fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: ym.isAlt ? C.purple : C.teal, background: `${C.bg}ee`, padding: '3px 10px', borderRadius: 4, border: `2px solid ${ym.isAlt ? C.purple : C.teal}`, boxShadow: `0 0 10px ${hexToRgba(ym.isAlt ? C.purple : C.teal, 0.3)}`, whiteSpace: 'nowrap' }}>{ym.year}</div>
-            </div>
-          ))}
-
-          {/* 🔴 ALL 426 DOTS */}
+          {/* 🔴 DOTS */}
           {data.sortedShows.map(show => (
-            <TimelineDot key={show.id} item={show} xPos={show.xPos} onTeleport={() => teleport(show.date)} genreMap={genreMap} />
+            <TimelineDot key={show.id} item={show} xPos={show.xPos} onTeleport={() => setActiveTab('byDay')} genreMap={genreMap} />
           ))}
 
         </div>
-      </div>
-      <div style={{ textAlign: 'center', marginTop: 15, fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, letterSpacing: '0.4em' }}>
-        ↔ {data.sortedShows.length} SHOWS DOCUMENTED // DATA-ACCURATE SPACING
       </div>
     </div>
   );
