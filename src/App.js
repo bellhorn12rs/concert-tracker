@@ -1763,12 +1763,13 @@ function GenreLegend() {
 
 // ─── 1. HORIZONTAL TIMELINE CARD (FIXED FOR 400+ DAYS) ───────────────────────
 // ─── 1. TIMELINE DOT ────────────────────────────────────────────────────────
-function TimelineDot({ item, globalIndex, onTeleport, genreMap, xOverride }) {  const [isHovered, setIsHovered] = useState(false);
+// ─── 1. TIMELINE DOT ────────────────────────────────────────────────────────
+function TimelineDot({ item, globalIndex, onTeleport, genreMap, xOverride, showLabel }) {
+  const [isHovered, setIsHovered] = useState(false);
   const gi = getConcertGenreInfo(item, genreMap);
   const themeColor = gi.mixed ? '#9d00ff' : (gi.color || C.teal);
   const bands = item.bands || [];
 
-  // 20-lane stagger: 10 above rail, 10 below
   const laneIndex = globalIndex % 20;
   const isUp = laneIndex < 10;
   const lane = isUp ? laneIndex : laneIndex - 10;
@@ -1776,7 +1777,8 @@ function TimelineDot({ item, globalIndex, onTeleport, genreMap, xOverride }) {  
   const LANE_GAP = 28;
   const connectorHeight = MIN_CONNECTOR + lane * LANE_GAP;
 
-const xPos = xOverride !== undefined ? xOverride : globalIndex * 100;
+  const xPos = xOverride !== undefined ? xOverride : globalIndex * 100;
+
   return (
     <div
       onMouseEnter={() => setIsHovered(true)}
@@ -1785,7 +1787,8 @@ const xPos = xOverride !== undefined ? xOverride : globalIndex * 100;
       style={{
         position: 'absolute',
         left: xPos,
-        width: 100,
+        width: 20,
+        marginLeft: -10,
         top: 0,
         bottom: 0,
         display: 'flex',
@@ -1795,75 +1798,77 @@ const xPos = xOverride !== undefined ? xOverride : globalIndex * 100;
         cursor: 'pointer',
       }}
     >
-      {/* Neon dot on the rail */}
+      {/* Neon dot — always visible for all 426 */}
       <div style={{
-        width: 8,
-        height: 8,
+        width: isHovered ? 12 : 7,
+        height: isHovered ? 12 : 7,
         borderRadius: '50%',
         background: themeColor,
-        border: '1.5px solid #fff',
-        boxShadow: `0 0 8px ${themeColor}, 0 0 16px ${hexToRgba(themeColor, 0.4)}`,
+        border: `1.5px solid ${isHovered ? '#fff' : hexToRgba(themeColor, 0.6)}`,
+        boxShadow: isHovered
+          ? `0 0 12px ${themeColor}, 0 0 24px ${hexToRgba(themeColor, 0.5)}`
+          : `0 0 4px ${hexToRgba(themeColor, 0.6)}`,
         zIndex: 100,
         position: 'relative',
-        transform: isHovered ? 'scale(2)' : 'scale(1)',
-        transition: 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        transition: 'all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
         flexShrink: 0,
       }} />
 
-      {/* Connector line */}
-      <div style={{
-        position: 'absolute',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        ...(isUp
-          ? { bottom: '50%' }
-          : { top: '50%' }),
-        width: 1.5,
-        height: connectorHeight,
-        background: themeColor,
-        boxShadow: `0 0 6px ${themeColor}`,
-        opacity: isHovered ? 1 : 0.5,
-        transition: 'opacity 0.2s',
-        pointerEvents: 'none',
-      }} />
-
-      {/* Label */}
-      <div style={{
-        position: 'absolute',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        ...(isUp
-          ? { bottom: `calc(50% + ${connectorHeight + 4}px)` }
-          : { top: `calc(50% + ${connectorHeight + 4}px)` }),
-        textAlign: 'center',
-        pointerEvents: 'none',
-        width: 90,
-      }}>
+      {/* Connector line — only when labeled or hovered */}
+      {(showLabel || isHovered) && (
         <div style={{
-          fontFamily: "'Bebas Neue'",
-          fontSize: '0.78rem',
-          color: isHovered ? themeColor : C.white,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          letterSpacing: '0.04em',
-          textShadow: isHovered ? `0 0 8px ${themeColor}` : '0 1px 3px #000',
-          transition: 'color 0.2s',
-        }}>
-          {bands[0]?.toUpperCase() || '—'}
-        </div>
-        <div style={{
-          fontFamily: "'Space Mono'",
-          fontSize: 6,
-          color: themeColor,
-          opacity: 0.8,
-          marginTop: 1,
-        }}>
-          {item.date?.slice(5).replace('-', '.')}
-        </div>
-      </div>
+          position: 'absolute',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          ...(isUp ? { bottom: '50%' } : { top: '50%' }),
+          width: 1.5,
+          height: connectorHeight,
+          background: themeColor,
+          boxShadow: `0 0 6px ${themeColor}`,
+          opacity: isHovered ? 1 : 0.5,
+          transition: 'opacity 0.2s',
+          pointerEvents: 'none',
+        }} />
+      )}
 
-      {/* Hover card — fixed center so it never breaks scroll */}
+      {/* Label — only for labeled shows */}
+      {showLabel && !isHovered && (
+        <div style={{
+          position: 'absolute',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          ...(isUp
+            ? { bottom: `calc(50% + ${connectorHeight + 4}px)` }
+            : { top: `calc(50% + ${connectorHeight + 4}px)` }),
+          textAlign: 'center',
+          pointerEvents: 'none',
+          width: 80,
+        }}>
+          <div style={{
+            fontFamily: "'Bebas Neue'",
+            fontSize: '0.78rem',
+            color: C.white,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            letterSpacing: '0.04em',
+            textShadow: '0 1px 3px #000',
+          }}>
+            {bands[0]?.toUpperCase() || '—'}
+          </div>
+          <div style={{
+            fontFamily: "'Space Mono'",
+            fontSize: 6,
+            color: themeColor,
+            opacity: 0.8,
+            marginTop: 1,
+          }}>
+            {item.date?.slice(5).replace('-', '.')}
+          </div>
+        </div>
+      )}
+
+      {/* Hover card — full info on any dot */}
       {isHovered && (
         <div
           className="fade-in"
@@ -1915,6 +1920,9 @@ const xPos = xOverride !== undefined ? xOverride : globalIndex * 100;
               <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 3 }}>
                 {item.venue?.toUpperCase()}
               </div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: themeColor, marginTop: 2 }}>
+                {fmtDate(item.date)}
+              </div>
             </div>
             <GenreBadge genre={gi.genre} color={gi.color} mixed={gi.mixed} small />
           </div>
@@ -1931,7 +1939,6 @@ const xPos = xOverride !== undefined ? xOverride : globalIndex * 100;
     </div>
   );
 }
-
 // ─── 2. PANORAMIC TIMELINE TAB ───────────────────────────────────────────────
 // ─── 2. PANORAMIC TIMELINE TAB ───────────────────────────────────────────────
 function TimelineTab({ concerts, setActiveTab, genreMap }) {
@@ -2088,8 +2095,8 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
             );
           })}
 
-          {/* All show dots */}
-          {sortedShows.map((show) => (
+          {/* All 426 dots — label only every 4th show to avoid collision */}
+          {sortedShows.map((show, idx) => (
             <TimelineDot
               key={show.id}
               item={show}
@@ -2097,6 +2104,7 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
               onTeleport={() => teleport(show.date)}
               genreMap={genreMap}
               xOverride={showXPos(show)}
+              showLabel={idx % 4 === 0}
             />
           ))}
         </div>
