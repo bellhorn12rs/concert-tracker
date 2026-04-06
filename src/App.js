@@ -1761,7 +1761,7 @@ function GenreLegend() {
   );
 }
 
-// ─── 1. TIMELINE CARD (Updated to show ALL bands) ───────────────────────────
+// ─── 1. HIGH-DENSITY TIMELINE CARD ──────────────────────────────────────────
 function TimelineCard({ item, isLeft, onTeleport, genreMap }) {
   const [isHovered, setIsHovered] = useState(false);
   const gi = getConcertGenreInfo(item, genreMap);
@@ -1776,7 +1776,7 @@ function TimelineCard({ item, isLeft, onTeleport, genreMap }) {
       style={{ 
         position: 'relative', 
         width: '100%', 
-        height: '60px', // Very tight vertical footprint
+        height: '45px', // Ultra-tight height to fit more days
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center',
@@ -1786,14 +1786,14 @@ function TimelineCard({ item, isLeft, onTeleport, genreMap }) {
     >
       {/* THE SPINE BUBBLE */}
       <div style={{ 
-        width: isHovered ? '16px' : '10px', 
-        height: isHovered ? '16px' : '10px', 
+        width: isHovered ? '14px' : '8px', 
+        height: isHovered ? '14px' : '8px', 
         borderRadius: '50%', 
         background: themeColor, 
         zIndex: 5, 
-        boxShadow: isHovered ? `0 0 20px ${themeColor}` : `0 0 5px ${themeColor}66`,
+        boxShadow: isHovered ? `0 0 20px ${themeColor}` : `0 0 5px ${themeColor}44`,
         transition: 'all 0.2s ease',
-        border: `2px solid ${C.bg}`
+        border: `1px solid ${C.bg}`
       }} />
 
       {/* THE CONNECTOR LINE */}
@@ -1801,61 +1801,71 @@ function TimelineCard({ item, isLeft, onTeleport, genreMap }) {
         position: 'absolute',
         left: isLeft ? 'auto' : '50%',
         right: isLeft ? '50%' : 'auto',
-        width: '40px',
+        width: '30px',
         height: '1px',
         background: `linear-gradient(${isLeft ? 'to left' : 'to right'}, ${themeColor}, transparent)`,
-        opacity: isHovered ? 1 : 0.4
+        opacity: isHovered ? 1 : 0.3
       }} />
 
       {/* THE CONTENT BOX */}
       <div style={{ 
         position: 'absolute',
-        left: isLeft ? 'auto' : 'calc(50% + 40px)',
-        right: isLeft ? 'calc(50% + 40px)' : 'auto',
-        width: isHovered ? '320px' : '180px', // Expands on hover
-        padding: isHovered ? '15px' : '4px 10px',
+        left: isLeft ? 'auto' : 'calc(50% + 30px)',
+        right: isLeft ? 'calc(50% + 30px)' : 'auto',
+        width: isHovered ? '340px' : '200px',
+        padding: isHovered ? '18px' : '2px 0',
         background: isHovered ? C.bgCard : 'transparent',
         border: isHovered ? `1px solid ${themeColor}` : 'none',
         borderRadius: '8px',
         textAlign: isLeft ? 'right' : 'left',
-        transform: isHovered ? 'translateY(-20%)' : 'none',
-        transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-        boxShadow: isHovered ? '0 20px 40px rgba(0,0,0,0.8)' : 'none',
+        transform: isHovered ? `translateY(${isLeft ? '-10%' : '-10%'})` : 'none',
+        transition: 'all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        boxShadow: isHovered ? `0 15px 40px rgba(0,0,0,0.9), 0 0 20px ${hexToRgba(themeColor, 0.2)}` : 'none',
         pointerEvents: 'none'
       }}>
         
-        {/* Resting State: Tiny Info */}
+        {/* RESTING STATE (Small Data Point) */}
         {!isHovered && (
-          <div className="fade-in">
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: C.white, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div className="fade-in" style={{ display: 'flex', flexDirection: isLeft ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: C.white, whiteSpace: 'nowrap', opacity: 0.9 }}>
               {bands[0]?.toUpperCase()}
             </div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: themeColor, opacity: 0.8 }}>
-              {fmtDateShort(item.date).toUpperCase()}
+            <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: themeColor, opacity: 0.6, letterSpacing: 1 }}>
+              {item.date.split('-')[1]}/{item.date.split('-')[2]}
             </div>
           </div>
         )}
 
-        {/* Hover State: Full Artifact Reveal */}
+        {/* HOVER STATE (Full Data Reveal) */}
         {isHovered && (
           <div className="fade-in">
-             <div style={{ marginBottom: 12 }}>
+             <div style={{ marginBottom: 15 }}>
                 {item.is_festival 
-                  ? <PhysicalWristband color={themeColor} label={item.festival_name} year={getYear(item.date)} size="small" /> 
-                  : <div style={{ transform: 'scale(0.8)', transformOrigin: isLeft ? 'right' : 'left' }}><DecorativeTicket event={item} templateIdx={0} /></div>
+                  ? <WristbandCard event={item} genreMap={genreMap} compact={true} /> 
+                  : <div style={{ transform: 'scale(0.85)', transformOrigin: isLeft ? 'right' : 'left' }}><DecorativeTicket event={item} templateIdx={0} /></div>
                 }
              </div>
-             <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: C.white, lineHeight: 1 }}>
+             
+             <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: C.white, lineHeight: 1.1, marginBottom: 8 }}>
                {bands[0]?.toUpperCase()}
              </div>
+
+             {/* FULL BAND LIST */}
              {bands.length > 1 && (
-               <div style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: C.gray, marginTop: 4 }}>
-                 + {bands.length - 1} MORE ACTS
+               <div style={{ 
+                 display: 'flex', flexWrap: 'wrap', gap: '4px 8px', 
+                 justifyContent: isLeft ? 'flex-end' : 'flex-start',
+                 marginBottom: 12, borderTop: `1px solid ${C.border}`, paddingTop: 8 
+               }}>
+                 {bands.slice(1).map((b, bi) => (
+                   <span key={bi} style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: C.gray }}>{b.toUpperCase()}</span>
+                 ))}
                </div>
              )}
-             <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 8, paddingTop: 8, display: 'flex', justifyContent: 'space-between' }}>
+
+             <div style={{ borderTop: `1px dashed ${C.border}`, paddingTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <GenreBadge genre={gi.genre} color={gi.color} small />
-                <span style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: C.grayDim }}>{item.venue}</span>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: C.grayDim }}>{item.venue?.toUpperCase()}</span>
              </div>
           </div>
         )}
@@ -1863,10 +1873,13 @@ function TimelineCard({ item, isLeft, onTeleport, genreMap }) {
     </div>
   );
 }
-// ─── 2. TIMELINE TAB (Updated with Month Markers & Docking) ──────────────────
+
+// ─── 2. THE EXHAUSTIVE TIMELINE TAB ──────────────────────────────────────────
 function TimelineTab({ concerts, setActiveTab, genreMap }) {
   const yearsData = useMemo(() => {
-    if (!concerts.length) return [];
+    if (!concerts || concerts.length === 0) return [];
+    
+    // Sort all 426 shows by date
     const sorted = [...concerts].sort((a, b) => b.date.localeCompare(a.date));
     const groups = {};
     
@@ -1883,13 +1896,21 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
       let lastMonth = -1;
 
       yearShows.forEach((s, i) => {
-        const currentMonth = new Date(s.date + 'T12:00:00').getMonth();
+        const dt = new Date(s.date + 'T12:00:00');
+        const currentMonth = dt.getMonth();
+        
         if (currentMonth !== lastMonth) {
-          flowWithMonths.push({ type: 'MONTH', label: monthNames[currentMonth], id: `month-${year}-${currentMonth}` });
+          flowWithMonths.push({ 
+            type: 'MONTH', 
+            label: monthNames[currentMonth], 
+            id: `month-${year}-${currentMonth}` 
+          });
           lastMonth = currentMonth;
         }
+
         flowWithMonths.push({ ...s, type: 'SHOW', side: i % 2 === 0 ? 'left' : 'right' });
       });
+
       return [year, flowWithMonths];
     });
   }, [concerts]);
@@ -1902,49 +1923,66 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
     }, 150);
   };
 
+  if (!yearsData.length) return <div style={{ color: C.white, padding: 100, textAlign: 'center' }}>ARCHIVE EMPTY</div>;
+
   return (
-    <div style={{ padding: '20px 0 100px' }} className="fade-in">
+    <div style={{ padding: '0 0 150px' }} className="fade-in">
       <GenreLegend />
       
-      <div style={{ maxWidth: 1000, margin: '0 auto', position: 'relative' }}>
-        <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2, background: C.border, transform: 'translateX(-50%)', opacity: 0.1 }} />
+      <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
+        {/* THE MAIN DATA SPINE */}
+        <div style={{ 
+          position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, 
+          background: `linear-gradient(to bottom, ${C.teal}, ${C.purple}, ${C.gold}, transparent)`, 
+          transform: 'translateX(-50%)', opacity: 0.2 
+        }} />
         
-        {yearsData.map(([year, flow]) => (
-          <div key={year} style={{ position: 'relative', marginBottom: 80, display: 'flex' }}>
+        {yearsData.map(([year, flow], yIdx) => (
+          <div key={year} style={{ position: 'relative', marginBottom: 100, display: 'flex' }}>
             
-            {/* DOCKING YEAR (LEFT) */}
-            <div style={{ position: 'sticky', top: '150px', height: 'fit-content', width: '80px', zIndex: 10, alignSelf: 'flex-start' }}>
+            {/* STICKY YEAR DOCKING (LEFT) */}
+            <div style={{ position: 'sticky', top: '150px', height: 'fit-content', width: '100px', zIndex: 10, alignSelf: 'flex-start' }}>
               <div style={{ 
-                fontFamily: "'Bebas Neue'", fontSize: '6rem', color: C.teal, 
-                filter: `drop-shadow(0 0 15px ${hexToRgba(C.teal, 0.8)})`, 
-                writingMode: 'vertical-rl', transform: 'rotate(180deg)', opacity: 0.8
+                fontFamily: "'Bebas Neue'", fontSize: '7rem', color: yIdx % 2 === 0 ? C.teal : C.purple, 
+                filter: `drop-shadow(0 0 15px ${hexToRgba(yIdx % 2 === 0 ? C.teal : C.purple, 0.6)})`, 
+                writingMode: 'vertical-rl', transform: 'rotate(180deg)', opacity: 1 
               }}>{year}</div>
             </div>
 
-            {/* CONDENSED FLOW */}
+            {/* THE DATA FLOW */}
             <div style={{ flex: 1, padding: '0 20px' }}>
-              {flow.map(item => {
+              {flow.map((item, idx) => {
                 if (item.type === 'MONTH') {
                   return (
-                    <div key={item.id} style={{ textAlign: 'center', margin: '30px 0 15px', position: 'relative', zIndex: 2 }}>
-                      <span style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: C.gray, letterSpacing: '4px' }}>
-                        — {item.label} —
+                    <div key={item.id} style={{ textAlign: 'center', margin: '40px 0 20px', position: 'relative', zIndex: 2 }}>
+                      <span style={{ 
+                        fontFamily: "'Space Mono'", fontSize: '9px', color: C.white, 
+                        background: '#000', padding: '4px 15px', borderRadius: '10px', 
+                        border: `1px solid ${C.border}`, letterSpacing: '3px', fontWeight: 900
+                      }}>
+                        {item.label}
                       </span>
                     </div>
                   );
                 }
                 return (
-                  <TimelineCard key={item.id} item={item} isLeft={item.side === 'left'} onTeleport={() => teleport(item.date)} genreMap={genreMap} />
+                  <TimelineCard 
+                    key={item.id} 
+                    item={item} 
+                    isLeft={item.side === 'left'} 
+                    onTeleport={() => teleport(item.date)} 
+                    genreMap={genreMap} 
+                  />
                 );
               })}
             </div>
 
-            {/* DOCKING YEAR (RIGHT) */}
-            <div style={{ position: 'sticky', top: '150px', height: 'fit-content', width: '80px', zIndex: 10, alignSelf: 'flex-start' }}>
+            {/* STICKY YEAR DOCKING (RIGHT) */}
+            <div style={{ position: 'sticky', top: '150px', height: 'fit-content', width: '100px', zIndex: 10, alignSelf: 'flex-start' }}>
               <div style={{ 
-                fontFamily: "'Bebas Neue'", fontSize: '6rem', color: C.purple, 
-                filter: `drop-shadow(0 0 15px ${hexToRgba(C.purple, 0.8)})`, 
-                writingMode: 'vertical-lr', opacity: 0.8
+                fontFamily: "'Bebas Neue'", fontSize: '7rem', color: yIdx % 2 === 0 ? C.teal : C.purple, 
+                filter: `drop-shadow(0 0 15px ${hexToRgba(yIdx % 2 === 0 ? C.teal : C.purple, 0.6)})`, 
+                writingMode: 'vertical-lr', opacity: 1 
               }}>{year}</div>
             </div>
 
@@ -1954,7 +1992,6 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
     </div>
   );
 }
-
 // ─── 4. BY DAY TAB ────────────────────────────────────────────────────────────
 function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, setYearFilter, festFilter, setFestFilter, genreFilter, setGenreFilter, concerts }) {
   return (
