@@ -382,6 +382,65 @@ const MarqueeStyles = () => (
   `}</style>
 );
 // ─── SHARED ATOMS ─────────────────────────────────────────────────────────────
+// ─── THE SETLIST DNA (IDEA #2) ───────────────────────────────────────────────
+const SetlistDNA = ({ genreScores }) => {
+  // genreScores = { Rock: 80, Indie: 90, Pop: 30, Electronic: 50, Experimental: 70 }
+  
+  const labels = Object.keys(genreScores);
+  const values = Object.values(genreScores);
+  const center = 100;
+  const radius = 80;
+
+  // Math for the Radar Points: 
+  // We convert the 0-100 scores into X/Y coordinates on a circle
+  const points = values.map((val, i) => {
+    const angle = (Math.PI * 2 * i) / labels.length - Math.PI / 2;
+    const r = (val / 100) * radius;
+    return `${center + r * Math.cos(angle)},${center + r * Math.sin(angle)}`;
+  }).join(' ');
+
+  return (
+    <div style={{ textAlign: 'center', padding: '20px' }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginBottom: 20 }}>GENRE DNA PROFILE</div>
+      <svg width="200" height="200" viewBox="0 0 200 200" style={{ filter: `drop-shadow(0 0 10px ${hexToRgba(C.teal, 0.4)})` }}>
+        {/* Background Hexagon Rings */}
+        {[0.2, 0.4, 0.6, 0.8, 1].map(scale => (
+          <polygon
+            key={scale}
+            points={labels.map((_, i) => {
+              const angle = (Math.PI * 2 * i) / labels.length - Math.PI / 2;
+              return `${center + (radius * scale) * Math.cos(angle)},${center + (radius * scale) * Math.sin(angle)}`;
+            }).join(' ')}
+            fill="none"
+            stroke="rgba(255,255,255,0.05)"
+            strokeWidth="1"
+          />
+        ))}
+        
+        {/* The DNA Shape */}
+        <polygon
+          points={points}
+          fill={hexToRgba(C.teal, 0.3)}
+          stroke={C.teal}
+          strokeWidth="2"
+        />
+        
+        {/* Axis Labels */}
+        {labels.map((label, i) => {
+          const angle = (Math.PI * 2 * i) / labels.length - Math.PI / 2;
+          const x = center + (radius + 15) * Math.cos(angle);
+          const y = center + (radius + 15) * Math.sin(angle);
+          return (
+            <text key={label} x={x} y={y} fill={C.gray} fontSize="8" fontFamily="'Space Mono'" textAnchor="middle" dominantBaseline="middle">
+              {label.toUpperCase()}
+            </text>
+          );
+        })}
+      </svg>
+    </div>
+  );
+};
+
 const Badge = ({ children, color = C.teal, bg = C.tealFaint }) => (
   <span style={{ display:'inline-block', fontFamily:"'Space Mono',monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color, background:bg, border:`1px solid ${color}44`, padding:'2px 6px', borderRadius:3 }}>{children}</span>
 );
@@ -1032,6 +1091,7 @@ function RandomShow({ concerts }) {
     </Card>
   );
 }
+
 // ─── SONIC DNA ────────────────────────────────────────────────────────────────
 function SonicDNA({ stats, onGenreClick }) {
   return (
