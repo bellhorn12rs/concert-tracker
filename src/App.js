@@ -2055,7 +2055,7 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
 
 // ─── 4. MEDIA COMPONENTS (SCRAPBOOK EXPANSION) ───────────────────────────────
 
-/ 📄 The Upgraded "Taped-Up" Setlist (Handles Multiple)
+// 📄 The Upgraded "Taped-Up" Setlist (Handles Multiple)
 function SetlistPaper({ src, index = 0 }) {
   if (!src) return null;
   // Stagger the tilt and offset for multiple setlists
