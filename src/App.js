@@ -1740,7 +1740,6 @@ function GenreLegend() {
 }
 
 // ─── 1. TIMELINE DOT ────────────────────────────────────────────────────────
-// ─── 1. TIMELINE DOT (Final Hover Logic) ───────────────────────────────────
 function TimelineDot({ item, onTeleport, genreMap, xPos }) {
   const [isHovered, setIsHovered] = useState(false);
   if (!item || !item.date) return null;
@@ -1761,7 +1760,7 @@ function TimelineDot({ item, onTeleport, genreMap, xPos }) {
         transform: 'translateY(-50%)',
         width: 10,
         height: 10,
-        zIndex: isHovered ? 1000 : 50, // Higher than background years (5)
+        zIndex: isHovered ? 1000 : 50,
         cursor: 'pointer',
       }}
     >
@@ -1809,31 +1808,49 @@ function TimelineDot({ item, onTeleport, genreMap, xPos }) {
   );
 }
 
-// ─── 2. PANORAMIC TIMELINE TAB (Final Geometry) ─────────────────────────────
+// ─── 2. PANORAMIC TIMELINE TAB ──────────────────────────────────────────────
 function TimelineTab({ concerts, setActiveTab, genreMap }) {
   const scrollRef = useRef(null);
   const [currentYear, setCurrentYear] = useState(null);
-  const PX_PER_DAY = 3.5; // Slightly more air between shows
+  const PX_PER_DAY = 3.5; 
 
   const data = useMemo(() => {
-    if (!concerts?.length) return { sortedShows: [], yearMarkers: [], highlights: [], totalWidth: 0 };
+    if (!concerts?.length) return { sortedShows: [], yearBlocks: [], monthMarkers: [], highlights: [], totalWidth: 0 };
 
     const sorted = [...concerts].filter(c => c && c.date).sort((a, b) => a.date.localeCompare(b.date));
-    const minTs = new Date(sorted[0].date + 'T12:00:00').getTime();
-    const maxTs = new Date(sorted[sorted.length - 1].date + 'T12:00:00').getTime();
+    const firstDate = new Date(sorted[0].date + 'T12:00:00');
+    const lastDate = new Date(sorted[sorted.length - 1].date + 'T12:00:00');
+    const minTs = firstDate.getTime();
     const MS_PER_DAY = 86400000;
     const PADDING = 300;
 
     const dateToX = (dateStr) => (PADDING + Math.round((new Date(dateStr + 'T12:00:00').getTime() - minTs) / MS_PER_DAY) * PX_PER_DAY);
-    const totalWidth = PADDING * 2 + Math.round((maxTs - minTs) / MS_PER_DAY) * PX_PER_DAY;
+    const totalWidth = PADDING * 2 + Math.round((lastDate.getTime() - minTs) / MS_PER_DAY) * PX_PER_DAY;
     const withX = sorted.map((s, i) => ({ ...s, globalIndex: i, xPos: dateToX(s.date) }));
+
+    // ─── STICKY YEAR BLOCKS ───
+    const yearBlocks = [];
+    for (let yr = firstDate.getFullYear(); yr <= lastDate.getFullYear(); yr++) {
+      const xStart = dateToX(`${yr}-01-01`);
+      const xEnd = dateToX(`${yr}-12-31`);
+      yearBlocks.push({ year: yr, x: xStart, width: xEnd - xStart, isAlt: yr % 2 === 1 });
+    }
+
+    // ─── MONTH MARKERS ───
+    const monthMarkers = [];
+    const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    let iter = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
+    while (iter <= lastDate) {
+      const ds = iter.toISOString().split('T')[0];
+      monthMarkers.push({ x: dateToX(ds), label: MONTHS[iter.getMonth()], isJan: iter.getMonth() === 0 });
+      iter.setMonth(iter.getMonth() + 1);
+    }
 
     // ─── STACKED HIGHLIGHTS ───
     const highlights = [];
     const laneLastX = { up: [-1000,-1000,-1000,-1000], down: [-1000,-1000,-1000,-1000] };
     const MIN_GAP = 140;
 
-    // Festivals First
     const festGroups = [];
     withX.forEach(s => {
       if (s.is_festival) {
@@ -1854,7 +1871,6 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
       }
     });
 
-    // Greedy Solo Shows
     withX.forEach((s, i) => {
       if (s.is_festival) return;
       const side = i % 2 === 0 ? 'up' : 'down';
@@ -1866,18 +1882,33 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
       }
     });
 
-    // Years
-    const yearMarkers = [];
-    for (let yr = new Date(minTs).getFullYear(); yr <= new Date(maxTs).getFullYear(); yr++) {
-      yearMarkers.push({ year: yr, x: dateToX(`${yr}-01-01`), isAlt: yr % 2 === 1 });
-    }
-
-    return { sortedShows: withX, yearMarkers, highlights, totalWidth };
+    return { sortedShows: withX, yearBlocks, monthMarkers, highlights, totalWidth };
   }, [concerts, genreMap]);
+
+  // Year HUD Tracker
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !data.sortedShows.length) return;
+    const onScroll = () => {
+      const cx = el.scrollLeft + el.clientWidth / 2;
+      const closest = data.sortedShows.reduce((best, s) => {
+        const d = Math.abs(s.xPos - cx);
+        return d < best.d ? { s, d } : best;
+      }, { s: null, d: Infinity }).s;
+      if (closest) setCurrentYear(getYear(closest.date));
+    };
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [data.sortedShows]);
 
   return (
     <div style={{ padding: '20px 0' }} className="fade-in">
       <GenreLegend />
+
+      {/* Persistent HUD Year */}
+      <div style={{ position: 'absolute', top: 80, left: 40, zIndex: 1000, pointerEvents: 'none' }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: C.teal, opacity: 0.4, lineHeight: 1 }}>{currentYear}</div>
+      </div>
 
       <div ref={scrollRef} style={{ 
         width: '100%', height: '750px', overflowX: 'auto', overflowY: 'hidden', 
@@ -1886,27 +1917,44 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
         <div style={{ width: data.totalWidth, height: '100%', position: 'relative' }}>
 
           {/* 🛤 RAIL */}
-          <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 2, background: `linear-gradient(90deg, transparent, ${C.teal}33, ${C.purple}33, transparent)`, zIndex: 10 }} />
+          <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 2, background: `linear-gradient(90deg, transparent, ${C.teal}33, ${C.purple}33, transparent)`, zIndex: 10, transform: 'translateY(-50%)' }} />
 
-          {/* 📅 BACKGROUND YEARS: Closer to center & sent to back */}
-          {data.yearMarkers.map(ym => (
-            <div key={ym.year} style={{ position: 'absolute', left: ym.x, top: 0, bottom: 0, zIndex: 5, pointerEvents: 'none' }}>
-              <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: `${ym.isAlt ? C.purple : C.teal}22` }} />
+          {/* 📅 STICKY YEAR BLOCKS */}
+          {data.yearBlocks.map(yb => (
+            <div key={yb.year} style={{ 
+              position: 'absolute', left: yb.x, top: 0, bottom: 0, width: yb.width, 
+              zIndex: 5, pointerEvents: 'none', borderLeft: `1px solid ${yb.isAlt ? C.purple : C.teal}22` 
+            }}>
               <div style={{ 
-                position: 'sticky', left: 20, 
-                // Moves years closer to the rail
-                top: ym.isAlt ? 'calc(50% + 120px)' : 'calc(50% - 160px)', 
-                width: 0, overflow: 'visible' 
+                position: 'sticky', left: 20, width: 'fit-content',
+                top: yb.isAlt ? 'calc(50% + 120px)' : 'calc(50% - 240px)', 
               }}>
                 <div style={{ 
-                  fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: `${ym.isAlt ? C.purple : C.teal}33`, // Low opacity year
-                  background: 'transparent', whiteSpace: 'nowrap', textShadow: `0 0 10px ${ym.isAlt ? C.purple : C.teal}22` 
-                }}>{ym.year}</div>
+                  fontFamily: "'Bebas Neue'", fontSize: '8rem', 
+                  color: `${yb.isAlt ? C.purple : C.teal}15`,
+                  whiteSpace: 'nowrap'
+                }}>
+                  {yb.year}
+                </div>
               </div>
             </div>
           ))}
 
-          {/* 🔦 STACKED HIGHLIGHTS: Layered OVER the years */}
+          {/* 🗓 MONTH MARKERS */}
+          {data.monthMarkers.map(mm => (
+            <div key={`${mm.x}-${mm.label}`} style={{ position: 'absolute', left: mm.x, top: '50%', transform: 'translateY(-50%)', zIndex: 11 }}>
+              <div style={{ width: 1, height: mm.isJan ? 25 : 12, background: mm.isJan ? C.teal : C.grayDim, opacity: 0.4 }} />
+              <div style={{ 
+                position: 'absolute', top: 18, left: -10, 
+                fontFamily: "'Space Mono'", fontSize: '8px', color: C.grayDim, 
+                opacity: 0.5, transform: 'rotate(-45deg)', whiteSpace: 'nowrap'
+              }}>
+                {mm.label}
+              </div>
+            </div>
+          ))}
+
+          {/* 🔦 STACKED HIGHLIGHTS */}
           {data.highlights.map((h, i) => {
             const laneH = 40 - (h.lane * 8); 
             return (
