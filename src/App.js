@@ -1985,117 +1985,54 @@ function PersonalPolaroid({ src, caption }) {
 }
 
 // 🗓 Main By Day View
-function ByDayTab({ dayGroups, onEdit, genreMap, concerts }) {
+function ByDayTab({ dayGroups, onEdit, genreMap }) {
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
-      {/* HEADER */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: '30px', 
-        padding: '15px 20px', 
-        background: 'rgba(255,255,255,0.03)', 
-        border: `1px solid ${C.border}`, 
-        borderRadius: '8px' 
-      }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: C.white }}>
-          DAILY <span style={{ color: C.teal }}>ARCHIVE</span>
-        </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: '9px', color: C.gray }}>
-          {dayGroups.length} ENTRIES FOUND
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', padding: '15px 20px', background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}`, borderRadius: '8px' }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: C.white }}>DAILY <span style={{ color: C.teal }}>ARCHIVE</span></div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '9px', color: C.gray }}>{dayGroups.length} ENTRIES FOUND</div>
       </div>
 
-      {/* ENTRIES LIST */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {dayGroups.map((event, idx) => (
           <div 
             key={event.id} 
             style={{ 
               display: 'flex', 
               alignItems: 'center', 
-              padding: '24px',
+              padding: '20px 30px',
               background: 'rgba(255,255,255,0.02)',
               borderRadius: '16px',
               border: `1px solid ${C.border}`,
-              transition: 'all 0.3s ease',
-              overflow: 'hidden'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = C.teal;
-              e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = C.border;
-              e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+              transition: 'all 0.3s ease'
             }}
           >
-            {/* 1. LEFT SIDE: THE ARTIFACT (Strict Width) */}
-            <div style={{ flexShrink: 0, width: '300px' }}>
+            {/* 1. THE ARTIFACT (Ticket) */}
+            <div style={{ flexShrink: 0, width: '280px' }}>
               {event.is_festival 
                 ? <WristbandCard event={event} genreMap={genreMap} compact={true} /> 
                 : <TicketStubCard event={event} onEdit={onEdit} genreMap={genreMap} stubIdx={idx} />
               }
             </div>
 
-            {/* 2. MIDDLE: THE INFO (Pushed away from the ticket) */}
-            <div style={{ flex: 1, paddingLeft: '40px' }}>
-              <div style={{ 
-                fontFamily: "'Bebas Neue'", 
-                fontSize: '2.5rem', 
-                color: C.white, 
-                lineHeight: 1,
-                letterSpacing: '1px'
-              }}>
+            {/* 2. THE INFO (Cleanly separated from the ticket) */}
+            <div style={{ flex: 1, paddingLeft: '50px' }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.4rem', color: C.white, lineHeight: 1 }}>
                 {event.bands?.slice(0, 3).join(' · ').toUpperCase()}
               </div>
               
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '12px', 
-                marginTop: 15 
-              }}>
-                <div style={{ 
-                  fontFamily: "'Space Mono'", 
-                  fontSize: '12px', 
-                  color: C.teal, 
-                  fontWeight: 900,
-                  textTransform: 'uppercase'
-                }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: 12 }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.teal, fontWeight: 900 }}>
                   {fmtDateShort(event.date)}
                 </div>
                 <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
-                <div style={{ 
-                  fontFamily: "'Space Mono'", 
-                  fontSize: '11px', 
-                  color: C.gray,
-                  letterSpacing: '0.5px'
-                }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray }}>
                   {event.venue?.toUpperCase()}
                 </div>
               </div>
-
-              {event.is_festival && (
-                <div style={{ marginTop: 12 }}>
-                   <span style={{ 
-                     fontSize: '9px', 
-                     fontFamily: "'Space Mono'", 
-                     color: C.gold, 
-                     border: `1px solid ${hexToRgba(C.gold, 0.3)}`, 
-                     padding: '3px 10px', 
-                     borderRadius: 4,
-                     background: 'rgba(212,175,55,0.05)',
-                     letterSpacing: '1px'
-                   }}>
-                     {event.festival_name?.toUpperCase()}
-                   </span>
-                </div>
-              )}
             </div>
 
-            {/* 3. RIGHT SIDE: THE PERSONAL PHOTO */}
+            {/* 3. THE POLAROID (Far Right) */}
             {event.personal_photo_url && (
               <div style={{ flexShrink: 0 }}>
                 <PersonalPolaroid 
