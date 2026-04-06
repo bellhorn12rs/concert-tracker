@@ -2994,7 +2994,7 @@ async function handleUpcomingDelete(id) {
             </div>
           </div>
            <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
-            </div>
+          
         </div>
 
         {/* ── NAV ── */}
