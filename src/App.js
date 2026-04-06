@@ -2893,12 +2893,10 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
   );
 }
 
-// ─── 5. EDIT MODAL (STABILITY VERSION - FIXED) ────────────────────────────────
 function EditModal({ concert, onClose, onSave, onDelete }) {
-  // 1. Setup Form State
   const [form, setForm] = useState({ 
     date: concert?.date || '', 
-    bands: Array.isArray(concert?.bands) ? concert.bands.join(', ') : (concert?.bands || ''), 
+    bands: (concert?.bands || []).join(', '), 
     venue: concert?.venue || '', 
     city: concert?.city || '', 
     state: concert?.state || '', 
@@ -2907,26 +2905,19 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
     festival_day: concert?.festival_day || '', 
     has_setlist_names: concert?.has_setlist_names || '', 
     genre: concert?.genre || '', 
-    image_url: concert?.image_url || '',
-    personal_photo_url: concert?.personal_photo_url || '' 
+    // FIXED: Changed key to 'image_url' to match database column
+    image_url: concert?.image_url || '' 
   });
 
-  const [saving, setSaving] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  
-  // 2. Safety Fallbacks
-  const safeC = typeof C !== 'undefined' ? C : { teal: '#00d2ff', bgCard: '#1a1a1a', border: '#333', gray: '#888' };
-  const safeGenres = typeof GENRES !== 'undefined' ? GENRES : ['Rock', 'Electronic', 'Jazz', 'Pop', 'Metal'];
+  const [saving, setSaving] = useState(false), [confirming, setConfirming] = useState(false);
   
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSave = async () => { 
     setSaving(true); 
-    // Handle both string and array inputs for bands
-    const bandList = typeof form.bands === 'string' 
-      ? form.bands.split(',').map(b => b.trim()).filter(Boolean)
-      : form.bands;
+    const bandList = form.bands.split(',').map(b => b.trim()).filter(Boolean); 
     
+    // This sends the updated form (including image_url) to the handleSave in App.js
     await onSave(concert?.id, {
       ...form,
       bands: bandList,
@@ -2935,87 +2926,156 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
     setSaving(false); 
   };
 
-  // 3. Styles
-  const lbl = { display: 'block', fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: safeC.teal, marginBottom: 4, opacity: 0.8 };
-  const inpSt = { width: '100%', background: 'rgba(0,0,0,0.3)', border: `1px solid ${safeC.teal}44`, color: '#fff', padding: '10px', fontFamily: "'Space Mono'", borderRadius: '4px', outline: 'none' };
+  const lbl = { display: 'block', fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 };
+  const inp = { ...inputSt, width: '100%' };
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(4px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="fade-in" style={{ background: safeC.bgCard, border: `1px solid ${safeC.teal}`, borderRadius: 10, padding: 24, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: `0 0 40px rgba(0,210,255,0.2)` }}>
-        
+      <div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.teal}`, borderRadius: 10, padding: 24, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: `0 0 40px ${C.tealGlow}` }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: safeC.teal }}>{concert?.id ? 'Edit Show' : 'Add Show'}</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: safeC.gray, fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: C.teal }}>{concert?.id ? 'Edit Show' : 'Add Show'}</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: C.gray, fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
         </div>
         
-        {/* BASIC INFO */}
-        <div style={{ marginBottom: 14 }}><label style={lbl}>Date</label><input style={inpSt} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
-        <div style={{ marginBottom: 14 }}><label style={lbl}>Artists (comma separated)</label><input style={inpSt} value={form.bands} onChange={e => set('bands', e.target.value)} /></div>
+        <div style={{ marginBottom: 14 }}><label style={lbl}>Date</label><input style={inp} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
+        <div style={{ marginBottom: 14 }}><label style={lbl}>Artists (comma separated)</label><input style={inp} value={form.bands} onChange={e => set('bands', e.target.value)} /></div>
         
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-          <div><label style={lbl}>Venue</label><input style={inpSt} value={form.venue} onChange={e => set('venue', e.target.value)} /></div>
-          <div><label style={lbl}>City</label><input style={inpSt} value={form.city} onChange={e => set('city', e.target.value)} /></div>
+          <div><label style={lbl}>Venue</label><input style={inp} value={form.venue} onChange={e => set('venue', e.target.value)} /></div>
+          <div><label style={lbl}>City</label><input style={inp} value={form.city} onChange={e => set('city', e.target.value)} /></div>
         </div>
         
-        <div style={{ marginBottom: 14 }}><label style={lbl}>Genre</label>
-          <select style={inpSt} value={form.genre} onChange={e => set('genre', e.target.value)}>
-            <option value="">— unset —</option>
-            {safeGenres.map(g => <option key={g} value={g}>{g}</option>)}
-          </select>
-        </div>
+        <div style={{ marginBottom: 14 }}><label style={lbl}>State</label><input style={{ ...inp, width: 80 }} value={form.state} onChange={e => set('state', e.target.value)} maxLength={2} /></div>
         
-        {/* FESTIVAL TOGGLE */}
-        <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <input type="checkbox" id="is_fest" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} style={{ cursor: 'pointer' }} />
-          <label htmlFor="is_fest" style={{ ...lbl, marginBottom: 0, cursor: 'pointer' }}>Festival Day</label>
-        </div>
+        <div style={{ marginBottom: 14 }}><label style={lbl}>Genre</label><select style={inp} value={form.genre} onChange={e => set('genre', e.target.value)}><option value="">— unset —</option>{GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+        
+        <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}><input type="checkbox" id="is_fest" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} style={{ accentColor: C.teal, width: 16, height: 16 }} /><label htmlFor="is_fest" style={{ ...lbl, marginBottom: 0, cursor: 'pointer' }}>Festival Day</label></div>
         
         {form.is_festival && (
-          /* 🟢 FIXED: added quotes around 'grid' below */
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-            <div><label style={lbl}>Festival Name</label><input style={inpSt} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} /></div>
-            <div><label style={lbl}>Day Label</label><input style={inpSt} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} /></div>
+            <div><label style={lbl}>Festival Name</label><input style={inp} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} /></div>
+            <div><label style={lbl}>Day Label</label><input style={inp} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} /></div>
           </div>
         )}
         
-        <div style={{ marginBottom: 20 }}><label style={lbl}>Setlist Names (comma separated)</label><input style={inpSt} value={form.has_setlist_names} onChange={e => set('has_setlist_names', e.target.value)} /></div>
+        <div style={{ marginBottom: 14 }}><label style={lbl}>Setlists Obtained (band names, comma separated)</label><input style={inp} value={form.has_setlist_names} onChange={e => set('has_setlist_names', e.target.value)} /></div>
         
-        {/* --- THE TWO PHOTO URLS --- */}
+        {/* FIXED: Input field now correctly targets image_url */}
         <div style={{ marginBottom: 14 }}>
-          <label style={lbl}>Setlist / Poster URL (Official)</label>
-          <input style={inpSt} value={form.image_url} onChange={e => set('image_url', e.target.value)} placeholder="https://i.imgur.com/..." />
+          <label style={lbl}>Gig Photo / Poster URL (Imgur Direct Link)</label>
+          <input 
+            style={inp} 
+            value={form.image_url} 
+            onChange={e => set('image_url', e.target.value)} 
+            placeholder="https://i.imgur.com/abc123.jpg" 
+          />
         </div>
 
-        <div style={{ marginBottom: 24, padding: '12px', background: 'rgba(157, 0, 255, 0.05)', borderRadius: '6px', border: '1px dashed rgba(157, 0, 255, 0.2)' }}>
-          <label style={{ ...lbl, color: '#9d00ff' }}>Personal Memory Photo (Polaroid)</label>
-          <input style={{ ...inpSt, borderColor: '#9d00ff44' }} value={form.personal_photo_url} onChange={e => set('personal_photo_url', e.target.value)} placeholder="https://i.imgur.com/..." />
-        </div>
-
-        {/* ACTIONS */}
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
-          {concert?.id && (
-            <button 
-              onClick={() => confirming ? onDelete(concert.id) : setConfirming(true)}
-              type="button"
-              style={{ background: confirming ? '#ff4444' : 'transparent', border: '1px solid #ff4444', color: confirming ? '#fff' : '#ff4444', padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1rem' }}
-            >
-              {confirming ? 'CONFIRM DELETE?' : 'DELETE'}
-            </button>
-          )}
-          <button onClick={onClose} type="button" style={{ background: 'transparent', border: `1px solid ${safeC.gray}`, color: safeC.gray, padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1rem' }}>CANCEL</button>
-          <button 
-            onClick={handleSave} 
-            disabled={saving}
-            type="button"
-            style={{ background: safeC.teal, border: 'none', color: '#000', padding: '8px 24px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', opacity: saving ? 0.5 : 1 }}
-          >
-            {saving ? 'SAVING...' : 'SAVE'}
-          </button>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', marginTop: 20 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {concert?.id && !confirming && <Btn variant="danger" onClick={() => setConfirming(true)}>Delete</Btn>}
+            {confirming && <><Btn variant="danger" onClick={() => onDelete(concert.id)}>Confirm</Btn><Btn variant="secondary" onClick={() => setConfirming(false)}>Cancel</Btn></>}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
+            <Btn onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Btn>
+          </div>
         </div>
       </div>
     </div>
   );
-}// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+}
+
+function ShareCard({ artist, shows, onClose }) {
+  const festCount=shows.filter(s=>s.is_festival).length, cities=[...new Set(shows.map(s=>s.city).filter(Boolean))], years=[...new Set(shows.map(s=>getYear(s.date)).filter(Boolean))].sort(), firstDate=fmtDate(shows[shows.length-1]?.date), lastDate=fmtDate(shows[0]?.date);
+  return (
+    <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,0.9)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20 }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="fade-in" style={{ width:'100%',maxWidth:420 }}>
+        <div style={{ background:`linear-gradient(135deg,${C.bg},${C.bgCard},${C.bgCardAlt})`,border:`1px solid ${C.teal}`,borderRadius:12,padding:'28px 24px',boxShadow:`0 0 40px ${C.tealGlow}` }}>
+          <div style={{ fontFamily:"'Space Mono',monospace",fontSize:8,letterSpacing:'0.25em',textTransform:'uppercase',color:C.tealDim,marginBottom:8 }}>🎸 Eric's Concert History</div>
+          <div style={{ fontFamily:"'Bebas Neue'",fontSize:'clamp(1.8rem,6vw,2.6rem)',color:C.white,lineHeight:1,marginBottom:16 }}>{artist}</div>
+          <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16 }}>
+            {[[shows.length,'Times Seen'],[festCount,'Festival Sets'],[shows.length-festCount,'Standalone'],[cities.length,cities.length===1?'City':'Cities']].map(([val,label])=>(
+              <div key={label} style={{ background:'rgba(255,255,255,0.04)',borderRadius:6,padding:'10px 12px',border:`1px solid ${C.border}` }}>
+                <div style={{ fontFamily:"'Bebas Neue'",fontSize:'1.8rem',color:C.teal,lineHeight:1 }}>{val}</div>
+                <div style={{ fontFamily:"'Space Mono',monospace",fontSize:7,color:C.gray,textTransform:'uppercase',marginTop:2 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display:'flex',flexWrap:'wrap',gap:3,marginBottom:12 }}>{years.map(y=><span key={y} style={{ fontFamily:"'Space Mono',monospace",fontSize:7,background:`${C.teal}22`,color:C.teal,border:`1px solid ${C.teal}44`,padding:'2px 5px',borderRadius:3 }}>{y}</span>)}</div>
+          <div style={{ fontFamily:"'Space Mono',monospace",fontSize:7,color:C.grayDim }}>First: {firstDate} · Last: {lastDate}</div>
+        </div>
+        <div style={{ display:'flex',gap:8,marginTop:12,justifyContent:'center' }}>
+          <button onClick={()=>navigator.clipboard?.writeText(`I've seen ${artist} ${shows.length} times. First: ${firstDate}. Last: ${lastDate}. #ConcertHistory`).then(()=>alert('Copied!'))} style={{ fontFamily:"'Space Mono',monospace",fontSize:9,textTransform:'uppercase',background:C.teal,color:C.bg,border:'none',borderRadius:4,padding:'8px 16px',cursor:'pointer' }}>📋 Copy Stats</button>
+          <button onClick={onClose} style={{ fontFamily:"'Space Mono',monospace",fontSize:9,textTransform:'uppercase',background:C.bgCard,color:C.gray,border:`1px solid ${C.border}`,borderRadius:4,padding:'8px 16px',cursor:'pointer' }}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── THEME SWITCHER ───────────────────────────────────────────────────────────
+function ThemeSwitcher() {
+  const { themeId, setThemeId } = useTheme();
+  const [open, setOpen] = useState(false);
+  const current = THEMES[themeId];
+
+  return (
+    <div style={{ position:'relative', display:'flex', alignItems:'center', padding:'0 12px', borderLeft:`1px solid ${C.border}`, flexShrink:0 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        title="Switch theme"
+        style={{ display:'flex', alignItems:'center', gap:7, background:'none', border:`1px solid ${C.border}`, borderRadius:20, padding:'5px 10px', cursor:'pointer', transition:'all 0.2s' }}
+        onMouseEnter={e => e.currentTarget.style.borderColor = C.teal}
+        onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
+      >
+        <div style={{ width:10, height:10, borderRadius:'50%', background:current.dot, boxShadow:`0 0 6px ${current.dot}` }} />
+        <span style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, letterSpacing:'0.1em', textTransform:'uppercase', whiteSpace:'nowrap' }}>{current.name}</span>
+        <span style={{ color:C.grayDim, fontSize:8 }}>{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div style={{ position:'absolute', top:'calc(100% + 8px)', right:0, background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:8, padding:8, minWidth:160, zIndex:300, boxShadow:`0 8px 32px rgba(0,0,0,0.6)` }}
+          className="fade-in">
+          <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:C.grayDim, letterSpacing:'0.15em', textTransform:'uppercase', padding:'4px 8px 8px', borderBottom:`1px solid ${C.border}`, marginBottom:6 }}>Theme</div>
+          {THEME_ORDER.map(id => {
+            const t = THEMES[id];
+            const isActive = id === themeId;
+            return (
+              <button key={id} onClick={() => { setThemeId(id); setOpen(false); }}
+                style={{ display:'flex', alignItems:'center', gap:10, width:'100%', background:isActive?`${t.dot}15`:'none', border:'none', borderRadius:4, padding:'8px 10px', cursor:'pointer', transition:'all 0.15s' }}
+                onMouseEnter={e => { if(!isActive)e.currentTarget.style.background=`${t.dot}0a`; }}
+                onMouseLeave={e => { if(!isActive)e.currentTarget.style.background='none'; }}>
+                <div style={{ width:12, height:12, borderRadius:'50%', background:t.dot, boxShadow:isActive?`0 0 8px ${t.dot}`:'none', flexShrink:0 }} />
+                <span style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:isActive?t.dot:C.gray, letterSpacing:'0.08em' }}>{t.name}</span>
+                {isActive && <span style={{ marginLeft:'auto', fontSize:10, color:t.dot }}>✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── TAB CONFIG ───────────────────────────────────────────────────────────────
+// [id, label, group, color]
+const TABS = [
+  ['dashboard','⚡ Dashboard',null,C.teal],
+  ['timeline','⏳ Timeline',null,C.cyan],
+  ['byDay','📅 By Day',null,C.teal],
+  ['byFest','🎪 By Festival','fest',C.gold],
+  ['passport','🗺️ Passport','fest',C.gold],
+  ['hof','🏆 Hall of Fame',null,C.purple],
+  ['vault','📋 Setlist Vault',null,C.green],
+['venues','📍 Venues',null,C.cyan],
+  ['poster','🎨 Poster Generator',null,'#ff6699'],  
+  ['browse','🔍 Browse','right',C.cyan],
+  ['manage','⚙️ Manage','right',C.gray],
+];
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   // ── THEME ────────────────────────────────────────────────────────────────────
   const [themeId, setThemeIdRaw] = useState(() => localStorage.getItem('concert-theme') || 'neon-noir');
@@ -3032,7 +3092,7 @@ export default function App() {
 
   // ── DATA STATE ───────────────────────────────────────────────────────────────
   const [concerts, setConcerts]         = useState([]);
-  const [artistGenres, setArtistGenres] = useState({});
+  const [artistGenres, setArtistGenres] = useState({}); // <── THIS WAS MISSING
   const [upcoming, setUpcoming]         = useState([]);
   const [loading, setLoading]           = useState(true);
   
@@ -3053,6 +3113,7 @@ export default function App() {
   const [page, setPage]                 = useState(1);
 
   // ── INITIAL FETCH ───────────────────────────────────────────────────────────
+  // This replaces your old useEffect to make sure genres load first
   useEffect(() => { 
     const init = async () => {
       setLoading(true);
@@ -3061,8 +3122,9 @@ export default function App() {
     };
     init();
   }, []);
-
   // ── DERIVED DATA ────────────────────────────────────────────────────────────
+  // ── DERIVED DATA ────────────────────────────────────────────────────────────
+  // This now pulls from the dedicated artist_genres table instead of concert rows
   const genreMap = useMemo(() => artistGenres, [artistGenres]);
 
   const allSetsList = useMemo(() => {
@@ -3075,6 +3137,7 @@ export default function App() {
   }, [concerts]);
 
   const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
+  const stateCounts = useMemo(() => { const m = {}; concerts.forEach(c => { if (c.state) m[c.state] = (m[c.state] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); }, [concerts]);
 
   const headerStats = useMemo(() => ({
     totalShows: concerts.length,
@@ -3084,6 +3147,7 @@ export default function App() {
     setlistCount: concerts.filter(c => c.has_setlist || c.has_setlist_names).length,
   }), [concerts, allSetsList]);
 
+  // Per-band genre counts (Now using the dedicated genre table)
   const genreStats = useMemo(() => {
     const counts = {};
     allSetsList.forEach(s => { 
@@ -3107,6 +3171,18 @@ export default function App() {
     return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
   }, [allSetsList]);
 
+  const festBreakdown = useMemo(() => {
+    const m = {};
+    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { m[c.festival_name] = (m[c.festival_name] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  }, [concerts]);
+
+  const passport = useMemo(() => {
+    const m = {};
+    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { if (!m[c.festival_name]) m[c.festival_name] = { name: c.festival_name, days: 0, years: new Set() }; m[c.festival_name].days++; const y = getYear(c.date); if (y) m[c.festival_name].years.add(y); });
+    return Object.values(m).map(f => ({ ...f, years: [...f.years].sort() })).sort((a, b) => b.days - a.days);
+  }, [concerts]);
+
   const festGroupings = useMemo(() => {
     const m = {};
     concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { const yr = getYear(c.date) || 'Unknown'; if (!m[c.festival_name]) m[c.festival_name] = { name: c.festival_name, years: {} }; if (!m[c.festival_name].years[yr]) m[c.festival_name].years[yr] = []; m[c.festival_name].years[yr].push(c); });
@@ -3129,9 +3205,28 @@ export default function App() {
     return d;
   }, [yearFilter, festFilter, genreFilter, search, artistGenres]);
 
+  const filteredSets = useMemo(() => {
+    const d = applyFilters(allSetsList, true);
+    return [...d].sort((a, b) => { const av = sortCol === 'artist' ? (a.artist || '').toLowerCase() : (String(a[sortCol] || '')).toLowerCase(); const bv = sortCol === 'artist' ? (b.artist || '').toLowerCase() : (String(b[sortCol] || '')).toLowerCase(); if (sortCol === 'date') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av); if (av < bv) return sortDir === 'asc' ? -1 : 1; if (av > bv) return sortDir === 'asc' ? 1 : -1; return 0; });
+  }, [allSetsList, applyFilters, sortCol, sortDir]);
+
+  const artistRows = useMemo(() => {
+    if (browseView !== 'artists') return [];
+    const m = {};
+    applyFilters(allSetsList, true).forEach(s => { if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; m[s.artist].shows.push(s); });
+    return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
+  }, [allSetsList, applyFilters, browseView]);
+
   const dayGroups = useMemo(() => applyFilters(concerts).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [concerts, applyFilters]);
+  const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE), totalPages = Math.ceil(filteredSets.length / PER_PAGE);
 
   // ── DB ACTIONS ──────────────────────────────────────────────────────────────
+
+  async function fetchInitialData() {
+    setLoading(true);
+    await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]);
+    setLoading(false);
+  }
 
   async function fetchConcerts() {
     const { data } = await supabase.from('concerts').select('*').order('date', { ascending: false });
@@ -3152,7 +3247,6 @@ export default function App() {
     if (data) setUpcoming(data);
   }
 
-  // 🟢 This function is already "future-proof" for your new photo field!
   async function handleSave(id, payload) {
     if (id) await supabase.from('concerts').update(payload).eq('id', id);
     else await supabase.from('concerts').insert([payload]);
@@ -3181,20 +3275,31 @@ export default function App() {
   }
 
   async function handleUpcomingSave(id, payload) {
-    const cleanPayload = {
-      artist: payload.artist,
-      venue: payload.venue,
-      date: payload.date,
-      status: payload.status,
-    };
-    if (id) {
-      await supabase.from('upcoming_concerts').update(cleanPayload).eq('id', id);
-    } else {
-      await supabase.from('upcoming_concerts').insert([cleanPayload]);
-    }
-    await fetchUpcoming();
-    setUpcomingModal(null);
+  const cleanPayload = {
+    artist: payload.artist,
+    venue: payload.venue,
+    date: payload.date,
+    status: payload.status,
+  };
+  if (id) {
+    const { data, error } = await supabase
+      .from('upcoming_concerts')
+      .update(cleanPayload)
+      .eq('id', id)
+      .select();
+    if (error) alert('Save failed: ' + error.message);
+    console.log('update result:', data, error);
+  } else {
+    const { data, error } = await supabase
+      .from('upcoming_concerts')
+      .insert([cleanPayload])
+      .select();
+    if (error) alert('Insert failed: ' + error.message);
+    console.log('insert result:', data, error);
   }
+  await fetchUpcoming();
+  setUpcomingModal(null);
+}
 
 async function handleUpcomingDelete(id) {
   if (window.confirm('Remove this show?')) {
