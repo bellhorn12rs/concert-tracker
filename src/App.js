@@ -1939,13 +1939,14 @@ function PersonalPolaroid({ src, venue, festival, date, isFestival }) {
   const [isFull, setIsFull] = useState(false);
   if (!src) return null;
 
-  // Dynamic Label: Priority to Festival Name, otherwise Venue
   const locationLabel = isFestival ? festival : (venue?.split(',')[0]);
   const displayCaption = `${locationLabel?.toUpperCase()} // ${fmtDateShort(date)}`;
 
   return (
     <>
+      {/* 1. THE SMALL THUMBNAIL */}
       <div 
+        onClick={() => setIsFull(true)}
         style={{
           padding: '10px 10px 32px 10px',
           background: '#fff',
@@ -1955,69 +1956,88 @@ function PersonalPolaroid({ src, venue, festival, date, isFestival }) {
           flexShrink: 0,
           border: '1px solid #ddd',
           zIndex: 10,
-          transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+          transition: 'all 0.3s ease',
           cursor: 'zoom-in',
           marginLeft: '20px' 
         }}
         onMouseEnter={(e) => { e.currentTarget.style.transform = 'rotate(0deg) scale(1.05)'; }}
         onMouseLeave={(e) => { e.currentTarget.style.transform = 'rotate(-2deg) scale(1)'; }}
-        onClick={() => setIsFull(true)}
       >
         <div style={{
           width: '100%',
           aspectRatio: '1/1',
           background: `url(${src}) center/cover no-repeat`,
-          borderRadius: '1px',
-          border: '1px solid rgba(0,0,0,0.05)'
+          border: '1px solid rgba(0,0,0,0.1)'
         }} />
         <div style={{ 
-          fontFamily: "'Permanent Marker', cursive", // Switch to a handwriting-style font if available, or stay with Mono
+          fontFamily: "'Space Mono', monospace", 
           fontSize: '9px', 
-          lineHeight: '1.2',
           color: '#333', 
           textAlign: 'center',
           marginTop: '12px',
-          opacity: 0.9,
+          fontWeight: 'bold'
         }}>
           {displayCaption}
         </div>
       </div>
 
-      {/* 📽 FULL SCREEN LIGHTBOX */}
+      {/* 2. THE FULL-SCREEN OVERLAY */}
       {isFull && (
         <div 
           onClick={() => setIsFull(false)}
           style={{
-            position: 'fixed', inset: 0, 
-            background: 'rgba(0,0,0,0.95)', 
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.96)', 
             zIndex: 99999, 
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'zoom-out', backdropFilter: 'blur(10px)',
-            animation: 'fadeIn 0.3s ease'
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'zoom-out',
+            padding: '40px'
           }}
         >
+          {/* THE BIG POLAROID FRAME */}
           <div style={{
-            background: '#fff', padding: '15px 15px 60px 15px',
-            boxShadow: '0 0 100px rgba(0,0,0,0.5)',
-            maxHeight: '90vh', maxWidth: '90vw',
-            transform: 'rotate(0deg)',
-            display: 'flex', flexDirection: 'column'
+            background: '#fff',
+            padding: '20px 20px 80px 20px',
+            boxShadow: '0 0 100px rgba(0,0,0,0.8)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            maxWidth: '90%',
+            maxHeight: '90%'
           }}>
             <img 
               src={src} 
-              style={{ maxHeight: '75vh', objectFit: 'contain', border: '1px solid #eee' }} 
-              alt="Memory" 
+              alt="Memory Full"
+              style={{ 
+                maxWidth: '100%', 
+                maxHeight: '70vh', // Keeps it from going off the bottom
+                display: 'block',
+                objectFit: 'contain',
+                border: '1px solid #eee'
+              }} 
             />
             <div style={{ 
-              fontFamily: "'Permanent Marker', cursive", 
-              fontSize: '2rem', 
-              color: '#333', 
-              textAlign: 'center', 
-              marginTop: '25px' 
+              fontFamily: "'Bebas Neue'", 
+              fontSize: '2.5rem', 
+              color: '#1a1a1a', 
+              marginTop: '30px',
+              textAlign: 'center'
             }}>
               {displayCaption}
             </div>
-            <div style={{ position: 'absolute', top: 20, right: 20, color: '#333', fontSize: '2rem', fontFamily: 'monospace' }}>✕</div>
+            
+            {/* CLOSE HINT */}
+            <div style={{ 
+              marginTop: '10px', 
+              fontFamily: "'Space Mono'", 
+              fontSize: '10px', 
+              color: '#999' 
+            }}>
+              CLICK ANYWHERE TO CLOSE
+            </div>
           </div>
         </div>
       )}
