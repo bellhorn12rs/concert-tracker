@@ -2055,29 +2055,41 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
 
 // ─── 4. MEDIA COMPONENTS (SCRAPBOOK EXPANSION) ───────────────────────────────
 
-// 📄 The "Taped-Up" Setlist Component (Official/Poster)
-function SetlistPaper({ src }) {
+/ 📄 The Upgraded "Taped-Up" Setlist (Handles Multiple)
+function SetlistPaper({ src, index = 0 }) {
   if (!src) return null;
+  // Stagger the tilt and offset for multiple setlists
+  const rotation = (index % 2 === 0 ? -1.5 : 1.5) + (index * 0.5);
+  const xOffset = index * -15;
+
   return (
     <div style={{
       width: '130px',
       height: '170px',
       background: '#fdfdfd',
       boxShadow: '2px 5px 15px rgba(0,0,0,0.4)',
-      transform: 'rotate(-1.5deg)',
+      transform: `rotate(${rotation}deg) translateX(${xOffset}px)`,
       padding: '5px',
       position: 'relative',
-      marginRight: '-25px', // Overlap with the Polaroid stack
+      marginRight: '-15px', 
       flexShrink: 0,
-      zIndex: 5,
-      border: '1px solid #eee'
+      zIndex: 5 + index,
+      border: '1px solid #eee',
+      transition: 'all 0.3s ease'
+    }}
+    onMouseEnter={(e) => { 
+      e.currentTarget.style.transform = `rotate(0deg) scale(1.1) translateY(-10px)`; 
+      e.currentTarget.style.zIndex = '1000';
+    }}
+    onMouseLeave={(e) => { 
+      e.currentTarget.style.transform = `rotate(${rotation}deg) translateX(${xOffset}px)`;
+      e.currentTarget.style.zIndex = 5 + index;
     }}>
-      {/* Blue Painters Tape Effect */}
+      {/* Tape stays centered on each paper */}
       <div style={{ 
         position: 'absolute', top: -10, left: '25%', width: '40px', height: '14px', 
         background: 'rgba(0, 110, 255, 0.45)', backdropFilter: 'blur(1px)', 
-        transform: 'rotate(2deg)', border: '1px solid rgba(0,100,255,0.2)',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        transform: 'rotate(2deg)', border: '1px solid rgba(0,100,255,0.2)'
       }} />
       
       <div style={{
@@ -2089,7 +2101,6 @@ function SetlistPaper({ src }) {
     </div>
   );
 }
-
 // 📸 Upgraded Polaroid (Handles Stacking & Full-Screen)
 function PersonalPolaroid({ src, caption, index = 0 }) {
   const [isFull, setIsFull] = useState(false);
@@ -2188,6 +2199,8 @@ function PersonalPolaroid({ src, caption, index = 0 }) {
 }
 // ─── 4. BY DAY TAB (SCRAPBOOK EDITION - EXPANDED) ───────────────────────────
 
+// ─── 4. BY DAY TAB (SCRAPBOOK EDITION - FULL MULTI-MEDIA) ────────────────────
+
 function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
@@ -2214,9 +2227,14 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
         {dayGroups.map((event, idx) => {
           
-          // 🟢 Prepare the Photo Array (Supports commas or single links)
+          // 🟢 Prepare the Photo Array (Supports multiple comma-separated links)
           const photos = event.personal_photo_url 
             ? event.personal_photo_url.split(',').map(u => u.trim()).filter(Boolean)
+            : [];
+          
+          // 🟢 Prepare the Setlist Array (Supports multiple comma-separated links)
+          const setlists = event.setlist_image_url
+            ? event.setlist_image_url.split(',').map(u => u.trim()).filter(Boolean)
             : [];
           
           const venueLabel = event.is_festival ? event.festival_name : event.venue;
@@ -2233,7 +2251,7 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
                 border: `1px solid ${C.border}`,
                 position: 'relative',
                 transition: 'all 0.3s ease',
-                overflow: 'visible' // Allows fanned photos to pop out
+                overflow: 'visible' // Allows fanned photos to pop out on hover
               }}
             >
               {/* 1. LEFT SIDE: THE ARTIFACT */}
@@ -2272,16 +2290,24 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'flex-end',
-                minWidth: '380px', // Increased width for the stack
+                minWidth: '400px', // Slightly wider to accommodate setlist + photo stacks
                 marginLeft: 'auto'
               }}>
                 
-                {/* 🟢 The Taped Setlist (New) */}
-                {event.setlist_image_url && (
-                  <SetlistPaper src={event.setlist_image_url} />
+                {/* 🟢 The Taped Setlist Stack (Updated to handle multiple) */}
+                {setlists.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {setlists.map((url, sIdx) => (
+                      <SetlistPaper 
+                        key={`${event.id}-setlist-${sIdx}`} 
+                        src={url} 
+                        index={sIdx} 
+                      />
+                    ))}
+                  </div>
                 )}
 
-                {/* 🟢 The Photo Stack (Upgraded) */}
+                {/* 🟢 The Photo Stack (Polaroids) */}
                 {photos.length > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     {photos.map((url, pIdx) => (
