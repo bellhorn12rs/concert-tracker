@@ -1669,65 +1669,41 @@ function TicketStubCard({ event, onEdit, genreMap, stubIdx = 0 }) {
 
 function WristbandCard({ event, genreMap, compact = false }) {
   const bands = event.bands || [];
-  const gi = getConcertGenreInfo(event, genreMap);
-  const wristColor = gi.mixed ? C.cyan : (gi.color || C.teal);
-  
-  // Logic: Split bands into columns for a "lineup" feel in the Festival Tab
   const STAGE_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green];
+  
+  // Logic: 1 column for Timeline/Venues, 3-4 columns for the Festival Tab
   const numCols = compact ? 1 : Math.max(1, bands.length <= 5 ? 3 : 4);
   const columns = Array.from({ length: numCols }, () => []);
   bands.forEach((b, i) => columns[i % numCols].push(b));
+  
+  const gi = getConcertGenreInfo(event, genreMap);
+  const wristColor = gi.mixed ? C.cyan : (gi.color || C.teal);
 
   return (
-    <div style={{ 
-      background: compact ? C.bgCardAlt : C.bgCard, 
-      border: `1px solid ${C.border}`, 
-      borderRadius: 6, 
-      marginBottom: compact ? 8 : 16, 
-      overflow: 'hidden' 
-    }}>
-      {/* 1. THE PHYSICAL WRISTBAND HEADER */}
+    <div style={{ background: compact ? C.bgCardAlt : C.bgCard, border: `1px solid ${C.border}`, borderRadius: 6, marginBottom: 12, overflow: 'hidden' }}>
+      {/* 1. PHYSICAL WRISTBAND HEADER */}
       <div style={{ padding: '12px 16px', background: hexToRgba(wristColor, 0.05), borderBottom: `1px solid ${C.border}` }}>
         <PhysicalWristband color={wristColor} label={event.festival_name} year={getYear(event.date)} />
-        
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.white }}>{fmtDate(event.date)}</div>
           <div style={{ display: 'flex', gap: 6 }}>
-             <GenreBadge genre={gi.genre} color={gi.color} mixed={gi.mixed} small />
-             <Badge color={wristColor}>{event.festival_name || 'FESTIVAL'}</Badge>
+            <GenreBadge genre={gi.genre} color={gi.color} mixed={gi.mixed} small />
+            <Badge color={wristColor}>{event.festival_name || 'FESTIVAL'}</Badge>
           </div>
         </div>
       </div>
-
-      {/* 2. THE RESTORED LINEUP GRID (Shows when NOT compact) */}
+      
+      {/* 2. THE SCHEDULE COLUMNS (Shows only on Festival Page) */}
       {!compact && columns.length > 0 && (
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: `repeat(${columns.length}, 1fr)`, 
-          borderTop: `1px solid ${C.border}`, 
-          background: 'rgba(0,0,0,0.15)' 
-        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns.length}, 1fr)`, borderTop: `1px solid ${C.border}`, background: 'rgba(0,0,0,0.2)' }}>
           {columns.map((stageBands, ci) => (
-            <div key={ci} style={{ 
-              borderRight: ci < columns.length - 1 ? `1px solid ${C.border}` : 'none', 
-              padding: '12px' 
-            }}>
-              {/* Colored "Stage" accent */}
-              <div style={{ height: 2, background: STAGE_COLORS[ci % STAGE_COLORS.length], marginBottom: 10, opacity: 0.7 }} />
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {stageBands.map((band, bi) => (
-                  <div key={bi} style={{ 
-                    fontSize: '0.75rem', 
-                    color: C.white, 
-                    lineHeight: 1.2, 
-                    fontFamily: "'Space Mono'",
-                    letterSpacing: '-0.2px'
-                  }}>
-                    • {band}
-                  </div>
-                ))}
-              </div>
+            <div key={ci} style={{ borderRight: ci < columns.length - 1 ? `1px solid ${C.border}` : 'none', padding: '12px' }}>
+              <div style={{ height: 2, background: STAGE_COLORS[ci % STAGE_COLORS.length], marginBottom: 10, opacity: 0.6 }} />
+              {stageBands.map((band, bi) => (
+                <div key={bi} style={{ fontSize: '0.78rem', color: C.white, marginBottom: 5, lineHeight: 1.2, fontFamily: "'Space Mono'", opacity: 0.9 }}>
+                  • {band}
+                </div>
+              ))}
             </div>
           ))}
         </div>
@@ -2176,6 +2152,7 @@ function VenueDonutCard({ concerts, onNavigateToVenues }) {
     </Card>
   );
 }
+// ─── VENUES TAB (COMPLETE STABILIZED VERSION) ─────────────────────────────────
 function VenuesTab({ concerts }) {
   const [sortBy, setSortBy] = useState('count');
   const [search, setSearch] = useState('');
@@ -2183,7 +2160,7 @@ function VenuesTab({ concerts }) {
 
   const toggle = (name) => setExpanded(p => ({ ...p, [name]: !p[name] }));
 
-  // ─── 1. YOUR COMPLETE METADATA LOGIC ───
+  // ─── 1. COMPLETE METADATA LOGIC ───
   const venues = useMemo(() => {
     const m = {};
     concerts.forEach(c => {
@@ -2219,7 +2196,6 @@ function VenuesTab({ concerts }) {
       const q = search.toLowerCase();
       list = list.filter(v => v.name.toLowerCase().includes(q) || v.city.toLowerCase().includes(q) || v.state.toLowerCase().includes(q));
     }
-    // Preserving all your specific sort modes
     if (sortBy === 'count') return [...list].sort((a, b) => b.count - a.count);
     if (sortBy === 'alpha') return [...list].sort((a, b) => a.name.localeCompare(b.name));
     if (sortBy === 'recent') return [...list].sort((a, b) => b.lastDate.localeCompare(a.lastDate));
@@ -2300,12 +2276,22 @@ function VenuesTab({ concerts }) {
                 <div style={{ borderTop: `1px solid ${C.border}`, padding: '40px 20px', background: 'rgba(0,0,0,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '40px' }}>
                   {v.shows.map((show, idx) => {
                     const hasImg = show.image_url && show.image_url.trim() !== "";
-                    const rotation = idx < 20 ? (idx % 2 === 0 ? 1.5 : -1.5) : 0; // Performance optimization
+                    const rotation = idx < 20 ? (idx % 2 === 0 ? 1.5 : -1.5) : 0; 
                     
                     return (
                       <div key={show.id} style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s' }}>
                         {show.is_festival ? (
-                          <PhysicalWristband color={C.gold} label={show.festival_name} year={getYear(show.date)} size="small" />
+                          /* 🎪 FESTIVAL ENTRY: Wristband + List */
+                          <div style={{ background: C.bgCardAlt, borderRadius: 6, border: `1px solid ${C.border}`, padding: '10px', overflow: 'hidden' }}>
+                            <PhysicalWristband color={C.gold} label={show.festival_name} year={getYear(show.date)} size="small" />
+                            <div style={{ marginTop: 10, borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
+                              {(show.bands || []).map((b, bi) => (
+                                <div key={bi} style={{ fontSize: '0.7rem', color: C.gray, fontFamily: "'Space Mono'", marginBottom: 3 }}>
+                                  {b.toUpperCase()}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         ) : hasImg ? (
                           /* 📸 SHOW PHOTO ARTIFACT */
                           <div style={{ background: '#fff', padding: '5px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', borderRadius: 2 }}>
