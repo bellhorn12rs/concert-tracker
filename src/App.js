@@ -2327,7 +2327,7 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
 const getDayColor = (baseHex, index) => {
   const variants = [1.0, 0.8, 0.6, 0.45, 0.3]; 
   return hexToRgba(baseHex || C.teal, variants[index % variants.length]);
-};.
+};
 
 // ─── 1. THE DRILL-DOWN (BYFESTTAB - THE BOX SET ARCHIVE) ────────────────────
 function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
