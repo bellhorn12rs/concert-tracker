@@ -1461,9 +1461,13 @@ function HallOfFame({ sets, genreMap, onShare }) {
     if (!selectedData) return [];
     const pics = [];
     selectedData.shows.forEach(s => {
-      const bandNames = s.has_setlist_names?.split(',').map(b => b.trim()) || [];
+      const bandNames = (s.has_setlist_names || '').split(',').map(b => b.trim()).filter(Boolean);
+      // Only include image if this artist is explicitly listed in has_setlist_names
+      const artistIsListed = bandNames.some(b => b.toLowerCase() === selectedData.artist.toLowerCase());
+      if (!artistIsListed) return;
       const imageLinks = (s.image_url || '').split(',').map(img => img.trim()).filter(Boolean);
-      const bandIdx = bandNames.indexOf(selectedData.artist);
+      const bandIdx = bandNames.findIndex(b => b.toLowerCase() === selectedData.artist.toLowerCase());
+      // Use the image at the matching index, or the first image if only one exists
       const img = imageLinks[bandIdx] || (imageLinks.length === 1 ? imageLinks[0] : null);
       if (img) pics.push({ url: img, date: s.date, venue: s.venue });
     });
@@ -1589,7 +1593,114 @@ function HallOfFame({ sets, genreMap, onShare }) {
   );
 }
 // ─── TICKET STUB CARD (By Day) ─────────────────────────────────────────────────
-function TicketStubCard({ event, onEdit, genreMap }) {
+// ─── TICKET STUB CARD (By Day) ─────────────────────────────────────────────────
+const STUB_TEMPLATES = [
+  { bg: '#e8dfa0', ink: '#1a1a1a', accent: '#8b0000', label: 'TICKETMASTER' },
+  { bg: '#d4e8d4', ink: '#1a2a1a', accent: '#004400', label: 'TICKETRON' },
+  { bg: '#d0d8f0', ink: '#0a0a2a', accent: '#000080', label: 'BASS TICKETS' },
+  { bg: '#f0d8cc', ink: '#2a0a00', accent: '#8b3300', label: 'GOOD TIMES' },
+  { bg: '#e8e8e8', ink: '#111', accent: '#444', label: 'CONCERT TICKET' },
+];
+
+function DecorativeTicket({ event, templateIdx }) {
+  const tpl = STUB_TEMPLATES[templateIdx % STUB_TEMPLATES.length];
+  const bands = event.bands || [];
+  const headliner = bands[0] || 'UNKNOWN ARTIST';
+  const dateStr = event.date || '';
+  const venue = event.venue || 'UNKNOWN VENUE';
+  const city = [event.city, event.state].filter(Boolean).join(', ') || '';
+
+  // Fake barcode bars
+  const barWidths = [2,1,3,1,2,1,4,1,2,3,1,2,1,3,2,1,2,1,3,1,2];
+
+  return (
+    <div style={{
+      width: 130,
+      flexShrink: 0,
+      background: tpl.bg,
+      borderRadius: 3,
+      overflow: 'hidden',
+      boxShadow: '2px 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.6)',
+      border: `1px solid ${hexToRgba(tpl.ink, 0.2)}`,
+      fontFamily: "'Courier New', Courier, monospace",
+      color: tpl.ink,
+      position: 'relative',
+      transform: 'rotate(-1.5deg)',
+      userSelect: 'none',
+    }}>
+      {/* Top color bar */}
+      <div style={{ background: tpl.accent, height: 6 }} />
+
+      {/* Issuer label */}
+      <div style={{
+        padding: '4px 6px 0',
+        fontSize: 6,
+        fontWeight: 900,
+        letterSpacing: '0.15em',
+        color: tpl.accent,
+        opacity: 0.8,
+        textTransform: 'uppercase',
+      }}>
+        {tpl.label}
+      </div>
+
+      {/* Headliner */}
+      <div style={{
+        padding: '2px 6px',
+        fontSize: 11,
+        fontWeight: 900,
+        lineHeight: 1.1,
+        textTransform: 'uppercase',
+        letterSpacing: '-0.5px',
+        color: tpl.ink,
+        wordBreak: 'break-word',
+      }}>
+        {headliner.length > 14 ? headliner.slice(0, 14) + '…' : headliner}
+      </div>
+
+      {/* Venue & date */}
+      <div style={{ padding: '2px 6px', fontSize: 6, lineHeight: 1.4, opacity: 0.75 }}>
+        <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{venue.length > 18 ? venue.slice(0,18)+'…' : venue}</div>
+        {city && <div>{city.toUpperCase()}</div>}
+        <div>{fmtDateShort(dateStr).toUpperCase()}</div>
+      </div>
+
+      {/* Price line */}
+      <div style={{
+        margin: '3px 6px',
+        paddingTop: 3,
+        borderTop: `1px dashed ${hexToRgba(tpl.ink, 0.3)}`,
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontSize: 6,
+        opacity: 0.7,
+      }}>
+        <span>PRICE: COMPLIMENTARY</span>
+        <span>GA</span>
+      </div>
+
+      {/* Perforation line */}
+      <div style={{ borderTop: `1px dashed ${hexToRgba(tpl.ink, 0.25)}`, margin: '3px 0' }} />
+
+      {/* Barcode */}
+      <div style={{ padding: '2px 6px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+        <div style={{ display: 'flex', gap: '1px', alignItems: 'flex-end' }}>
+          {barWidths.map((w, i) => (
+            <div key={i} style={{ width: w, height: i % 3 === 0 ? 18 : 14, background: tpl.ink, opacity: 0.85 }} />
+          ))}
+        </div>
+        <div style={{ fontSize: 5, letterSpacing: '0.1em', opacity: 0.5 }}>
+          {String(event.id || '').slice(0,12).toUpperCase() || '000000000000'}
+        </div>
+      </div>
+
+      {/* Bottom color bar */}
+      <div style={{ background: tpl.accent, height: 4, opacity: 0.5 }} />
+    </div>
+  );
+}
+
+function TicketStubCard({ event, onEdit, genreMap, stubIdx = 0 }) {
   const bands = event.bands||[];
   const hasSetlist = event.has_setlist||(event.has_setlist_names?.trim());
   const gi = getConcertGenreInfo(event, genreMap);
@@ -1600,35 +1711,13 @@ function TicketStubCard({ event, onEdit, genreMap }) {
   return (
     <div className="ticket-hover" data-date={event.date}
       onClick={() => onEdit && onEdit(event)}
-      style={{ display:'flex', marginBottom:10, cursor:'pointer', filter:`drop-shadow(0 4px 12px rgba(0,0,0,0.5))` }}>
+      style={{ display:'flex', marginBottom:10, cursor:'pointer', filter:`drop-shadow(0 4px 12px rgba(0,0,0,0.5))`, gap: 10 }}>
+
+      {/* Decorative vintage ticket stub */}
+      <DecorativeTicket event={event} templateIdx={stubIdx} />
 
       {/* Main ticket body */}
       <div style={{ flex:1, background:`linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(borderColor,0.08)})`, border:`1px solid ${borderColor}44`, borderRight:'none', borderRadius:'6px 0 0 6px', padding:'12px 16px', position:'relative', overflow:'hidden' }}>
-        
-        {/* 📸 GIG PHOTO PREVIEW (Polaroid Style) */}
-        {event.image_url && (
-          <div style={{
-            position: 'absolute',
-            right: 12,
-            top: '50%',
-            transform: 'translateY(-50%) rotate(3deg)',
-            width: 52,
-            height: 52,
-            padding: '3px 3px 10px 3px',
-            background: '#fff',
-            boxShadow: '0 4px 10px rgba(0,0,0,0.4)',
-            border: '1px solid #ddd',
-            zIndex: 10,
-            pointerEvents: 'none' 
-          }}>
-            <img 
-              src={event.image_url} 
-              alt="Gig" 
-              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '1px' }} 
-              onError={(e) => e.target.parentElement.style.display = 'none'}
-            />
-          </div>
-        )}
 
         {/* Background watermark */}
         <div style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', fontFamily:"'Bebas Neue'", fontSize:'5rem', color:'rgba(255,255,255,0.02)', lineHeight:1, userSelect:'none', whiteSpace:'nowrap' }}>ADMIT ONE</div>
@@ -1646,7 +1735,7 @@ function TicketStubCard({ event, onEdit, genreMap }) {
         </div>
 
         {/* Artist names */}
-        <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:8, position: 'relative', zIndex: 2, maxWidth: '85%' }}>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:8, position: 'relative', zIndex: 2 }}>
           {bands.map((b,i) => {
             const bg = genreMap[b] ? GENRE_COLORS[genreMap[b]] : null;
             return <span key={i} style={{ fontSize:i===0?'1rem':'0.78rem', fontFamily:i===0?"'Bebas Neue'":"'Space Mono',monospace", color:bg||C.white, letterSpacing:i===0?'0.06em':'0', fontWeight:i===0?900:400 }}>{b}{i<bands.length-1&&i!==0?' •':''}</span>;
@@ -2185,7 +2274,7 @@ function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, 
               
               {event.is_festival
                 ? <WristbandCard event={event} genreMap={genreMap} />
-                : <TicketStubCard event={event} onEdit={onEdit} genreMap={genreMap} />
+                : <TicketStubCard event={event} onEdit={onEdit} genreMap={genreMap} stubIdx={dayGroups.indexOf(event)} />
               }
             </div>
           ))
@@ -2278,9 +2367,27 @@ function ByFestTab({ festGroupings, genreMap = {} }) {
 }
 
 // ─── PASSPORT TAB ─────────────────────────────────────────────────────────────
-function PassportTab({ passport, onNavigateToFest }) {
-  return (
+function PassportTab({ passport, genreStats, onNavigateToFest }) {  return (
     <div style={{ padding:'24px 0' }} className="fade-in">
+      {genreStats && genreStats.length >= 3 && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 40 }}>
+          <Card neon style={{ display: 'flex', gap: 32, alignItems: 'center', padding: 32, maxWidth: 600, width: '100%' }}>
+            <SetlistDNA genreScores={Object.fromEntries(genreStats.slice(0,6).map(g => [g.name, Math.round((g.count/(genreStats[0]?.count||1))*100)]))} />
+            <div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.white, marginBottom: 8 }}>Your Sonic DNA</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, lineHeight: 1.8 }}>
+                {genreStats.slice(0,4).map(g => (
+                  <div key={g.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: g.color }} />
+                    <span style={{ color: g.color }}>{g.name}</span>
+                    <span style={{ color: C.grayDim }}>— {g.count} sets</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
       <div style={{ fontFamily:"'Space Mono',monospace", fontSize:10, color:C.gray, marginBottom:20, letterSpacing:'0.1em', textTransform:'uppercase' }}>Your festival attendance record — click any card to view full history</div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:14 }}>
         {passport.map(f => (
@@ -2389,6 +2496,192 @@ function BrowseTab({ browseView, setBrowseView, search, setSearch, yearFilter, s
   );
 }
 
+// ─── VENUES TAB ───────────────────────────────────────────────────────────────
+function VenuesTab({ concerts }) {
+  const [sortBy, setSortBy] = useState('count');
+  const [search, setSearch] = useState('');
+
+  const venues = useMemo(() => {
+    const m = {};
+    concerts.forEach(c => {
+      if (!c.venue) return;
+      const key = c.venue.trim();
+      if (!m[key]) {
+        m[key] = {
+          name: key,
+          city: c.city || '',
+          state: c.state || '',
+          count: 0,
+          years: new Set(),
+          artists: new Set(),
+          festivals: 0,
+          shows: [],
+          firstDate: c.date,
+          lastDate: c.date,
+        };
+      }
+      m[key].count++;
+      if (c.date < m[key].firstDate) m[key].firstDate = c.date;
+      if (c.date > m[key].lastDate) m[key].lastDate = c.date;
+      const yr = getYear(c.date);
+      if (yr) m[key].years.add(yr);
+      (c.bands || []).forEach(b => m[key].artists.add(b));
+      if (c.is_festival) m[key].festivals++;
+      m[key].shows.push(c);
+    });
+
+    return Object.values(m).map(v => ({
+      ...v,
+      years: [...v.years].sort(),
+      artists: [...v.artists],
+    }));
+  }, [concerts]);
+
+  const filtered = useMemo(() => {
+    let list = venues;
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(v => v.name.toLowerCase().includes(q) || v.city.toLowerCase().includes(q) || v.state.toLowerCase().includes(q));
+    }
+    if (sortBy === 'count') return [...list].sort((a, b) => b.count - a.count);
+    if (sortBy === 'alpha') return [...list].sort((a, b) => a.name.localeCompare(b.name));
+    if (sortBy === 'recent') return [...list].sort((a, b) => b.lastDate.localeCompare(a.lastDate));
+    if (sortBy === 'first') return [...list].sort((a, b) => a.firstDate.localeCompare(b.firstDate));
+    return list;
+  }, [venues, sortBy, search]);
+
+  const topVenue = filtered[0];
+  const totalVenues = venues.length;
+  const totalCities = new Set(venues.map(v => v.city).filter(Boolean)).size;
+
+  const VENUE_MEDALS = ['🥇','🥈','🥉'];
+
+  return (
+    <div style={{ padding: '24px 0' }} className="fade-in">
+      {/* Header */}
+      <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(2.5rem,6vw,4rem)', color: C.white, letterSpacing: '0.05em' }}>
+          📍 THE <span style={{ color: C.teal }}>VENUE LOG</span>
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, letterSpacing: '0.2em', marginTop: 4 }}>
+          {totalVenues} VENUES · {totalCities} CITIES
+        </div>
+      </div>
+
+      {/* Top 3 podium */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 40 }}>
+        {filtered.slice(0, 3).map((v, i) => {
+          const colors = [C.gold, C.gray, C.cyan];
+          const sizes = ['2rem', '1.6rem', '1.4rem'];
+          return (
+            <div key={v.name} style={{
+              background: `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(colors[i], 0.08)})`,
+              border: `1px solid ${hexToRgba(colors[i], 0.5)}`,
+              borderRadius: 8,
+              padding: 20,
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: `0 0 20px ${hexToRgba(colors[i], 0.15)}`,
+            }}>
+              <div style={{ position: 'absolute', right: -10, bottom: -20, fontFamily: "'Bebas Neue'", fontSize: '6rem', color: hexToRgba(colors[i], 0.05), pointerEvents: 'none' }}>{v.count}×</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: colors[i], marginBottom: 8 }}>{VENUE_MEDALS[i]} #{i + 1}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: sizes[i], color: C.white, lineHeight: 1.1, marginBottom: 6 }}>{v.name}</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginBottom: 12 }}>{[v.city, v.state].filter(Boolean).join(', ')}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: colors[i], lineHeight: 1 }}>{v.count}<span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, marginLeft: 4 }}>shows</span></div>
+              <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <Badge color={colors[i]}>{v.artists.length} artists</Badge>
+                {v.festivals > 0 && <Badge color={C.gold}>{v.festivals} fest days</Badge>}
+              </div>
+              <div style={{ marginTop: 10, fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>
+                {fmtDateShort(v.firstDate)} → {fmtDateShort(v.lastDate)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
+        <input
+          placeholder="Search venues or cities..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ ...inputSt, flex: '1 1 240px' }}
+        />
+        <div style={{ display: 'flex', background: C.bgCardAlt, borderRadius: 4, padding: 2, border: `1px solid ${C.border}` }}>
+          {[['count','Most Visited'],['alpha','A–Z'],['recent','Most Recent'],['first','Oldest First']].map(([val, label]) => (
+            <button key={val} onClick={() => setSortBy(val)} style={{
+              padding: '5px 12px', fontSize: 9, fontFamily: "'Space Mono'", letterSpacing: '0.08em',
+              textTransform: 'uppercase', background: sortBy === val ? C.teal : 'transparent',
+              color: sortBy === val ? C.bg : C.gray, border: 'none', cursor: 'pointer', borderRadius: 3,
+            }}>{label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Full venue list */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {filtered.map((v, i) => {
+          const pct = Math.round((v.count / (filtered[0]?.count || 1)) * 100);
+          const isTop = i < 3;
+          const rowColor = isTop ? [C.gold, C.gray, C.cyan][i] : C.teal;
+          return (
+            <div key={v.name} style={{
+              background: C.bgCard,
+              border: `1px solid ${isTop ? hexToRgba(rowColor, 0.4) : C.border}`,
+              borderLeft: `4px solid ${rowColor}`,
+              borderRadius: 6,
+              padding: '12px 16px',
+              position: 'relative',
+              overflow: 'hidden',
+              transition: 'all 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = rowColor; e.currentTarget.style.boxShadow = `0 0 12px ${hexToRgba(rowColor, 0.2)}`; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = isTop ? hexToRgba(rowColor, 0.4) : C.border; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              {/* Progress bar background */}
+              <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: hexToRgba(rowColor, 0.04), pointerEvents: 'none' }} />
+
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 16 }}>
+                {/* Rank */}
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: rowColor, width: 28, flexShrink: 0, textAlign: 'center' }}>
+                  {i < 3 ? VENUE_MEDALS[i] : `#${i + 1}`}
+                </div>
+
+                {/* Name + location */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.white, lineHeight: 1, marginBottom: 2 }}>{v.name}</div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray }}>{[v.city, v.state].filter(Boolean).join(', ')}</div>
+                </div>
+
+                {/* Years */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, maxWidth: 140, justifyContent: 'flex-end' }}>
+                  {v.years.slice(-6).map(yr => (
+                    <span key={yr} style={{ fontFamily: "'Space Mono'", fontSize: 7, background: hexToRgba(rowColor, 0.12), color: rowColor, border: `1px solid ${hexToRgba(rowColor, 0.3)}`, padding: '1px 4px', borderRadius: 2 }}>{yr}</span>
+                  ))}
+                  {v.years.length > 6 && <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>+{v.years.length - 6}</span>}
+                </div>
+
+                {/* Artists count */}
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: rowColor, lineHeight: 1 }}>{v.count}</div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, textTransform: 'uppercase' }}>shows</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {!filtered.length && (
+        <div style={{ textAlign: 'center', padding: 80, color: C.grayDim }}>
+          <div style={{ fontSize: '3rem', marginBottom: 16 }}>📍</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem' }}>NO VENUES FOUND</div>
+        </div>
+      )}
+    </div>
+  );
+}
 // ─── POSTER GENERATOR ─────────────────────────────────────────────────────────
 const POSTER_TEMPLATES = [
   { id:0, name:'COACHELLA GRID', bg:'#f5f0e8', accent:'#1a1a2e', accent2:'#8b0000', font:'Bebas Neue', style:'grid', dark:false },
@@ -2909,7 +3202,8 @@ const TABS = [
   ['passport','🗺️ Passport','fest',C.gold],
   ['hof','🏆 Hall of Fame',null,C.purple],
   ['vault','📋 Setlist Vault',null,C.green],
-  ['poster','🎨 Poster Generator',null,'#ff6699'],
+['venues','📍 Venues',null,C.cyan],
+  ['poster','🎨 Poster Generator',null,'#ff6699'],  
   ['browse','🔍 Browse','right',C.cyan],
   ['manage','⚙️ Manage','right',C.gray],
 ];
@@ -3219,25 +3513,68 @@ async function handleUpcomingDelete(id) {
         </div>
 
         {/* ── NAV ── */}
-        <nav style={{ background: C.bgCard, borderBottom: `1px solid ${C.teal}22`, display: 'flex', position: 'sticky', top: 0, zIndex: 200 }}>
-          <div style={{ display: 'flex', flex: 1, overflowX: 'auto', scrollbarWidth: 'none' }}>
-            {TABS.filter(([,, g]) => g !== 'right').map(([id, label, group, color]) => {
-              const isActive = activeTab === id;
-              const isFestGroup = group === 'fest';
+        <div style={{ display: 'flex', flex: 1, overflowX: 'auto', scrollbarWidth: 'none', alignItems: 'stretch' }}>
+            {(() => {
+              const nonRightTabs = TABS.filter(([,, g]) => g !== 'right');
+              const festTabs = nonRightTabs.filter(([,, g]) => g === 'fest');
+              const otherTabs = nonRightTabs.filter(([,, g]) => g !== 'fest');
+
+              const renderTab = ([id, label, group, color]) => {
+                const isActive = activeTab === id;
+                return (
+                  <button key={id} onClick={() => setActiveTab(id)}
+                    style={{
+                      fontFamily: "'Space Mono'", fontSize: 10,
+                      color: isActive ? color : C.gray,
+                      background: 'none', border: 'none',
+                      borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
+                      padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                      position: 'relative', transition: 'color 0.2s'
+                    }}>
+                    {label}
+                    {isActive && <div className="tab-active" style={{ '--tab-color': color }} />}
+                  </button>
+                );
+              };
+
               return (
-                <button key={id} onClick={() => setActiveTab(id)}
-                  style={{
-                    fontFamily: "'Space Mono'", fontSize: 10, color: isActive ? color : C.gray,
-                    background: isFestGroup ? 'rgba(255,204,0,0.04)' : 'none', border: 'none',
-                    borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
-                    padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
-                    position: 'relative', transition: 'color 0.2s'
+                <>
+                  {otherTabs.map(renderTab)}
+
+                  {/* ── FESTIVAL ZONE ── */}
+                  <div style={{
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'stretch',
+                    border: `1.5px solid ${C.gold}`,
+                    borderRadius: 4,
+                    margin: '4px 6px',
+                    boxShadow: `0 0 10px ${hexToRgba(C.gold, 0.4)}, 0 0 20px ${hexToRgba(C.gold, 0.2)}, inset 0 0 10px ${hexToRgba(C.gold, 0.05)}`,
+                    background: hexToRgba(C.gold, 0.06),
                   }}>
-                  {label}
-                  {isActive && <div className="tab-active" style={{ '--tab-color': color }} />}
-                </button>
+                    {/* FESTIVAL ZONE label */}
+                    <div style={{
+                      position: 'absolute',
+                      top: -8,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      background: C.bgCard,
+                      padding: '0 6px',
+                      fontFamily: "'Space Mono'",
+                      fontSize: 6,
+                      color: C.gold,
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      textShadow: `0 0 8px ${hexToRgba(C.gold, 0.8)}`,
+                    }}>
+                      ★ FESTIVAL ZONE ★
+                    </div>
+                    {festTabs.map(renderTab)}
+                  </div>
+                </>
               );
-            })}
+            })()}
           </div>
           <div style={{ display: 'flex', borderLeft: `1px solid ${C.border}`, background: C.bgCard }}>
             {TABS.filter(([,, g]) => g === 'right').map(([id, label,, color]) => {
@@ -3344,11 +3681,41 @@ async function handleUpcomingDelete(id) {
                     })}
                   </div>
                 </Card>
-                <Card neon style={{ display: 'flex', flexDirection: 'column' }}>
+                <Card neon style={{ display: 'flex', flexDirection: 'column', minHeight: 420 }}>
                   <CardTitle>Setlist Spotlight 📋</CardTitle>
-                  <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
+                  </div>
+                  <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'center' }}>
+                    <button onClick={() => setActiveTab('vault')} style={{ background: 'none', border: `1px solid ${C.teal}44`, color: C.tealDim, fontFamily: "'Space Mono'", fontSize: 8, padding: '5px 16px', borderRadius: 3, cursor: 'pointer', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                      VIEW FULL VAULT ↗
+                    </button>
+                  </div>
                 </Card>
               </div>
+              {genreStats.length >= 3 && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, marginTop: 16, marginBottom: 0 }}>
+                  <Card neon style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <CardTitle style={{ textAlign: 'center' }}>Genre DNA 🧬</CardTitle>
+                    <SetlistDNA genreScores={Object.fromEntries(genreStats.slice(0,6).map(g => [g.name, Math.round((g.count / (genreStats[0]?.count||1)) * 100)]))} />
+                  </Card>
+                  <Card neon style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 24 }}>
+                    <CardTitle>Your Sonic Fingerprint</CardTitle>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {genreStats.slice(0,6).map((g, i) => (
+                        <div key={g.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: g.color, boxShadow: `0 0 6px ${g.color}`, flexShrink: 0 }} />
+                          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, width: 100, flexShrink: 0 }}>{g.name}</div>
+                          <div style={{ flex: 1, height: 4, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${Math.round((g.count/(genreStats[0]?.count||1))*100)}%`, background: g.color, borderRadius: 2, transition: 'width 1s ease' }} />
+                          </div>
+                          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: g.color, width: 30, textAlign: 'right' }}>{g.count}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                </div>
+              )}
               <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
             </div>
           )}
@@ -3382,9 +3749,10 @@ async function handleUpcomingDelete(id) {
 
           {/* ════ OTHER TABS ════ */}
           {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} />}
-          {activeTab === 'passport' && <PassportTab passport={passport} onNavigateToFest={name => { setActiveTab('byFest'); setTimeout(() => { const el = document.getElementById(`fest-${name.replace(/\s+/g, '-')}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); }} />}
-          {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
+{activeTab === 'passport' && <PassportTab passport={passport} genreStats={genreStats} onNavigateToFest={name => { setActiveTab('byFest'); setTimeout(() => { const el = document.getElementById(`fest-${name.replace(/\s+/g, '-')}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); }} />}          {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
           {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
+                    {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
+
           {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
           {activeTab === 'browse' && (
             <BrowseTab browseView={browseView} setBrowseView={setBrowseView} search={search} setSearch={setSearch} yearFilter={yearFilter} setYearFilter={setYearFilter} festFilter={festFilter} setFestFilter={setFestFilter} genreFilter={genreFilter} setGenreFilter={setGenreFilter} sortCol={sortCol} setSortCol={setSortCol} sortDir={sortDir} setSortDir={setSortDir} paged={paged} page={page} setPage={setPage} totalPages={totalPages} artistRows={artistRows} years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} onEdit={setEditTarget} onSetGenre={handleSetGenre} genreMap={artistGenres} />
