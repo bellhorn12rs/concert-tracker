@@ -1671,7 +1671,7 @@ function WristbandCard({ event, genreMap, compact = false }) {
   const bands = event.bands || [];
   const STAGE_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green];
   
-  // Logic: 1 column for Timeline/Venues, 3-4 columns for the Festival Tab
+  // Logic: Multi-column grid for Festival Tab, single column/compact for elsewhere
   const numCols = compact ? 1 : Math.max(1, bands.length <= 5 ? 3 : 4);
   const columns = Array.from({ length: numCols }, () => []);
   bands.forEach((b, i) => columns[i % numCols].push(b));
@@ -1680,7 +1680,7 @@ function WristbandCard({ event, genreMap, compact = false }) {
   const wristColor = gi.mixed ? C.cyan : (gi.color || C.teal);
 
   return (
-    <div style={{ background: compact ? C.bgCardAlt : C.bgCard, border: `1px solid ${C.border}`, borderRadius: 6, marginBottom: 12, overflow: 'hidden' }}>
+    <div style={{ background: compact ? C.bgCardAlt : C.bgCard, border: `1px solid ${C.border}`, borderRadius: 6, marginBottom: compact ? 8 : 16, overflow: 'hidden' }}>
       {/* 1. PHYSICAL WRISTBAND HEADER */}
       <div style={{ padding: '12px 16px', background: hexToRgba(wristColor, 0.05), borderBottom: `1px solid ${C.border}` }}>
         <PhysicalWristband color={wristColor} label={event.festival_name} year={getYear(event.date)} />
@@ -1693,17 +1693,20 @@ function WristbandCard({ event, genreMap, compact = false }) {
         </div>
       </div>
       
-      {/* 2. THE SCHEDULE COLUMNS (Shows only on Festival Page) */}
+      {/* 2. THE LINEUP GRID (Restored for Festival Tab) */}
       {!compact && columns.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns.length}, 1fr)`, borderTop: `1px solid ${C.border}`, background: 'rgba(0,0,0,0.2)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns.length}, 1fr)`, borderTop: `1px solid ${C.border}`, background: 'rgba(0,0,0,0.15)' }}>
           {columns.map((stageBands, ci) => (
             <div key={ci} style={{ borderRight: ci < columns.length - 1 ? `1px solid ${C.border}` : 'none', padding: '12px' }}>
-              <div style={{ height: 2, background: STAGE_COLORS[ci % STAGE_COLORS.length], marginBottom: 10, opacity: 0.6 }} />
-              {stageBands.map((band, bi) => (
-                <div key={bi} style={{ fontSize: '0.78rem', color: C.white, marginBottom: 5, lineHeight: 1.2, fontFamily: "'Space Mono'", opacity: 0.9 }}>
-                  • {band}
-                </div>
-              ))}
+              {/* Stage Accent Line */}
+              <div style={{ height: 2, background: STAGE_COLORS[ci % STAGE_COLORS.length], marginBottom: 10, opacity: 0.7 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {stageBands.map((band, bi) => (
+                  <div key={bi} style={{ fontSize: '0.75rem', color: C.white, lineHeight: 1.2, fontFamily: "'Space Mono'", opacity: 0.9 }}>
+                    • {band}
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -1711,7 +1714,6 @@ function WristbandCard({ event, genreMap, compact = false }) {
     </div>
   );
 }
-
 // ─── 2. SETLIST VAULT (CLEAN IMAGE LOGIC) ────────────────────────────────────
 function SetlistVaultTab({ concerts, genreMap }) {
   const setlists = useMemo(() => {
@@ -1913,59 +1915,66 @@ function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, 
     </div>
   );
 }
-// ─── BY FESTIVAL TAB ──────────────────────────────────────────────────────────
 function ByFestTab({ festGroupings, genreMap = {} }) {
   const [collapsed, setCollapsed] = useState({});
-  const toggle = (name,year) => setCollapsed(p=>({...p,[`${name}-${year}`]:!p[`${name}-${year}`]}));
-  const FEST_COLORS = [C.teal,C.cyan,C.purple,C.gold,C.green,'#ff6699','#ff4400','#a2ff00'];
+  const toggle = (name, year) => setCollapsed(p => ({ ...p, [`${name}-${year}`]: !p[`${name}-${year}`] }));
+  const FEST_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699', '#ff4400', '#a2ff00'];
+
   return (
-    <div style={{ marginTop:20 }} className="fade-in">
-      {festGroupings.map((fest,fi) => {
-        const color=FEST_COLORS[fi%FEST_COLORS.length];
-        const allShows=Object.values(fest.years).flat();
-        const yearsSorted=Object.keys(fest.years).sort((a,b)=>b.localeCompare(a));
-        const firstYear=yearsSorted[yearsSorted.length-1], lastYear=yearsSorted[0];
-        const uniqueArtists=new Set(allShows.flatMap(s=>s.bands||[])).size;
+    <div style={{ marginTop: 20 }} className="fade-in">
+      {festGroupings.map((fest, fi) => {
+        const color = FEST_COLORS[fi % FEST_COLORS.length];
+        const allShows = Object.values(fest.years).flat();
+        const yearsSorted = Object.keys(fest.years).sort((a, b) => b.localeCompare(a));
+        const firstYear = yearsSorted[yearsSorted.length - 1], lastYear = yearsSorted[0];
+        const uniqueArtists = new Set(allShows.flatMap(s => s.bands || [])).size;
+
         return (
-          <div key={fest.name} style={{ marginBottom:48 }}>
-            <div id={`fest-${fest.name.replace(/\s+/g,'-')}`} style={{ position:'relative', borderRadius:12, overflow:'hidden', marginBottom:20, background:`linear-gradient(135deg,${hexToRgba(color,0.12)},${C.bgCard})`, border:`1px solid ${hexToRgba(color,0.5)}`, boxShadow:`0 0 40px ${hexToRgba(color,0.2)},0 4px 20px rgba(0,0,0,0.6)`, padding:'32px 36px' }}>
-              <div style={{ position:'absolute', top:-60, right:-60, width:300, height:300, background:`radial-gradient(circle,${hexToRgba(color,0.15)},transparent)`, pointerEvents:'none' }} />
-              <div style={{ position:'absolute', left:0, top:0, bottom:0, width:4, background:`linear-gradient(to bottom,${color},${hexToRgba(color,0.2)})`, borderRadius:'12px 0 0 12px' }} />
-              <div style={{ position:'relative', zIndex:1 }}>
-                <div style={{ fontFamily:"'Space Mono',monospace", fontSize:9, letterSpacing:'0.3em', textTransform:'uppercase', color:hexToRgba(color,0.8), marginBottom:10 }}>🎪 FESTIVAL PASSPORT</div>
-                <div style={{ fontFamily:"'Bebas Neue'", fontSize:'clamp(2.5rem,6vw,4.5rem)', letterSpacing:'0.06em', color:C.white, lineHeight:1, marginBottom:16, textShadow:`0 0 30px ${hexToRgba(color,0.4)}` }}>{fest.name}</div>
-                <div style={{ display:'flex', flexWrap:'wrap', gap:24, marginBottom:20 }}>
-                  {[[allShows.length,allShows.length===1?'DAY':'DAYS ATTENDED'],[yearsSorted.length,yearsSorted.length===1?'YEAR':'YEARS'],[uniqueArtists,'UNIQUE ARTISTS'],[firstYear===lastYear?firstYear:`${firstYear}–${lastYear}`,'SPAN']].map(([val,label]) => (
-                    <div key={label}><div style={{ fontFamily:"'Bebas Neue'", fontSize:'2rem', color, lineHeight:1 }}>{val}</div><div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, textTransform:'uppercase', letterSpacing:'0.12em', marginTop:2 }}>{label}</div></div>
+          <div key={fest.name} style={{ marginBottom: 48 }}>
+            {/* Festival Passport Header (No changes to your styles) */}
+            <div id={`fest-${fest.name.replace(/\s+/g, '-')}`} style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', marginBottom: 20, background: `linear-gradient(135deg,${hexToRgba(color, 0.12)},${C.bgCard})`, border: `1px solid ${hexToRgba(color, 0.5)}`, boxShadow: `0 0 40px ${hexToRgba(color, 0.2)},0 4px 20px rgba(0,0,0,0.6)`, padding: '32px 36px' }}>
+              <div style={{ position: 'absolute', top: -60, right: -60, width: 300, height: 300, background: `radial-gradient(circle,${hexToRgba(color, 0.15)},transparent)`, pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: `linear-gradient(to bottom,${color},${hexToRgba(color, 0.2)})`, borderRadius: '12px 0 0 12px' }} />
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: '0.3em', textTransform: 'uppercase', color: hexToRgba(color, 0.8), marginBottom: 10 }}>🎪 FESTIVAL PASSPORT</div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(2.5rem,6vw,4.5rem)', letterSpacing: '0.06em', color: C.white, lineHeight: 1, marginBottom: 16, textShadow: `0 0 30px ${hexToRgba(color, 0.4)}` }}>{fest.name}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, marginBottom: 20 }}>
+                  {[[allShows.length, allShows.length === 1 ? 'DAY' : 'DAYS ATTENDED'], [yearsSorted.length, yearsSorted.length === 1 ? 'YEAR' : 'YEARS'], [uniqueArtists, 'UNIQUE ARTISTS'], [firstYear === lastYear ? firstYear : `${firstYear}–${lastYear}`, 'SPAN']].map(([val, label]) => (
+                    <div key={label}><div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color, lineHeight: 1 }}>{val}</div><div style={{ fontFamily: "'Space Mono',monospace", fontSize: 8, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.12em', marginTop: 2 }}>{label}</div></div>
                   ))}
                 </div>
-                <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-                  {yearsSorted.map(yr => <span key={yr} onClick={()=>toggle(fest.name,yr)} style={{ fontFamily:"'Space Mono',monospace", fontSize:9, background:hexToRgba(color,0.18), color, border:`1px solid ${hexToRgba(color,0.45)}`, padding:'3px 10px', borderRadius:4, cursor:'pointer' }}>{yr} {collapsed[`${fest.name}-${yr}`]?'▸':'▾'}</span>)}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {yearsSorted.map(yr => <span key={yr} onClick={() => toggle(fest.name, yr)} style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, background: hexToRgba(color, 0.18), color, border: `1px solid ${hexToRgba(color, 0.45)}`, padding: '3px 10px', borderRadius: 4, cursor: 'pointer' }}>{yr} {collapsed[`${fest.name}-${yr}`] ? '▸' : '▾'}</span>)}
                 </div>
               </div>
             </div>
+
+            {/* Individual Years */}
             {yearsSorted.map(yr => {
-              const isCollapsed=collapsed[`${fest.name}-${yr}`];
-              const shows=fest.years[yr];
+              const isCollapsed = collapsed[`${fest.name}-${yr}`];
+              const shows = fest.years[yr];
               return (
-                <div key={yr} style={{ marginBottom:16 }}>
-                  <div onClick={()=>toggle(fest.name,yr)} style={{ display:'flex', alignItems:'center', gap:12, padding:'8px 16px', background:hexToRgba(color,0.07), border:`1px solid ${hexToRgba(color,0.2)}`, borderRadius:6, cursor:'pointer', marginBottom:isCollapsed?0:10 }}>
-                    <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.3rem', color, lineHeight:1 }}>{yr}</div>
-                    <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray }}>{shows.length} {shows.length===1?'DAY':'DAYS'} · {new Set(shows.flatMap(s=>s.bands||[])).size} ARTISTS</div>
-                    <div style={{ marginLeft:'auto', color:C.grayDim, fontSize:10 }}>{isCollapsed?'▸':'▾'}</div>
+                <div key={yr} style={{ marginBottom: 16 }}>
+                  <div onClick={() => toggle(fest.name, yr)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', background: hexToRgba(color, 0.07), border: `1px solid ${hexToRgba(color, 0.2)}`, borderRadius: 6, cursor: 'pointer', marginBottom: isCollapsed ? 0 : 10 }}>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color, lineHeight: 1 }}>{yr}</div>
+                    <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 8, color: C.gray }}>{shows.length} {shows.length === 1 ? 'DAY' : 'DAYS'} · {new Set(shows.flatMap(s => s.bands || [])).size} ARTISTS</div>
+                    <div style={{ marginLeft: 'auto', color: C.grayDim, fontSize: 10 }}>{isCollapsed ? '▸' : '▾'}</div>
                   </div>
-                  {!isCollapsed && shows.sort((a,b)=>a.date.localeCompare(b.date)).map(s => <WristbandCard key={s.id} event={s} genreMap={genreMap} compact />)}
+                  
+                  {/* 🟢 FIXED: compact={false} ensures the grid shows up here */}
+                  {!isCollapsed && shows.sort((a, b) => a.date.localeCompare(b.date)).map(s => (
+                    <WristbandCard key={s.id} event={s} genreMap={genreMap} compact={false} />
+                  ))}
                 </div>
               );
             })}
           </div>
         );
       })}
-      {!festGroupings.length && <div style={{ textAlign:'center', color:C.gray, padding:60 }}>No festival data yet.</div>}
+      {!festGroupings.length && <div style={{ textAlign: 'center', color: C.gray, padding: 60 }}>No festival data yet.</div>}
     </div>
   );
 }
-
 // ─── PASSPORT TAB ─────────────────────────────────────────────────────────────
 function PassportTab({ passport, genreStats, onNavigateToFest }) {  return (
     <div style={{ padding:'24px 0' }} className="fade-in">
