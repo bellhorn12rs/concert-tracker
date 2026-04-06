@@ -1665,29 +1665,72 @@ function TicketStubCard({ event, onEdit, genreMap, stubIdx }) {
   );
 }
 
-// ─── CLEAN WRISTBAND (No Sidecar) ────────────────────────────────────────────
-function WristbandCard({ event, genreMap, compact }) {
+// ─── CLEAN WRISTBAND (Lineup Edition - No Sidecar) ────────────────────────────
+function WristbandCard({ event, genreMap, compact, onEdit }) {
   const gi = getConcertGenreInfo(event, genreMap);
-  const themeColor = gi.mixed ? C.purple : (gi.color || C.teal);
+  const themeColor = gi.mixed ? '#9d00ff' : (gi.color || C.teal);
   
+  // Logic to handle the lineup display
+  const bands = event.bands || [];
+  const lineup = bands.join(' · ').toUpperCase();
+
   return (
-    <div style={{ 
-      width: '100%', 
-      background: '#1a1a1a', 
-      borderRadius: 8, 
-      border: `1.5px solid ${themeColor}`,
-      boxShadow: `0 0 20px ${hexToRgba(themeColor, 0.15)}`,
-      overflow: 'hidden'
-    }}>
+    <div 
+      onClick={onEdit ? () => onEdit(event) : null}
+      style={{ 
+        width: '100%', 
+        background: '#1a1a1a', 
+        borderRadius: 8, 
+        border: `1.5px solid ${themeColor}`,
+        boxShadow: `0 0 20px ${hexToRgba(themeColor, 0.15)}`,
+        overflow: 'hidden',
+        cursor: onEdit ? 'pointer' : 'default',
+        transition: 'all 0.2s ease',
+        position: 'relative'
+      }}
+      onMouseEnter={onEdit ? (e) => e.currentTarget.style.borderColor = '#fff' : null}
+      onMouseLeave={onEdit ? (e) => e.currentTarget.style.borderColor = themeColor : null}
+    >
       {/* Mini Wristband Header */}
-      <div style={{ background: themeColor, height: 6 }} />
-      <div style={{ padding: '12px', textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: themeColor, letterSpacing: '2px' }}>
+      <div style={{ background: themeColor, height: compact ? 6 : 8 }} />
+      
+      <div style={{ padding: compact ? '12px' : '20px', textAlign: 'center' }}>
+        <div style={{ 
+          fontFamily: "'Bebas Neue'", 
+          fontSize: compact ? '0.9rem' : '1.4rem', 
+          color: themeColor, 
+          letterSpacing: '2px',
+          lineHeight: 1
+        }}>
           {event.festival_name?.toUpperCase() || 'FESTIVAL'}
         </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: '#fff', marginTop: 4 }}>
+        
+        <div style={{ 
+          fontFamily: "'Space Mono'", 
+          fontSize: compact ? '9px' : '10px', 
+          color: '#fff', 
+          marginTop: 4, 
+          opacity: 0.6 
+        }}>
           {event.festival_day?.toUpperCase() || 'ALL DAYS'}
         </div>
+
+        {/* 🟢 THE LINEUP BAR (The Fix) */}
+        {bands.length > 0 && (
+          <div style={{ 
+            marginTop: compact ? 10 : 15,
+            paddingTop: compact ? 10 : 15,
+            borderTop: `1px solid ${hexToRgba(themeColor, 0.2)}`,
+            fontFamily: "'Space Mono'",
+            fontSize: compact ? '8px' : '11px',
+            color: '#fff',
+            lineHeight: 1.4,
+            letterSpacing: '0.5px',
+            opacity: 0.9
+          }}>
+            {lineup}
+          </div>
+        )}
       </div>
     </div>
   );
