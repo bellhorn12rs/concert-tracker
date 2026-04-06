@@ -1602,7 +1602,7 @@ function HallOfFame({ sets, genreMap, onShare }) {
     </div>
   );
 }
-// ─── 1. PHYSICAL DESIGN SYSTEM (UNIFIED) ─────────────────────────────────────
+// ─── 1. TICKET & WRISTBAND DESIGN SYSTEM ─────────────────────────────────────
 const STUB_TEMPLATES = [
   { bg: '#e8dfa0', ink: '#1a1a1a', accent: '#8b0000', label: 'TICKETMASTER' },
   { bg: '#d4e8d4', ink: '#1a2a1a', accent: '#004400', label: 'TICKETRON' },
@@ -1611,65 +1611,68 @@ const STUB_TEMPLATES = [
   { bg: '#e8e8e8', ink: '#111', accent: '#444', label: 'CONCERT TICKET' },
 ];
 
+// The High-Fidelity Wristband (RFID Chip + Woven Strap)
 const PhysicalWristband = ({ color, label, year, size = 'large' }) => {
   const isLarge = size === 'large';
   return (
     <div style={{ width: '100%', height: isLarge ? '42px' : '32px', position: 'relative', display: 'flex', alignItems: 'center', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))', margin: isLarge ? '10px 0' : '5px 0' }}>
-      <div style={{ width: '100%', height: isLarge ? '24px' : '18px', background: `repeating-linear-gradient(90deg, ${color}, ${color} 10px, ${hexToRgba(color, 0.8)} 10px, ${hexToRgba(color, 0.8)} 20px)`, borderRadius: '2px', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', padding: '0 10px', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.2)' }}>
+      <div style={{ width: '100%', height: isLarge ? '24px' : '18px', background: `repeating-linear-gradient(90deg, ${color}, ${color} 10px, ${hexToRgba(color, 0.8)} 10px, ${hexToRgba(color, 0.8)} 20px)`, borderRadius: '2px', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3), inset 0 -2px 4px rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', padding: '0 10px', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.2)' }}>
         <span style={{ fontFamily: "'Bebas Neue'", fontSize: isLarge ? '10px' : '8px', color: 'rgba(0,0,0,0.6)', whiteSpace: 'nowrap', letterSpacing: '1px', fontWeight: 900 }}>{label?.toUpperCase()} • {year} • {label?.toUpperCase()} • {year}</span>
       </div>
-      <div style={{ position: 'absolute', left: '20%', width: isLarge ? '36px' : '28px', height: isLarge ? '36px' : '28px', background: '#1a1a1a', borderRadius: '4px', border: `1px solid ${color}`, boxShadow: `0 0 15px ${hexToRgba(color, 0.6)}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+      <div style={{ position: 'absolute', left: '20%', width: isLarge ? '36px' : '28px', height: isLarge ? '36px' : '28px', background: '#1a1a1a', borderRadius: '4px', border: `1px solid ${color}`, boxShadow: '0 4px 12px rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: isLarge ? '11px' : '9px', color: color, lineHeight: 1 }}>{year}</div>
-        <div style={{ width: isLarge ? '10px' : '6px', height: isLarge ? '10px' : '6px', marginTop: 2, background: color, borderRadius: '1px' }} />
+        <div style={{ width: isLarge ? '10px' : '6px', height: isLarge ? '10px' : '6px', marginTop: 2, background: color, borderRadius: '1px', opacity: 0.8 }} />
       </div>
-      <div style={{ position: 'absolute', right: '15%', width: isLarge ? '12px' : '10px', height: isLarge ? '32px' : '24px', background: '#050505', borderRadius: '3px', zIndex: 1 }} />
+      <div style={{ position: 'absolute', right: '15%', width: isLarge ? '12px' : '10px', height: isLarge ? '32px' : '24px', background: '#050505', borderRadius: '3px', boxShadow: '2px 0 5px rgba(0,0,0,0.5)', zIndex: 1 }} />
     </div>
   );
 };
 
 function DecorativeTicket({ event, templateIdx }) {
   const tpl = STUB_TEMPLATES[templateIdx % STUB_TEMPLATES.length];
-  const headliner = (event.bands || [])[0] || 'UNKNOWN ARTIST';
+  const bands = event.bands || [];
+  const headliner = bands[0] || 'UNKNOWN ARTIST';
   return (
     <div style={{ width: 260, flexShrink: 0, background: tpl.bg, borderRadius: 3, overflow: 'hidden', boxShadow: '2px 4px 12px rgba(0,0,0,0.4)', border: `1px solid ${hexToRgba(tpl.ink, 0.2)}`, fontFamily: "'Courier New', Courier, monospace", color: tpl.ink, position: 'relative', transform: 'rotate(-1.5deg)', userSelect: 'none' }}>
       <div style={{ background: tpl.accent, height: 6 }} />
       <div style={{ padding: '4px 6px 0', fontSize: 6, fontWeight: 900, color: tpl.accent, textTransform: 'uppercase' }}>{tpl.label}</div>
-      <div style={{ padding: '2px 6px', fontSize: 11, fontWeight: 900, lineHeight: 1.1 }}>{headliner.length > 14 ? headliner.slice(0, 14) + '…' : headliner}</div>
-      <div style={{ padding: '2px 6px', fontSize: 6, opacity: 0.75 }}><div>{event.venue?.toUpperCase()}</div><div>{event.city?.toUpperCase()}</div><div>{fmtDateShort(event.date).toUpperCase()}</div></div>
+      <div style={{ padding: '2px 6px', fontSize: 11, fontWeight: 900, lineHeight: 1.1, textTransform: 'uppercase' }}>{headliner.length > 14 ? headliner.slice(0, 14) + '…' : headliner}</div>
+      <div style={{ padding: '2px 6px', fontSize: 6, opacity: 0.75 }}>
+        <div>{event.venue?.toUpperCase()}</div>
+        <div>{event.city?.toUpperCase()}, {event.state}</div>
+        <div>{fmtDateShort(event.date).toUpperCase()}</div>
+      </div>
       <div style={{ borderTop: `1px dashed ${hexToRgba(tpl.ink, 0.25)}`, margin: '3px 0' }} />
-      <div style={{ padding: '2px 6px 6px', display: 'flex', gap: '1px', justifyContent: 'center' }}>{[2,1,3,1,2,1,4,1,2,3,1,2].map((w, i) => (<div key={i} style={{ width: w, height: 14, background: tpl.ink, opacity: 0.85 }} />))}</div>
+      <div style={{ padding: '2px 6px 6px', display: 'flex', gap: '1px', justifyContent: 'center' }}>
+        {[2,1,3,1,2,1,4,1,2,3,1,2].map((w, i) => (<div key={i} style={{ width: w, height: 14, background: tpl.ink, opacity: 0.85 }} />))}
+      </div>
     </div>
   );
 }
-
-// ─── 2. SHARED TAB COMPONENTS ────────────────────────────────────────────────
 
 function TicketStubCard({ event, onEdit, genreMap, stubIdx = 0 }) {
   const bands = event.bands||[];
   const gi = getConcertGenreInfo(event, genreMap);
   const borderColor = gi.mixed ? C.teal : (gi.color||C.border);
   return (
-    <div className="ticket-hover" onClick={() => onEdit && onEdit(event)} style={{ display:'flex', marginBottom:10, cursor:'pointer', gap: 10 }}>
+    <div className="ticket-hover" onClick={() => onEdit && onEdit(event)} style={{ display:'flex', marginBottom:10, cursor:'pointer', filter:`drop-shadow(0 4px 12px rgba(0,0,0,0.5))`, gap: 10 }}>
       <DecorativeTicket event={event} templateIdx={stubIdx} />
-      <div style={{ flex:1, background:`linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(borderColor,0.08)})`, border:`1px solid ${borderColor}44`, borderLeft:`3.5px solid ${borderColor}`, borderRadius:6, padding:'12px 16px', position:'relative', overflow:'hidden' }}>
+      <div style={{ flex:1, background:`linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(borderColor,0.08)})`, border:`1px solid ${borderColor}44`, borderLeft:`3px solid ${borderColor}`, borderRadius:6, padding:'12px 16px', position:'relative', overflow:'hidden' }}>
         <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.3rem', color:C.white }}>{fmtDate(event.date)}</div>
-        <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginTop:8 }}>{bands.map((b,i) => (<span key={i} style={{ fontSize:i===0?'1rem':'0.78rem', fontFamily:i===0?"'Bebas Neue'":"'Space Mono'", color:C.white }}>{b}{i<bands.length-1&&i!==0?' •':''}</span>))}</div>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginTop:8 }}>
+          {bands.map((b,i) => (<span key={i} style={{ fontSize:i===0?'1rem':'0.78rem', fontFamily:i===0?"'Bebas Neue'":"'Space Mono'", color:C.white }}>{b}{i<bands.length-1&&i!==0?' •':''}</span>))}
+        </div>
       </div>
     </div>
   );
 }
 
 function WristbandCard({ event, genreMap, compact = false }) {
-  const bands = event.bands||[];
-  const STAGE_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green];
-  const numCols = compact ? 1 : Math.max(1, bands.length <= 5 ? 3 : 4);
-  const columns = Array.from({ length: numCols }, () => []);
-  bands.forEach((b, i) => columns[i % numCols].push(b));
   const gi = getConcertGenreInfo(event, genreMap);
   const wristColor = gi.mixed ? C.cyan : (gi.color||C.teal);
-
+  const bands = event.bands||[];
   return (
-    <div style={{ background:compact?C.bgCardAlt:C.bgCard, border:`1px solid ${C.border}`, borderRadius:6, marginBottom:12, overflow:'hidden' }}>
+    <div style={{ background:compact?C.bgCardAlt:C.bgCard, border:`1px solid ${C.border}`, borderRadius:6, marginBottom:compact?8:12, overflow:'hidden' }}>
       <div style={{ padding: '12px 16px', background: hexToRgba(wristColor, 0.05), borderBottom: `1px solid ${C.border}` }}>
         <PhysicalWristband color={wristColor} label={event.festival_name} year={getYear(event.date)} />
         <div style={{ display:'flex', justifyContent:'space-between', marginTop: 10 }}>
@@ -1677,20 +1680,12 @@ function WristbandCard({ event, genreMap, compact = false }) {
           <Badge color={wristColor}>{event.festival_name || 'FESTIVAL'}</Badge>
         </div>
       </div>
-      {!compact && columns.length > 0 && (
-        <div style={{ display:'grid', gridTemplateColumns:`repeat(${columns.length}, 1fr)`, borderTop: `1px solid ${C.border}` }}>
-          {columns.map((stageBands, ci) => (
-            <div key={ci} style={{ borderRight: ci < columns.length-1 ? `1px solid ${C.border}` : 'none', padding: '12px' }}>
-              <div style={{ height: 2, background: STAGE_COLORS[ci % STAGE_COLORS.length], marginBottom: 10 }} />
-              {stageBands.map((band, bi) => (<div key={bi} style={{ fontSize: '0.78rem', color: C.white, marginBottom: 5, lineHeight: 1.2 }}>• {band}</div>))}
-            </div>
-          ))}
-        </div>
-      )}
+      {!compact && <div style={{ padding: '10px', fontSize: '0.8rem', color: C.gray }}>{bands.join(' • ')}</div>}
     </div>
   );
 }
 
+// ─── 2. SETLIST VAULT (CLEAN IMAGE LOGIC) ────────────────────────────────────
 function SetlistVaultTab({ concerts, genreMap }) {
   const setlists = useMemo(() => {
     const results = [];
@@ -1700,21 +1695,23 @@ function SetlistVaultTab({ concerts, genreMap }) {
       const images = (c.image_url || '').split(',').map(img => img.trim()).filter(Boolean);
       bands.forEach((band, idx) => {
         const img = images[idx] || (images.length === 1 ? images[0] : null);
-        results.push({ id: `${c.id}-${band}`, band, date: c.date, venue: c.venue, festival_name: c.festival_name, is_festival: c.is_festival, image_url: img });
+        results.push({ id: `${c.id}-${band}`, band, date: c.date, venue: c.venue, city: c.city, state: c.state, festival_name: c.festival_name, is_festival: c.is_festival, image_url: img });
       });
     });
     return results.sort((a, b) => b.date.localeCompare(a.date));
   }, [concerts]);
 
+  if (!setlists.length) return <div style={{ padding:'80px 0', textAlign:'center' }}><div style={{ fontSize:'4rem' }}>📋</div><div style={{ fontFamily:"'Bebas Neue'", fontSize:'2rem', color:C.white }}>VAULT IS EMPTY</div></div>;
+
   return (
     <div style={{ padding:'40px 0' }} className="fade-in">
       <div style={{ textAlign:'center', marginBottom:48 }}><div style={{ fontFamily:"'Bebas Neue'", fontSize:'4rem', color:C.white }}>SETLIST <span style={{ color:C.teal }}>VAULT</span></div></div>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:'30px' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'40px' }}>
         {setlists.map((s, i) => (
-          <div key={s.id} style={{ position:'relative', transform:`rotate(${(i%2===0?1:-1)*(i%3)}deg)` }}>
+          <div key={s.id} style={{ position:'relative', transform:`rotate(${(i%2===0?1:-1)*(i%3)}deg)`, marginBottom:30 }}>
             <div style={{ background: '#fff', padding: '5px', boxShadow: '0 10px 20px rgba(0,0,0,0.5)', borderRadius: 2 }}>
               <div style={{ padding: '8px 4px', textAlign: 'center', background: '#111', color: '#fff', fontFamily: "'Bebas Neue'", fontSize: '1.2rem' }}>{s.band.toUpperCase()}</div>
-              {s.image_url ? <img src={s.image_url} alt={s.band} style={{ width: '100%', height: 'auto', maxHeight: '350px', objectFit: 'contain', background: '#000' }} /> : <div style={{ height: '150px', background: '#f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: '10px' }}>NO IMAGE</div>}
+              {s.image_url ? <img src={s.image_url} alt={s.band} style={{ width: '100%', height: 'auto', maxHeight: '300px', objectFit: 'contain', background: '#000' }} /> : <div style={{ height: '150px', background: '#f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: '10px' }}>NO IMAGE</div>}
               <div style={{ padding: '10px 6px', color: '#000', fontSize: '9px', fontFamily: "'Space Mono'" }}>{fmtDateShort(s.date)} • {s.venue}</div>
             </div>
           </div>
@@ -1724,38 +1721,58 @@ function SetlistVaultTab({ concerts, genreMap }) {
   );
 }
 
+// ─── 3. TIMELINE TAB ──────────────────────────────────────────────────────────
+function GenreLegend() {
+  return (
+    <div style={{ display:'flex', flexWrap:'wrap', gap:15, justifyContent:'center', padding:20, background: hexToRgba(C.bgCard, 0.5), borderRadius:12, margin:'0 auto 40px auto', maxWidth:900, border:`1px solid ${C.border}` }}>
+      {Object.entries(GENRE_COLORS).map(([name,color]) => (
+        <div key={name} style={{ display:'flex', alignItems:'center', gap:6 }}><div style={{ width:8, height:8, borderRadius:'50%', background:color }} /><span style={{ fontFamily:"'Space Mono'", fontSize:9, color:C.gray }}>{name.toUpperCase()}</span></div>
+      ))}
+    </div>
+  );
+}
+
+function TimelineCard({ item, isLeft, marginTop, onTeleport, genreMap }) {
+  const [hovered, setHovered] = useState(false);
+  const gi = getConcertGenreInfo(item, genreMap);
+  const themeColor = gi.mixed ? '#9d00ff' : (gi.color||C.teal);
+  return (
+    <div onMouseEnter={()=>setHovered(true)} onMouseLeave={()=>setHovered(false)} onClick={onTeleport}
+      style={{ marginTop, display:'flex', justifyContent:isLeft?'flex-start':'flex-end', alignItems:'center', width:'100%', position:'relative', cursor:'pointer' }}>
+      <div style={{ position:'absolute', left:'calc(50% - 6px)', width:12, height:12, borderRadius:'50%', background:themeColor, zIndex:5, boxShadow:`0 0 ${hovered?'20px':'10px'} ${themeColor}`, border:`2px solid ${C.bg}`, transition:'0.3s' }} />
+      <div style={{ width:'43%', padding:20, borderRadius:12, background: hovered ? hexToRgba(themeColor, 0.12) : C.bgCard, border: `1px solid ${hovered ? themeColor : C.border}`, borderLeft: isLeft ? `6px solid ${themeColor}` : `1px solid ${C.border}`, borderRight: !isLeft ? `6px solid ${themeColor}` : `1px solid ${C.border}`, transform: hovered ? 'scale(1.03) translateY(-5px)' : 'scale(1)', transition: 'all 0.4s ease', zIndex: hovered ? 20 : 1, position: 'relative' }}>
+        <div style={{ marginBottom: 15, opacity: hovered ? 1 : 0.8 }}>
+          {item.is_festival ? <PhysicalWristband color={themeColor} label={item.festival_name} year={getYear(item.date)} size="small" /> : <DecorativeTicket event={item} templateIdx={0} />}
+        </div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.white, lineHeight: 1 }}>{(item.bands||[])[0]?.toUpperCase()}</div>
+        <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <GenreBadge genre={gi.genre} color={gi.color} mixed={gi.mixed} small />
+          <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: themeColor, fontWeight: 700 }}>{daysSince(item.date)} DAYS AGO</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TimelineTab({ concerts, setActiveTab, genreMap }) {
   const yearsData = useMemo(() => {
+    if (!concerts.length) return [];
+    const sorted = [...concerts].sort((a,b)=>b.date.localeCompare(a.date));
     const groups = {};
-    [...concerts].sort((a,b)=>b.date.localeCompare(a.date)).forEach(s => { const yr = getYear(s.date); if(!groups[yr]) groups[yr]=[]; groups[yr].push(s); });
-    return Object.entries(groups).sort((a,b)=>b[0]-a[0]);
+    sorted.forEach(show => { const yr = getYear(show.date); if(!groups[yr]) groups[yr]=[]; groups[yr].push(show); });
+    return Object.entries(groups).sort((a,b)=>b[0]-a[0]).map(([year, yearShows]) => [year, yearShows.map((s, i) => ({ ...s, type: 'SHOW', side: i % 2 === 0 ? 'left' : 'right' }))]);
   }, [concerts]);
 
   return (
-    <div style={{ padding:'40px 0 80px' }} className="fade-in">
+    <div style={{ padding:'40px 0 80px', position: 'relative' }} className="fade-in">
+      <GenreLegend />
       <div style={{ maxWidth:1100, margin:'0 auto', position:'relative' }}>
         <div style={{ position:'absolute', left:'50%', top:0, bottom:0, width:2, background:C.border, transform:'translateX(-50%)', opacity:0.15 }} />
-        {yearsData.map(([year, shows]) => (
-          <div key={year} style={{ position:'relative', marginBottom:120, display: 'flex' }}>
-            <div style={{ position: 'sticky', top: '150px', height: 'fit-content', width: '80px', zIndex: 10, alignSelf: 'flex-start' }}>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '6.5rem', color: C.teal, filter: `drop-shadow(0 0 20px ${hexToRgba(C.teal, 0.9)})`, writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{year}</div>
-            </div>
-            <div style={{ flex: 1, padding: '0 40px' }}>
-              {shows.map((item, i) => {
-                const gi = getConcertGenreInfo(item, genreMap);
-                const themeColor = gi.mixed ? '#9d00ff' : (gi.color||C.teal);
-                const isLeft = i % 2 === 0;
-                return (
-                  <div key={item.id} onClick={() => setActiveTab('byDay')} style={{ marginTop:40, display:'flex', justifyContent:isLeft?'flex-start':'flex-end', width:'100%', position:'relative', cursor:'pointer' }}>
-                    <div style={{ position:'absolute', left:'calc(50% - 6px)', width:12, height:12, borderRadius:'50%', background:themeColor, zIndex:5, boxShadow:`0 0 10px ${themeColor}`, border:`2px solid ${C.bg}` }} />
-                    <div style={{ width:'45%', padding:20, borderRadius:12, background:C.bgCard, border: `1px solid ${themeColor}44`, borderLeft: isLeft ? `6px solid ${themeColor}` : `1px solid ${C.border}`, borderRight: !isLeft ? `6px solid ${themeColor}` : `1px solid ${C.border}`, transition: '0.3s ease' }}>
-                      <div style={{ marginBottom: 15 }}>{item.is_festival ? <PhysicalWristband color={themeColor} label={item.festival_name} year={getYear(item.date)} size="small" /> : <div style={{ transform: 'scale(0.8)', transformOrigin: 'left' }}><DecorativeTicket event={item} templateIdx={0} /></div>}</div>
-                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.white, lineHeight: 1 }}>{(item.bands||[])[0]?.toUpperCase()}</div>
-                      <div style={{ fontFamily:"'Space Mono'", fontSize:7, color:themeColor, fontWeight:700, marginTop:10 }}>{daysSince(item.date)} DAYS AGO</div>
-                    </div>
-                  </div>
-                );
-              })}
+        {yearsData.map(([year, flow]) => (
+          <div key={year} style={{ position:'relative', marginBottom:120 }}>
+            <div style={{ position: 'absolute', left: -80, fontFamily: "'Bebas Neue'", fontSize: '5rem', color: C.teal, opacity: 0.1, writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{year}</div>
+            <div style={{ width:'100%', padding:'0 20px' }}>
+              {flow.map(item => <TimelineCard key={item.id} item={item} isLeft={item.side === 'left'} marginTop={30} onTeleport={() => setActiveTab('byDay')} genreMap={genreMap} />)}
             </div>
           </div>
         ))}
@@ -1764,6 +1781,7 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
   );
 }
 
+// ─── 4. BY DAY TAB ────────────────────────────────────────────────────────────
 function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, setYearFilter, festFilter, setFestFilter, genreFilter, setGenreFilter, concerts }) {
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
@@ -1771,7 +1789,7 @@ function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, 
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: C.white }}>DAILY <span style={{ color: C.teal }}>ARCHIVE</span></div>
         <div style={{ fontFamily: "'Space Mono'", fontSize: '9px', color: C.gray }}>{dayGroups.length} ENTRIES FOUND</div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {dayGroups.map((event, idx) => (
           <div key={event.id} style={{ position: 'relative' }}>
             <div style={{ position: 'absolute', left: '-20px', top: '50%', width: '15px', height: '1px', background: C.border }} />
@@ -1782,95 +1800,580 @@ function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, 
     </div>
   );
 }
-
-function ByFestTab({ festGroupings, genreMap }) {
-  return (
-    <div className="fade-in" style={{ marginTop: 20 }}>
-      {festGroupings.map(fest => (
-        <div key={fest.name} style={{ marginBottom: 60 }}>
-          <div style={{ background: `linear-gradient(90deg, ${C.gold}, transparent)`, padding: '10px 20px', borderRadius: '4px 0 0 4px', marginBottom: 20 }}>
-             <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3.5rem', color: C.white }}>{fest.name.toUpperCase()}</div>
-          </div>
-          {Object.entries(fest.years).sort((a,b) => b[0] - a[0]).map(([yr, shows]) => (
-            <div key={yr} style={{ marginBottom: 30, paddingLeft: 20, borderLeft: `2px solid ${C.border}` }}>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 14, color: C.gold, marginBottom: 15, letterSpacing: 3 }}>★ {yr}</div>
-              {shows.map(s => <WristbandCard key={s.id} event={s} genreMap={genreMap} />)}
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function PassportTab({ passport, onNavigateToFest }) {
-  return (
-    <div className="fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
-      {passport.map(f => (
-        <div key={f.name} onClick={()=>onNavigateToFest(f.name)} style={{ background:C.bgCard, border:`1px solid ${C.teal}33`, borderRadius:8, padding:16, cursor:'pointer' }}>
-          <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.3rem', color:C.gold }}>{f.name}</div>
-          <div style={{ fontSize:7, color:C.gray }}>{f.days} DAYS ATTENDED</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function BrowseTab({ browseView, setBrowseView, search, setSearch, paged, page, setPage, totalPages, artistRows, onShare, onEdit, onSetGenre, genreMap }) {
+// ─── BY FESTIVAL TAB ──────────────────────────────────────────────────────────
+function ByFestTab({ festGroupings, genreMap = {} }) {
+  const [collapsed, setCollapsed] = useState({});
+  const toggle = (name,year) => setCollapsed(p=>({...p,[`${name}-${year}`]:!p[`${name}-${year}`]}));
+  const FEST_COLORS = [C.teal,C.cyan,C.purple,C.gold,C.green,'#ff6699','#ff4400','#a2ff00'];
   return (
     <div style={{ marginTop:20 }} className="fade-in">
-      <div style={{ display:'flex', gap:10, marginBottom:20 }}><input placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)} style={{ ...inputSt, flex:1 }} /></div>
-      {browseView === 'shows' ? (
-        <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:8, overflow:'hidden' }}>
-          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'0.78rem' }}>
-            <thead><tr style={{ background:C.bgCardAlt }}>{['Date','Artist','Venue'].map(h => <th key={h} style={{ padding:'10px 12px', textAlign:'left', color:C.tealDim }}>{h}</th>)}</tr></thead>
-            <tbody>{paged.map(s => <tr key={s.id} className="row-hover" onClick={()=>onEdit(s)} style={{ borderBottom:`1px solid ${C.border}` }}><td style={{ padding:'9px 12px', color:C.gray }}>{s.date}</td><td style={{ padding:'9px 12px', color:C.white }}>{s.artist}</td><td style={{ padding:'9px 12px', color:C.gray }}>{s.venue}</td></tr>)}</tbody>
-          </table>
+      {festGroupings.map((fest,fi) => {
+        const color=FEST_COLORS[fi%FEST_COLORS.length];
+        const allShows=Object.values(fest.years).flat();
+        const yearsSorted=Object.keys(fest.years).sort((a,b)=>b.localeCompare(a));
+        const firstYear=yearsSorted[yearsSorted.length-1], lastYear=yearsSorted[0];
+        const uniqueArtists=new Set(allShows.flatMap(s=>s.bands||[])).size;
+        return (
+          <div key={fest.name} style={{ marginBottom:48 }}>
+            <div id={`fest-${fest.name.replace(/\s+/g,'-')}`} style={{ position:'relative', borderRadius:12, overflow:'hidden', marginBottom:20, background:`linear-gradient(135deg,${hexToRgba(color,0.12)},${C.bgCard})`, border:`1px solid ${hexToRgba(color,0.5)}`, boxShadow:`0 0 40px ${hexToRgba(color,0.2)},0 4px 20px rgba(0,0,0,0.6)`, padding:'32px 36px' }}>
+              <div style={{ position:'absolute', top:-60, right:-60, width:300, height:300, background:`radial-gradient(circle,${hexToRgba(color,0.15)},transparent)`, pointerEvents:'none' }} />
+              <div style={{ position:'absolute', left:0, top:0, bottom:0, width:4, background:`linear-gradient(to bottom,${color},${hexToRgba(color,0.2)})`, borderRadius:'12px 0 0 12px' }} />
+              <div style={{ position:'relative', zIndex:1 }}>
+                <div style={{ fontFamily:"'Space Mono',monospace", fontSize:9, letterSpacing:'0.3em', textTransform:'uppercase', color:hexToRgba(color,0.8), marginBottom:10 }}>🎪 FESTIVAL PASSPORT</div>
+                <div style={{ fontFamily:"'Bebas Neue'", fontSize:'clamp(2.5rem,6vw,4.5rem)', letterSpacing:'0.06em', color:C.white, lineHeight:1, marginBottom:16, textShadow:`0 0 30px ${hexToRgba(color,0.4)}` }}>{fest.name}</div>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:24, marginBottom:20 }}>
+                  {[[allShows.length,allShows.length===1?'DAY':'DAYS ATTENDED'],[yearsSorted.length,yearsSorted.length===1?'YEAR':'YEARS'],[uniqueArtists,'UNIQUE ARTISTS'],[firstYear===lastYear?firstYear:`${firstYear}–${lastYear}`,'SPAN']].map(([val,label]) => (
+                    <div key={label}><div style={{ fontFamily:"'Bebas Neue'", fontSize:'2rem', color, lineHeight:1 }}>{val}</div><div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, textTransform:'uppercase', letterSpacing:'0.12em', marginTop:2 }}>{label}</div></div>
+                  ))}
+                </div>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+                  {yearsSorted.map(yr => <span key={yr} onClick={()=>toggle(fest.name,yr)} style={{ fontFamily:"'Space Mono',monospace", fontSize:9, background:hexToRgba(color,0.18), color, border:`1px solid ${hexToRgba(color,0.45)}`, padding:'3px 10px', borderRadius:4, cursor:'pointer' }}>{yr} {collapsed[`${fest.name}-${yr}`]?'▸':'▾'}</span>)}
+                </div>
+              </div>
+            </div>
+            {yearsSorted.map(yr => {
+              const isCollapsed=collapsed[`${fest.name}-${yr}`];
+              const shows=fest.years[yr];
+              return (
+                <div key={yr} style={{ marginBottom:16 }}>
+                  <div onClick={()=>toggle(fest.name,yr)} style={{ display:'flex', alignItems:'center', gap:12, padding:'8px 16px', background:hexToRgba(color,0.07), border:`1px solid ${hexToRgba(color,0.2)}`, borderRadius:6, cursor:'pointer', marginBottom:isCollapsed?0:10 }}>
+                    <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.3rem', color, lineHeight:1 }}>{yr}</div>
+                    <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray }}>{shows.length} {shows.length===1?'DAY':'DAYS'} · {new Set(shows.flatMap(s=>s.bands||[])).size} ARTISTS</div>
+                    <div style={{ marginLeft:'auto', color:C.grayDim, fontSize:10 }}>{isCollapsed?'▸':'▾'}</div>
+                  </div>
+                  {!isCollapsed && shows.sort((a,b)=>a.date.localeCompare(b.date)).map(s => <WristbandCard key={s.id} event={s} genreMap={genreMap} compact />)}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+      {!festGroupings.length && <div style={{ textAlign:'center', color:C.gray, padding:60 }}>No festival data yet.</div>}
+    </div>
+  );
+}
+
+// ─── PASSPORT TAB ─────────────────────────────────────────────────────────────
+function PassportTab({ passport, genreStats, onNavigateToFest }) {  return (
+    <div style={{ padding:'24px 0' }} className="fade-in">
+      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:10, color:C.gray, marginBottom:20, letterSpacing:'0.1em', textTransform:'uppercase' }}>Your festival attendance record — click any card to view full history</div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:14 }}>
+        {passport.map(f => (
+          <div key={f.name} onClick={()=>onNavigateToFest(f.name)}
+            style={{ background:C.bgCard, border:`1px solid ${C.teal}33`, borderRadius:8, padding:16, cursor:'pointer', transition:'all 0.18s' }}
+            onMouseEnter={e=>{e.currentTarget.style.border=`1px solid ${C.teal}88`;e.currentTarget.style.boxShadow=`0 0 16px ${C.tealGlow}`;}}
+            onMouseLeave={e=>{e.currentTarget.style.border=`1px solid ${C.teal}33`;e.currentTarget.style.boxShadow='none';}}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
+              <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.3rem', color:C.gold, lineHeight:1 }}>{f.name}</div>
+              <div style={{ textAlign:'right' }}><div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.6rem', color:C.teal, lineHeight:1 }}>{f.days}</div><div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:C.gray, textTransform:'uppercase' }}>days</div></div>
+            </div>
+            <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, marginBottom:8, textTransform:'uppercase' }}>{f.years.length} {f.years.length===1?'year':'years'} attended</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:10 }}>{f.years.map(y=><span key={y} style={{ fontFamily:"'Space Mono',monospace", fontSize:8, background:`${C.gold}22`, color:C.gold, border:`1px solid ${C.gold}44`, padding:'2px 6px', borderRadius:3 }}>{y}</span>)}</div>
+            <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:C.tealDim, textTransform:'uppercase', letterSpacing:'0.1em' }}>↗ View full festival history</div>
+          </div>
+        ))}
+        {!passport.length && <div style={{ color:C.gray, textAlign:'center', gridColumn:'1/-1', padding:60 }}>No festival passport stamps yet.</div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── BROWSE TAB ───────────────────────────────────────────────────────────────
+// ─── BROWSE TAB (Fixed for Artist Genres) ─────────────────────────────────────
+function BrowseTab({ browseView, setBrowseView, search, setSearch, yearFilter, setYearFilter, festFilter, setFestFilter, sortCol, setSortCol, sortDir, setSortDir, paged, page, setPage, totalPages, artistRows, years, onShare, onEdit, onSetGenre, genreMap, genreFilter, setGenreFilter }) {
+  return (
+    <div style={{ marginTop:20 }} className="fade-in">
+      <div style={{ display:'flex', flexWrap:'wrap', gap:10, marginBottom:20, background:C.bgCard, padding:15, borderRadius:8, border:`1px solid ${C.border}` }}>
+        <input placeholder="Search artists, venues, cities..." value={search} onChange={e=>setSearch(e.target.value)} style={{ ...inputSt, flex:'1 1 260px' }} />
+        <select value={yearFilter} onChange={e=>setYearFilter(e.target.value)} style={{ ...inputSt, minWidth:100 }}><option value="all">All Years</option>{years.map(y=><option key={y} value={y}>{y}</option>)}</select>
+        <select value={festFilter} onChange={e=>setFestFilter(e.target.value)} style={{ ...inputSt, minWidth:130 }}><option value="all">All Types</option><option value="fest">Festival Only</option><option value="solo">Standalone Only</option></select>
+        <select value={genreFilter} onChange={e=>setGenreFilter(e.target.value)} style={{ ...inputSt, minWidth:130 }}><option value="all">All Genres</option>{GENRES.map(g=><option key={g} value={g}>{g}</option>)}</select>
+        <div style={{ display:'flex', background:C.bgCardAlt, borderRadius:4, padding:2, border:`1px solid ${C.border}` }}>
+          {['shows','artists'].map(v=><button key={v} onClick={()=>setBrowseView(v)} style={{ padding:'6px 14px', fontSize:10, fontFamily:"'Space Mono'", letterSpacing:'0.1em', textTransform:'uppercase', background:browseView===v?C.teal:'transparent', color:browseView===v?C.bg:C.gray, border:'none', cursor:'pointer', borderRadius:3, transition:'0.15s' }}>{v}</button>)}
         </div>
-      ) : (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:12 }}>
-          {artistRows.map(row => <div key={row.artist} style={{ background:C.bgCard, padding:15, borderRadius:8, border:`1px solid ${C.border}` }}><div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.2rem', color:C.teal }}>{row.artist}</div><div style={{ fontSize:8, color:C.gray }}>{row.shows.length} shows</div></div>)}
+      </div>
+
+      {browseView==='shows' && (
+        <>
+          <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:8, overflow:'hidden' }}>
+            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'0.78rem' }}>
+              <thead>
+                <tr style={{ background:C.bgCardAlt }}>
+                  {[['date','Date'],['artist','Artist'],['venue','Venue'],['city','City']].map(([col,label]) => (
+                    <th key={col} onClick={()=>{setSortCol(col);setSortDir(d=>d==='asc'?'desc':'asc');}} style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', padding:'10px 12px', textAlign:'left', color:sortCol===col?C.teal:C.tealDim, borderBottom:`1px solid ${C.border}`, cursor:'pointer', userSelect:'none' }}>{label} {sortCol===col?(sortDir==='asc'?'▲':'▼'):''}</th>
+                  ))}
+                  <th style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', padding:'10px 12px', textAlign:'left', color:C.tealDim, borderBottom:`1px solid ${C.border}` }}>Genre</th>
+                  <th style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', padding:'10px 12px', textAlign:'left', color:C.tealDim, borderBottom:`1px solid ${C.border}` }}>📋</th>
+                  <th style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', padding:'10px 12px', textAlign:'left', color:C.tealDim, borderBottom:`1px solid ${C.border}` }}>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paged.map((s,i) => {
+                  // HERE IS THE FIX: Pull genre from the artist-specific map
+                  const artistGenre = genreMap[s.artist] || null;
+                  return (
+                    <tr key={`${s.id}-${s.artist}`} className="row-hover" onClick={()=>onEdit(s)} style={{ borderBottom:`1px solid ${C.border}`, background:i%2===1?C.bgCardAlt:'transparent' }}>
+                      <td style={{ padding:'9px 12px', fontFamily:"'Space Mono',monospace", fontSize:'0.7rem', color:C.gray, whiteSpace:'nowrap' }}>{fmtDate(s.date)}</td>
+                      <td style={{ padding:'9px 12px', color:C.teal, fontWeight:600 }}>{s.artist}</td>
+                      <td style={{ padding:'9px 12px', color:C.gray }}>{s.venue||'—'}</td>
+                      <td style={{ padding:'9px 12px', color:C.gray }}>{s.city||'—'}{s.state?`, ${s.state}`:''}</td>
+                      <td style={{ padding:'9px 12px' }}>{artistGenre ? <GenreBadge genre={artistGenre} color={GENRE_COLORS[artistGenre]} small /> : <span style={{ color:C.grayDim, fontSize:8 }}>—</span>}</td>
+                      <td style={{ padding:'9px 12px', textAlign:'center' }}>{(s.has_setlist||(s.has_setlist_names?.trim()))?<a href={`https://www.setlist.fm/search?query=${encodeURIComponent(s.artist)}`} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ textDecoration:'none', fontSize:12, filter:'drop-shadow(0 0 3px gold)' }} title="setlist.fm">📋</a>:<span style={{ color:C.grayDim }}>—</span>}</td>
+                      <td style={{ padding:'9px 12px' }}>{s.is_festival?<Badge color={C.teal}>Fest</Badge>:<Badge color={C.grayDim} bg="transparent">Solo</Badge>}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {totalPages>1 && (
+            <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:10, marginTop:16 }}>
+              <Btn variant="secondary" onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} style={{ padding:'5px 12px' }}>← Prev</Btn>
+              <span style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:C.gray }}>Page {page} of {totalPages}</span>
+              <Btn variant="secondary" onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} style={{ padding:'5px 12px' }}>Next →</Btn>
+            </div>
+          )}
+        </>
+      )}
+
+      {browseView==='artists' && (
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:12 }}>
+          {artistRows.map(row => {
+            const genre = genreMap[row.artist] || null;
+            const gc = genre ? (GENRE_COLORS[genre] || null) : null;
+            return (
+              <div key={row.artist} style={{ background:gc?`linear-gradient(135deg,${C.bgCard},${hexToRgba(gc,0.1)})`:C.bgCard, border:`1px solid ${gc?hexToRgba(gc,0.5):C.border}`, boxShadow:gc?`0 0 12px ${hexToRgba(gc,0.2)}`:'none', borderRadius:8, padding:'14px 16px', position:'relative' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
+                  <div>
+                    <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.2rem', color:gc||C.teal, marginBottom:4, cursor:'pointer' }} onClick={()=>onShare(row.artist,row.shows)}>{row.artist}</div>
+                    <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray }}>{row.shows.length} shows</div>
+                  </div>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:10, paddingTop:10, borderTop:`1px solid ${C.border}` }}>
+                  <select value={genre||''} onChange={e=>onSetGenre(row.artist, e.target.value||null)} style={{ flex:1, background:gc?hexToRgba(gc,0.15):C.bgCardAlt, border:`1px solid ${gc?hexToRgba(gc,0.4):C.border}`, borderRadius:4, color:gc||C.gray, fontSize:9, padding:'3px 6px', fontFamily:"'Space Mono'", cursor:'pointer' }}>
+                    <option value="">— unset —</option>
+                    {GENRES.map(g=><option key={g} value={g}>{g}</option>)}
+                  </select>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
+// ─── VENUE DONUT CARD ─────────────────────────────────────────────────────────
+function VenueDonutCard({ concerts, onNavigateToVenues }) {
+  const venueData = useMemo(() => {
+    const m = {};
+    concerts.forEach(c => {
+      if (!c.venue) return;
+      const key = c.venue.trim();
+      m[key] = (m[key] || 0) + 1;
+    });
+    const sorted = Object.entries(m).sort((a, b) => b[1] - a[1]);
+    const top5 = sorted.slice(0, 5);
+    const otherCount = sorted.slice(5).reduce((acc, [, n]) => acc + n, 0);
+    if (otherCount > 0) top5.push(['Other Venues', otherCount]);
+    return top5;
+  }, [concerts]);
+
+  const total = venueData.reduce((acc, [, n]) => acc + n, 0) || 1;
+  const COLORS = ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88', '#445566'];
+
+  const cx = 70, cy = 70, r = 52;
+  const circ = 2 * Math.PI * r;
+
+  let cumulative = 0;
+  const slices = venueData.map(([name, count], i) => {
+    const pct = count / total;
+    const dash = pct * circ;
+    const offset = -cumulative * circ;
+    cumulative += pct;
+    return { name, count, pct, dash, offset, color: COLORS[i % COLORS.length] };
+  });
+
+  return (
+    <Card neon onClick={onNavigateToVenues} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+      className="card-texture">
+      <CardTitle>Top Venues 📍</CardTitle>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
+        <svg width={140} height={140} viewBox="0 0 140 140" style={{ flexShrink: 0 }}>
+          {slices.map((s, i) => (
+            <circle
+              key={i}
+              cx={cx} cy={cy} r={r}
+              fill="none"
+              stroke={s.color}
+              strokeWidth={14}
+              strokeDasharray={`${s.dash} ${circ}`}
+              strokeDashoffset={s.offset}
+              transform={`rotate(-90 ${cx} ${cy})`}
+              style={{ filter: `drop-shadow(0 0 4px ${s.color}66)` }}
+            />
+          ))}
+          <text x={cx} y={cy - 6} textAnchor="middle" style={{ fontFamily: "'Bebas Neue'", fontSize: 16, fill: C.white }}>
+            {new Set(concerts.map(c => c.venue).filter(Boolean)).size}
+          </text>
+          <text x={cx} y={cy + 10} textAnchor="middle" style={{ fontFamily: "'Space Mono'", fontSize: 7, fill: C.gray }}>
+            VENUES
+          </text>
+        </svg>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {slices.map((s, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: s.color, flexShrink: 0, boxShadow: `0 0 4px ${s.color}` }} />
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {s.name.length > 18 ? s.name.slice(0, 18) + '…' : s.name}
+              </div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: s.color, flexShrink: 0 }}>{s.count}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.tealDim, textAlign: 'center', marginTop: 10, letterSpacing: '0.1em' }}>
+        ↗ CLICK TO VIEW ALL VENUES
+      </div>
+    </Card>
+  );
+}
+// ─── VENUES TAB ───────────────────────────────────────────────────────────────
 function VenuesTab({ concerts }) {
+  const [sortBy, setSortBy] = useState('count');
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState({});
+
+  const toggle = (name) => setExpanded(p => ({ ...p, [name]: !p[name] }));
+
   const venues = useMemo(() => {
     const m = {};
-    concerts.forEach(c => { if (!c.venue) return; const key = c.venue.trim(); if (!m[key]) m[key] = { name: key, city: c.city, count: 0, shows: [] }; m[key].count++; m[key].shows.push(c); });
-    return Object.values(m).sort((a, b) => b.count - a.count);
+    concerts.forEach(c => {
+      if (!c.venue) return;
+      const key = c.venue.trim();
+      if (!m[key]) {
+        m[key] = {
+          name: key,
+          city: c.city || '',
+          state: c.state || '',
+          count: 0,
+          years: new Set(),
+          artists: new Set(),
+          festivals: 0,
+          shows: [],
+          firstDate: c.date,
+          lastDate: c.date,
+        };
+      }
+      m[key].count++;
+      if (c.date < m[key].firstDate) m[key].firstDate = c.date;
+      if (c.date > m[key].lastDate) m[key].lastDate = c.date;
+      const yr = getYear(c.date);
+      if (yr) m[key].years.add(yr);
+      (c.bands || []).forEach(b => m[key].artists.add(b));
+      if (c.is_festival) m[key].festivals++;
+      m[key].shows.push(c);
+    });
+    return Object.values(m).map(v => ({
+      ...v,
+      years: [...v.years].sort(),
+      artists: [...v.artists],
+      shows: [...v.shows].sort((a, b) => b.date.localeCompare(a.date)),
+    }));
   }, [concerts]);
-  const filtered = venues.filter(v => v.name.toLowerCase().includes(search.toLowerCase()));
+
+  const filtered = useMemo(() => {
+    let list = venues;
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(v => v.name.toLowerCase().includes(q) || v.city.toLowerCase().includes(q) || v.state.toLowerCase().includes(q));
+    }
+    if (sortBy === 'count') return [...list].sort((a, b) => b.count - a.count);
+    if (sortBy === 'alpha') return [...list].sort((a, b) => a.name.localeCompare(b.name));
+    if (sortBy === 'recent') return [...list].sort((a, b) => b.lastDate.localeCompare(a.lastDate));
+    if (sortBy === 'first') return [...list].sort((a, b) => a.firstDate.localeCompare(b.firstDate));
+    return list;
+  }, [venues, sortBy, search]);
+
+  const totalVenues = venues.length;
+  const totalCities = new Set(venues.map(v => v.city).filter(Boolean)).size;
+  const VENUE_MEDALS = ['🥇','🥈','🥉'];
+  const STUB_COLORS = ['#e8dfa0','#d4e8d4','#d0d8f0','#f0d8cc','#e8e8e8'];
+  const STUB_INKS = ['#1a1a1a','#1a2a1a','#0a0a2a','#2a0a00','#111'];
+  const STUB_ACCENTS = ['#8b0000','#004400','#000080','#8b3300','#444'];
+  const STUB_LABELS = ['TICKETMASTER','TICKETRON','BASS TICKETS','GOOD TIMES','CONCERT TICKET'];
+
   return (
-    <div style={{ padding: '24px 0' }}>
-      <div style={{ textAlign: 'center', marginBottom: 40 }}><div style={{ fontFamily: "'Bebas Neue'", fontSize: '3.5rem', color: C.white }}>📍 THE <span style={{ color: C.teal }}>VENUE LOG</span></div><input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...inputSt, width: '300px', marginTop: 20 }} /></div>
-      {filtered.map((v, i) => (
-        <Card key={v.name} neon style={{ marginBottom: 10, padding: 0, overflow: 'hidden' }}>
-          <div onClick={() => setExpanded(p => ({ ...p, [v.name]: !p[v.name] }))} style={{ padding: '15px 20px', cursor:'pointer', display:'flex', justifyContent:'space-between' }}>
-            <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: C.white }}>{v.name}</span>
-            <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: C.teal }}>{v.count} SHOWS</span>
+    <div style={{ padding: '24px 0' }} className="fade-in">
+      {/* Header */}
+      <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(2.5rem,6vw,4rem)', color: C.white, letterSpacing: '0.05em' }}>
+          📍 THE <span style={{ color: C.teal }}>VENUE LOG</span>
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, letterSpacing: '0.2em', marginTop: 4 }}>
+          {totalVenues} VENUES · {totalCities} CITIES
+        </div>
+      </div>
+
+      {/* Top 3 podium */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 40 }}>
+        {filtered.slice(0, 3).map((v, i) => {
+          const colors = [C.gold, C.gray, C.cyan];
+          const sizes = ['2rem', '1.6rem', '1.4rem'];
+          return (
+            <div key={v.name} onClick={() => toggle(v.name)} style={{
+              background: `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(colors[i], 0.08)})`,
+              border: `1px solid ${hexToRgba(colors[i], 0.5)}`,
+              borderRadius: 8, padding: 20, position: 'relative', overflow: 'hidden',
+              boxShadow: `0 0 20px ${hexToRgba(colors[i], 0.15)}`, cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}>
+              <div style={{ position: 'absolute', right: -10, bottom: -20, fontFamily: "'Bebas Neue'", fontSize: '6rem', color: hexToRgba(colors[i], 0.05), pointerEvents: 'none' }}>{v.count}×</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: colors[i], marginBottom: 8 }}>{VENUE_MEDALS[i]} #{i + 1}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: sizes[i], color: C.white, lineHeight: 1.1, marginBottom: 6 }}>{v.name}</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginBottom: 12 }}>{[v.city, v.state].filter(Boolean).join(', ')}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: colors[i], lineHeight: 1 }}>{v.count}<span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, marginLeft: 4 }}>shows</span></div>
+              <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <Badge color={colors[i]}>{v.artists.length} artists</Badge>
+                {v.festivals > 0 && <Badge color={C.gold}>{v.festivals} fest days</Badge>}
+              </div>
+              <div style={{ marginTop: 6, fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>
+                {expanded[v.name] ? '▲ collapse' : '▼ view shows'}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
+        <input placeholder="Search venues or cities..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...inputSt, flex: '1 1 240px' }} />
+        <div style={{ display: 'flex', background: C.bgCardAlt, borderRadius: 4, padding: 2, border: `1px solid ${C.border}` }}>
+          {[['count','Most Visited'],['alpha','A–Z'],['recent','Most Recent'],['first','Oldest First']].map(([val, label]) => (
+            <button key={val} onClick={() => setSortBy(val)} style={{
+              padding: '5px 12px', fontSize: 9, fontFamily: "'Space Mono'", letterSpacing: '0.08em',
+              textTransform: 'uppercase', background: sortBy === val ? C.teal : 'transparent',
+              color: sortBy === val ? C.bg : C.gray, border: 'none', cursor: 'pointer', borderRadius: 3,
+            }}>{label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Full venue list */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {filtered.map((v, i) => {
+          const pct = Math.round((v.count / (filtered[0]?.count || 1)) * 100);
+          const isTop = i < 3;
+          const rowColor = isTop ? [C.gold, C.gray, C.cyan][i] : C.teal;
+          const isOpen = expanded[v.name];
+
+          return (
+            <div key={v.name} style={{
+              background: C.bgCard,
+              border: `1px solid ${isTop ? hexToRgba(rowColor, 0.4) : C.border}`,
+              borderLeft: `4px solid ${rowColor}`,
+              borderRadius: 6,
+              overflow: 'hidden',
+              transition: 'all 0.2s',
+            }}>
+              {/* Row header — always visible */}
+              <div
+                onClick={() => toggle(v.name)}
+                style={{ padding: '12px 16px', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
+                onMouseEnter={e => { e.currentTarget.style.background = hexToRgba(rowColor, 0.04); }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+              >
+                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: hexToRgba(rowColor, 0.04), pointerEvents: 'none' }} />
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: rowColor, width: 28, flexShrink: 0, textAlign: 'center' }}>
+                    {i < 3 ? VENUE_MEDALS[i] : `#${i + 1}`}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.white, lineHeight: 1, marginBottom: 2 }}>{v.name}</div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray }}>{[v.city, v.state].filter(Boolean).join(', ')}</div>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, maxWidth: 140, justifyContent: 'flex-end' }}>
+                    {v.years.slice(-5).map(yr => (
+                      <span key={yr} style={{ fontFamily: "'Space Mono'", fontSize: 7, background: hexToRgba(rowColor, 0.12), color: rowColor, border: `1px solid ${hexToRgba(rowColor, 0.3)}`, padding: '1px 4px', borderRadius: 2 }}>{yr}</span>
+                    ))}
+                    {v.years.length > 5 && <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>+{v.years.length - 5}</span>}
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: rowColor, lineHeight: 1 }}>{v.count}</div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, textTransform: 'uppercase' }}>shows</div>
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, flexShrink: 0 }}>
+                    {isOpen ? '▲' : '▼'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Expanded ticket stub grid */}
+              {isOpen && (
+                <div style={{ borderTop: `1px solid ${C.border}`, padding: '20px 16px', background: hexToRgba(C.bgCardAlt, 0.5) }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0 30px', alignItems: 'start' }}>
+                    {[[], [], []].map((_, colIdx) => (
+                      <div key={colIdx} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                        {v.shows.filter((_, idx) => idx % 3 === colIdx).map((show, showIdx) => {
+  const isFest = show.is_festival;
+  const tIdx = (i + showIdx) % 5;
+  
+  // Shared styles for the "Board" feel
+  const rot = (showIdx % 2 === 0 ? 1 : -1) * ((showIdx % 3) + 0.5);
+  const headliner = (show.bands || [])[0] || 'UNKNOWN';
+  const festColor = ['#ff0055', '#00ffcc', '#bc13fe', '#ffcc00', '#0077ff'][tIdx];
+
+  return (
+    <div key={show.id} style={{
+      position: 'relative',
+      transform: `rotate(${rot}deg)`,
+      marginBottom: 35,
+      zIndex: 1,
+      display: 'flex',
+      justifyContent: 'center'
+    }}>
+      {/* ─── TAPE (Keeping the 'pinned' look) ─── */}
+      <div style={{
+        position: 'absolute', top: -12, left: '50%',
+        transform: 'translateX(-50%)',
+        width: 38, height: 12,
+        background: isFest ? 'rgba(255,255,255,0.15)' : ['#ffcc00','#00e5cc','#9966ff','#ff4466','#00cfff'][tIdx],
+        backdropFilter: 'blur(2px)',
+        opacity: 0.7, borderRadius: 1, zIndex: 10,
+      }} />
+
+      {isFest ? (
+        /* ─── THE FESTIVAL WRISTBAND ─── */
+        <div style={{
+          width: '100%',
+          maxWidth: '180px',
+          height: '42px',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))'
+        }}>
+          {/* Fabric Strap */}
+          <div style={{
+            width: '100%',
+            height: '24px',
+            background: `repeating-linear-gradient(90deg, ${festColor}, ${festColor} 10px, ${hexToRgba(festColor, 0.8)} 10px, ${hexToRgba(festColor, 0.8)} 20px)`,
+            borderRadius: '2px',
+            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3), inset 0 -2px 4px rgba(255,255,255,0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 10px',
+            overflow: 'hidden'
+          }}>
+            <span style={{ 
+              fontFamily: "'Bebas Neue'", 
+              fontSize: '10px', 
+              color: 'rgba(0,0,0,0.6)', 
+              whiteSpace: 'nowrap',
+              letterSpacing: '1px'
+            }}>
+              {show.festival_name?.toUpperCase()} • {getYear(show.date)} • {show.festival_name?.toUpperCase()}
+            </span>
           </div>
-          {expanded[v.name] && <div style={{ padding: '20px', background: 'rgba(0,0,0,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>{v.shows.map(s => <div key={s.id}>{s.is_festival ? <PhysicalWristband color={C.gold} label={s.festival_name} year={getYear(s.date)} size="small" /> : <DecorativeTicket event={s} templateIdx={0} />}</div>)}</div>}
-        </Card>
-      ))}
+
+          {/* RFID Plastic Chip */}
+          <div style={{
+            position: 'absolute',
+            left: '25%',
+            width: '34px',
+            height: '34px',
+            background: '#1a1a1a',
+            borderRadius: '4px',
+            border: `1px solid ${festColor}`,
+            boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2
+          }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '11px', color: festColor, lineHeight: 1 }}>{getYear(show.date)}</div>
+            <div style={{ width: '12px', height: '12px', marginTop: 2, border: `1px solid ${hexToRgba(festColor, 0.5)}`, borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+               <div style={{ width: '4px', height: '4px', background: festColor, borderRadius: '50%' }} />
+            </div>
+          </div>
+
+          {/* The Plastic Toggle (Black Slider) */}
+          <div style={{
+            position: 'absolute',
+            right: '15%',
+            width: '12px',
+            height: '30px',
+            background: '#000',
+            borderRadius: '3px',
+            boxShadow: '2px 0 5px rgba(0,0,0,0.5)',
+            zIndex: 1
+          }} />
+        </div>
+      ) : (
+        /* ─── THE STANDARD TICKET STUB (Existing Code) ─── */
+        <div style={{
+          background: STUB_COLORS[tIdx],
+          borderRadius: 3,
+          overflow: 'hidden',
+          boxShadow: '2px 6px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.6)',
+          border: `1px solid ${hexToRgba(STUB_INKS[tIdx], 0.15)}`,
+          fontFamily: "'Courier New', Courier, monospace",
+          color: STUB_INKS[tIdx],
+          width: '100%'
+        }}>
+          <div style={{ background: STUB_ACCENTS[tIdx], height: 7 }} />
+          <div style={{ padding: '4px 8px 0', fontSize: 6, fontWeight: 900, letterSpacing: '0.15em', color: STUB_ACCENTS[tIdx], opacity: 0.8 }}>{STUB_LABELS[tIdx]}</div>
+          <div style={{ padding: '2px 8px', fontSize: 13, fontWeight: 900, lineHeight: 1.1, textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
+            {headliner.length > 14 ? headliner.slice(0,14)+'…' : headliner}
+          </div>
+          <div style={{ padding: '2px 8px', fontSize: 6, lineHeight: 1.5, opacity: 0.75 }}>
+            <div style={{ fontWeight: 'bold' }}>{fmtDateShort(show.date).toUpperCase()}</div>
+            {show.city && <div>{[show.city, show.state].filter(Boolean).join(', ').toUpperCase()}</div>}
+          </div>
+          <div style={{ margin: '3px 8px', paddingTop: 3, borderTop: `1px dashed ${hexToRgba(STUB_INKS[tIdx], 0.25)}`, display: 'flex', justifyContent: 'space-between', fontSize: 6, opacity: 0.65 }}>
+            <span>PRICE: COMPLIMENTARY</span><span>GA</span>
+          </div>
+          <div style={{ borderTop: `1px dashed ${hexToRgba(STUB_INKS[tIdx], 0.2)}`, margin: '2px 0' }} />
+          <div style={{ padding: '4px 8px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <div style={{ display: 'flex', gap: '1px' }}>
+              {[2,1,3,1,2,1,4,1,2,3,1,2,1].map((w, bi) => (
+                <div key={bi} style={{ width: w, height: bi % 3 === 0 ? 16 : 12, background: STUB_INKS[tIdx], opacity: 0.8 }} />
+              ))}
+            </div>
+            <div style={{ fontSize: 5, opacity: 0.4 }}>{String(show.id || '').slice(0,12).toUpperCase()}</div>
+          </div>
+          <div style={{ background: STUB_ACCENTS[tIdx], height: 4, opacity: 0.4 }} />
+        </div>
+      )}
+    </div>
+  );
+})}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {!filtered.length && (
+        <div style={{ textAlign: 'center', padding: 80, color: C.grayDim }}>
+          <div style={{ fontSize: '3rem', marginBottom: 16 }}>📍</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem' }}>NO VENUES FOUND</div>
+        </div>
+      )}
     </div>
   );
 }
-
-// ─── 3. POSTER STUDIO DATA & GENERATORS ──────────────────────────────────────
-
+// ─── POSTER GENERATOR ─────────────────────────────────────────────────────────
 const POSTER_TEMPLATES = [
-  { id: 0, name: 'COACHELLA CLASSIC', layout: 'tiered', bg: '#fdfcf0', accent: '#111', font: "'Bebas Neue'", texture: 'grain' },
-  { id: 1, name: 'NEON NOIR XEROX', layout: 'zine', bg: '#050505', accent: '#00ffcc', font: "'Space Mono'", texture: 'grunge' },
-  { id: 2, name: 'MODERNIST SWISS', layout: 'swiss', bg: '#ffffff', accent: '#ff4400', font: "'Bebas Neue'", texture: 'clean' },
-  { id: 3, name: 'GLASTO MUD', layout: 'folk', bg: '#2d3b2d', accent: '#e8dfa0', font: "'Bebas Neue'", texture: 'grain' },
-  { id: 4, name: 'INDUSTRIAL TECHNO', layout: 'vertical', bg: '#1a1a1a', accent: '#bc13fe', font: "'Space Mono'", texture: 'grunge' },
-  { id: 5, name: 'PSYCHEDELIC MELT', layout: 'wavy', bg: '#12002b', accent: '#ff00ff', font: "'Bebas Neue'", texture: 'grain' },
-  { id: 6, name: '80S RETROWAVE', layout: 'grid80', bg: '#000033', accent: '#00e5cc', font: "'Space Mono'", texture: 'grunge' }
+  { id:0, name:'COACHELLA GRID', bg:'#f5f0e8', accent:'#1a1a2e', accent2:'#8b0000', font:'Bebas Neue', style:'grid', dark:false },
+  { id:1, name:'LOLLA BOLD', bg:'#050510', accent:'#ff0055', accent2:'#ffffff', font:'Monoton', style:'bold', dark:true },
+  { id:2, name:'BONNAROO FOREST', bg:'#0a1a08', accent:'#88cc44', accent2:'#ffcc00', font:'Caveat', style:'forest', dark:true },
 ];
 
 const FEST_NAME_PARTS = {
@@ -1878,83 +2381,1075 @@ const FEST_NAME_PARTS = {
   'Electronic':[['Neon','Circuit','Static','Pulse'],['Grid','Wave','Surge','Flux']],
   'Jam':[['Rolling','Wandering','Spiral','Endless'],['Current','River','Flow','Grove']],
   'Folk':[['Timber','Ember','Moss','Willow'],['Creek','Ridge','Vale','Hearth']],
+  'Alternative':[['Fault','Storm','Drift','Void'],['Line','Break','Surge','Shift']],
+  'Punk':[['Concrete','Iron','Rust','Voltage'],['Teeth','Wire','Fist','Noise']],
+  'Classic Rock':[['Thunder','Stone','Chrome','Road'],['Mountain','Highway','Peak','Mile']],
+  'Hip Hop':[['Block','Crown','Signal','Cipher'],['Party','Summit','Session','Verse']],
+  'Experimental':[['Strange','Liminal','Fractal','Echo'],['Ritual','Chamber','Loop','Signal']],
   'default':[['Open','Free','Wild','Lost'],['Ground','Field','Valley','Plains']],
 };
 
 function generateFestName(dominantGenre) {
-  const parts = FEST_NAME_PARTS[dominantGenre] || FEST_NAME_PARTS['default'];
-  const a = parts[0][Math.floor(Math.random()*parts[0].length)];
-  const b = parts[1][Math.floor(Math.random()*parts[1].length)];
-  const suffixes = ['Festival','Fest','Gathering','Sessions','Archive'];
+  const parts=FEST_NAME_PARTS[dominantGenre]||FEST_NAME_PARTS['default'];
+  const a=parts[0][Math.floor(Math.random()*parts[0].length)];
+  const b=parts[1][Math.floor(Math.random()*parts[1].length)];
+  const suffixes=['Festival','Fest','Music Festival','Gathering','Sessions'];
   return `${a} ${b} ${suffixes[Math.floor(Math.random()*suffixes.length)]}`;
 }
 
-const PosterTexture = ({ type }) => (
-  <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10, opacity: type === 'grain' ? 0.15 : 0.25, backgroundImage: type === 'grain' ? `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` : type === 'grunge' ? `repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 4px)` : 'none' }} />
-);
-
-const JustifiedRow = ({ text, color, fontSize, font }) => (
-  <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', fontSize, fontFamily: font, color, textTransform: 'uppercase', lineHeight: 1, marginBottom: 5, letterSpacing: '0.1em' }}>
-    {text.split('').map((c, i) => <span key={i}>{c === ' ' ? '\u00A0' : c}</span>)}
-  </div>
-);
-
-const PosterPreview = ({ tpl, artists, name, headlinerCount, dnaScores }) => {
-  if (!tpl || !artists || artists.length === 0) return null;
-  const hls = artists.slice(0, headlinerCount), mid = artists.slice(headlinerCount, headlinerCount + 8), uc = artists.slice(headlinerCount + 8);
-  return (
-    <div style={{ width: '100%', maxWidth: '480px', height: '680px', background: tpl.bg, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: '40px 30px', boxShadow: '0 40px 100px rgba(0,0,0,0.8)', border: `1px solid rgba(255,255,255,0.1)` }}>
-      <PosterTexture type={tpl.texture} />
-      <div style={{ position: 'absolute', top: '55%', left: '50%', transform: 'translate(-50%, -50%) scale(1.6)', opacity: 0.1, pointerEvents: 'none' }}><SetlistDNA genreScores={dnaScores} /></div>
-      <div style={{ textAlign: tpl.layout === 'vertical' ? 'left' : 'center', zIndex: 20, marginBottom: 30 }}><div style={{ fontFamily: tpl.font, fontSize: '3.8rem', color: tpl.accent, lineHeight: 0.8 }}>{name.toUpperCase()}</div><div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: tpl.accent, opacity: 0.6, letterSpacing: '0.5em', marginTop: 10 }}>EST. 1999 // ARCHIVE RECALL {artists.length}</div></div>
-      <div style={{ flex: 1, zIndex: 20, position: 'relative' }}>
-        {(tpl.layout === 'tiered' || tpl.layout === 'folk' || tpl.layout === 'swiss') && <>{hls.map(a => <JustifiedRow key={a.artist} text={a.artist} fontSize="2.6rem" color={tpl.accent} font={tpl.font} />)}<div style={{ height: 2, background: tpl.accent, margin: '15px 0' }} />{mid.map((a, i) => i % 2 === 0 && <JustifiedRow key={i} text={`${a.artist}  ${mid[i+1]?.artist || ''}`} fontSize="1.1rem" color={tpl.accent} font={tpl.font} />)}<div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '5px 12px', marginTop: 20 }}>{uc.map(a => <span key={a.artist} style={{ fontFamily: "'Space Mono'", fontSize: 8, color: tpl.accent, opacity: 0.7 }}>{a.artist.toUpperCase()}</span>)}</div></>}
-        {tpl.layout === 'zine' && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{artists.map((a, i) => <div key={a.artist} style={{ background: i < headlinerCount ? tpl.accent : 'transparent', color: i < headlinerCount ? '#000' : tpl.accent, padding: '2px 6px', border: i >= headlinerCount ? `1px solid ${tpl.accent}` : 'none', fontFamily: "'Space Mono'", fontSize: i < headlinerCount ? '1.4rem' : '0.8rem', transform: `rotate(${(i%2 === 0 ? 1 : -1) * (i%4)}deg)`, fontWeight: 900 }}>{a.artist.toUpperCase()}</div>)}</div>}
-        {tpl.layout === 'vertical' && <div style={{ display: 'flex', height: '100%' }}><div style={{ writingMode: 'vertical-rl', fontFamily: tpl.font, fontSize: '4rem', color: tpl.accent, fontWeight: 900, lineHeight: 1 }}>{hls[0]?.artist.toUpperCase()}</div><div style={{ flex: 1, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>{artists.slice(1, 15).map(a => <div key={a.artist} style={{ fontFamily: "'Space Mono'", fontSize: 9, color: tpl.accent, borderBottom: `1px solid ${tpl.accent}33`, paddingBottom: 2 }}>{a.artist.toUpperCase()}</div>)}</div></div>}
-        {(tpl.layout === 'wavy' || tpl.layout === 'grid80') && <div style={{ textAlign: 'center' }}>{artists.map((a, i) => <div key={a.artist} style={{ fontFamily: tpl.font, color: tpl.accent, fontSize: i < headlinerCount ? '2.4rem' : '1rem', transform: tpl.layout === 'wavy' ? `skewX(${Math.sin(i) * 15}deg)` : 'none', marginBottom: 4, letterSpacing: tpl.layout === 'grid80' ? '0.3em' : 'normal' }}>{a.artist.toUpperCase()}</div>)}</div>}
-      </div>
-      <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: `1px solid ${tpl.accent}33`, paddingTop: 15, zIndex: 20 }}><div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: tpl.accent, opacity: 0.5 }}>NEON NOIR DESIGN STUDIO // ID: {name.toUpperCase()}</div><div style={{ display: 'flex', gap: 1 }}>{[1,4,2,1,5,2,1].map((w, i) => <div key={i} style={{ width: w, height: 12, background: tpl.accent, opacity: 0.4 }} />)}</div></div>
-    </div>
-  );
-};
-
 function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
-  const [genreMix, setGenreMix] = useState({ 'Indie Rock': 30, 'Electronic': 20, 'Rock': 20, 'Folk': 10, 'Alternative': 10, 'Experimental': 10 });
+  const [genreMix, setGenreMix] = useState({ 'Indie Rock':30,'Electronic':20,'Folk':20,'Jam':15,'Alternative':15 });
   const [templateIdx, setTemplateIdx] = useState(0);
   const [festName, setFestName] = useState('');
   const [generated, setGenerated] = useState(null);
-  const [headlinerCount, setHeadlinerCount] = useState(3);
-  const [totalActs, setTotalActs] = useState(25);
+  const [headlinerCount, setHeadlinerCount] = useState(2);
+  const [totalActs, setTotalActs] = useState(20);
+
+  const totalPct = Object.values(genreMix).reduce((a,b)=>a+b,0);
 
   const artistPool = useMemo(() => {
     const m = {};
-    const list = allSetsList || concerts || [];
-    list.forEach(s => {
-      const g = genreMap[s.artist] || s.genre || 'Other';
-      if (!m[s.artist]) m[s.artist] = { artist: s.artist, genre: g, count: 0 };
+    allSetsList.forEach(s => {
+      const g=genreMap[s.artist]||s.genre||null;
+      if(!g||g==='Other') return;
+      if(!m[s.artist])m[s.artist]={artist:s.artist,genre:g,count:0};
       m[s.artist].count++;
     });
-    return Object.values(m).sort((a, b) => b.count - a.count);
-  }, [allSetsList, concerts, genreMap]);
+    return Object.values(m).sort((a,b)=>b.count-a.count);
+  }, [allSetsList, genreMap]);
 
   const generate = () => {
-    const tpl = POSTER_TEMPLATES[templateIdx];
-    const picked = [], used = new Set();
-    Object.entries(genreMix).forEach(([genre, pct]) => {
-      const count = Math.max(0, Math.round((pct / 100) * totalActs));
-      artistPool.filter(a => a.genre === genre && !used.has(a.artist)).slice(0, count).forEach(a => { picked.push(a); used.add(a.artist); });
+    const tpl=POSTER_TEMPLATES[templateIdx];
+    const total=Object.values(genreMix).reduce((a,b)=>a+b,0)||100;
+    const normalized={};
+    Object.entries(genreMix).forEach(([g,v])=>{normalized[g]=Math.max(0,Math.round((v/total)*totalActs));});
+    const picked=[], used=new Set();
+    Object.entries(normalized).forEach(([genre,count])=>{
+      if(count<=0) return;
+      artistPool.filter(a=>a.genre===genre&&!used.has(a.artist)).slice(0,count).forEach(a=>{picked.push({...a});used.add(a.artist);});
     });
-    picked.sort((a, b) => b.count - a.count);
-    const dominantGenre = Object.entries(genreMix).sort((a, b) => b[1] - a[1])[0]?.[0] || 'default';
-    const dna = {}; GENRES.forEach(g => { dna[g] = genreMix[g] || 0; });
-    setGenerated({ tpl, artists: picked.slice(0, totalActs), name: festName.trim() || generateFestName(dominantGenre), headlinerCount, dnaScores: dna });
+    picked.sort((a,b)=>b.count-a.count);
+    const dominantGenre=Object.entries(genreMix).sort((a,b)=>b[1]-a[1])[0]?.[0]||'default';
+    setGenerated({ tpl, artists:picked, name:festName.trim()||generateFestName(dominantGenre), headlinerCount });
   };
 
-  useEffect(() => { if (generated) generate(); }, [templateIdx]);
+  const tpl=POSTER_TEMPLATES[templateIdx];
+
+  const PosterPreview = ({ tpl:t, artists, name, headlinerCount:hc }) => {
+    const headliners=artists.slice(0,hc);
+    const midTier=artists.slice(hc,hc+Math.ceil((artists.length-hc)/2));
+    const undercard=artists.slice(hc+Math.ceil((artists.length-hc)/2));
+
+    if (t.style==='grid') {
+      // Coachella grid: light background, black typography, tight grid
+      return (
+        <div style={{ background:t.bg, borderRadius:12, overflow:'hidden', border:'2px solid #1a1a2e', padding:'32px 28px', fontFamily:"'Bebas Neue'", textAlign:'center', minHeight:600 }}>
+          <div style={{ borderBottom:'3px solid #1a1a2e', paddingBottom:12, marginBottom:16 }}>
+            <div style={{ fontSize:'clamp(2rem,5vw,3.2rem)', letterSpacing:'0.12em', color:t.accent, lineHeight:1 }}>{name.toUpperCase()}</div>
+            <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:'#666', letterSpacing:'0.3em', marginTop:4 }}>JUNE 2026 · FROM YOUR 27-YEAR CONCERT HISTORY</div>
+          </div>
+          {headliners.map((a,i) => <div key={a.artist} style={{ fontSize:i===0?'clamp(2rem,6vw,4rem)':'clamp(1.5rem,4vw,2.5rem)', letterSpacing:'0.06em', color:t.accent, lineHeight:1.1, marginBottom:6 }}>{a.artist.toUpperCase()}</div>)}
+          <div style={{ height:2, background:'#1a1a2e', margin:'12px 0' }} />
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px 12px', marginBottom:12 }}>
+            {midTier.map(a => <div key={a.artist} style={{ fontSize:'clamp(0.8rem,2vw,1.1rem)', letterSpacing:'0.06em', color:t.accent2, lineHeight:1.2, borderBottom:'1px solid #ddd', paddingBottom:4 }}>{a.artist.toUpperCase()}</div>)}
+          </div>
+          <div style={{ display:'flex', flexWrap:'wrap', justifyContent:'center', gap:'4px 12px' }}>
+            {undercard.map(a => <span key={a.artist} style={{ fontFamily:"'Space Mono',monospace", fontSize:'clamp(6px,1.2vw,9px)', color:'#555', letterSpacing:'0.12em' }}>{a.artist.toUpperCase()}</span>)}
+          </div>
+        </div>
+      );
+    }
+
+    if (t.style==='forest') {
+      // Bonnaroo forest: rough, handwritten feel, earthy
+      return (
+        <div style={{ background:t.bg, borderRadius:12, overflow:'hidden', border:`3px solid ${t.accent}`, padding:'32px 28px', textAlign:'center', minHeight:600, position:'relative' }}>
+          <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 0%,rgba(136,204,68,0.1),transparent 60%)', pointerEvents:'none' }} />
+          <div style={{ fontFamily:"'Caveat',cursive", fontSize:'clamp(2.5rem,7vw,4.5rem)', fontWeight:700, color:t.accent, lineHeight:1, marginBottom:8, textShadow:`0 0 20px ${hexToRgba(t.accent,0.4)}` }}>{name}</div>
+          <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:hexToRgba(t.accent2,0.7), letterSpacing:'0.2em', marginBottom:24 }}>JUNE 2026</div>
+          {headliners.map((a,i) => <div key={a.artist} style={{ fontFamily:"'Caveat',cursive", fontSize:i===0?'clamp(2rem,5vw,3.5rem)':'clamp(1.5rem,3.5vw,2.5rem)', fontWeight:700, color:i===0?t.accent2:t.accent, lineHeight:1.1, marginBottom:6 }}>{a.artist}</div>)}
+          <div style={{ height:2, background:`${t.accent}55`, margin:'16px 0', borderRadius:1 }} />
+          <div style={{ fontFamily:"'Caveat',cursive", fontSize:'clamp(1rem,2.5vw,1.5rem)', color:hexToRgba(t.accent,0.8), lineHeight:1.8, marginBottom:12 }}>
+            {midTier.map(a=>a.artist).join(' · ')}
+          </div>
+          <div style={{ fontFamily:"'Space Mono',monospace", fontSize:'clamp(6px,1.2vw,8px)', color:hexToRgba(t.accent,0.5), letterSpacing:'0.1em', lineHeight:2 }}>
+            {undercard.map(a=>a.artist).join('  ·  ')}
+          </div>
+        </div>
+      );
+    }
+
+    // Lolla Bold: dark, massive type, high impact
+    return (
+      <div style={{ background:t.bg, borderRadius:12, overflow:'hidden', border:`2px solid ${t.accent}`, padding:'32px 28px', textAlign:'center', minHeight:600, position:'relative' }}>
+        <div style={{ position:'absolute', inset:0, background:`radial-gradient(ellipse at 50% 0%,${hexToRgba(t.accent,0.2)},transparent 60%)`, pointerEvents:'none' }} />
+        <div style={{ position:'absolute', inset:0, background:`radial-gradient(ellipse at 50% 100%,${hexToRgba(t.accent2,0.05)},transparent 60%)`, pointerEvents:'none' }} />
+        <div style={{ position:'relative', zIndex:1 }}>
+          <div style={{ height:2, background:`linear-gradient(90deg,transparent,${t.accent},transparent)`, marginBottom:20 }} />
+          <div style={{ fontFamily:"'Monoton',cursive", fontSize:'clamp(1.5rem,4vw,2.5rem)', letterSpacing:'0.1em', color:t.accent, lineHeight:1.2, marginBottom:6, textShadow:`0 0 20px ${hexToRgba(t.accent,0.5)}` }}>{name.toUpperCase()}</div>
+          <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:hexToRgba(t.accent2,0.5), letterSpacing:'0.3em', marginBottom:28 }}>JUNE 2026</div>
+          {headliners.map((a,i) => <div key={a.artist} style={{ fontFamily:"'Bebas Neue'", fontSize:i===0?'clamp(3rem,8vw,6rem)':'clamp(2rem,5vw,3.5rem)', letterSpacing:'0.04em', color:i===0?t.accent2:t.accent, lineHeight:1, marginBottom:4, textShadow:i===0?`0 0 30px ${hexToRgba(t.accent,0.3)}`:'none' }}>{a.artist.toUpperCase()}</div>)}
+          <div style={{ height:1, background:`${t.accent}66`, margin:'20px 0' }} />
+          <div style={{ fontFamily:"'Bebas Neue'", fontSize:'clamp(1rem,2.5vw,1.6rem)', color:hexToRgba(t.accent2,0.7), letterSpacing:'0.06em', lineHeight:1.8, marginBottom:16 }}>{midTier.map(a=>a.artist.toUpperCase()).join(' · ')}</div>
+          <div style={{ fontFamily:"'Space Mono',monospace", fontSize:'clamp(6px,1.2vw,8px)', color:hexToRgba(t.accent2,0.35), letterSpacing:'0.15em', lineHeight:2 }}>{undercard.map(a=>a.artist.toUpperCase()).join('  ·  ')}</div>
+          <div style={{ height:2, background:`linear-gradient(90deg,transparent,${t.accent},transparent)`, marginTop:20 }} />
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div style={{ padding: '24px 0' }} className="fade-in">
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40 }}>
-        <div style={{ height: '700px', overflowY: 'auto', paddingRight: 15 }}>
-          <Card neon style={{ marginBottom: 16 }}><CardTitle>Genre Allocation</CardTitle>{GENRES.filter(g => g !== 'Other').map(g => (<div key={g} style={{ marginBottom: 10 }}><div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Space Mono'", fontSize: 8, color: C.gray }}><span>{g.toUpperCase()}</span><span style={{ color: genreMix[g] > 0 ? GENRE_COLORS[g] : C.gray }}>{genreMix[g] || 0}%</span></div><input type="range" min="0" max="100" value={genreMix[g] || 0} onChange={e => setGenreMix(p => ({ ...p, [g]: +e.target.value }))} style={{ width: '100%', accentColor: GENRE_COLORS[g] || C.teal }} /></div>))}</Card>
-          <Card neon style={{ marginBottom: 16 }}><CardTitle>Blueprint Options</CardTitle><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15, marginBottom: 15 }}><div><div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginBottom: 5 }}>TOTAL ACTS: {totalActs}</div><input type="range" min="10" max="50" value={totalActs} onChange={e => setTotalActs(+e.target.value)} style={{ width: '100%' }} /></div><div><div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginBottom: 5 }}>HEADLINERS: {headlinerCount}</div><input type="range" min="1" max="5" value={headlinerCount} onChange={e => setHeadlinerCount(+e.target.value)} style={{ width: '100%' }} /></div></div><input value={festName} onChange={e => set
+    <div style={{ padding:'24px 0' }} className="fade-in">
+      <div style={{ textAlign:'center', marginBottom:32 }}>
+        <div style={{ fontFamily:"'Bebas Neue'", fontSize:'clamp(2rem,5vw,3.5rem)', color:C.white, letterSpacing:'0.06em', marginBottom:8 }}>🎨 POSTER <span style={{ color:C.teal }}>GENERATOR</span></div>
+        <div style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:C.gray }}>Build your dream festival from your concert history</div>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24, marginBottom:32 }}>
+        <div>
+          <Card neon style={{ marginBottom:16 }}>
+            <CardTitle>Genre Mix</CardTitle>
+            <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:totalPct===100?C.green:totalPct>100?C.red:C.gold, marginBottom:12 }}>Total: {totalPct}% {totalPct!==100&&'(should equal 100)'}</div>
+            {GENRES.filter(g=>g!=='Other').map(g => (
+              <div key={g} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+                <div style={{ width:10, height:10, borderRadius:'50%', background:GENRE_COLORS[g], flexShrink:0 }} />
+                <span style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, width:90, flexShrink:0 }}>{g}</span>
+                <input type="range" min={0} max={100} value={genreMix[g]||0} onChange={e=>setGenreMix(p=>({...p,[g]:+e.target.value}))} style={{ flex:1, accentColor:GENRE_COLORS[g] }} />
+                <span style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:GENRE_COLORS[g], width:32, textAlign:'right', flexShrink:0 }}>{genreMix[g]||0}%</span>
+              </div>
+            ))}
+          </Card>
+          <Card neon style={{ marginBottom:16 }}>
+            <CardTitle>Options</CardTitle>
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, marginBottom:6 }}>TOTAL ACTS: {totalActs}</div>
+              <input type="range" min={5} max={40} value={totalActs} onChange={e=>setTotalActs(+e.target.value)} style={{ width:'100%', accentColor:C.teal }} />
+            </div>
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, marginBottom:6 }}>HEADLINERS: {headlinerCount}</div>
+              <input type="range" min={1} max={4} value={headlinerCount} onChange={e=>setHeadlinerCount(+e.target.value)} style={{ width:'100%', accentColor:C.gold }} />
+            </div>
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, marginBottom:6 }}>FESTIVAL NAME (leave blank to auto-generate)</div>
+              <input value={festName} onChange={e=>setFestName(e.target.value)} placeholder="e.g. Neon Pines Festival" style={{ ...inputSt, width:'100%' }} />
+            </div>
+          </Card>
+          <Card neon>
+            <CardTitle>Template</CardTitle>
+            <div style={{ display:'flex', gap:8 }}>
+              {POSTER_TEMPLATES.map((t,i) => (
+                <div key={t.id} onClick={()=>setTemplateIdx(i)} style={{ flex:1, background:t.bg, border:`2px solid ${i===templateIdx?t.accent:C.border}`, borderRadius:6, padding:'10px 6px', cursor:'pointer', textAlign:'center', boxShadow:i===templateIdx?`0 0 12px rgba(0,0,0,0.5)`:'none', transition:'all 0.2s' }}>
+                  <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:t.dark?t.accent:'#1a1a2e', textTransform:'uppercase', letterSpacing:1, lineHeight:1.4 }}>{t.name}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+          <div style={{ marginTop:20 }}>
+            <Btn onClick={generate} style={{ width:'100%', padding:'14px', fontSize:13, letterSpacing:'0.2em' }}>⚡ GENERATE POSTER</Btn>
+          </div>
+        </div>
+        <div>
+          {generated
+            ? <PosterPreview {...generated} />
+            : <div style={{ background:C.bgCard, border:`2px dashed ${C.border}`, borderRadius:12, minHeight:600, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16 }}>
+                <div style={{ fontSize:'4rem' }}>🎨</div>
+                <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.5rem', color:C.grayDim }}>YOUR POSTER APPEARS HERE</div>
+                <div style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:C.grayDim }}>Configure your mix and hit Generate</div>
+              </div>
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MANAGE TAB ───────────────────────────────────────────────────────────────
+function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
+  const [search, setSearch] = useState(''), [page, setPage] = useState(1); const PER=30;
+  const filtered = useMemo(() => { if(!search)return concerts; const q=search.toLowerCase(); return concerts.filter(c=>(c.bands||[]).some(b=>b.toLowerCase().includes(q))||(c.venue||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q)||(c.festival_name||'').toLowerCase().includes(q)); }, [concerts,search]);
+  const paged=filtered.slice((page-1)*PER,page*PER), totalPages=Math.ceil(filtered.length/PER);
+  return (
+    <div style={{ padding:'24px 0' }} className="fade-in">
+      <div style={{ display:'flex', gap:10, marginBottom:16 }}>
+        <input style={{ ...inputSt, flex:1 }} placeholder="Search shows to edit..." value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }} />
+        <Btn onClick={onAdd}>+ Add Show</Btn>
+      </div>
+      <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:8, overflow:'hidden' }}>
+        <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'0.78rem' }}>
+          <thead>
+            <tr style={{ background:C.bgCardAlt }}>
+              {['Date','Artists','Venue','City','Genre','Type','📋','Dup','Edit'].map(h => <th key={h} style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', padding:'10px 12px', textAlign:'left', color:C.tealDim, borderBottom:`1px solid ${C.border}` }}>{h}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {paged.map((c,i) => (
+              <tr key={c.id} style={{ borderBottom:`1px solid ${C.border}`, background:i%2===1?C.bgCardAlt:'transparent' }}>
+                <td style={{ padding:'9px 12px', fontFamily:"'Space Mono',monospace", fontSize:'0.7rem', color:C.gray, whiteSpace:'nowrap' }}>{fmtDate(c.date)}</td>
+                <td className="row-hover" onClick={()=>onEdit(c)} style={{ padding:'9px 12px', color:C.white, fontWeight:500, cursor:'pointer' }}>{(c.bands||[]).slice(0,3).join(', ')}{c.bands?.length>3?` +${c.bands.length-3}`:''}</td>
+                <td style={{ padding:'9px 12px', color:C.gray }}>{c.venue||'—'}</td>
+                <td style={{ padding:'9px 12px', color:C.gray }}>{c.city||'—'}</td>
+                <td style={{ padding:'9px 12px' }}>{c.genre?<GenreBadge genre={c.genre} color={GENRE_COLORS[c.genre]} small />:<span style={{ color:C.grayDim }}>—</span>}</td>
+                <td style={{ padding:'9px 12px' }}>{c.is_festival?<Badge color={C.teal}>Fest</Badge>:<Badge color={C.grayDim} bg="transparent">Solo</Badge>}</td>
+                <td style={{ padding:'9px 12px' }}>{c.has_setlist?<span style={{ color:C.gold }}>📋</span>:<span style={{ color:C.grayDim }}>—</span>}</td>
+                <td style={{ padding:'9px 12px' }}><button onClick={()=>onDuplicate(c)} style={{ background:'none', border:`1px solid ${C.border}`, color:C.gray, cursor:'pointer', fontSize:9, borderRadius:3, padding:'2px 6px', fontFamily:"'Space Mono'" }} title="Duplicate">⧉</button></td>
+                <td style={{ padding:'9px 12px' }}><button onClick={()=>onEdit(c)} style={{ background:'none', border:`1px solid ${C.border}`, color:C.tealDim, cursor:'pointer', fontSize:9, borderRadius:3, padding:'2px 6px', fontFamily:"'Space Mono'" }}>✎</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {totalPages>1 && <div style={{ display:'flex', justifyContent:'center', gap:5, marginTop:14 }}><Btn variant="secondary" onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} style={{ padding:'5px 10px' }}>←</Btn>{Array.from({length:Math.min(7,totalPages)},(_,i)=>{ const p=page<=4?i+1:page+i-3; if(p<1||p>totalPages)return null; return <Btn key={p} variant={p===page?'primary':'secondary'} onClick={()=>setPage(p)} style={{ padding:'5px 10px' }}>{p}</Btn>; })}<Btn variant="secondary" onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} style={{ padding:'5px 10px' }}>→</Btn></div>}
+    </div>
+  );
+}
+
+// ─── MODALS ───────────────────────────────────────────────────────────────────
+function UpcomingModal({ show, onClose, onSave, onDelete }) {
+  const isNew = !show?.id;
+  const [form, setForm] = useState({ artist: '', venue: '', date: '', status: 'TICKETS BOUGHT' });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (show && show.id) {
+      setForm({
+        artist: show.artist || '',
+        venue: show.venue || '',
+        date: show.date || '',
+        status: show.status || 'TICKETS BOUGHT'
+      });
+    } else {
+      setForm({ artist: '', venue: '', date: '', status: 'TICKETS BOUGHT' });
+    }
+  }, [show]);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSave = async () => {
+    if (!form.artist || !form.date) return alert('Artist and date required.');
+    setSaving(true);
+    await onSave(show?.id, form);
+    setSaving(false);
+  };
+
+  const handleDelete = () => {
+    onDelete(show.id);
+  };
+
+  const lbl = { display: 'block', fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 };
+  const inp = { ...inputSt, width: '100%', marginBottom: 15 };
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(10px)' }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        className="fade-in"
+        style={{ background: C.bgCard, border: `1px solid ${C.gold}`, borderRadius: 12, padding: 32, width: '100%', maxWidth: 420, boxShadow: `0 0 50px ${hexToRgba(C.gold, 0.2)}`, position: 'relative' }}
+      >
+        {/* Watermark */}
+        <div style={{ position: 'absolute', top: -10, right: -10, fontFamily: "'Bebas Neue'", fontSize: '6rem', color: 'rgba(255,204,0,0.03)', pointerEvents: 'none', zIndex: 0 }}>
+          {isNew ? 'NEW' : 'EDIT'}
+        </div>
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25, position: 'relative', zIndex: 1 }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, letterSpacing: '0.05em' }}>
+            {isNew ? 'STAGING NEW SHOW' : 'REVISING SHOW'}
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: C.gray, fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1 }}>✕</button>
+        </div>
+
+        {/* Form */}
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <label style={lbl}>Artist / Band *</label>
+          <input style={inp} value={form.artist} onChange={e => set('artist', e.target.value)} placeholder="e.g. Tame Impala" />
+
+          <label style={lbl}>Venue</label>
+          <input style={inp} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="e.g. Red Rocks" />
+
+          <label style={lbl}>Date *</label>
+          <input style={{ ...inp, colorScheme: 'dark' }} type="date" value={form.date} onChange={e => set('date', e.target.value)} />
+
+          <label style={lbl}>Status</label>
+          <select style={inp} value={form.status} onChange={e => set('status', e.target.value)}>
+            <option value="TICKETS">TICKETS</option>
+            <option value="PENDING">PENDING</option>
+            <option value="DREAMING">DREAMING</option>
+          </select>
+        </div>
+
+        {/* Buttons — outside the zIndex stacking, plain siblings */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 20 }}>
+          <div>
+            {!isNew && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                style={{ background: 'none', border: `1px solid ${C.red}`, color: C.red, padding: '10px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9, fontWeight: 700, letterSpacing: '0.1em' }}
+              >
+                DELETE
+              </button>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{ background: C.bgCardAlt, border: `1px solid ${C.border}`, color: C.gray, padding: '10px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9, letterSpacing: '0.1em' }}
+            >
+              CANCEL
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              style={{ background: C.gold, color: '#000', border: 'none', padding: '10px 24px', borderRadius: 4, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'Space Mono'", fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', opacity: saving ? 0.7 : 1 }}
+            >
+              {saving ? 'SAVING...' : 'SAVE SHOW'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditModal({ concert, onClose, onSave, onDelete }) {
+  const [form, setForm] = useState({ 
+    date: concert?.date || '', 
+    bands: (concert?.bands || []).join(', '), 
+    venue: concert?.venue || '', 
+    city: concert?.city || '', 
+    state: concert?.state || '', 
+    is_festival: concert?.is_festival || false, 
+    festival_name: concert?.festival_name || '', 
+    festival_day: concert?.festival_day || '', 
+    has_setlist_names: concert?.has_setlist_names || '', 
+    genre: concert?.genre || '', 
+    // FIXED: Changed key to 'image_url' to match database column
+    image_url: concert?.image_url || '' 
+  });
+
+  const [saving, setSaving] = useState(false), [confirming, setConfirming] = useState(false);
+  
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSave = async () => { 
+    setSaving(true); 
+    const bandList = form.bands.split(',').map(b => b.trim()).filter(Boolean); 
+    
+    // This sends the updated form (including image_url) to the handleSave in App.js
+    await onSave(concert?.id, {
+      ...form,
+      bands: bandList,
+      has_setlist: !!(form.has_setlist_names?.trim())
+    }); 
+    setSaving(false); 
+  };
+
+  const lbl = { display: 'block', fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 };
+  const inp = { ...inputSt, width: '100%' };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(4px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.teal}`, borderRadius: 10, padding: 24, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: `0 0 40px ${C.tealGlow}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: C.teal }}>{concert?.id ? 'Edit Show' : 'Add Show'}</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: C.gray, fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+        </div>
+        
+        <div style={{ marginBottom: 14 }}><label style={lbl}>Date</label><input style={inp} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
+        <div style={{ marginBottom: 14 }}><label style={lbl}>Artists (comma separated)</label><input style={inp} value={form.bands} onChange={e => set('bands', e.target.value)} /></div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+          <div><label style={lbl}>Venue</label><input style={inp} value={form.venue} onChange={e => set('venue', e.target.value)} /></div>
+          <div><label style={lbl}>City</label><input style={inp} value={form.city} onChange={e => set('city', e.target.value)} /></div>
+        </div>
+        
+        <div style={{ marginBottom: 14 }}><label style={lbl}>State</label><input style={{ ...inp, width: 80 }} value={form.state} onChange={e => set('state', e.target.value)} maxLength={2} /></div>
+        
+        <div style={{ marginBottom: 14 }}><label style={lbl}>Genre</label><select style={inp} value={form.genre} onChange={e => set('genre', e.target.value)}><option value="">— unset —</option>{GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+        
+        <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}><input type="checkbox" id="is_fest" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} style={{ accentColor: C.teal, width: 16, height: 16 }} /><label htmlFor="is_fest" style={{ ...lbl, marginBottom: 0, cursor: 'pointer' }}>Festival Day</label></div>
+        
+        {form.is_festival && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+            <div><label style={lbl}>Festival Name</label><input style={inp} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} /></div>
+            <div><label style={lbl}>Day Label</label><input style={inp} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} /></div>
+          </div>
+        )}
+        
+        <div style={{ marginBottom: 14 }}><label style={lbl}>Setlists Obtained (band names, comma separated)</label><input style={inp} value={form.has_setlist_names} onChange={e => set('has_setlist_names', e.target.value)} /></div>
+        
+        {/* FIXED: Input field now correctly targets image_url */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={lbl}>Gig Photo / Poster URL (Imgur Direct Link)</label>
+          <input 
+            style={inp} 
+            value={form.image_url} 
+            onChange={e => set('image_url', e.target.value)} 
+            placeholder="https://i.imgur.com/abc123.jpg" 
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', marginTop: 20 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {concert?.id && !confirming && <Btn variant="danger" onClick={() => setConfirming(true)}>Delete</Btn>}
+            {confirming && <><Btn variant="danger" onClick={() => onDelete(concert.id)}>Confirm</Btn><Btn variant="secondary" onClick={() => setConfirming(false)}>Cancel</Btn></>}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
+            <Btn onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Btn>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShareCard({ artist, shows, onClose }) {
+  const festCount=shows.filter(s=>s.is_festival).length, cities=[...new Set(shows.map(s=>s.city).filter(Boolean))], years=[...new Set(shows.map(s=>getYear(s.date)).filter(Boolean))].sort(), firstDate=fmtDate(shows[shows.length-1]?.date), lastDate=fmtDate(shows[0]?.date);
+  return (
+    <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,0.9)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20 }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="fade-in" style={{ width:'100%',maxWidth:420 }}>
+        <div style={{ background:`linear-gradient(135deg,${C.bg},${C.bgCard},${C.bgCardAlt})`,border:`1px solid ${C.teal}`,borderRadius:12,padding:'28px 24px',boxShadow:`0 0 40px ${C.tealGlow}` }}>
+          <div style={{ fontFamily:"'Space Mono',monospace",fontSize:8,letterSpacing:'0.25em',textTransform:'uppercase',color:C.tealDim,marginBottom:8 }}>🎸 Eric's Concert History</div>
+          <div style={{ fontFamily:"'Bebas Neue'",fontSize:'clamp(1.8rem,6vw,2.6rem)',color:C.white,lineHeight:1,marginBottom:16 }}>{artist}</div>
+          <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16 }}>
+            {[[shows.length,'Times Seen'],[festCount,'Festival Sets'],[shows.length-festCount,'Standalone'],[cities.length,cities.length===1?'City':'Cities']].map(([val,label])=>(
+              <div key={label} style={{ background:'rgba(255,255,255,0.04)',borderRadius:6,padding:'10px 12px',border:`1px solid ${C.border}` }}>
+                <div style={{ fontFamily:"'Bebas Neue'",fontSize:'1.8rem',color:C.teal,lineHeight:1 }}>{val}</div>
+                <div style={{ fontFamily:"'Space Mono',monospace",fontSize:7,color:C.gray,textTransform:'uppercase',marginTop:2 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display:'flex',flexWrap:'wrap',gap:3,marginBottom:12 }}>{years.map(y=><span key={y} style={{ fontFamily:"'Space Mono',monospace",fontSize:7,background:`${C.teal}22`,color:C.teal,border:`1px solid ${C.teal}44`,padding:'2px 5px',borderRadius:3 }}>{y}</span>)}</div>
+          <div style={{ fontFamily:"'Space Mono',monospace",fontSize:7,color:C.grayDim }}>First: {firstDate} · Last: {lastDate}</div>
+        </div>
+        <div style={{ display:'flex',gap:8,marginTop:12,justifyContent:'center' }}>
+          <button onClick={()=>navigator.clipboard?.writeText(`I've seen ${artist} ${shows.length} times. First: ${firstDate}. Last: ${lastDate}. #ConcertHistory`).then(()=>alert('Copied!'))} style={{ fontFamily:"'Space Mono',monospace",fontSize:9,textTransform:'uppercase',background:C.teal,color:C.bg,border:'none',borderRadius:4,padding:'8px 16px',cursor:'pointer' }}>📋 Copy Stats</button>
+          <button onClick={onClose} style={{ fontFamily:"'Space Mono',monospace",fontSize:9,textTransform:'uppercase',background:C.bgCard,color:C.gray,border:`1px solid ${C.border}`,borderRadius:4,padding:'8px 16px',cursor:'pointer' }}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── THEME SWITCHER ───────────────────────────────────────────────────────────
+function ThemeSwitcher() {
+  const { themeId, setThemeId } = useTheme();
+  const [open, setOpen] = useState(false);
+  const current = THEMES[themeId];
+
+  return (
+    <div style={{ position:'relative', display:'flex', alignItems:'center', padding:'0 12px', borderLeft:`1px solid ${C.border}`, flexShrink:0 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        title="Switch theme"
+        style={{ display:'flex', alignItems:'center', gap:7, background:'none', border:`1px solid ${C.border}`, borderRadius:20, padding:'5px 10px', cursor:'pointer', transition:'all 0.2s' }}
+        onMouseEnter={e => e.currentTarget.style.borderColor = C.teal}
+        onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
+      >
+        <div style={{ width:10, height:10, borderRadius:'50%', background:current.dot, boxShadow:`0 0 6px ${current.dot}` }} />
+        <span style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, letterSpacing:'0.1em', textTransform:'uppercase', whiteSpace:'nowrap' }}>{current.name}</span>
+        <span style={{ color:C.grayDim, fontSize:8 }}>{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div style={{ position:'absolute', top:'calc(100% + 8px)', right:0, background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:8, padding:8, minWidth:160, zIndex:300, boxShadow:`0 8px 32px rgba(0,0,0,0.6)` }}
+          className="fade-in">
+          <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:C.grayDim, letterSpacing:'0.15em', textTransform:'uppercase', padding:'4px 8px 8px', borderBottom:`1px solid ${C.border}`, marginBottom:6 }}>Theme</div>
+          {THEME_ORDER.map(id => {
+            const t = THEMES[id];
+            const isActive = id === themeId;
+            return (
+              <button key={id} onClick={() => { setThemeId(id); setOpen(false); }}
+                style={{ display:'flex', alignItems:'center', gap:10, width:'100%', background:isActive?`${t.dot}15`:'none', border:'none', borderRadius:4, padding:'8px 10px', cursor:'pointer', transition:'all 0.15s' }}
+                onMouseEnter={e => { if(!isActive)e.currentTarget.style.background=`${t.dot}0a`; }}
+                onMouseLeave={e => { if(!isActive)e.currentTarget.style.background='none'; }}>
+                <div style={{ width:12, height:12, borderRadius:'50%', background:t.dot, boxShadow:isActive?`0 0 8px ${t.dot}`:'none', flexShrink:0 }} />
+                <span style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:isActive?t.dot:C.gray, letterSpacing:'0.08em' }}>{t.name}</span>
+                {isActive && <span style={{ marginLeft:'auto', fontSize:10, color:t.dot }}>✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── TAB CONFIG ───────────────────────────────────────────────────────────────
+// [id, label, group, color]
+const TABS = [
+  ['dashboard','⚡ Dashboard',null,C.teal],
+  ['timeline','⏳ Timeline',null,C.cyan],
+  ['byDay','📅 By Day',null,C.teal],
+  ['byFest','🎪 By Festival','fest',C.gold],
+  ['passport','🗺️ Passport','fest',C.gold],
+  ['hof','🏆 Hall of Fame',null,C.purple],
+  ['vault','📋 Setlist Vault',null,C.green],
+['venues','📍 Venues',null,C.cyan],
+  ['poster','🎨 Poster Generator',null,'#ff6699'],  
+  ['browse','🔍 Browse','right',C.cyan],
+  ['manage','⚙️ Manage','right',C.gray],
+];
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+export default function App() {
+  // ── THEME ────────────────────────────────────────────────────────────────────
+  const [themeId, setThemeIdRaw] = useState(() => localStorage.getItem('concert-theme') || 'neon-noir');
+
+  const setThemeId = (id) => {
+    Object.assign(C, THEMES[id]);
+    setThemeIdRaw(id);
+    localStorage.setItem('concert-theme', id);
+  };
+
+  useEffect(() => { Object.assign(C, THEMES[themeId]); }, []);
+
+  const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
+
+  // ── DATA STATE ───────────────────────────────────────────────────────────────
+  const [concerts, setConcerts]         = useState([]);
+  const [artistGenres, setArtistGenres] = useState({}); // <── THIS WAS MISSING
+  const [upcoming, setUpcoming]         = useState([]);
+  const [loading, setLoading]           = useState(true);
+  
+  // ── UI STATE ─────────────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab]       = useState('dashboard');
+  const [editTarget, setEditTarget]     = useState(null);
+  const [shareCard, setShareCard]       = useState(null);
+  const [upcomingModal, setUpcomingModal] = useState(null);
+
+  // ── FILTER STATE ─────────────────────────────────────────────────────────────
+  const [search, setSearch]             = useState('');
+  const [yearFilter, setYearFilter]     = useState('all');
+  const [festFilter, setFestFilter]     = useState('all');
+  const [genreFilter, setGenreFilter]   = useState('all');
+  const [browseView, setBrowseView]     = useState('shows');
+  const [sortCol, setSortCol]           = useState('date');
+  const [sortDir, setSortDir]           = useState('desc');
+  const [page, setPage]                 = useState(1);
+
+  // ── INITIAL FETCH ───────────────────────────────────────────────────────────
+  // This replaces your old useEffect to make sure genres load first
+  useEffect(() => { 
+    const init = async () => {
+      setLoading(true);
+      await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]);
+      setLoading(false);
+    };
+    init();
+  }, []);
+  // ── DERIVED DATA ────────────────────────────────────────────────────────────
+  // ── DERIVED DATA ────────────────────────────────────────────────────────────
+  // This now pulls from the dedicated artist_genres table instead of concert rows
+  const genreMap = useMemo(() => artistGenres, [artistGenres]);
+
+  const allSetsList = useMemo(() => {
+    const r = [];
+    concerts.forEach(c => { 
+      const bands = Array.isArray(c.bands) ? c.bands : [c.artist].filter(Boolean); 
+      bands.forEach(band => { if (band) r.push({ ...c, artist: band }); }); 
+    });
+    return r;
+  }, [concerts]);
+
+  const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
+  const stateCounts = useMemo(() => { const m = {}; concerts.forEach(c => { if (c.state) m[c.state] = (m[c.state] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); }, [concerts]);
+
+  const headerStats = useMemo(() => ({
+    totalShows: concerts.length,
+    totalSets: allSetsList.length,
+    uniqueArtists: new Set(allSetsList.map(s => s.artist)).size,
+    festDays: concerts.filter(c => c.is_festival).length,
+    setlistCount: concerts.filter(c => c.has_setlist || c.has_setlist_names).length,
+  }), [concerts, allSetsList]);
+
+  // Per-band genre counts (Now using the dedicated genre table)
+  const genreStats = useMemo(() => {
+    const counts = {};
+    allSetsList.forEach(s => { 
+      const g = artistGenres[s.artist] || 'Other'; 
+      counts[g] = (counts[g] || 0) + 1; 
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count, color: GENRE_COLORS[name] || GENRE_COLORS['Other'] }))
+      .sort((a, b) => b.count - a.count);
+  }, [allSetsList, artistGenres]);
+
+  const timelineData = useMemo(() => {
+    const m = {};
+    allSetsList.forEach(s => { const y = getYear(s.date); if (y) m[y] = (m[y] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => +a[0] - +b[0]).map(([year, count]) => ({ year: String(year).slice(2), count, fullYear: +year }));
+  }, [allSetsList]);
+
+  const artistCounts = useMemo(() => {
+    const m = {};
+    allSetsList.forEach(s => { m[s.artist] = (m[s.artist] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
+  }, [allSetsList]);
+
+  const festBreakdown = useMemo(() => {
+    const m = {};
+    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { m[c.festival_name] = (m[c.festival_name] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  }, [concerts]);
+
+  const passport = useMemo(() => {
+    const m = {};
+    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { if (!m[c.festival_name]) m[c.festival_name] = { name: c.festival_name, days: 0, years: new Set() }; m[c.festival_name].days++; const y = getYear(c.date); if (y) m[c.festival_name].years.add(y); });
+    return Object.values(m).map(f => ({ ...f, years: [...f.years].sort() })).sort((a, b) => b.days - a.days);
+  }, [concerts]);
+
+  const festGroupings = useMemo(() => {
+    const m = {};
+    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { const yr = getYear(c.date) || 'Unknown'; if (!m[c.festival_name]) m[c.festival_name] = { name: c.festival_name, years: {} }; if (!m[c.festival_name].years[yr]) m[c.festival_name].years[yr] = []; m[c.festival_name].years[yr].push(c); });
+    return Object.values(m).sort((a, b) => Object.values(b.years).flat().length - Object.values(a.years).flat().length);
+  }, [concerts]);
+
+  const applyFilters = useCallback((list, isSet = false) => {
+    let d = list;
+    if (yearFilter !== 'all') d = d.filter(r => getYear(r.date) === +yearFilter);
+    if (festFilter === 'fest') d = d.filter(r => r.is_festival);
+    if (festFilter === 'solo') d = d.filter(r => !r.is_festival);
+    if (genreFilter !== 'all') d = d.filter(r => { const g = isSet ? (artistGenres[r.artist]) : (r.genre); return g === genreFilter; });
+    if (search) {
+      const q = search.toLowerCase();
+      d = d.filter(r => {
+        const bands = isSet ? [r.artist] : (r.bands || []);
+        return bands.some(b => b.toLowerCase().includes(q)) || (r.venue || '').toLowerCase().includes(q) || (r.city || '').toLowerCase().includes(q) || (r.festival_name || '').toLowerCase().includes(q);
+      });
+    }
+    return d;
+  }, [yearFilter, festFilter, genreFilter, search, artistGenres]);
+
+  const filteredSets = useMemo(() => {
+    const d = applyFilters(allSetsList, true);
+    return [...d].sort((a, b) => { const av = sortCol === 'artist' ? (a.artist || '').toLowerCase() : (String(a[sortCol] || '')).toLowerCase(); const bv = sortCol === 'artist' ? (b.artist || '').toLowerCase() : (String(b[sortCol] || '')).toLowerCase(); if (sortCol === 'date') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av); if (av < bv) return sortDir === 'asc' ? -1 : 1; if (av > bv) return sortDir === 'asc' ? 1 : -1; return 0; });
+  }, [allSetsList, applyFilters, sortCol, sortDir]);
+
+  const artistRows = useMemo(() => {
+    if (browseView !== 'artists') return [];
+    const m = {};
+    applyFilters(allSetsList, true).forEach(s => { if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; m[s.artist].shows.push(s); });
+    return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
+  }, [allSetsList, applyFilters, browseView]);
+
+  const dayGroups = useMemo(() => applyFilters(concerts).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [concerts, applyFilters]);
+  const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE), totalPages = Math.ceil(filteredSets.length / PER_PAGE);
+
+  // ── DB ACTIONS ──────────────────────────────────────────────────────────────
+
+  async function fetchInitialData() {
+    setLoading(true);
+    await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]);
+    setLoading(false);
+  }
+
+  async function fetchConcerts() {
+    const { data } = await supabase.from('concerts').select('*').order('date', { ascending: false });
+    if (data) setConcerts(data);
+  }
+
+  async function fetchGenres() {
+    const { data } = await supabase.from('artist_genres').select('*');
+    if (data) {
+      const gMap = {};
+      data.forEach(row => { gMap[row.artist_name] = row.genre; });
+      setArtistGenres(gMap);
+    }
+  }
+
+  async function fetchUpcoming() {
+    const { data } = await supabase.from('upcoming_concerts').select('*').order('date', { ascending: true });
+    if (data) setUpcoming(data);
+  }
+
+  async function handleSave(id, payload) {
+    if (id) await supabase.from('concerts').update(payload).eq('id', id);
+    else await supabase.from('concerts').insert([payload]);
+    fetchConcerts();
+    setEditTarget(null);
+  }
+
+  async function handleDelete(id) {
+    if (window.confirm('Delete show?')) {
+      await supabase.from('concerts').delete().eq('id', id);
+      fetchConcerts();
+      setEditTarget(null);
+    }
+  }
+
+  async function handleSetGenre(artist, genre) {
+    if (!artist) return;
+    const { error } = await supabase
+      .from('artist_genres')
+      .upsert({ artist_name: artist, genre: genre }, { onConflict: 'artist_name' });
+    if (error) {
+      console.error('Genre error:', error);
+    } else {
+      setArtistGenres(prev => ({ ...prev, [artist]: genre }));
+    }
+  }
+
+  async function handleUpcomingSave(id, payload) {
+  const cleanPayload = {
+    artist: payload.artist,
+    venue: payload.venue,
+    date: payload.date,
+    status: payload.status,
+  };
+  if (id) {
+    const { data, error } = await supabase
+      .from('upcoming_concerts')
+      .update(cleanPayload)
+      .eq('id', id)
+      .select();
+    if (error) alert('Save failed: ' + error.message);
+    console.log('update result:', data, error);
+  } else {
+    const { data, error } = await supabase
+      .from('upcoming_concerts')
+      .insert([cleanPayload])
+      .select();
+    if (error) alert('Insert failed: ' + error.message);
+    console.log('insert result:', data, error);
+  }
+  await fetchUpcoming();
+  setUpcomingModal(null);
+}
+
+async function handleUpcomingDelete(id) {
+  if (window.confirm('Remove this show?')) {
+    const { error } = await supabase
+      .from('upcoming_concerts')
+      .delete()
+      .eq('id', id);
+    if (error) alert('Delete failed: ' + error.message);
+    console.log('delete id:', id, 'error:', error);
+    await fetchUpcoming();
+    setUpcomingModal(null);
+  }
+}
+
+  async function handleDuplicate(concert) {
+    const { id, created_at, ...rest } = concert;
+    await supabase.from('concerts').insert([{ ...rest, date: '', festival_day: '' }]);
+    fetchConcerts();
+    alert('Duplicated! Find it in Manage and update the date.');
+  }
+
+  const handleGenreClick = (genre) => {
+    setGenreFilter(genre);
+    setBrowseView('artists');
+    setActiveTab('browse');
+  };
+
+  if (loading) return (
+    <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING</div>
+    </div>
+  );
+
+  return (
+    <ThemeContext.Provider value={themeCtx}>
+      <div key={themeId} style={{ background: C.bg, minHeight: '100vh', paddingBottom: 60 }}>
+        <MarqueeStyles />
+
+        {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
+        {editTarget && <EditModal concert={editTarget === 'new' ? null : editTarget} onClose={() => setEditTarget(null)} onSave={handleSave} onDelete={handleDelete} />}
+        {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
+
+        {/* ── HERO HEADER ── */}
+            <div style={{ background: `linear-gradient(180deg,#050508 0%,${C.bgCard} 100%)`, borderBottom: `1px solid ${C.teal}22`, padding: '36px 24px 0', textAlign: 'center', position: 'relative' }}>          <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative' }}>
+            <h1 style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(3rem,8vw,6rem)', color: C.white, margin: '0 0 8px', lineHeight: 1, letterSpacing: '0.04em' }}>
+              🎸 LIVE <span style={{ color: C.gray, fontSize: '0.7em' }}>//</span> <span style={{ color: C.teal }}>IN CONCERT</span>
+            </h1>
+            <div style={{ fontFamily: "'Space Mono',monospace", fontSize: '0.75rem', color: C.gray, display: 'flex', justifyContent: 'center', gap: 20, flexWrap: 'wrap', marginBottom: 28 }}>
+              <span>{years.length > 0 ? `${years[years.length - 1] - years[0]} YEARS` : '0 YEARS'}</span>
+              <span style={{ color: C.grayDim }}>·</span>
+              <span>{stateCounts.length} STATES</span>
+              <span style={{ color: C.grayDim }}>·</span>
+              <span style={{ color: C.white, fontWeight: 700 }}>{headerStats.totalSets.toLocaleString()} SETS 🤘</span>
+            </div>
+
+           {/* Neon stat tiles */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 0, borderTop: `1px solid ${C.border}`, marginTop: 0 }}>
+              {[
+                { value: headerStats.totalSets, label: 'TOTAL SETS', sub: 'individual performances', color: C.teal, icon: '🎵' },
+                { value: headerStats.uniqueArtists, label: 'UNIQUE ARTISTS', sub: 'bands & performers', color: C.cyan, icon: '🎤' },
+                { value: headerStats.totalShows, label: 'SHOW DAYS', sub: `${headerStats.festDays} fest · ${headerStats.totalShows - headerStats.festDays} solo`, color: C.purple, icon: '📅' },
+                { value: headerStats.setlistCount, label: 'SETLISTS', sub: 'click to view vault', color: C.gold, icon: '📋', onClick: () => setActiveTab('vault') },
+              ].map((s, i) => (
+                <div key={s.label} onClick={s.onClick}
+                  style={{ padding: '20px 16px', borderRight: i < 3 ? `1px solid ${C.border}` : 'none', textAlign: 'center', cursor: s.onClick ? 'pointer' : 'default', position: 'relative', overflow: 'hidden', transition: 'background 0.2s' }}
+                  onMouseEnter={e => { if (s.onClick) e.currentTarget.style.background = hexToRgba(s.color, 0.06); }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                  <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2, background: s.color, boxShadow: `0 0 8px ${s.color}, 0 0 16px ${s.color}`, borderRadius: 2 }} />
+                  <div style={{ fontSize: '1.2rem', marginBottom: 4 }}>{s.icon}</div>
+                  <CountUpStat value={s.value} label={s.label} sub={s.sub} color={s.color} />
+                  {s.onClick && <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: s.color, letterSpacing: '0.15em', marginTop: 4, opacity: 0.7 }}>↗ VIEW VAULT</div>}
+                </div>
+              ))}
+            </div>
+            <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
+          </div>
+        </div>
+
+        {/* ── NAV ── */}
+        {/* ── NAV ── */}
+        <nav style={{ background: C.bgCard, borderBottom: `1px solid ${C.teal}22`, display: 'flex', position: 'sticky', top: 0, zIndex: 200 }}>
+        <div style={{ display: 'flex', flex: 1, overflowX: 'auto', scrollbarWidth: 'none', alignItems: 'stretch' }}>
+            {(() => {
+              const nonRightTabs = TABS.filter(([,, g]) => g !== 'right');
+              const festTabs = nonRightTabs.filter(([,, g]) => g === 'fest');
+              const otherTabs = nonRightTabs.filter(([,, g]) => g !== 'fest');
+
+              const renderTab = ([id, label, group, color]) => {
+                const isActive = activeTab === id;
+                return (
+                  <button key={id} onClick={() => setActiveTab(id)}
+                    style={{
+                      fontFamily: "'Space Mono'", fontSize: 10,
+                      color: isActive ? color : C.gray,
+                      background: 'none', border: 'none',
+                      borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
+                      padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                      position: 'relative', transition: 'color 0.2s'
+                    }}>
+                    {label}
+                    {isActive && <div className="tab-active" style={{ '--tab-color': color }} />}
+                  </button>
+                );
+              };
+
+              return (
+                <>
+                  {otherTabs.map(renderTab)}
+
+                  {/* ── FESTIVAL ZONE ── */}
+                  <div style={{
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'stretch',
+                    border: `1.5px solid ${C.gold}`,
+                    borderRadius: 4,
+                    margin: '4px 6px',
+                    boxShadow: `0 0 10px ${hexToRgba(C.gold, 0.4)}, 0 0 20px ${hexToRgba(C.gold, 0.2)}, inset 0 0 10px ${hexToRgba(C.gold, 0.05)}`,
+                    background: hexToRgba(C.gold, 0.06),
+                  }}>
+                    {/* FESTIVAL ZONE label */}
+                    <div style={{
+                      position: 'absolute',
+                      top: -8,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      background: C.bgCard,
+                      padding: '0 6px',
+                      fontFamily: "'Space Mono'",
+                      fontSize: 6,
+                      color: C.gold,
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      textShadow: `0 0 8px ${hexToRgba(C.gold, 0.8)}`,
+                    }}>
+                      ★ FESTIVAL ZONE ★
+                    </div>
+                    {festTabs.map(renderTab)}
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+          <div style={{ display: 'flex', borderLeft: `1px solid ${C.border}`, background: C.bgCard }}>
+            {TABS.filter(([,, g]) => g === 'right').map(([id, label,, color]) => {
+              const isActive = activeTab === id;
+              return (
+                <button key={id} onClick={() => setActiveTab(id)}
+                  style={{
+                    fontFamily: "'Space Mono'", fontSize: 10, color: isActive ? color : C.grayDim,
+                    background: 'none', border: 'none',
+                    borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
+                    padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
+                  }}>
+                  {label}
+                </button>
+              );
+            })}
+            <ThemeSwitcher />
+          </div>
+        </nav>
+
+        {/* ── THE MAIN STAGE ── */}
+        <main style={{
+          maxWidth: 1300,
+          margin: '20px auto',
+          padding: '24px',
+          background: `linear-gradient(180deg, ${hexToRgba(C.bgCard, 0.7)} 0%, ${hexToRgba(C.bg, 0.9)} 100%)`,
+          border: `1px solid ${C.border}`,
+          borderRadius: '16px',
+          boxShadow: '0 30px 100px rgba(0,0,0,0.8)',
+          backdropFilter: 'blur(12px)',
+          position: 'relative',
+          zIndex: 1,
+          minHeight: '80vh'
+        }}>
+          <div style={{
+            position: 'absolute',
+            top: 0, right: 0,
+            width: '300px', height: '300px',
+            background: `radial-gradient(circle at top right, ${hexToRgba(C.teal, 0.03)}, transparent 70%)`,
+            pointerEvents: 'none'
+          }} />
+
+          {/* ════ DASHBOARD ════ */}
+          {activeTab === 'dashboard' && (
+            <div className="fade-in">
+              <OnThisDay concerts={concerts} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 16, marginBottom: 16, marginTop: 8 }}>
+                <ArtistInsights concerts={concerts} />
+                <TheaterMarquee upcoming={upcoming} onAdd={() => setUpcomingModal('new')} onEdit={setUpcomingModal} />
+                <RandomShow concerts={concerts} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: 16, marginBottom: 16 }}>
+                <VenueDonutCard concerts={concerts} onNavigateToVenues={() => setActiveTab('venues')} />
+                <Card neon>
+                  <CardTitle>Sets Per Year — click a bar to jump to that year</CardTitle>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={timelineData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }} onClick={data => { if (data?.activePayload?.[0]?.payload?.fullYear) { setActiveTab('timeline'); } }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+                      <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                      <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                      <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10 }} cursor={{ fill: 'rgba(0,229,204,0.08)' }} />
+                      <Bar dataKey="count" radius={[4, 4, 0, 0]} style={{ cursor: 'pointer' }}>
+                        {timelineData.map((entry, index) => <Cell key={`cell-${index}`} fill={C.teal} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Card>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+                <Card neon><CardTitle>Fest vs Standalone</CardTitle><DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} /></Card>
+                <Card neon><CardTitle>Top Festivals</CardTitle><TopFestBlocks festBreakdown={festBreakdown} /></Card>
+                <Card neon>
+                  <CardTitle>By Decade</CardTitle>
+                  <DecadeBlocks sets={allSetsList} />
+                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+                    <FerrisWheel size={90} />
+                  </div>
+                </Card>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <Card neon>
+                  <CardTitle>Most Seen Artists</CardTitle>
+                  <div style={{ display: 'grid', gap: 10 }}>
+                    {artistCounts.slice(0, 6).map((a, i) => {
+                      const gc = artistGenres[a.name] ? GENRE_COLORS[artistGenres[a.name]] : null;
+                      const MEDALS = ['🥇', '🥈', '🥉', '🏅', '🏅', '🏅'];
+                      const pct = Math.round((a.count / (artistCounts[0]?.count || 1)) * 100);
+                      return (
+                        <div key={a.name} style={{ marginBottom: 2, padding: '10px 12px', background: gc ? hexToRgba(gc, 0.06) : C.bgCardAlt, borderRadius: 6, border: `1px solid ${gc ? hexToRgba(gc, 0.25) : C.border}`, position: 'relative', overflow: 'hidden' }}>
+                          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: gc ? hexToRgba(gc, 0.1) : 'rgba(255,255,255,0.03)', borderRadius: 6, transition: 'width 1s ease' }} />
+                          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>{MEDALS[i]}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: gc || C.white, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.name}</div>
+                              {artistGenres[a.name] && <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: gc, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 1 }}>{artistGenres[a.name]}</div>}
+                            </div>
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                              <span style={{ color: C.gold, fontFamily: "'Bebas Neue'", fontSize: '1.6rem', lineHeight: 1 }}>{a.count}</span>
+                              <span style={{ color: C.grayDim, fontFamily: "'Space Mono',monospace", fontSize: 8, marginLeft: 2 }}>×</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+                <Card neon style={{ display: 'flex', flexDirection: 'column', minHeight: 420 }}>
+                  <CardTitle>Setlist Spotlight 📋</CardTitle>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
+                  </div>
+                  <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'center' }}>
+                    <button onClick={() => setActiveTab('vault')} style={{ background: 'none', border: `1px solid ${C.teal}44`, color: C.tealDim, fontFamily: "'Space Mono'", fontSize: 8, padding: '5px 16px', borderRadius: 3, cursor: 'pointer', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                      VIEW FULL VAULT ↗
+                    </button>
+                  </div>
+                </Card>
+              </div>
+              {genreStats.length >= 3 && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, marginTop: 16, marginBottom: 0 }}>
+                  <Card neon style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <CardTitle style={{ textAlign: 'center' }}>Genre DNA 🧬</CardTitle>
+                    <SetlistDNA genreScores={Object.fromEntries(genreStats.slice(0,6).map(g => [g.name, Math.round((g.count / (genreStats[0]?.count||1)) * 100)]))} />
+                  </Card>
+                  <Card neon style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 24 }}>
+                    <CardTitle>Your Sonic Fingerprint</CardTitle>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {genreStats.slice(0,6).map((g, i) => (
+                        <div key={g.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: g.color, boxShadow: `0 0 6px ${g.color}`, flexShrink: 0 }} />
+                          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, width: 100, flexShrink: 0 }}>{g.name}</div>
+                          <div style={{ flex: 1, height: 4, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${Math.round((g.count/(genreStats[0]?.count||1))*100)}%`, background: g.color, borderRadius: 2, transition: 'width 1s ease' }} />
+                          </div>
+                          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: g.color, width: 30, textAlign: 'right' }}>{g.count}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                </div>
+              )}
+              <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
+            </div>
+          )}
+
+          {/* ════ TIMELINE ════ */}
+          {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
+
+          {/* ════ BY DAY ════ */}
+          {activeTab === 'byDay' && (
+            <div className="fade-in">
+              <div style={{ display: 'flex', gap: 10, marginTop: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+                <select value={yearFilter} onChange={e => setYearFilter(e.target.value)} style={{ ...inputSt, minWidth: 100 }}><option value="all">All Years</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                <select value={festFilter} onChange={e => setFestFilter(e.target.value)} style={{ ...inputSt, minWidth: 140 }}><option value="all">All Types</option><option value="fest">Festival Only</option><option value="solo">Standalone Only</option></select>
+              </div>
+              <ByDayTab
+                dayGroups={dayGroups}
+                onEdit={setEditTarget}
+                genreMap={artistGenres}
+                search={search}
+                setSearch={setSearch}
+                yearFilter={yearFilter}
+                setYearFilter={setYearFilter}
+                festFilter={festFilter}
+                setFestFilter={setFestFilter}
+                genreFilter={genreFilter}
+                setGenreFilter={setGenreFilter}
+                concerts={concerts}
+              />
+            </div>
+          )}
+
+          {/* ════ OTHER TABS ════ */}
+          {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} />}
+{activeTab === 'passport' && <PassportTab passport={passport} genreStats={genreStats} onNavigateToFest={name => { setActiveTab('byFest'); setTimeout(() => { const el = document.getElementById(`fest-${name.replace(/\s+/g, '-')}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); }} />}          {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
+          {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
+                    {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
+
+          {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
+          {activeTab === 'browse' && (
+            <BrowseTab browseView={browseView} setBrowseView={setBrowseView} search={search} setSearch={setSearch} yearFilter={yearFilter} setYearFilter={setYearFilter} festFilter={festFilter} setFestFilter={setFestFilter} genreFilter={genreFilter} setGenreFilter={setGenreFilter} sortCol={sortCol} setSortCol={setSortCol} sortDir={sortDir} setSortDir={setSortDir} paged={paged} page={page} setPage={setPage} totalPages={totalPages} artistRows={artistRows} years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} onEdit={setEditTarget} onSetGenre={handleSetGenre} genreMap={artistGenres} />
+          )}
+          {activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} onDuplicate={handleDuplicate} />}
+
+        </main>
+      </div>
+    </ThemeContext.Provider>
+  );
+}
