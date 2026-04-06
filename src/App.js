@@ -1762,11 +1762,16 @@ function GenreLegend() {
 }
 
 // ─── 1. HORIZONTAL TIMELINE CARD (FIXED FOR 400+ DAYS) ───────────────────────
-function TimelineCard({ item, isUp, onTeleport, genreMap }) {
+// ─── 1. STAGGERED HORIZONTAL CARD ──────────────────────────────────────────
+function TimelineCard({ item, isUp, staggerIndex, onTeleport, genreMap }) {
   const [isHovered, setIsHovered] = useState(false);
   const gi = getConcertGenreInfo(item, genreMap);
   const themeColor = gi.mixed ? '#9d00ff' : (gi.color || C.teal);
   const bands = item.bands || [];
+
+  // 🟢 Variation: Vary the connector lengths so cards don't "grid" up
+  const staggerHeights = [50, 90, 130, 170]; 
+  const connectorHeight = staggerHeights[staggerIndex % staggerHeights.length];
 
   return (
     <div 
@@ -1776,10 +1781,9 @@ function TimelineCard({ item, isUp, onTeleport, genreMap }) {
       style={{ 
         position: 'relative', 
         height: '100%', 
-        width: '65px', // Fixed width for every single day
-        flexShrink: 0, // CRITICAL: Prevents days from being hidden/squeezed
+        width: '45px', // Much tighter horizontal spacing
+        flexShrink: 0,
         display: 'flex', 
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: isHovered ? 200 : 1,
@@ -1788,87 +1792,75 @@ function TimelineCard({ item, isUp, onTeleport, genreMap }) {
     >
       {/* THE SPINE BUBBLE */}
       <div style={{ 
-        width: isHovered ? '16px' : '10px', 
-        height: isHovered ? '16px' : '10px', 
+        width: isHovered ? '14px' : '6px', 
+        height: isHovered ? '14px' : '6px', 
         borderRadius: '50%', 
         background: themeColor, 
         zIndex: 10, 
-        boxShadow: isHovered ? `0 0 25px ${themeColor}` : `0 0 5px ${themeColor}44`,
+        boxShadow: isHovered ? `0 0 20px ${themeColor}` : `0 0 5px ${themeColor}44`,
         transition: 'all 0.2s ease',
-        border: `2px solid ${C.bg}`,
-        position: 'absolute',
-        top: '50%',
-        transform: 'translateY(-50%)'
+        border: `1px solid ${C.bg}`
       }} />
 
-      {/* THE CONNECTOR LINE */}
+      {/* THE STAGGERED CONNECTOR LINE */}
       <div style={{ 
         position: 'absolute',
         left: '50%',
         bottom: isUp ? '50%' : 'auto',
         top: isUp ? 'auto' : '50%',
         width: '1px',
-        height: isHovered ? '70px' : '35px',
+        height: isHovered ? connectorHeight + 20 : connectorHeight,
         background: `linear-gradient(${isUp ? 'to top' : 'to bottom'}, ${themeColor}, transparent)`,
-        opacity: isHovered ? 1 : 0.4,
-        transition: 'height 0.3s ease, opacity 0.2s'
+        opacity: isHovered ? 1 : 0.2,
+        transition: 'all 0.3s ease'
       }} />
 
       {/* THE INFO BOX */}
       <div style={{ 
         position: 'absolute',
-        bottom: isUp ? 'calc(50% + 35px)' : 'auto',
-        top: isUp ? 'auto' : 'calc(50% + 35px)',
-        width: isHovered ? '340px' : '120px',
-        padding: isHovered ? '18px' : '2px 0',
+        bottom: isUp ? `calc(50% + ${connectorHeight}px)` : 'auto',
+        top: isUp ? 'auto' : `calc(50% + ${connectorHeight}px)`,
+        width: isHovered ? '320px' : '100px',
+        padding: isHovered ? '18px' : '0',
         background: isHovered ? C.bgCard : 'transparent',
         border: isHovered ? `1px solid ${themeColor}` : 'none',
         borderRadius: '8px',
-        textAlign: 'center',
-        transform: isHovered ? (isUp ? 'translateY(-15px)' : 'translateY(15px)') : 'none',
+        textAlign: isUp ? 'left' : 'left',
+        transform: isHovered ? 'translateY(0)' : (isUp ? 'rotate(-15deg)' : 'rotate(15deg)'), // Slight tilt when resting
         transition: 'all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-        boxShadow: isHovered ? `0 20px 50px rgba(0,0,0,1)` : 'none',
+        boxShadow: isHovered ? `0 20px 60px rgba(0,0,0,1)` : 'none',
         pointerEvents: 'none',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center'
+        alignItems: isHovered ? 'stretch' : 'center'
       }}>
         
-        {/* RESTING: Tiny Label */}
-        {!isHovered && (
-          <div className="fade-in">
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: C.white, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '110px', opacity: 0.8 }}>
-              {bands[0]?.toUpperCase()}
-            </div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: themeColor, opacity: 0.6 }}>
-              {item.date.split('-')[1]}.{item.date.split('-')[2]}
-            </div>
+        {!isHovered ? (
+          /* RESTING: Tiny Vertical Label */
+          <div style={{ 
+            writingMode: 'vertical-rl', 
+            transform: isUp ? 'rotate(180deg)' : 'none',
+            fontFamily: "'Space Mono'", 
+            fontSize: '7px', 
+            color: C.white, 
+            opacity: 0.4,
+            letterSpacing: '1px'
+          }}>
+            {bands[0]?.toUpperCase()}
           </div>
-        )}
-
-        {/* HOVER: Detailed Artifact */}
-        {isHovered && (
-          <div className="fade-in" style={{ width: '100%' }}>
-             <div style={{ marginBottom: 12, transform: 'scale(0.9)' }}>
+        ) : (
+          /* HOVER: Artifact Reveal */
+          <div className="fade-in">
+             <div style={{ marginBottom: 12, transform: 'scale(0.85)', transformOrigin: 'center' }}>
                 {item.is_festival 
                   ? <WristbandCard event={item} genreMap={genreMap} compact={true} /> 
                   : <DecorativeTicket event={item} templateIdx={0} />
                 }
              </div>
-             <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: C.white, lineHeight: 1.1, marginBottom: 8 }}>
-               {bands[0]?.toUpperCase()}
-             </div>
-             {bands.length > 1 && (
-               <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 10px', marginBottom: 12, borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
-                 {bands.slice(1, 5).map((b, bi) => (
-                   <span key={bi} style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: C.gray }}>{b.toUpperCase()}</span>
-                 ))}
-                 {bands.length > 5 && <span style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: C.teal }}>+{bands.length-5} MORE</span>}
-               </div>
-             )}
-             <div style={{ borderTop: `1px dashed ${C.border}`, paddingTop: 8, display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '7px', fontFamily: "'Space Mono'", color: C.grayDim }}>
+             <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: C.white, lineHeight: 1.1 }}>{bands[0]?.toUpperCase()}</div>
+             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, paddingTop: 8, borderTop: `1px dashed ${C.border}` }}>
                 <GenreBadge genre={gi.genre} color={gi.color} small />
-                <span>{item.venue?.toUpperCase()}</span>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: C.grayDim }}>{fmtDateShort(item.date)}</span>
              </div>
           </div>
         )}
@@ -1877,111 +1869,75 @@ function TimelineCard({ item, isUp, onTeleport, genreMap }) {
   );
 }
 
-// ─── 2. THE PANORAMIC TIMELINE TAB ───────────────────────────────────────────
+// ─── 2. THE STAGGERED PANORAMIC TIMELINE ─────────────────────────────────────
 function TimelineTab({ concerts, setActiveTab, genreMap }) {
   const horizontalFlow = useMemo(() => {
     if (!concerts || concerts.length === 0) return [];
     
-    // 1. Ensure Chronological Order (Past to Future)
     const sorted = [...concerts].sort((a, b) => a.date.localeCompare(b.date));
     const result = [];
     let lastYear = -1;
     let lastMonth = -1;
-    let showCounter = 0; // Ensures perfect up/down alternation
-    const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    let showCounter = 0;
 
     sorted.forEach((s) => {
       const dt = new Date(s.date + 'T12:00:00');
       const yr = dt.getFullYear();
       const mo = dt.getMonth();
+      const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-      // Inject Year Header
       if (yr !== lastYear) {
         result.push({ type: 'YEAR', label: yr, id: `yr-${yr}` });
         lastYear = yr;
         lastMonth = -1;
       }
-
-      // Inject Month Header
       if (mo !== lastMonth) {
         result.push({ type: 'MONTH', label: monthNames[mo], id: `mo-${yr}-${mo}` });
         lastMonth = mo;
       }
 
-      // Add Show
-      result.push({ ...s, type: 'SHOW', side: showCounter % 2 === 0 ? 'up' : 'down' });
+      result.push({ ...s, type: 'SHOW', side: showCounter % 2 === 0 ? 'up' : 'down', stagger: showCounter });
       showCounter++;
     });
 
     return result;
   }, [concerts]);
 
-  const teleport = date => { 
-    setActiveTab('byDay');
-    setTimeout(() => {
-      const el = document.querySelector(`[data-date="${date}"]`);
-      if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
-    }, 150);
-  };
-
   return (
-    <div style={{ padding: '20px 0' }} className="fade-in">
+    <div style={{ padding: '40px 0' }} className="fade-in">
       <GenreLegend />
       
-      {/* ↔ HORIZONTAL SCROLL AREA ↔ */}
       <div style={{ 
         width: '100%', 
-        height: '700px', 
+        height: '750px', // Taller container for the staggered heights
         overflowX: 'auto', 
-        overflowY: 'hidden',
-        position: 'relative',
-        background: 'rgba(0,0,0,0.4)',
+        background: 'rgba(0,0,0,0.2)',
         borderRadius: '16px',
         border: `1px solid ${C.border}`,
-        padding: '0 100px'
+        display: 'flex',
+        alignItems: 'center'
       }}>
-        
-        {/* THE INFINITE TRACK */}
-        <div style={{ 
-          display: 'flex', 
-          height: '100%', 
-          alignItems: 'center', 
-          width: 'max-content', // CRITICAL: Forces track to expand to fit all 426 days
-          position: 'relative'
-        }}>
+        <div style={{ display: 'flex', height: '100%', alignItems: 'center', width: 'max-content', padding: '0 200px' }}>
           
-          {/* THE SPINE RAIL */}
+          {/* THE CENTER RAIL */}
           <div style={{ 
-            position: 'absolute', top: '50%', left: -100, right: -100, height: '2px', 
-            background: `linear-gradient(to right, ${C.teal}, ${C.purple}, ${C.gold}, ${C.teal})`, 
-            opacity: 0.2, zIndex: 1 
+            position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', 
+            background: `linear-gradient(90deg, transparent, ${C.teal}, ${C.purple}, ${C.gold}, transparent)`, 
+            opacity: 0.3 
           }} />
 
           {horizontalFlow.map((item) => {
             if (item.type === 'YEAR') {
               return (
-                <div key={item.id} style={{ 
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', 
-                  margin: '0 80px', position: 'relative', zIndex: 5, flexShrink: 0 
-                }}>
-                  <div style={{ 
-                    fontFamily: "'Bebas Neue'", fontSize: '7rem', color: C.teal, 
-                    lineHeight: 1, filter: `drop-shadow(0 0 15px ${hexToRgba(C.teal, 0.4)})`
-                  }}>{item.label}</div>
-                  <div style={{ width: '1px', height: '500px', background: C.border, opacity: 0.1, position: 'absolute', zIndex: 0 }} />
+                <div key={item.id} style={{ margin: '0 100px', textAlign: 'center', flexShrink: 0 }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '8rem', color: C.white, opacity: 0.1, lineHeight: 0.8 }}>{item.label}</div>
                 </div>
               );
             }
             if (item.type === 'MONTH') {
               return (
                 <div key={item.id} style={{ margin: '0 40px', textAlign: 'center', flexShrink: 0 }}>
-                  <div style={{ 
-                    fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray, 
-                    transform: 'rotate(-90deg)', letterSpacing: '5px', fontWeight: 900,
-                    width: '30px', whiteSpace: 'nowrap', opacity: 0.6
-                  }}>
-                    {item.label}
-                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.teal, fontWeight: 900, transform: 'rotate(-90deg)', opacity: 0.5 }}>{item.label}</div>
                 </div>
               );
             }
@@ -1990,19 +1946,13 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
                 key={item.id} 
                 item={item} 
                 isUp={item.side === 'up'} 
-                onTeleport={() => teleport(item.date)} 
+                staggerIndex={item.stagger}
+                onTeleport={() => setActiveTab('byDay')} 
                 genreMap={genreMap} 
               />
             );
           })}
         </div>
-      </div>
-
-      <div style={{ 
-        textAlign: 'center', marginTop: 30, fontFamily: "'Space Mono'", 
-        fontSize: '9px', color: C.teal, letterSpacing: '0.3em', opacity: 0.8 
-      }}>
-        TOTAL SHOW DAYS LOADED: {concerts.length} // Panning Left to Right
       </div>
     </div>
   );
