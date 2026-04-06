@@ -2843,7 +2843,7 @@ function VenuesTab({ concerts }) {
     </div>
   );
 }
-// ─── POSTER STUDIO CONSTANTS ──────────────────────────────────────────────────
+// ─── POSTER STUDIO CONSTANTS & HELPERS (SINGLE DECLARATION) ──────────────────
 const POSTER_TEMPLATES = [
   { 
     id: 0, name: 'COACHELLA CLASSIC', layout: 'tiered', 
@@ -2862,8 +2862,6 @@ const POSTER_TEMPLATES = [
   }
 ];
 
-// ─── POSTER UTILITIES ─────────────────────────────────────────────────────────
-
 const TextureOverlay = ({ type }) => {
   const styles = {
     grain: {
@@ -2876,111 +2874,30 @@ const TextureOverlay = ({ type }) => {
       backgroundSize: '3px 3px',
     }
   };
-  
   return (
     <>
       <div style={styles[type] || {}} />
-      {/* Fold Line */}
       <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.1)', boxShadow: '0 1px 2px rgba(0,0,0,0.1)', zIndex: 11 }} />
     </>
   );
 };
 
-// Helper to justify text by stretching letter spacing
 const JustifiedRow = ({ text, color, fontSize, weight = 400, font }) => {
-  // A rough heuristic: shorter strings need wider letter-spacing to fill the row
   const spacing = text.length > 20 ? '0.05em' : text.length > 10 ? '0.2em' : '0.5em';
-  
   return (
     <div style={{
-      width: '100%',
-      display: 'flex',
-      justifyContent: 'space-between',
-      fontSize,
-      fontFamily: font,
-      color,
-      fontWeight: weight,
-      letterSpacing: spacing,
-      textAlign: 'justify',
-      textTransform: 'uppercase',
-      lineHeight: 1,
-      marginBottom: 8
+      width: '100%', display: 'flex', justifyContent: 'space-between', fontSize,
+      fontFamily: font, color, fontWeight: weight, letterSpacing: spacing,
+      textAlign: 'justify', textTransform: 'uppercase', lineHeight: 1, marginBottom: 8
     }}>
       {text.split('').map((char, i) => <span key={i}>{char === ' ' ? '\u00A0' : char}</span>)}
     </div>
   );
 };
 
-// ─── POSTER STUDIO CONSTANTS ──────────────────────────────────────────────────
-const POSTER_TEMPLATES = [
-  { 
-    id: 0, name: 'COACHELLA CLASSIC', layout: 'tiered', 
-    bg: '#fdfcf0', accent: '#111', accent2: '#444', 
-    font: "'Bebas Neue'", texture: 'grain', dark: false 
-  },
-  { 
-    id: 1, name: 'NEON NOIR XEROX', layout: 'zine', 
-    bg: '#050505', accent: '#00ffcc', accent2: '#fff', 
-    font: "'Space Mono'", texture: 'grunge', dark: true 
-  },
-  { 
-    id: 2, name: 'MODERNIST GRID', layout: 'swiss', 
-    bg: '#e8e8e8', accent: '#ff4400', accent2: '#000', 
-    font: "'Bebas Neue'", texture: 'clean', dark: false 
-  }
-];
-
-// ─── POSTER UTILITIES ─────────────────────────────────────────────────────────
-
-const TextureOverlay = ({ type }) => {
-  const styles = {
-    grain: {
-      position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10, opacity: 0.15,
-      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-    },
-    grunge: {
-      position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10, opacity: 0.2,
-      background: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
-      backgroundSize: '3px 3px',
-    }
-  };
-  
-  return (
-    <>
-      <div style={styles[type] || {}} />
-      {/* Fold Line */}
-      <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.1)', boxShadow: '0 1px 2px rgba(0,0,0,0.1)', zIndex: 11 }} />
-    </>
-  );
-};
-
-// Helper to justify text by stretching letter spacing
-const JustifiedRow = ({ text, color, fontSize, weight = 400, font }) => {
-  // A rough heuristic: shorter strings need wider letter-spacing to fill the row
-  const spacing = text.length > 20 ? '0.05em' : text.length > 10 ? '0.2em' : '0.5em';
-  
-  return (
-    <div style={{
-      width: '100%',
-      display: 'flex',
-      justifyContent: 'space-between',
-      fontSize,
-      fontFamily: font,
-      color,
-      fontWeight: weight,
-      letterSpacing: spacing,
-      textAlign: 'justify',
-      textTransform: 'uppercase',
-      lineHeight: 1,
-      marginBottom: 8
-    }}>
-      {text.split('').map((char, i) => <span key={i}>{char === ' ' ? '\u00A0' : char}</span>)}
-    </div>
-  );
-};
-
+// ─── POSTER GENERATOR TAB ─────────────────────────────────────────────────────
 function PosterGeneratorTab({ concerts, genreMap, allSetsList, dnaScores }) {
-  // 1. RESTORED: Full initial state for all genres
+  // RESTORED: Full state for all genres
   const [genreMix, setGenreMix] = useState({ 
     'Indie Rock': 30, 'Electronic': 20, 'Folk': 10, 'Jam': 10, 'Alternative': 10, 'Rock': 20 
   });
@@ -3005,24 +2922,18 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList, dnaScores }) {
   const generate = () => {
     const tpl = POSTER_TEMPLATES[templateIdx];
     const picked = [], used = new Set();
-    
-    // Sort genres by weight to pick artists
     Object.entries(genreMix).forEach(([genre, pct]) => {
       const count = Math.max(0, Math.round((pct / 100) * totalActs));
       artistPool.filter(a => a.genre === genre && !used.has(a.artist))
         .slice(0, count)
         .forEach(a => { picked.push(a); used.add(a.artist); });
     });
-
     picked.sort((a, b) => b.count - a.count);
     const dominantGenre = Object.entries(genreMix).sort((a, b) => b[1] - a[1])[0]?.[0] || 'default';
-    
     setGenerated({ 
-      tpl, 
-      artists: picked.slice(0, totalActs), 
+      tpl, artists: picked.slice(0, totalActs), 
       name: festName.trim() || generateFestName(dominantGenre), 
-      headlinerCount,
-      dnaScores 
+      headlinerCount, dnaScores 
     });
   };
 
@@ -3032,15 +2943,14 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList, dnaScores }) {
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(2rem,5vw,3.5rem)', color: C.white, letterSpacing: '0.06em', marginBottom: 8 }}>
           🎨 POSTER <span style={{ color: C.teal }}>STUDIO</span>
         </div>
-        <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, color: C.gray }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray }}>
           Physical Design Engine // {artistPool.length} Qualified Artists
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginBottom: 32 }}>
-        {/* ─── COLUMN 1: THE CONTROLS ─── */}
+        {/* COLUMN 1: CONTROLS */}
         <div>
-          {/* RESTORED: ALL Genre Sliders */}
           <Card neon style={{ marginBottom: 16 }}>
             <CardTitle>Genre Allocation</CardTitle>
             <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: totalPct === 100 ? C.green : C.gold, marginBottom: 12 }}>
@@ -3056,7 +2966,6 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList, dnaScores }) {
             ))}
           </Card>
 
-          {/* RESTORED: Options Sliders & Name Input */}
           <Card neon style={{ marginBottom: 16 }}>
             <CardTitle>Design Options</CardTitle>
             <div style={{ marginBottom: 12 }}>
@@ -3073,7 +2982,6 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList, dnaScores }) {
             </div>
           </Card>
 
-          {/* Style Selector */}
           <Card neon style={{ marginBottom: 20 }}>
             <CardTitle>Visual Archetype</CardTitle>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
@@ -3092,7 +3000,7 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList, dnaScores }) {
           </Btn>
         </div>
 
-        {/* ─── COLUMN 2: THE PREVIEW ─── */}
+        {/* COLUMN 2: PREVIEW */}
         <div style={{ display: 'flex', justifyContent: 'center', background: '#070707', borderRadius: 12, padding: 30, border: `1px solid ${C.border}`, position: 'relative' }}>
           {generated ? (
             <PosterPreview {...generated} />
