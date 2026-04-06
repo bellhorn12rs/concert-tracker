@@ -2809,10 +2809,12 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
   );
 }
 
+// ─── 5. EDIT MODAL (DUAL-LINK VERSION) ──────────────────────────────────────
 function EditModal({ concert, onClose, onSave, onDelete }) {
+  // 1. Initial State
   const [form, setForm] = useState({ 
     date: concert?.date || '', 
-    bands: (concert?.bands || []).join(', '), 
+    bands: Array.isArray(concert?.bands) ? concert.bands.join(', ') : (concert?.bands || ''), 
     venue: concert?.venue || '', 
     city: concert?.city || '', 
     state: concert?.state || '', 
@@ -2821,19 +2823,22 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
     festival_day: concert?.festival_day || '', 
     has_setlist_names: concert?.has_setlist_names || '', 
     genre: concert?.genre || '', 
-    // FIXED: Changed key to 'image_url' to match database column
-    image_url: concert?.image_url || '' 
+    image_url: concert?.image_url || '', // Setlist/Poster
+    personal_photo_url: concert?.personal_photo_url || '' // 🟢 The Polaroid Memory
   });
 
-  const [saving, setSaving] = useState(false), [confirming, setConfirming] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   
+  const safeC = typeof C !== 'undefined' ? C : { teal: '#00d2ff', bgCard: '#1a1a1a', border: '#333', gray: '#888' };
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSave = async () => { 
     setSaving(true); 
-    const bandList = form.bands.split(',').map(b => b.trim()).filter(Boolean); 
+    const bandList = typeof form.bands === 'string' 
+      ? form.bands.split(',').map(b => b.trim()).filter(Boolean)
+      : form.bands;
     
-    // This sends the updated form (including image_url) to the handleSave in App.js
     await onSave(concert?.id, {
       ...form,
       bands: bandList,
@@ -2842,66 +2847,97 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
     setSaving(false); 
   };
 
-  const lbl = { display: 'block', fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 };
-  const inp = { ...inputSt, width: '100%' };
+  const lbl = { display: 'block', fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: safeC.teal, marginBottom: 4, opacity: 0.8 };
+  const inpSt = { width: '100%', background: 'rgba(0,0,0,0.3)', border: `1px solid ${safeC.teal}44`, color: '#fff', padding: '10px', fontFamily: "'Space Mono'", borderRadius: '4px', outline: 'none' };
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(4px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.teal}`, borderRadius: 10, padding: 24, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: `0 0 40px ${C.tealGlow}` }}>
+      <div className="fade-in" style={{ background: safeC.bgCard, border: `1px solid ${safeC.teal}`, borderRadius: 10, padding: 24, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: `0 0 40px rgba(0,210,255,0.2)` }}>
+        
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: C.teal }}>{concert?.id ? 'Edit Show' : 'Add Show'}</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: C.gray, fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: safeC.teal }}>{concert?.id ? 'Edit Show' : 'Add Show'}</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: safeC.gray, fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
         </div>
         
-        <div style={{ marginBottom: 14 }}><label style={lbl}>Date</label><input style={inp} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
-        <div style={{ marginBottom: 14 }}><label style={lbl}>Artists (comma separated)</label><input style={inp} value={form.bands} onChange={e => set('bands', e.target.value)} /></div>
+        {/* ROW 1: DATE & BANDS */}
+        <div style={{ marginBottom: 14 }}><label style={lbl}>Date</label><input style={inpSt} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
+        <div style={{ marginBottom: 14 }}><label style={lbl}>Artists (comma separated)</label><input style={inpSt} value={form.bands} onChange={e => set('bands', e.target.value)} /></div>
         
+        {/* ROW 2: VENUE & CITY */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-          <div><label style={lbl}>Venue</label><input style={inp} value={form.venue} onChange={e => set('venue', e.target.value)} /></div>
-          <div><label style={lbl}>City</label><input style={inp} value={form.city} onChange={e => set('city', e.target.value)} /></div>
+          <div><label style={lbl}>Venue</label><input style={inpSt} value={form.venue} onChange={e => set('venue', e.target.value)} /></div>
+          <div><label style={lbl}>City</label><input style={inpSt} value={form.city} onChange={e => set('city', e.target.value)} /></div>
         </div>
         
-        <div style={{ marginBottom: 14 }}><label style={lbl}>State</label><input style={{ ...inp, width: 80 }} value={form.state} onChange={e => set('state', e.target.value)} maxLength={2} /></div>
-        
-        <div style={{ marginBottom: 14 }}><label style={lbl}>Genre</label><select style={inp} value={form.genre} onChange={e => set('genre', e.target.value)}><option value="">— unset —</option>{GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
-        
-        <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}><input type="checkbox" id="is_fest" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} style={{ accentColor: C.teal, width: 16, height: 16 }} /><label htmlFor="is_fest" style={{ ...lbl, marginBottom: 0, cursor: 'pointer' }}>Festival Day</label></div>
+        {/* ROW 3: GENRE & FEST TOGGLE */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: 12, marginBottom: 14 }}>
+           <div>
+             <label style={lbl}>Genre</label>
+             <select style={inpSt} value={form.genre} onChange={e => set('genre', e.target.value)}>
+               <option value="">— unset —</option>
+               {(typeof GENRES !== 'undefined' ? GENRES : []).map(g => <option key={g} value={g}>{g}</option>)}
+             </select>
+           </div>
+           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+             <label style={lbl}>Festival?</label>
+             <input type="checkbox" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} style={{ width: 18, height: 18 }} />
+           </div>
+        </div>
         
         {form.is_festival && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-            <div><label style={lbl}>Festival Name</label><input style={inp} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} /></div>
-            <div><label style={lbl}>Day Label</label><input style={inp} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} /></div>
+            <div><label style={lbl}>Festival Name</label><input style={inpSt} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} /></div>
+            <div><label style={lbl}>Day Label</label><input style={inpSt} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} /></div>
           </div>
         )}
         
-        <div style={{ marginBottom: 14 }}><label style={lbl}>Setlists Obtained (band names, comma separated)</label><input style={inp} value={form.has_setlist_names} onChange={e => set('has_setlist_names', e.target.value)} /></div>
+        <div style={{ marginBottom: 20 }}><label style={lbl}>Setlist Names (comma separated)</label><input style={inpSt} value={form.has_setlist_names} onChange={e => set('has_setlist_names', e.target.value)} /></div>
         
-        {/* FIXED: Input field now correctly targets image_url */}
+        {/* 🎫 LINK 1: OFFICIAL POSTER */}
         <div style={{ marginBottom: 14 }}>
           <label style={lbl}>Gig Photo / Poster URL (Imgur Direct Link)</label>
-          <input 
-            style={inp} 
-            value={form.image_url} 
-            onChange={e => set('image_url', e.target.value)} 
-            placeholder="https://i.imgur.com/abc123.jpg" 
-          />
+          <input style={inpSt} value={form.image_url} onChange={e => set('image_url', e.target.value)} placeholder="https://i.imgur.com/setlist.jpg" />
         </div>
 
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', marginTop: 20 }}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {concert?.id && !confirming && <Btn variant="danger" onClick={() => setConfirming(true)}>Delete</Btn>}
-            {confirming && <><Btn variant="danger" onClick={() => onDelete(concert.id)}>Confirm</Btn><Btn variant="secondary" onClick={() => setConfirming(false)}>Cancel</Btn></>}
+        {/* 📸 LINK 2: PERSONAL MEMORY */}
+        <div style={{ marginBottom: 24, padding: '12px', background: 'rgba(157, 0, 255, 0.05)', borderRadius: '6px', border: '1px dashed rgba(157, 0, 255, 0.2)' }}>
+          <label style={{ ...lbl, color: '#9d00ff' }}>Personal Memory Photo (Polaroid URL)</label>
+          <input 
+            style={{ ...inpSt, borderColor: '#9d00ff44' }} 
+            value={form.personal_photo_url} 
+            onChange={e => set('personal_photo_url', e.target.value)} 
+            placeholder="https://i.imgur.com/memory.jpg" 
+          />
+          <div style={{ fontSize: 7, color: '#9d00ff', opacity: 0.6, marginTop: 4, fontFamily: "'Space Mono', monospace" }}>
+            * Direct links only. This powers the Polaroid in the By Day tab.
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
-            <Btn onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Btn>
-          </div>
+        </div>
+
+        {/* ACTIONS */}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
+          {concert?.id && (
+            <button 
+              onClick={() => confirming ? onDelete(concert.id) : setConfirming(true)}
+              type="button"
+              style={{ background: confirming ? '#ff4444' : 'transparent', border: '1px solid #ff4444', color: confirming ? '#fff' : '#ff4444', padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1rem' }}
+            >
+              {confirming ? 'CONFIRM DELETE?' : 'DELETE'}
+            </button>
+          )}
+          <button onClick={onClose} type="button" style={{ background: 'transparent', border: `1px solid ${safeC.gray}`, color: safeC.gray, padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1rem' }}>CANCEL</button>
+          <button 
+            onClick={handleSave} 
+            disabled={saving}
+            type="button"
+            style={{ background: safeC.teal, border: 'none', color: '#000', padding: '8px 24px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', opacity: saving ? 0.5 : 1 }}
+          >
+            {saving ? 'SAVING...' : 'SAVE'}
+          </button>
         </div>
       </div>
     </div>
   );
 }
-
 function ShareCard({ artist, shows, onClose }) {
   const festCount=shows.filter(s=>s.is_festival).length, cities=[...new Set(shows.map(s=>s.city).filter(Boolean))], years=[...new Set(shows.map(s=>getYear(s.date)).filter(Boolean))].sort(), firstDate=fmtDate(shows[shows.length-1]?.date), lastDate=fmtDate(shows[0]?.date);
   return (
