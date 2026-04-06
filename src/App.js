@@ -110,7 +110,11 @@ const fmtDate = d => { if (!d) return '—'; const dt = new Date(d + 'T12:00:00'
 const fmtDateShort = d => { if (!d) return '—'; const dt = new Date(d + 'T12:00:00'); return `${MONTHS_SHORT[dt.getMonth()]} ${dt.getDate()}, ${dt.getFullYear()}`; };
 const getYear = d => d ? new Date(d + 'T12:00:00').getFullYear() : null;
 const daysSince = d => { if (!d) return 0; return Math.floor((Date.now() - new Date(d + 'T12:00:00')) / 86400000); };
-
+const fmtDateShort = (d) => {
+  if (!d) return '';
+  const [y, m, day] = d.split('-');
+  return `${m}/${day}/${y.slice(2)}`; // Returns 04/05/26
+};
 
 // ─── STYLES (POSTER & TEXTURE EDITION) ─────────────────────────────────────────
 const MarqueeStyles = () => (
@@ -987,28 +991,21 @@ function DecadeBlocks({ sets }) {
   );
 }
 
-// ─── HALL OF FAME ─────────────────────────────────────────────────────────────
-// ─── HALL OF FAME (SYNCED EDITION) ─────────────────────────────────────────────
+// ─── HALL OF FAME (GALLERY EDITION) ───────────────────────────────────────────
 function HallOfFame({ sets, genreMap, onShare }) {
   const [selected, setSelected] = useState(null);
   const topRef = useRef(null);
 
   const artists = useMemo(() => {
     const m = {};
-    // 1. Group all shows by artist
     sets.forEach(s => { 
       if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; 
       m[s.artist].shows.push(s); 
     });
 
-    // 2. Assign the Master Genre from your new table
     return Object.values(m).map(a => {
-      // MASTER FIX: Look at the master genreMap first!
       const masterGenre = genreMap[a.artist];
-      return {
-        ...a,
-        genre: masterGenre || null
-      };
+      return { ...a, genre: masterGenre || null };
     })
     .filter(a => a.shows.length >= HALL_OF_FAME_MIN)
     .sort((a, b) => b.shows.length - a.shows.length);
@@ -1023,6 +1020,22 @@ function HallOfFame({ sets, genreMap, onShare }) {
     setTimeout(() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); 
   };
 
+  // ── Helper to find all images for this specific artist ──
+  const artistMemories = useMemo(() => {
+    if (!selectedData) return [];
+    const pics = [];
+    selectedData.shows.forEach(s => {
+      const bandNames = s.has_setlist_names?.split(',').map(b => b.trim()) || [];
+      const imageLinks = (s.image_url || '').split(',').map(img => img.trim()).filter(Boolean);
+      
+      const bandIdx = bandNames.indexOf(selectedData.artist);
+      const img = imageLinks[bandIdx] || (imageLinks.length === 1 ? imageLinks[0] : null);
+      
+      if (img) pics.push({ url: img, date: s.date, venue: s.venue });
+    });
+    return pics;
+  }, [selectedData]);
+
   return (
     <div ref={topRef} style={{ padding: '24px 0' }} className="fade-in">
       <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 10, color: C.gray, marginBottom: 16, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
@@ -1036,56 +1049,104 @@ function HallOfFame({ sets, genreMap, onShare }) {
             background: `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(gc, 0.08)})`, 
             border: `1px solid ${gc}55`, 
             borderRadius: 8, 
-            padding: '18px 20px', 
+            padding: '24px', 
             marginBottom: 24, 
-            boxShadow: `0 0 24px ${hexToRgba(gc, 0.2)}`,
+            boxShadow: `0 0 30px ${hexToRgba(gc, 0.25)}`,
             position: 'relative',
             overflow: 'hidden'
           }}>
-            {/* Poster Watermark in background */}
-            <div style={{ position: 'absolute', right: -10, bottom: -20, fontFamily: "'Bebas Neue'", fontSize: '8rem', color: hexToRgba(gc, 0.03), pointerEvents: 'none' }}>
-              {selectedData.shows.length}x
+            {/* Background Stats Watermark */}
+            <div style={{ position: 'absolute', right: -10, bottom: -20, fontFamily: "'Bebas Neue'", fontSize: '10rem', color: hexToRgba(gc, 0.04), pointerEvents: 'none', userSelect: 'none' }}>
+              {selectedData.shows.length}X
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
+            {/* HEADER AREA */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, position: 'relative', zIndex: 1 }}>
               <div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', letterSpacing: '0.08em', color: gc, marginBottom: 4, lineHeight: 1 }}>
-                  {selectedData.artist}
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.8rem', letterSpacing: '0.08em', color: gc, marginBottom: 4, lineHeight: 1 }}>
+                  {selectedData.artist.toUpperCase()}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   {selectedData.genre && <GenreBadge genre={selectedData.genre} color={gc} />}
-                  <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, color: C.gray, textTransform: 'uppercase' }}>
-                    {selectedData.shows.length} sets · {fmtDate(selectedData.shows[selectedData.shows.length - 1]?.date)} → {fmtDate(selectedData.shows[0]?.date)}
+                  <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 10, color: C.gray, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    {selectedData.shows.length} Total Sets
                   </span>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {onShare && <button onClick={() => onShare(selectedData.artist, selectedData.shows)} style={{ fontFamily: "'Space Mono'", fontSize: 9, background: hexToRgba(gc, 0.15), border: `1px solid ${gc}44`, color: gc, borderRadius: 4, padding: '4px 10px', cursor: 'pointer' }}>📤 Share</button>}
-                <button onClick={() => setSelected(null)} style={{ background: 'none', border: `1px solid ${C.border}`, color: C.gray, fontSize: 10, borderRadius: 4, padding: '4px 8px', cursor: 'pointer' }}>CLOSE</button>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {onShare && <button onClick={() => onShare(selectedData.artist, selectedData.shows)} style={{ fontFamily: "'Space Mono'", fontSize: 9, background: hexToRgba(gc, 0.15), border: `1px solid ${gc}44`, color: gc, borderRadius: 4, padding: '6px 12px', cursor: 'pointer', fontWeight: 700 }}>📤 SHARE STORY</button>}
+                <button onClick={() => setSelected(null)} style={{ background: 'none', border: `1px solid ${C.border}`, color: C.gray, fontSize: 10, borderRadius: 4, padding: '6px 12px', cursor: 'pointer' }}>CLOSE</button>
               </div>
             </div>
 
-            <div style={{ position: 'relative', paddingLeft: 20, zIndex: 1 }}>
-              <div style={{ position: 'absolute', left: 5, top: 0, bottom: 0, width: 1, background: `linear-gradient(to bottom, ${gc}, ${C.grayDim})` }} />
-              {[...selectedData.shows].reverse().map((s, i) => {
-                const hasSet = s.has_setlist || (s.has_setlist_names?.trim());
-                return (
-                  <div key={i} style={{ position: 'relative', marginBottom: 12, paddingLeft: 14 }}>
-                    <div style={{ position: 'absolute', left: -7, top: 4, width: 8, height: 8, borderRadius: '50%', background: s.is_festival ? gc : (hasSet ? C.gold : C.grayDim), zIndex: 2 }} />
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 10, color: hasSet ? C.gold : C.tealDim }}>{fmtDate(s.date)}</span>
-                      <span style={{ fontSize: '0.85rem', color: C.white }}>{s.venue}</span>
-                      <span style={{ fontSize: '0.75rem', color: C.grayDim }}>{s.city}, {s.state}</span>
-                      {s.is_festival && <Badge color={gc}>{s.festival_name}</Badge>}
+            {/* MAIN CONTENT: TWO COLUMNS */}
+            <div style={{ display: 'flex', gap: '40px', position: 'relative', zIndex: 1 }}>
+              
+              {/* COLUMN 1: THE TIMELINE */}
+              <div style={{ flex: 1.2, position: 'relative', paddingLeft: 20 }}>
+                <div style={{ position: 'absolute', left: 5, top: 0, bottom: 0, width: 1, background: `linear-gradient(to bottom, ${gc}, ${C.grayDim})`, opacity: 0.5 }} />
+                {[...selectedData.shows].reverse().map((s, i) => {
+                  const hasSet = s.has_setlist || (s.has_setlist_names?.trim());
+                  return (
+                    <div key={i} style={{ position: 'relative', marginBottom: 14, paddingLeft: 14 }}>
+                      <div style={{ position: 'absolute', left: -7, top: 4, width: 8, height: 8, borderRadius: '50%', background: s.is_festival ? gc : (hasSet ? C.gold : C.grayDim), zIndex: 2, boxShadow: hasSet ? `0 0 8px ${C.gold}` : 'none' }} />
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 10, color: hasSet ? C.gold : C.tealDim, fontWeight: 700 }}>{fmtDate(s.date)}</span>
+                        <span style={{ fontSize: '0.9rem', color: C.white, fontWeight: 500 }}>{s.venue}</span>
+                        <span style={{ fontSize: '0.8rem', color: C.grayDim }}>{s.city}, {s.state}</span>
+                        {s.is_festival && <Badge color={gc} small>{s.festival_name}</Badge>}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+
+              {/* COLUMN 2: THE MEMORY GALLERY (The Dead Space Fix) */}
+              <div style={{ flex: 1, borderLeft: '1px solid rgba(255,255,255,0.05)', paddingLeft: '20px' }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: gc, letterSpacing: 2, marginBottom: 15, opacity: 0.6, textTransform: 'uppercase' }}>
+                   Captured Artifacts ({artistMemories.length})
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignContent: 'start' }}>
+                  {artistMemories.length > 0 ? (
+                    artistMemories.map((m, idx) => (
+                      <div key={idx} style={{
+                        width: '100px',
+                        background: '#fff',
+                        padding: '4px 4px 10px 4px',
+                        boxShadow: '0 8px 20px rgba(0,0,0,0.4)',
+                        transform: `rotate(${(idx % 2 === 0 ? 2 : -2)}deg)`,
+                        transition: 'all 0.2s ease',
+                        cursor: 'zoom-in'
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'scale(1.2) rotate(0deg)';
+                        e.currentTarget.style.zIndex = 10;
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = `rotate(${(idx % 2 === 0 ? 2 : -2)}deg)`;
+                        e.currentTarget.style.zIndex = 1;
+                      }}>
+                        <img src={m.url} alt="setlist" style={{ width: '100%', height: '80px', objectFit: 'cover', display: 'block', borderRadius: 1 }} />
+                        <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: '#000', marginTop: '5px', textAlign: 'center', fontWeight: 900 }}>
+                          {fmtDateShort(m.date)}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ padding: '40px 20px', textAlign: 'center', width: '100%', opacity: 0.2 }}>
+                      <div style={{ fontSize: '2rem', marginBottom: 10 }}>📷</div>
+                      <div style={{ fontFamily: "'Space Mono'", fontSize: 8 }}>NO SETLIST IMAGES FOUND</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
             </div>
           </div>
         );
       })()}
 
+      {/* GRID VIEW */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
         {artists.map((a, i) => {
           const gc = a.genre ? (GENRE_COLORS[a.genre] || C.teal) : null;
@@ -1122,7 +1183,6 @@ function HallOfFame({ sets, genreMap, onShare }) {
     </div>
   );
 }
-
 // ─── TICKET STUB CARD (By Day) ─────────────────────────────────────────────────
 function TicketStubCard({ event, onEdit, genreMap }) {
   const bands = event.bands||[];
