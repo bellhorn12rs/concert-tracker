@@ -1934,56 +1934,96 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
 // ─── 4. BY DAY TAB (SCRAPBOOK EDITION) ────────────────────────────────────────
 
 // 📸 Helper Component for the Personal Photo
-function PersonalPolaroid({ src, caption }) {
+// 📸 THE UPGRADED POLAROID (With Full-Screen Lightbox)
+function PersonalPolaroid({ src, venue, festival, date, isFestival }) {
+  const [isFull, setIsFull] = useState(false);
   if (!src) return null;
+
+  // Dynamic Label: Priority to Festival Name, otherwise Venue
+  const locationLabel = isFestival ? festival : (venue?.split(',')[0]);
+  const displayCaption = `${locationLabel?.toUpperCase()} // ${fmtDateShort(date)}`;
+
   return (
-    <div 
-      style={{
-        padding: '10px 10px 28px 10px',
-        background: '#fff',
-        boxShadow: '0 8px 25px rgba(0,0,0,0.7)',
-        transform: 'rotate(-2deg)', 
-        width: '160px',
-        flexShrink: 0,
-        border: '1px solid #ddd',
-        zIndex: 10,
-        transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-        cursor: 'zoom-in',
-        marginLeft: '20px' 
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'rotate(0deg) scale(1.1)';
-        e.currentTarget.style.zIndex = '100';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'rotate(-2deg) scale(1)';
-        e.currentTarget.style.zIndex = '10';
-      }}
-    >
-      <div style={{
-        width: '100%',
-        aspectRatio: '1/1',
-        background: `url(${src}) center/cover no-repeat`,
-        borderRadius: '1px',
-        border: '1px solid rgba(0,0,0,0.05)'
-      }} />
-      <div style={{ 
-        fontFamily: "'Courier New', monospace", 
-        fontSize: '10px', 
-        fontWeight: 'bold',
-        color: '#333', 
-        textAlign: 'center',
-        marginTop: '10px',
-        opacity: 0.8,
-        textTransform: 'uppercase',
-        letterSpacing: '1px'
-      }}>
-        {caption}
+    <>
+      <div 
+        style={{
+          padding: '10px 10px 32px 10px',
+          background: '#fff',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.8)',
+          transform: 'rotate(-2deg)', 
+          width: '180px',
+          flexShrink: 0,
+          border: '1px solid #ddd',
+          zIndex: 10,
+          transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+          cursor: 'zoom-in',
+          marginLeft: '20px' 
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.transform = 'rotate(0deg) scale(1.05)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = 'rotate(-2deg) scale(1)'; }}
+        onClick={() => setIsFull(true)}
+      >
+        <div style={{
+          width: '100%',
+          aspectRatio: '1/1',
+          background: `url(${src}) center/cover no-repeat`,
+          borderRadius: '1px',
+          border: '1px solid rgba(0,0,0,0.05)'
+        }} />
+        <div style={{ 
+          fontFamily: "'Permanent Marker', cursive", // Switch to a handwriting-style font if available, or stay with Mono
+          fontSize: '9px', 
+          lineHeight: '1.2',
+          color: '#333', 
+          textAlign: 'center',
+          marginTop: '12px',
+          opacity: 0.9,
+        }}>
+          {displayCaption}
+        </div>
       </div>
-    </div>
+
+      {/* 📽 FULL SCREEN LIGHTBOX */}
+      {isFull && (
+        <div 
+          onClick={() => setIsFull(false)}
+          style={{
+            position: 'fixed', inset: 0, 
+            background: 'rgba(0,0,0,0.95)', 
+            zIndex: 99999, 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'zoom-out', backdropFilter: 'blur(10px)',
+            animation: 'fadeIn 0.3s ease'
+          }}
+        >
+          <div style={{
+            background: '#fff', padding: '15px 15px 60px 15px',
+            boxShadow: '0 0 100px rgba(0,0,0,0.5)',
+            maxHeight: '90vh', maxWidth: '90vw',
+            transform: 'rotate(0deg)',
+            display: 'flex', flexDirection: 'column'
+          }}>
+            <img 
+              src={src} 
+              style={{ maxHeight: '75vh', objectFit: 'contain', border: '1px solid #eee' }} 
+              alt="Memory" 
+            />
+            <div style={{ 
+              fontFamily: "'Permanent Marker', cursive", 
+              fontSize: '2rem', 
+              color: '#333', 
+              textAlign: 'center', 
+              marginTop: '25px' 
+            }}>
+              {displayCaption}
+            </div>
+            <div style={{ position: 'absolute', top: 20, right: 20, color: '#333', fontSize: '2rem', fontFamily: 'monospace' }}>✕</div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
-
 // 🗓 Main By Day View
 function ByDayTab({ dayGroups, onEdit, genreMap }) {
   return (
@@ -2034,13 +2074,16 @@ function ByDayTab({ dayGroups, onEdit, genreMap }) {
 
             {/* 3. THE POLAROID (Far Right) */}
             {event.personal_photo_url && (
-              <div style={{ flexShrink: 0 }}>
-                <PersonalPolaroid 
-                  src={event.personal_photo_url} 
-                  caption={event.date?.split('-')[0] + " MEMORY"} 
-                />
-              </div>
-            )}
+  <div style={{ flexShrink: 0 }}>
+    <PersonalPolaroid 
+      src={event.personal_photo_url} 
+      venue={event.venue}
+      festival={event.festival_name}
+      date={event.date}
+      isFestival={event.is_festival}
+    />
+  </div>
+)}
           </div>
         ))}
       </div>
