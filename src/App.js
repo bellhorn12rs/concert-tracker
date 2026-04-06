@@ -1952,19 +1952,173 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
     </div>
   );
 }
-// ─── 4. BY DAY TAB ────────────────────────────────────────────────────────────
+
+function PersonalPolaroid({ src, caption }) {
+  if (!src) return null;
+  return (
+    <div style={{
+      padding: '10px 10px 28px 10px',
+      background: '#fff',
+      boxShadow: '0 8px 20px rgba(0,0,0,0.6)',
+      transform: 'rotate(-3deg)', // Tilted opposite to the ticket for balance
+      width: '160px',
+      flexShrink: 0,
+      border: '1px solid #ddd',
+      zIndex: 10,
+      transition: 'transform 0.3s ease',
+      cursor: 'zoom-in'
+    }}
+    onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(0deg) scale(1.1)'}
+    onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(-3deg) scale(1)'}
+    >
+      <div style={{
+        width: '100%',
+        aspectRatio: '1/1',
+        background: `url(${src}) center/cover no-repeat`,
+        borderRadius: '1px'
+      }} />
+      <div style={{ 
+        fontFamily: "'Permanent Marker', cursive", 
+        fontSize: '11px', 
+        color: '#222', 
+        textAlign: 'center',
+        marginTop: '8px',
+        opacity: 0.8
+      }}>
+        {caption}
+      </div>
+    </div>
+  );
+}
+// ─── 4. BY DAY TAB (SCRAPBOOK EDITION) ────────────────────────────────────────
+
+// Helper Component for the Personal Photo
+function PersonalPolaroid({ src, caption }) {
+  if (!src) return null;
+  return (
+    <div 
+      style={{
+        padding: '10px 10px 28px 10px',
+        background: '#fff',
+        boxShadow: '0 8px 20px rgba(0,0,0,0.6)',
+        transform: 'rotate(-2deg)', // Slight tilt for that "tossed on the table" look
+        width: '160px',
+        flexShrink: 0,
+        border: '1px solid #ddd',
+        zIndex: 10,
+        transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        cursor: 'zoom-in',
+        marginLeft: 'auto' // Pushes it to the far right
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'rotate(0deg) scale(1.1)';
+        e.currentTarget.style.zIndex = '100';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'rotate(-2deg) scale(1)';
+        e.currentTarget.style.zIndex = '10';
+      }}
+    >
+      <div style={{
+        width: '100%',
+        aspectRatio: '1/1',
+        background: `url(${src}) center/cover no-repeat`,
+        borderRadius: '1px',
+        border: '1px solid rgba(0,0,0,0.05)'
+      }} />
+      <div style={{ 
+        fontFamily: "'Courier New', monospace", 
+        fontSize: '10px', 
+        fontWeight: 'bold',
+        color: '#333', 
+        textAlign: 'center',
+        marginTop: '10px',
+        opacity: 0.7,
+        textTransform: 'uppercase',
+        letterSpacing: '1px'
+      }}>
+        {caption}
+      </div>
+    </div>
+  );
+}
+
 function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, setYearFilter, festFilter, setFestFilter, genreFilter, setGenreFilter, concerts }) {
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', padding: '15px 20px', background: hexToRgba(C.teal, 0.03), border: `1px solid ${C.border}`, borderRadius: '8px' }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: C.white }}>DAILY <span style={{ color: C.teal }}>ARCHIVE</span></div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: '9px', color: C.gray }}>{dayGroups.length} ENTRIES FOUND</div>
+      {/* HEADER HUD */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '30px', 
+        padding: '15px 20px', 
+        background: 'rgba(255,255,255,0.03)', 
+        border: `1px solid ${C.border}`, 
+        borderRadius: '8px' 
+      }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: C.white }}>
+          DAILY <span style={{ color: C.teal }}>ARCHIVE</span>
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '9px', color: C.gray }}>
+          {dayGroups.length} ENTRIES FOUND
+        </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+      {/* ENTRIES LIST */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
         {dayGroups.map((event, idx) => (
-          <div key={event.id} style={{ position: 'relative' }}>
+          <div 
+            key={event.id} 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '40px', 
+              padding: '20px',
+              background: 'rgba(255,255,255,0.02)',
+              borderRadius: '12px',
+              border: `1px solid ${C.border}`,
+              position: 'relative',
+              transition: 'border-color 0.3s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.borderColor = C.teal}
+            onMouseLeave={(e) => e.currentTarget.style.borderColor = C.border}
+          >
+            {/* THE DECORATIVE LINE */}
             <div style={{ position: 'absolute', left: '-20px', top: '50%', width: '15px', height: '1px', background: C.border }} />
-            {event.is_festival ? <WristbandCard event={event} genreMap={genreMap} /> : <TicketStubCard event={event} onEdit={onEdit} genreMap={genreMap} stubIdx={idx} />}
+
+            {/* 1. LEFT SIDE: THE ARTIFACT */}
+            <div style={{ flexShrink: 0, width: '320px' }}>
+              {event.is_festival 
+                ? <WristbandCard event={event} genreMap={genreMap} compact={true} /> 
+                : <TicketStubCard event={event} onEdit={onEdit} genreMap={genreMap} stubIdx={idx} />
+              }
+            </div>
+
+            {/* 2. MIDDLE: THE INFO BRIDGE */}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.white, lineHeight: 1.1 }}>
+                {event.bands?.slice(0, 3).join(' · ').toUpperCase()}
+              </div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: 8, letterSpacing: '1px' }}>
+                {event.venue?.toUpperCase()} — {fmtDateShort(event.date)}
+              </div>
+              {event.is_festival && (
+                <div style={{ marginTop: 10 }}>
+                   <span style={{ fontSize: '9px', fontFamily: "'Space Mono'", color: C.gold, background: 'rgba(212,175,55,0.1)', padding: '2px 6px', borderRadius: 4 }}>
+                     {event.festival_name?.toUpperCase()}
+                   </span>
+                </div>
+              )}
+            </div>
+
+            {/* 3. RIGHT SIDE: THE PERSONAL PHOTO */}
+            {event.personal_photo_url && (
+              <PersonalPolaroid 
+                src={event.personal_photo_url} 
+                caption={event.date?.split('-')[0] + " MEMORY"} 
+              />
+            )}
           </div>
         ))}
       </div>
