@@ -1993,6 +1993,121 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
 
     return { sortedShows: withIndex, years, monthMarkers, totalWidth, showXPos };
   }, [concerts]);
+  // Track scroll to update floating year/month indicator
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const scrollX = el.scrollLeft + el.clientWidth / 2;
+      let closest = null;
+      let minDist = Infinity;
+      sortedShows.forEach(show => {
+        const x = showXPos(show);
+        const dist = Math.abs(x - scrollX);
+        if (dist < minDist) { minDist = dist; closest = show; }
+      });
+      if (closest) {
+        setCurrentYear(String(getYear(closest.date)));
+        setCurrentMonth(closest.date?.slice(0, 7));
+      }
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [sortedShows, showXPos]);
+
+  const teleport = (date) => {
+    setActiveTab('byDay');
+    setTimeout(() => {
+      const el = document.querySelector(`[data-date="${date}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+  };
+
+  if (!sortedShows.length) return (
+    <div style={{ color: C.white, padding: 100, textAlign: 'center' }}>No concerts yet.</div>
+  );
+
+  const MONTH_NAMES = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const currentMonthName = currentMonth ? MONTH_NAMES[parseInt(currentMonth.split('-')[1]) - 1] : '';
+
+  return (
+    <div style={{ padding: '16px 0 0' }} className="fade-in">
+      <GenreLegend />
+
+      {/* Floating year/month HUD */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 12 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.teal, lineHeight: 1, textShadow: `0 0 20px ${C.teal}`, letterSpacing: '0.05em', transition: 'all 0.3s ease' }}>
+          {currentYear || '—'}
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '1rem', color: C.purple, textShadow: `0 0 10px ${C.purple}`, letterSpacing: '0.2em', transition: 'all 0.3s ease' }}>
+          {currentMonthName || '—'}
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, letterSpacing: '0.15em' }}>
+          ← SCROLL →
+        </div>
+      </div>
+
+      {/* Scrollable track */}
+      <div
+        ref={scrollRef}
+        style={{ width: '100%', height: '68vh', overflowX: 'auto', overflowY: 'hidden', background: 'rgba(0,0,0,0.35)', border: `1px solid ${C.border}`, borderRadius: 8, position: 'relative', cursor: 'grab' }}
+      >
+        <div style={{ width: totalWidth, height: '100%', position: 'relative' }}>
+
+          {/* Center rail */}
+          <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 1, background: `linear-gradient(90deg, transparent, ${C.teal}33, ${C.purple}33, ${C.gold}33, transparent)`, transform: 'translateY(-50%)', zIndex: 1 }} />
+
+          {/* Month markers */}
+          {monthMarkers.map((m, mi) => {
+            const showTop = mi % 2 === 0;
+            return (
+              <div key={`${m.year}-${m.month}`} style={{ position: 'absolute', left: m.x, top: '50%', transform: 'translateX(-50%)', zIndex: 3, pointerEvents: 'none' }}>
+                <div style={{ position: 'absolute', left: '50%', ...(showTop ? { bottom: 0 } : { top: 0 }), transform: 'translateX(-50%)', width: 1, height: 14, background: C.grayDim, opacity: 0.5 }} />
+                <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', ...(showTop ? { bottom: 18 } : { top: 18 }), fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, whiteSpace: 'nowrap', letterSpacing: '0.1em', opacity: 0.7 }}>
+                  {m.label}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Year dividers — alternating top/bottom */}
+          {years.map(([year, shows], yi) => {
+            const color = yi % 2 === 0 ? C.teal : C.purple;
+            const showAtTop = yi % 2 === 0;
+            const firstX = showXPos(shows[0]);
+            return (
+              <div key={year} style={{ position: 'absolute', left: firstX - 30, top: 0, bottom: 0, zIndex: 4, pointerEvents: 'none' }}>
+                <div style={{ position: 'absolute', left: 30, top: 0, bottom: 0, width: 1, background: `linear-gradient(to bottom, transparent, ${hexToRgba(color, 0.3)}, transparent)` }} />
+                <div style={{ position: 'absolute', left: 4, ...(showAtTop ? { top: 12 } : { bottom: 12 }) }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color, background: `${C.bg}ee`, padding: '3px 10px', borderRadius: 4, border: `1.5px solid ${color}`, boxShadow: `0 0 12px ${hexToRgba(color, 0.5)}`, textShadow: `0 0 6px ${color}`, whiteSpace: 'nowrap' }}>
+                    {year}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* All show dots */}
+          {sortedShows.map((show) => (
+            <TimelineDot
+              key={show.id}
+              item={show}
+              globalIndex={show.globalIndex}
+              onTeleport={() => teleport(show.date)}
+              genreMap={genreMap}
+              xOverride={showXPos(show)}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div style={{ textAlign: 'center', marginTop: 10, fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, letterSpacing: '0.3em' }}>
+        {sortedShows.length} SHOWS · {years.length} YEARS
+      </div>
+    </div>
+  );
+}
 // ─── 4. BY DAY TAB ────────────────────────────────────────────────────────────
 function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, setYearFilter, festFilter, setFestFilter, genreFilter, setGenreFilter, concerts }) {
   return (
