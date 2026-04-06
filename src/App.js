@@ -69,6 +69,72 @@ const TicketStub = ({ show }) => {
   );
 };
 
+// ─── THE BACKSTAGE PASS (IDEA #3) ────────────────────────────────────────────
+const BackstagePass = ({ stats }) => {
+  // stats = { totalShows, topArtist, topVenue, dominantGenre, level }
+  return (
+    <div className="pass-float" style={{
+      width: '240px',
+      height: '380px',
+      background: '#111',
+      border: `2px solid ${C.teal}`,
+      borderRadius: '12px',
+      display: 'flex',
+      flexDirection: 'column',
+      padding: '0',
+      position: 'relative',
+      boxShadow: `0 0 40px ${hexToRgba(C.teal, 0.3)}`,
+      margin: '40px auto',
+      overflow: 'hidden'
+    }}>
+      {/* Lanyard Hole */}
+      <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 40, height: 10, borderRadius: 10, background: '#000', border: '1px solid #333' }} />
+
+      {/* Header Bar */}
+      <div style={{ background: C.teal, padding: '25px 10px 10px', textAlign: 'center' }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: '#000', fontWeight: '900', letterSpacing: 2 }}>
+          ACCESS ALL AREAS
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px' }}>
+        <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#222', border: `2px dashed ${C.teal}`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 15, fontSize: '2rem' }}>
+          🎫
+        </div>
+        
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: '#fff', textAlign: 'center', lineHeight: 1, marginBottom: 5 }}>
+          CONCERT ARCHIVIST
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: C.teal, textTransform: 'uppercase', marginBottom: 20 }}>
+          {stats.dominantGenre} SPECIALIST
+        </div>
+
+        <div style={{ width: '100%', borderTop: '1px solid #333', paddingTop: 15 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+            <span style={{ fontSize: '8px', color: '#666', fontFamily: "'Space Mono'" }}>TOTAL SETS</span>
+            <span style={{ fontSize: '12px', color: '#fff', fontWeight: 'bold' }}>{stats.totalShows}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+            <span style={{ fontSize: '8px', color: '#666', fontFamily: "'Space Mono'" }}>TOP ARTIST</span>
+            <span style={{ fontSize: '10px', color: '#fff' }}>{stats.topArtist}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Barcode */}
+      <div style={{ background: '#fff', height: '60px', padding: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: '2px', height: '30px' }}>
+          {[1,3,1,4,2,6,1,2,5,1,3].map((w, i) => <div key={i} style={{ width: w, background: '#000' }} />)}
+        </div>
+        <div style={{ fontSize: '8px', color: '#000', fontFamily: "'Space Mono'", marginTop: 5 }}>
+          ID: {stats.totalShows}-{stats.topArtist.substring(0,3).toUpperCase()}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── THEMES ───────────────────────────────────────────────────────────────────
 const THEMES = {
   'neon-noir': {
