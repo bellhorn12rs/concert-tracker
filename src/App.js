@@ -1953,46 +1953,9 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
   );
 }
 
-function PersonalPolaroid({ src, caption }) {
-  if (!src) return null;
-  return (
-    <div style={{
-      padding: '10px 10px 28px 10px',
-      background: '#fff',
-      boxShadow: '0 8px 20px rgba(0,0,0,0.6)',
-      transform: 'rotate(-3deg)', // Tilted opposite to the ticket for balance
-      width: '160px',
-      flexShrink: 0,
-      border: '1px solid #ddd',
-      zIndex: 10,
-      transition: 'transform 0.3s ease',
-      cursor: 'zoom-in'
-    }}
-    onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(0deg) scale(1.1)'}
-    onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(-3deg) scale(1)'}
-    >
-      <div style={{
-        width: '100%',
-        aspectRatio: '1/1',
-        background: `url(${src}) center/cover no-repeat`,
-        borderRadius: '1px'
-      }} />
-      <div style={{ 
-        fontFamily: "'Permanent Marker', cursive", 
-        fontSize: '11px', 
-        color: '#222', 
-        textAlign: 'center',
-        marginTop: '8px',
-        opacity: 0.8
-      }}>
-        {caption}
-      </div>
-    </div>
-  );
-}
 // ─── 4. BY DAY TAB (SCRAPBOOK EDITION) ────────────────────────────────────────
 
-// Helper Component for the Personal Photo
+// Helper Component for the Personal Photo (Single Declaration)
 function PersonalPolaroid({ src, caption }) {
   if (!src) return null;
   return (
