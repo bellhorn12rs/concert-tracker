@@ -2739,67 +2739,140 @@ function VenuesTab({ concerts }) {
                     {[[], [], []].map((_, colIdx) => (
                       <div key={colIdx} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                         {v.shows.filter((_, idx) => idx % 3 === colIdx).map((show, showIdx) => {
-                          const tIdx = (i + showIdx) % 5;
-                          const bg = STUB_COLORS[tIdx];
-                          const ink = STUB_INKS[tIdx];
-                          const accent = STUB_ACCENTS[tIdx];
-                          const label = STUB_LABELS[tIdx];
-                          const headliner = (show.bands || [])[0] || 'UNKNOWN';
-                          const rot = (showIdx % 2 === 0 ? 1 : -1) * ((showIdx % 3) + 0.5);
-                          const barWidths = [2,1,3,1,2,1,4,1,2,3,1,2,1];
-                          return (
-                            <div key={show.id} style={{
-                              position: 'relative',
-                              transform: `rotate(${rot}deg)`,
-                              marginBottom: 28,
-                              zIndex: 1,
-                            }}>
-                              {/* Tape */}
-                              <div style={{
-                                position: 'absolute', top: -10, left: '50%',
-                                transform: 'translateX(-50%)',
-                                width: 44, height: 14,
-                                background: ['#ffcc00','#00e5cc','#9966ff','#ff4466','#00cfff'][tIdx],
-                                opacity: 0.8, borderRadius: 1, zIndex: 10,
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                              }} />
+  const isFest = show.is_festival;
+  const tIdx = (i + showIdx) % 5;
+  
+  // Shared styles for the "Board" feel
+  const rot = (showIdx % 2 === 0 ? 1 : -1) * ((showIdx % 3) + 0.5);
+  const headliner = (show.bands || [])[0] || 'UNKNOWN';
+  const festColor = ['#ff0055', '#00ffcc', '#bc13fe', '#ffcc00', '#0077ff'][tIdx];
 
-                              {/* The stub */}
-                              <div style={{
-                                background: bg,
-                                borderRadius: 3,
-                                overflow: 'hidden',
-                                boxShadow: '2px 6px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.6)',
-                                border: `1px solid ${hexToRgba(ink, 0.15)}`,
-                                fontFamily: "'Courier New', Courier, monospace",
-                                color: ink,
-                              }}>
-                                <div style={{ background: accent, height: 7 }} />
-                                <div style={{ padding: '4px 8px 0', fontSize: 6, fontWeight: 900, letterSpacing: '0.15em', color: accent, opacity: 0.8 }}>{label}</div>
-                                <div style={{ padding: '2px 8px', fontSize: 13, fontWeight: 900, lineHeight: 1.1, textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
-                                  {headliner.length > 14 ? headliner.slice(0,14)+'…' : headliner}
-                                </div>
-                                <div style={{ padding: '2px 8px', fontSize: 6, lineHeight: 1.5, opacity: 0.75 }}>
-                                  <div style={{ fontWeight: 'bold' }}>{fmtDateShort(show.date).toUpperCase()}</div>
-                                  {show.city && <div>{[show.city, show.state].filter(Boolean).join(', ').toUpperCase()}</div>}
-                                </div>
-                                <div style={{ margin: '3px 8px', paddingTop: 3, borderTop: `1px dashed ${hexToRgba(ink, 0.25)}`, display: 'flex', justifyContent: 'space-between', fontSize: 6, opacity: 0.65 }}>
-                                  <span>PRICE: COMPLIMENTARY</span><span>GA</span>
-                                </div>
-                                <div style={{ borderTop: `1px dashed ${hexToRgba(ink, 0.2)}`, margin: '2px 0' }} />
-                                <div style={{ padding: '4px 8px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                                  <div style={{ display: 'flex', gap: '1px' }}>
-                                    {barWidths.map((w, bi) => (
-                                      <div key={bi} style={{ width: w, height: bi % 3 === 0 ? 16 : 12, background: ink, opacity: 0.8 }} />
-                                    ))}
-                                  </div>
-                                  <div style={{ fontSize: 5, opacity: 0.4 }}>{String(show.id || '').slice(0,12).toUpperCase()}</div>
-                                </div>
-                                <div style={{ background: accent, height: 4, opacity: 0.4 }} />
-                              </div>
-                            </div>
-                          );
-                        })}
+  return (
+    <div key={show.id} style={{
+      position: 'relative',
+      transform: `rotate(${rot}deg)`,
+      marginBottom: 35,
+      zIndex: 1,
+      display: 'flex',
+      justifyContent: 'center'
+    }}>
+      {/* ─── TAPE (Keeping the 'pinned' look) ─── */}
+      <div style={{
+        position: 'absolute', top: -12, left: '50%',
+        transform: 'translateX(-50%)',
+        width: 38, height: 12,
+        background: isFest ? 'rgba(255,255,255,0.15)' : ['#ffcc00','#00e5cc','#9966ff','#ff4466','#00cfff'][tIdx],
+        backdropFilter: 'blur(2px)',
+        opacity: 0.7, borderRadius: 1, zIndex: 10,
+      }} />
+
+      {isFest ? (
+        /* ─── THE FESTIVAL WRISTBAND ─── */
+        <div style={{
+          width: '100%',
+          maxWidth: '180px',
+          height: '42px',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))'
+        }}>
+          {/* Fabric Strap */}
+          <div style={{
+            width: '100%',
+            height: '24px',
+            background: `repeating-linear-gradient(90deg, ${festColor}, ${festColor} 10px, ${hexToRgba(festColor, 0.8)} 10px, ${hexToRgba(festColor, 0.8)} 20px)`,
+            borderRadius: '2px',
+            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3), inset 0 -2px 4px rgba(255,255,255,0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 10px',
+            overflow: 'hidden'
+          }}>
+            <span style={{ 
+              fontFamily: "'Bebas Neue'", 
+              fontSize: '10px', 
+              color: 'rgba(0,0,0,0.6)', 
+              whiteSpace: 'nowrap',
+              letterSpacing: '1px'
+            }}>
+              {show.festival_name?.toUpperCase()} • {getYear(show.date)} • {show.festival_name?.toUpperCase()}
+            </span>
+          </div>
+
+          {/* RFID Plastic Chip */}
+          <div style={{
+            position: 'absolute',
+            left: '25%',
+            width: '34px',
+            height: '34px',
+            background: '#1a1a1a',
+            borderRadius: '4px',
+            border: `1px solid ${festColor}`,
+            boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2
+          }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '11px', color: festColor, lineHeight: 1 }}>{getYear(show.date)}</div>
+            <div style={{ width: '12px', height: '12px', marginTop: 2, border: `1px solid ${hexToRgba(festColor, 0.5)}`, borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+               <div style={{ width: '4px', height: '4px', background: festColor, borderRadius: '50%' }} />
+            </div>
+          </div>
+
+          {/* The Plastic Toggle (Black Slider) */}
+          <div style={{
+            position: 'absolute',
+            right: '15%',
+            width: '12px',
+            height: '30px',
+            background: '#000',
+            borderRadius: '3px',
+            boxShadow: '2px 0 5px rgba(0,0,0,0.5)',
+            zIndex: 1
+          }} />
+        </div>
+      ) : (
+        /* ─── THE STANDARD TICKET STUB (Existing Code) ─── */
+        <div style={{
+          background: STUB_COLORS[tIdx],
+          borderRadius: 3,
+          overflow: 'hidden',
+          boxShadow: '2px 6px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.6)',
+          border: `1px solid ${hexToRgba(STUB_INKS[tIdx], 0.15)}`,
+          fontFamily: "'Courier New', Courier, monospace",
+          color: STUB_INKS[tIdx],
+          width: '100%'
+        }}>
+          <div style={{ background: STUB_ACCENTS[tIdx], height: 7 }} />
+          <div style={{ padding: '4px 8px 0', fontSize: 6, fontWeight: 900, letterSpacing: '0.15em', color: STUB_ACCENTS[tIdx], opacity: 0.8 }}>{STUB_LABELS[tIdx]}</div>
+          <div style={{ padding: '2px 8px', fontSize: 13, fontWeight: 900, lineHeight: 1.1, textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
+            {headliner.length > 14 ? headliner.slice(0,14)+'…' : headliner}
+          </div>
+          <div style={{ padding: '2px 8px', fontSize: 6, lineHeight: 1.5, opacity: 0.75 }}>
+            <div style={{ fontWeight: 'bold' }}>{fmtDateShort(show.date).toUpperCase()}</div>
+            {show.city && <div>{[show.city, show.state].filter(Boolean).join(', ').toUpperCase()}</div>}
+          </div>
+          <div style={{ margin: '3px 8px', paddingTop: 3, borderTop: `1px dashed ${hexToRgba(STUB_INKS[tIdx], 0.25)}`, display: 'flex', justifyContent: 'space-between', fontSize: 6, opacity: 0.65 }}>
+            <span>PRICE: COMPLIMENTARY</span><span>GA</span>
+          </div>
+          <div style={{ borderTop: `1px dashed ${hexToRgba(STUB_INKS[tIdx], 0.2)}`, margin: '2px 0' }} />
+          <div style={{ padding: '4px 8px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <div style={{ display: 'flex', gap: '1px' }}>
+              {[2,1,3,1,2,1,4,1,2,3,1,2,1].map((w, bi) => (
+                <div key={bi} style={{ width: w, height: bi % 3 === 0 ? 16 : 12, background: STUB_INKS[tIdx], opacity: 0.8 }} />
+              ))}
+            </div>
+            <div style={{ fontSize: 5, opacity: 0.4 }}>{String(show.id || '').slice(0,12).toUpperCase()}</div>
+          </div>
+          <div style={{ background: STUB_ACCENTS[tIdx], height: 4, opacity: 0.4 }} />
+        </div>
+      )}
+    </div>
+  );
+})}
                       </div>
                     ))}
                   </div>
