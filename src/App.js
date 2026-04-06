@@ -2056,6 +2056,7 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
 // ─── 4. MEDIA COMPONENTS (SCRAPBOOK EXPANSION) ───────────────────────────────
 
 // 📄 The Upgraded "Taped-Up" Setlist (Handles Multiple)
+// 📄 The Upgraded "Taped-Up" Setlist (Handles Multiple)
 function SetlistPaper({ src, index = 0 }) {
   if (!src) return null;
   // Stagger the tilt and offset for multiple setlists
@@ -2101,14 +2102,13 @@ function SetlistPaper({ src, index = 0 }) {
     </div>
   );
 }
+
 // 📸 Upgraded Polaroid (Handles Stacking & Full-Screen)
 function PersonalPolaroid({ src, caption, index = 0 }) {
   const [isFull, setIsFull] = useState(false);
   if (!src) return null;
 
-  // Staggered physical look: 1st is tilted left, 2nd right, 3rd left...
   const rotation = (index % 2 === 0 ? -3 : 3) + (index * 1.5);
-  // Shift them horizontally so they "fan out"
   const xOffset = index * -18; 
 
   return (
@@ -2123,7 +2123,7 @@ function PersonalPolaroid({ src, caption, index = 0 }) {
           width: '170px',
           flexShrink: 0,
           border: '1px solid #ddd',
-          zIndex: 10 + index, // Newer photos sit on top
+          zIndex: 10 + index,
           transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
           cursor: 'zoom-in',
           marginLeft: index === 0 ? '25px' : '0'
@@ -2158,7 +2158,6 @@ function PersonalPolaroid({ src, caption, index = 0 }) {
         </div>
       </div>
 
-      {/* LIGHTBOX OVERLAY */}
       {isFull && (
         <div 
           onClick={() => setIsFull(false)} 
@@ -2197,10 +2196,8 @@ function PersonalPolaroid({ src, caption, index = 0 }) {
     </>
   );
 }
-// ─── 4. BY DAY TAB (SCRAPBOOK EDITION - EXPANDED) ───────────────────────────
 
 // ─── 4. BY DAY TAB (SCRAPBOOK EDITION - FULL MULTI-MEDIA) ────────────────────
-
 function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
@@ -2223,16 +2220,12 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
         </div>
       </div>
 
-      {/* ENTRIES LIST */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
         {dayGroups.map((event, idx) => {
-          
-          // 🟢 Prepare the Photo Array (Supports multiple comma-separated links)
           const photos = event.personal_photo_url 
             ? event.personal_photo_url.split(',').map(u => u.trim()).filter(Boolean)
             : [];
           
-          // 🟢 Prepare the Setlist Array (Supports multiple comma-separated links)
           const setlists = event.setlist_image_url
             ? event.setlist_image_url.split(',').map(u => u.trim()).filter(Boolean)
             : [];
@@ -2251,7 +2244,7 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
                 border: `1px solid ${C.border}`,
                 position: 'relative',
                 transition: 'all 0.3s ease',
-                overflow: 'visible' // Allows fanned photos to pop out on hover
+                overflow: 'visible'
               }}
             >
               {/* 1. LEFT SIDE: THE ARTIFACT */}
@@ -2290,11 +2283,9 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'flex-end',
-                minWidth: '400px', // Slightly wider to accommodate setlist + photo stacks
+                minWidth: '400px',
                 marginLeft: 'auto'
               }}>
-                
-                {/* 🟢 The Taped Setlist Stack (Updated to handle multiple) */}
                 {setlists.length > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     {setlists.map((url, sIdx) => (
@@ -2307,14 +2298,13 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
                   </div>
                 )}
 
-                {/* 🟢 The Photo Stack (Polaroids) */}
                 {photos.length > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     {photos.map((url, pIdx) => (
                       <PersonalPolaroid 
                         key={`${event.id}-photo-${pIdx}`}
                         src={url} 
-                        index={pIdx} // Controls the fan-out tilt
+                        index={pIdx}
                         venue={event.venue}
                         festival={event.festival_name}
                         date={event.date}
@@ -2337,7 +2327,7 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
 const getDayColor = (baseHex, index) => {
   const variants = [1.0, 0.8, 0.6, 0.45, 0.3]; 
   return hexToRgba(baseHex || C.teal, variants[index % variants.length]);
-};
+};.
 
 // ─── 1. THE DRILL-DOWN (BYFESTTAB - THE BOX SET ARCHIVE) ────────────────────
 function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
