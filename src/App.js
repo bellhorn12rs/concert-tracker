@@ -1759,21 +1759,104 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
     if (!concerts.length) return [];
     const sorted = [...concerts].sort((a,b)=>b.date.localeCompare(a.date));
     const groups = {};
-    sorted.forEach(show => { const yr = getYear(show.date); if(!groups[yr]) groups[yr]=[]; groups[yr].push(show); });
-    return Object.entries(groups).sort((a,b)=>b[0]-a[0]).map(([year, yearShows]) => [year, yearShows.map((s, i) => ({ ...s, type: 'SHOW', side: i % 2 === 0 ? 'left' : 'right' }))]);
+    sorted.forEach(show => { 
+      const yr = new Date(show.date+'T12:00:00').getFullYear(); 
+      if(!groups[yr]) groups[yr]=[]; 
+      groups[yr].push(show); 
+    });
+    // Sorting years descending (2026, 2025...)
+    return Object.entries(groups).sort((a,b)=>b[0]-a[0]).map(([year, yearShows]) => {
+      const flow = yearShows.map((s, i) => ({ ...s, type: 'SHOW', side: i % 2 === 0 ? 'left' : 'right' }));
+      return [year, flow];
+    });
   }, [concerts]);
+
+  const teleport = date => { 
+    setActiveTab('byDay');
+    setTimeout(() => {
+      const el = document.querySelector(`[data-date="${date}"]`);
+      if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+    }, 150);
+  };
+
+  if (!yearsData.length) return <div style={{ color:C.white, padding:100, textAlign:'center' }}>No concerts yet.</div>;
 
   return (
     <div style={{ padding:'40px 0 80px', position: 'relative' }} className="fade-in">
       <GenreLegend />
+      
       <div style={{ maxWidth:1100, margin:'0 auto', position:'relative' }}>
+        {/* The Spine line */}
         <div style={{ position:'absolute', left:'50%', top:0, bottom:0, width:2, background:C.border, transform:'translateX(-50%)', opacity:0.15 }} />
-        {yearsData.map(([year, flow]) => (
-          <div key={year} style={{ position:'relative', marginBottom:120 }}>
-            <div style={{ position: 'absolute', left: -80, fontFamily: "'Bebas Neue'", fontSize: '5rem', color: C.teal, opacity: 0.1, writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{year}</div>
-            <div style={{ width:'100%', padding:'0 20px' }}>
-              {flow.map(item => <TimelineCard key={item.id} item={item} isLeft={item.side === 'left'} marginTop={30} onTeleport={() => setActiveTab('byDay')} genreMap={genreMap} />)}
+
+        {yearsData.map(([year, flow], yIdx) => (
+          <div key={year} style={{ 
+            position:'relative', 
+            marginBottom:140, 
+            display: 'flex', 
+            alignItems: 'flex-start' 
+          }}>
+            
+            {/* ── STICKY YEAR LABEL (LEFT) ── */}
+            <div style={{ 
+              position: 'sticky', 
+              top: '180px', // Where it "docks" on the screen
+              width: '120px', 
+              zIndex: 10, 
+              flexShrink: 0,
+              pointerEvents: 'none'
+            }}>
+              <div style={{ 
+                fontFamily: "'Bebas Neue'", 
+                fontSize: '8rem', 
+                lineHeight: 0.8,
+                color: yIdx % 2 === 0 ? C.teal : C.purple,
+                // Bright Neon Glow
+                filter: `drop-shadow(0 0 12px ${hexToRgba(yIdx % 2 === 0 ? C.teal : C.purple, 0.7)})`,
+                writingMode: 'vertical-rl',
+                transform: 'rotate(180deg)',
+                opacity: 1
+              }}>
+                {year}
+              </div>
             </div>
+
+            {/* MAIN LIST OF SHOWS */}
+            <div style={{ flex: 1, padding: '0 20px' }}>
+              {flow.map(item => (
+                <TimelineCard 
+                  key={item.id} 
+                  item={item} 
+                  isLeft={item.side === 'left'} 
+                  marginTop={50} 
+                  onTeleport={() => teleport(item.date)} 
+                  genreMap={genreMap} 
+                />
+              ))}
+            </div>
+
+            {/* ── STICKY YEAR LABEL (RIGHT SIDE MIRROR) ── */}
+            <div style={{ 
+              position: 'sticky', 
+              top: '180px', 
+              width: '120px', 
+              zIndex: 10, 
+              flexShrink: 0,
+              pointerEvents: 'none'
+            }}>
+              <div style={{ 
+                fontFamily: "'Bebas Neue'", 
+                fontSize: '8rem', 
+                lineHeight: 0.8,
+                color: yIdx % 2 === 0 ? C.teal : C.purple,
+                filter: `drop-shadow(0 0 12px ${hexToRgba(yIdx % 2 === 0 ? C.teal : C.purple, 0.7)})`,
+                writingMode: 'vertical-lr',
+                opacity: 1
+              }}>
+                {year}
+              </div>
+            </div>
+
           </div>
         ))}
       </div>
