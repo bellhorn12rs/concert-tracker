@@ -110,11 +110,7 @@ const fmtDate = d => { if (!d) return '—'; const dt = new Date(d + 'T12:00:00'
 const fmtDateShort = d => { if (!d) return '—'; const dt = new Date(d + 'T12:00:00'); return `${MONTHS_SHORT[dt.getMonth()]} ${dt.getDate()}, ${dt.getFullYear()}`; };
 const getYear = d => d ? new Date(d + 'T12:00:00').getFullYear() : null;
 const daysSince = d => { if (!d) return 0; return Math.floor((Date.now() - new Date(d + 'T12:00:00')) / 86400000); };
-const fmtDateShort = (d) => {
-  if (!d) return '';
-  const [y, m, day] = d.split('-');
-  return `${m}/${day}/${y.slice(2)}`; // Returns 04/05/26
-};
+
 
 // ─── STYLES (POSTER & TEXTURE EDITION) ─────────────────────────────────────────
 const MarqueeStyles = () => (
