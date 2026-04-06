@@ -2053,112 +2053,132 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
   );
 }
 
-// ─── 4. BY DAY TAB (SCRAPBOOK EDITION) ────────────────────────────────────────
+// ─── 4. MEDIA COMPONENTS (SCRAPBOOK EXPANSION) ───────────────────────────────
 
-// 📸 Helper Component for the Personal Photo
-// 📸 THE UPGRADED POLAROID (With Full-Screen Lightbox)
-function PersonalPolaroid({ src, venue, festival, date, isFestival }) {
+// 📄 The "Taped-Up" Setlist Component (Official/Poster)
+function SetlistPaper({ src }) {
+  if (!src) return null;
+  return (
+    <div style={{
+      width: '130px',
+      height: '170px',
+      background: '#fdfdfd',
+      boxShadow: '2px 5px 15px rgba(0,0,0,0.4)',
+      transform: 'rotate(-1.5deg)',
+      padding: '5px',
+      position: 'relative',
+      marginRight: '-25px', // Overlap with the Polaroid stack
+      flexShrink: 0,
+      zIndex: 5,
+      border: '1px solid #eee'
+    }}>
+      {/* Blue Painters Tape Effect */}
+      <div style={{ 
+        position: 'absolute', top: -10, left: '25%', width: '40px', height: '14px', 
+        background: 'rgba(0, 110, 255, 0.45)', backdropFilter: 'blur(1px)', 
+        transform: 'rotate(2deg)', border: '1px solid rgba(0,100,255,0.2)',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      }} />
+      
+      <div style={{
+        width: '100%', height: '100%',
+        background: `url(${src}) center/cover no-repeat`,
+        opacity: 0.95,
+        filter: 'sepia(0.05) contrast(1.05)'
+      }} />
+    </div>
+  );
+}
+
+// 📸 Upgraded Polaroid (Handles Stacking & Full-Screen)
+function PersonalPolaroid({ src, caption, index = 0 }) {
   const [isFull, setIsFull] = useState(false);
   if (!src) return null;
 
-  const locationLabel = isFestival ? festival : (venue?.split(',')[0]);
-  const displayCaption = `${locationLabel?.toUpperCase()} // ${fmtDateShort(date)}`;
+  // Staggered physical look: 1st is tilted left, 2nd right, 3rd left...
+  const rotation = (index % 2 === 0 ? -3 : 3) + (index * 1.5);
+  // Shift them horizontally so they "fan out"
+  const xOffset = index * -18; 
 
   return (
     <>
-      {/* 1. THE SMALL THUMBNAIL */}
       <div 
         onClick={() => setIsFull(true)}
         style={{
           padding: '10px 10px 32px 10px',
           background: '#fff',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.8)',
-          transform: 'rotate(-2deg)', 
-          width: '180px',
+          boxShadow: '0 8px 25px rgba(0,0,0,0.6)',
+          transform: `rotate(${rotation}deg) translateX(${xOffset}px)`,
+          width: '170px',
           flexShrink: 0,
           border: '1px solid #ddd',
-          zIndex: 10,
-          transition: 'all 0.3s ease',
+          zIndex: 10 + index, // Newer photos sit on top
+          transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
           cursor: 'zoom-in',
-          marginLeft: '20px' 
+          marginLeft: index === 0 ? '25px' : '0'
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.transform = 'rotate(0deg) scale(1.05)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = 'rotate(-2deg) scale(1)'; }}
+        onMouseEnter={(e) => { 
+          e.currentTarget.style.transform = `rotate(0deg) scale(1.15) translateY(-15px)`; 
+          e.currentTarget.style.zIndex = '1000';
+          e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.8)';
+        }}
+        onMouseLeave={(e) => { 
+          e.currentTarget.style.transform = `rotate(${rotation}deg) translateX(${xOffset}px)`;
+          e.currentTarget.style.zIndex = 10 + index;
+          e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.6)';
+        }}
       >
-        <div style={{
-          width: '100%',
-          aspectRatio: '1/1',
+        <div style={{ 
+          width: '100%', 
+          aspectRatio: '1/1', 
           background: `url(${src}) center/cover no-repeat`,
-          border: '1px solid rgba(0,0,0,0.1)'
+          border: '1px solid rgba(0,0,0,0.05)'
         }} />
         <div style={{ 
           fontFamily: "'Space Mono', monospace", 
-          fontSize: '9px', 
+          fontSize: '8px', 
           color: '#333', 
-          textAlign: 'center',
-          marginTop: '12px',
-          fontWeight: 'bold'
+          textAlign: 'center', 
+          marginTop: '12px', 
+          fontWeight: 'bold',
+          opacity: 0.8
         }}>
-          {displayCaption}
+          {caption}
         </div>
       </div>
 
-      {/* 2. THE FULL-SCREEN OVERLAY */}
+      {/* LIGHTBOX OVERLAY */}
       {isFull && (
         <div 
-          onClick={() => setIsFull(false)}
-          style={{
-            position: 'fixed',
-            top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.96)', 
-            zIndex: 99999, 
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'zoom-out',
-            padding: '40px'
+          onClick={() => setIsFull(false)} 
+          style={{ 
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', 
+            zIndex: 999999, display: 'flex', alignItems: 'center', 
+            justifyContent: 'center', cursor: 'zoom-out', padding: '40px' 
           }}
         >
-          {/* THE BIG POLAROID FRAME */}
-          <div style={{
-            background: '#fff',
-            padding: '20px 20px 80px 20px',
-            boxShadow: '0 0 100px rgba(0,0,0,0.8)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            maxWidth: '90%',
-            maxHeight: '90%'
+          <div style={{ 
+            background: '#fff', padding: '15px 15px 70px 15px', 
+            boxShadow: '0 0 120px rgba(0,0,0,0.9)', maxWidth: '90%', 
+            maxHeight: '90%', display: 'flex', flexDirection: 'column', 
+            alignItems: 'center', position: 'relative' 
           }}>
             <img 
               src={src} 
-              alt="Memory Full"
-              style={{ 
-                maxWidth: '100%', 
-                maxHeight: '70vh', // Keeps it from going off the bottom
-                display: 'block',
-                objectFit: 'contain',
-                border: '1px solid #eee'
-              }} 
+              alt="Memory" 
+              style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', border: '1px solid #eee' }} 
             />
             <div style={{ 
-              fontFamily: "'Bebas Neue'", 
-              fontSize: '2.5rem', 
-              color: '#1a1a1a', 
-              marginTop: '30px',
-              textAlign: 'center'
+              fontFamily: "'Bebas Neue'", fontSize: '2.5rem', 
+              color: '#1a1a1a', marginTop: '30px', textAlign: 'center' 
             }}>
-              {displayCaption}
+              {caption}
             </div>
-            
-            {/* CLOSE HINT */}
             <div style={{ 
-              marginTop: '10px', 
-              fontFamily: "'Space Mono'", 
-              fontSize: '10px', 
-              color: '#999' 
+              marginTop: '10px', fontFamily: "'Space Mono'", 
+              fontSize: '10px', color: '#999' 
             }}>
-              CLICK ANYWHERE TO CLOSE
+              CLICK ANYWHERE TO DISMISS
             </div>
           </div>
         </div>
@@ -2166,68 +2186,122 @@ function PersonalPolaroid({ src, venue, festival, date, isFestival }) {
     </>
   );
 }
-// 🗓 Main By Day View
-function ByDayTab({ dayGroups, onEdit, genreMap }) {
+// ─── 4. BY DAY TAB (SCRAPBOOK EDITION - EXPANDED) ───────────────────────────
+
+function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', padding: '15px 20px', background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}`, borderRadius: '8px' }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: C.white }}>DAILY <span style={{ color: C.teal }}>ARCHIVE</span></div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: '9px', color: C.gray }}>{dayGroups.length} ENTRIES FOUND</div>
+      {/* HEADER HUD */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '30px', 
+        padding: '15px 20px', 
+        background: 'rgba(255,255,255,0.03)', 
+        border: `1px solid ${C.border}`, 
+        borderRadius: '8px' 
+      }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: C.white }}>
+          DAILY <span style={{ color: C.teal }}>ARCHIVE</span>
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '9px', color: C.gray }}>
+          {dayGroups.length} ENTRIES FOUND
+        </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {dayGroups.map((event, idx) => (
-          <div 
-            key={event.id} 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              padding: '20px 30px',
-              background: 'rgba(255,255,255,0.02)',
-              borderRadius: '16px',
-              border: `1px solid ${C.border}`,
-              transition: 'all 0.3s ease'
-            }}
-          >
-            {/* 1. THE ARTIFACT (Ticket) */}
-            <div style={{ flexShrink: 0, width: '280px' }}>
-              {event.is_festival 
-                ? <WristbandCard event={event} genreMap={genreMap} compact={true} /> 
-                : <TicketStubCard event={event} onEdit={onEdit} genreMap={genreMap} stubIdx={idx} />
-              }
-            </div>
+      {/* ENTRIES LIST */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+        {dayGroups.map((event, idx) => {
+          
+          // 🟢 Prepare the Photo Array (Supports commas or single links)
+          const photos = event.personal_photo_url 
+            ? event.personal_photo_url.split(',').map(u => u.trim()).filter(Boolean)
+            : [];
+          
+          const venueLabel = event.is_festival ? event.festival_name : event.venue;
 
-            {/* 2. THE INFO (Cleanly separated from the ticket) */}
-            <div style={{ flex: 1, paddingLeft: '50px' }}>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.4rem', color: C.white, lineHeight: 1 }}>
-                {event.bands?.slice(0, 3).join(' · ').toUpperCase()}
+          return (
+            <div 
+              key={event.id} 
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                padding: '24px',
+                background: 'rgba(255,255,255,0.02)',
+                borderRadius: '16px',
+                border: `1px solid ${C.border}`,
+                position: 'relative',
+                transition: 'all 0.3s ease',
+                overflow: 'visible' // Allows fanned photos to pop out
+              }}
+            >
+              {/* 1. LEFT SIDE: THE ARTIFACT */}
+              <div style={{ flexShrink: 0, width: '300px' }}>
+                {event.is_festival 
+                  ? <WristbandCard event={event} genreMap={genreMap} compact={true} onEdit={isAdmin ? onEdit : null} /> 
+                  : <TicketStubCard event={event} onEdit={isAdmin ? onEdit : null} genreMap={genreMap} stubIdx={idx} />
+                }
               </div>
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: 12 }}>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.teal, fontWeight: 900 }}>
-                  {fmtDateShort(event.date)}
+
+              {/* 2. MIDDLE: THE INFO */}
+              <div style={{ flex: 1, paddingLeft: '40px' }}>
+                <div style={{ 
+                  fontFamily: "'Bebas Neue'", 
+                  fontSize: '2.5rem', 
+                  color: C.white, 
+                  lineHeight: 1,
+                  letterSpacing: '1px'
+                }}>
+                  {event.bands?.slice(0, 3).join(' · ').toUpperCase()}
                 </div>
-                <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
-                <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray }}>
-                  {event.venue?.toUpperCase()}
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: 12 }}>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: C.teal, fontWeight: 900 }}>
+                    {fmtDateShort(event.date)}
+                  </div>
+                  <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>
+                    {event.venue?.toUpperCase()}
+                  </div>
                 </div>
+              </div>
+
+              {/* 3. RIGHT SIDE: THE MEDIA CLUSTER */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'flex-end',
+                minWidth: '380px', // Increased width for the stack
+                marginLeft: 'auto'
+              }}>
+                
+                {/* 🟢 The Taped Setlist (New) */}
+                {event.setlist_image_url && (
+                  <SetlistPaper src={event.setlist_image_url} />
+                )}
+
+                {/* 🟢 The Photo Stack (Upgraded) */}
+                {photos.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {photos.map((url, pIdx) => (
+                      <PersonalPolaroid 
+                        key={`${event.id}-photo-${pIdx}`}
+                        src={url} 
+                        index={pIdx} // Controls the fan-out tilt
+                        venue={event.venue}
+                        festival={event.festival_name}
+                        date={event.date}
+                        isFestival={event.is_festival}
+                        caption={venueLabel?.split(',')[0].toUpperCase()}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* 3. THE POLAROID (Far Right) */}
-            {event.personal_photo_url && (
-  <div style={{ flexShrink: 0 }}>
-    <PersonalPolaroid 
-      src={event.personal_photo_url} 
-      venue={event.venue}
-      festival={event.festival_name}
-      date={event.date}
-      isFestival={event.is_festival}
-    />
-  </div>
-)}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -3099,9 +3173,8 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
   );
 }
 
-// ─── 5. EDIT MODAL (DUAL-LINK VERSION) ──────────────────────────────────────
+// ─── 5. EDIT MODAL (SCRAPBOOK EXPANSION VERSION) ──────────────────────────────
 function EditModal({ concert, onClose, onSave, onDelete }) {
-  // 1. Initial State
   const [form, setForm] = useState({ 
     date: concert?.date || '', 
     bands: Array.isArray(concert?.bands) ? concert.bands.join(', ') : (concert?.bands || ''), 
@@ -3113,14 +3186,15 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
     festival_day: concert?.festival_day || '', 
     has_setlist_names: concert?.has_setlist_names || '', 
     genre: concert?.genre || '', 
-    image_url: concert?.image_url || '', // Setlist/Poster
-    personal_photo_url: concert?.personal_photo_url || '' // 🟢 The Polaroid Memory
+    image_url: concert?.image_url || '', // Poster
+    setlist_image_url: concert?.setlist_image_url || '', // 🟢 The Taped Setlist
+    personal_photo_url: concert?.personal_photo_url || '' // 🟢 Multiple Polaroids
   });
 
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const safeC = typeof C !== 'undefined' ? C : { teal: '#00d2ff', bgCard: '#1a1a1a', gray: '#888' };
   
-  const safeC = typeof C !== 'undefined' ? C : { teal: '#00d2ff', bgCard: '#1a1a1a', border: '#333', gray: '#888' };
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSave = async () => { 
@@ -3141,7 +3215,7 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
   const inpSt = { width: '100%', background: 'rgba(0,0,0,0.3)', border: `1px solid ${safeC.teal}44`, color: '#fff', padding: '10px', fontFamily: "'Space Mono'", borderRadius: '4px', outline: 'none' };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(4px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(4px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="fade-in" style={{ background: safeC.bgCard, border: `1px solid ${safeC.teal}`, borderRadius: 10, padding: 24, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: `0 0 40px rgba(0,210,255,0.2)` }}>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -3149,78 +3223,47 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: safeC.gray, fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
         </div>
         
-        {/* ROW 1: DATE & BANDS */}
+        {/* BASIC INFO */}
         <div style={{ marginBottom: 14 }}><label style={lbl}>Date</label><input style={inpSt} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
         <div style={{ marginBottom: 14 }}><label style={lbl}>Artists (comma separated)</label><input style={inpSt} value={form.bands} onChange={e => set('bands', e.target.value)} /></div>
         
-        {/* ROW 2: VENUE & CITY */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
           <div><label style={lbl}>Venue</label><input style={inpSt} value={form.venue} onChange={e => set('venue', e.target.value)} /></div>
           <div><label style={lbl}>City</label><input style={inpSt} value={form.city} onChange={e => set('city', e.target.value)} /></div>
         </div>
-        
-        {/* ROW 3: GENRE & FEST TOGGLE */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: 12, marginBottom: 14 }}>
-           <div>
-             <label style={lbl}>Genre</label>
-             <select style={inpSt} value={form.genre} onChange={e => set('genre', e.target.value)}>
-               <option value="">— unset —</option>
-               {(typeof GENRES !== 'undefined' ? GENRES : []).map(g => <option key={g} value={g}>{g}</option>)}
-             </select>
-           </div>
-           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-             <label style={lbl}>Festival?</label>
-             <input type="checkbox" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} style={{ width: 18, height: 18 }} />
-           </div>
-        </div>
-        
-        {form.is_festival && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-            <div><label style={lbl}>Festival Name</label><input style={inpSt} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} /></div>
-            <div><label style={lbl}>Day Label</label><input style={inpSt} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} /></div>
-          </div>
-        )}
-        
-        <div style={{ marginBottom: 20 }}><label style={lbl}>Setlist Names (comma separated)</label><input style={inpSt} value={form.has_setlist_names} onChange={e => set('has_setlist_names', e.target.value)} /></div>
-        
-        {/* 🎫 LINK 1: OFFICIAL POSTER */}
-        <div style={{ marginBottom: 14 }}>
-          <label style={lbl}>Gig Photo / Poster URL (Imgur Direct Link)</label>
-          <input style={inpSt} value={form.image_url} onChange={e => set('image_url', e.target.value)} placeholder="https://i.imgur.com/setlist.jpg" />
-        </div>
 
-        {/* 📸 LINK 2: PERSONAL MEMORY */}
-        <div style={{ marginBottom: 24, padding: '12px', background: 'rgba(157, 0, 255, 0.05)', borderRadius: '6px', border: '1px dashed rgba(157, 0, 255, 0.2)' }}>
-          <label style={{ ...lbl, color: '#9d00ff' }}>Personal Memory Photo (Polaroid URL)</label>
-          <input 
-            style={{ ...inpSt, borderColor: '#9d00ff44' }} 
-            value={form.personal_photo_url} 
-            onChange={e => set('personal_photo_url', e.target.value)} 
-            placeholder="https://i.imgur.com/memory.jpg" 
-          />
-          <div style={{ fontSize: 7, color: '#9d00ff', opacity: 0.6, marginTop: 4, fontFamily: "'Space Mono', monospace" }}>
-            * Direct links only. This powers the Polaroid in the By Day tab.
+        {/* 📸 THE MEMORY ARCHIVE (PURPLE ZONE) */}
+        <div style={{ marginBottom: 24, padding: '15px', background: 'rgba(157, 0, 255, 0.05)', borderRadius: '8px', border: '1px dashed rgba(157, 0, 255, 0.3)' }}>
+          <div style={{ marginBottom: 15 }}>
+            <label style={{ ...lbl, color: '#9d00ff' }}>Personal Polaroids (Comma separated Imgur links)</label>
+            <textarea 
+              style={{ ...inpSt, borderColor: '#9d00ff44', height: '60px', fontSize: '10px', resize: 'none', lineHeight: '1.4' }} 
+              value={form.personal_photo_url} 
+              onChange={e => set('personal_photo_url', e.target.value)} 
+              placeholder="link1.jpg, link2.jpg..." 
+            />
+          </div>
+          
+          <div>
+            <label style={{ ...lbl, color: '#9d00ff' }}>Stage Setlist / Poster (Taped Paper)</label>
+            <input 
+              style={{ ...inpSt, borderColor: '#9d00ff44' }} 
+              value={form.setlist_image_url} 
+              onChange={e => set('setlist_image_url', e.target.value)} 
+              placeholder="Direct Imgur link to setlist photo" 
+            />
           </div>
         </div>
 
         {/* ACTIONS */}
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           {concert?.id && (
-            <button 
-              onClick={() => confirming ? onDelete(concert.id) : setConfirming(true)}
-              type="button"
-              style={{ background: confirming ? '#ff4444' : 'transparent', border: '1px solid #ff4444', color: confirming ? '#fff' : '#ff4444', padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1rem' }}
-            >
-              {confirming ? 'CONFIRM DELETE?' : 'DELETE'}
+            <button onClick={() => confirming ? onDelete(concert.id) : setConfirming(true)} type="button" style={{ background: confirming ? '#ff4444' : 'transparent', border: '1px solid #ff4444', color: confirming ? '#fff' : '#ff4444', padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1rem' }}>
+              {confirming ? 'CONFIRM?' : 'DELETE'}
             </button>
           )}
           <button onClick={onClose} type="button" style={{ background: 'transparent', border: `1px solid ${safeC.gray}`, color: safeC.gray, padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1rem' }}>CANCEL</button>
-          <button 
-            onClick={handleSave} 
-            disabled={saving}
-            type="button"
-            style={{ background: safeC.teal, border: 'none', color: '#000', padding: '8px 24px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', opacity: saving ? 0.5 : 1 }}
-          >
+          <button onClick={handleSave} disabled={saving} type="button" style={{ background: safeC.teal, border: 'none', color: '#000', padding: '8px 24px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', opacity: saving ? 0.5 : 1 }}>
             {saving ? 'SAVING...' : 'SAVE'}
           </button>
         </div>
