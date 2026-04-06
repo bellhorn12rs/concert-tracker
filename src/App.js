@@ -3513,6 +3513,8 @@ async function handleUpcomingDelete(id) {
         </div>
 
         {/* ── NAV ── */}
+        {/* ── NAV ── */}
+        <nav style={{ background: C.bgCard, borderBottom: `1px solid ${C.teal}22`, display: 'flex', position: 'sticky', top: 0, zIndex: 200 }}>
         <div style={{ display: 'flex', flex: 1, overflowX: 'auto', scrollbarWidth: 'none', alignItems: 'stretch' }}>
             {(() => {
               const nonRightTabs = TABS.filter(([,, g]) => g !== 'right');
