@@ -1740,13 +1740,17 @@ function GenreLegend() {
 }
 
 // ─── 1. TIMELINE DOT ────────────────────────────────────────────────────────
+// ─── 1. TIMELINE DOT (Full Lineup Edition) ───────────────────────────────────
 function TimelineDot({ item, onTeleport, genreMap, xPos }) {
   const [isHovered, setIsHovered] = useState(false);
   if (!item || !item.date) return null;
 
   const gi = getConcertGenreInfo(item, genreMap);
   const themeColor = gi.mixed ? '#9d00ff' : (gi.color || C.teal);
+  
+  // 🟢 Logic to join all bands for the display title
   const bands = item.bands || [];
+  const lineupTitle = bands.length > 0 ? bands.join(' · ').toUpperCase() : 'UNKNOWN ARTIST';
 
   return (
     <div
@@ -1780,7 +1784,7 @@ function TimelineDot({ item, onTeleport, genreMap, xPos }) {
       {isHovered && (
         <div className="fade-in" style={{
           position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          width: 380, padding: 20, background: C.bgCard, borderRadius: 12,
+          width: 400, padding: 20, background: C.bgCard, borderRadius: 12,
           border: `2px solid ${themeColor}`, boxShadow: `0 0 80px rgba(0,0,0,1)`,
           zIndex: 9999, pointerEvents: 'none',
         }}>
@@ -1791,23 +1795,42 @@ function TimelineDot({ item, onTeleport, genreMap, xPos }) {
                <div style={{ background: '#8b0000', height: 6 }} />
                <div style={{ padding: '8px 12px', fontFamily: "'Courier New', monospace" }}>
                  <div style={{ fontSize: 7, fontWeight: 900, color: '#8b0000' }}>ADMIT ONE</div>
-                 <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase' }}>{bands[0]}</div>
+                 {/* Show full lineup on the mini ticket too */}
+                 <div style={{ fontSize: 14, fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.1 }}>{lineupTitle}</div>
                </div>
             </div>
           )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
-            <div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: '#fff' }}>{bands[0]?.toUpperCase()}</div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray }}>{item.venue?.toUpperCase()}</div>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 15, marginTop: 10 }}>
+            <div style={{ flex: 1 }}>
+              {/* 🟢 THE FIXED HEADER: Now shows the full lineup */}
+              <div style={{ 
+                fontFamily: "'Bebas Neue'", 
+                fontSize: bands.length > 2 ? '1.3rem' : '1.7rem', // Auto-shrink if lineup is long
+                color: '#fff', 
+                lineHeight: 1.1 
+              }}>
+                {lineupTitle}
+              </div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginTop: 4 }}>
+                {item.venue?.toUpperCase()} — {fmtDateShort(item.date)}
+              </div>
             </div>
             <GenreBadge genre={gi.genre} color={gi.color} small />
           </div>
+
+          {/* Add a little "Memory Indicator" if you have a photo for this show */}
+          {item.personal_photo_url && (
+            <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 5 }}>
+               <span style={{ fontSize: '10px' }}>📸</span>
+               <span style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: C.teal, letterSpacing: '1px' }}>PHOTO ARCHIVED</span>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
-
 // ─── 2. PANORAMIC TIMELINE TAB (High-Contrast Years & Months) ──────────────
 function TimelineTab({ concerts, setActiveTab, genreMap }) {
   const scrollRef = useRef(null);
