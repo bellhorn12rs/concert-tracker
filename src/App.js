@@ -1668,19 +1668,70 @@ function TicketStubCard({ event, onEdit, genreMap, stubIdx = 0 }) {
 }
 
 function WristbandCard({ event, genreMap, compact = false }) {
+  const bands = event.bands || [];
   const gi = getConcertGenreInfo(event, genreMap);
-  const wristColor = gi.mixed ? C.cyan : (gi.color||C.teal);
-  const bands = event.bands||[];
+  const wristColor = gi.mixed ? C.cyan : (gi.color || C.teal);
+  
+  // Logic: Split bands into columns for a "lineup" feel in the Festival Tab
+  const STAGE_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green];
+  const numCols = compact ? 1 : Math.max(1, bands.length <= 5 ? 3 : 4);
+  const columns = Array.from({ length: numCols }, () => []);
+  bands.forEach((b, i) => columns[i % numCols].push(b));
+
   return (
-    <div style={{ background:compact?C.bgCardAlt:C.bgCard, border:`1px solid ${C.border}`, borderRadius:6, marginBottom:compact?8:12, overflow:'hidden' }}>
+    <div style={{ 
+      background: compact ? C.bgCardAlt : C.bgCard, 
+      border: `1px solid ${C.border}`, 
+      borderRadius: 6, 
+      marginBottom: compact ? 8 : 16, 
+      overflow: 'hidden' 
+    }}>
+      {/* 1. THE PHYSICAL WRISTBAND HEADER */}
       <div style={{ padding: '12px 16px', background: hexToRgba(wristColor, 0.05), borderBottom: `1px solid ${C.border}` }}>
         <PhysicalWristband color={wristColor} label={event.festival_name} year={getYear(event.date)} />
-        <div style={{ display:'flex', justifyContent:'space-between', marginTop: 10 }}>
-          <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.2rem', color:C.white }}>{fmtDate(event.date)}</div>
-          <Badge color={wristColor}>{event.festival_name || 'FESTIVAL'}</Badge>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.white }}>{fmtDate(event.date)}</div>
+          <div style={{ display: 'flex', gap: 6 }}>
+             <GenreBadge genre={gi.genre} color={gi.color} mixed={gi.mixed} small />
+             <Badge color={wristColor}>{event.festival_name || 'FESTIVAL'}</Badge>
+          </div>
         </div>
       </div>
-      {!compact && <div style={{ padding: '10px', fontSize: '0.8rem', color: C.gray }}>{bands.join(' • ')}</div>}
+
+      {/* 2. THE RESTORED LINEUP GRID (Shows when NOT compact) */}
+      {!compact && columns.length > 0 && (
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: `repeat(${columns.length}, 1fr)`, 
+          borderTop: `1px solid ${C.border}`, 
+          background: 'rgba(0,0,0,0.15)' 
+        }}>
+          {columns.map((stageBands, ci) => (
+            <div key={ci} style={{ 
+              borderRight: ci < columns.length - 1 ? `1px solid ${C.border}` : 'none', 
+              padding: '12px' 
+            }}>
+              {/* Colored "Stage" accent */}
+              <div style={{ height: 2, background: STAGE_COLORS[ci % STAGE_COLORS.length], marginBottom: 10, opacity: 0.7 }} />
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {stageBands.map((band, bi) => (
+                  <div key={bi} style={{ 
+                    fontSize: '0.75rem', 
+                    color: C.white, 
+                    lineHeight: 1.2, 
+                    fontFamily: "'Space Mono'",
+                    letterSpacing: '-0.2px'
+                  }}>
+                    • {band}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -2125,7 +2176,6 @@ function VenueDonutCard({ concerts, onNavigateToVenues }) {
     </Card>
   );
 }
-// ─── VENUES TAB ───────────────────────────────────────────────────────────────
 function VenuesTab({ concerts }) {
   const [sortBy, setSortBy] = useState('count');
   const [search, setSearch] = useState('');
@@ -2133,7 +2183,7 @@ function VenuesTab({ concerts }) {
 
   const toggle = (name) => setExpanded(p => ({ ...p, [name]: !p[name] }));
 
-  // 100% of your metadata logic preserved below
+  // ─── 1. YOUR COMPLETE METADATA LOGIC ───
   const venues = useMemo(() => {
     const m = {};
     concerts.forEach(c => {
@@ -2169,6 +2219,7 @@ function VenuesTab({ concerts }) {
       const q = search.toLowerCase();
       list = list.filter(v => v.name.toLowerCase().includes(q) || v.city.toLowerCase().includes(q) || v.state.toLowerCase().includes(q));
     }
+    // Preserving all your specific sort modes
     if (sortBy === 'count') return [...list].sort((a, b) => b.count - a.count);
     if (sortBy === 'alpha') return [...list].sort((a, b) => a.name.localeCompare(b.name));
     if (sortBy === 'recent') return [...list].sort((a, b) => b.lastDate.localeCompare(a.lastDate));
@@ -2180,7 +2231,7 @@ function VenuesTab({ concerts }) {
 
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
-      {/* Header remains identical to yours */}
+      {/* ─── HEADER ─── */}
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(2.5rem,6vw,4rem)', color: C.white, letterSpacing: '0.05em' }}>
           📍 THE <span style={{ color: C.teal }}>VENUE LOG</span>
@@ -2190,11 +2241,10 @@ function VenuesTab({ concerts }) {
         </div>
       </div>
 
-      {/* Top 3 podium remains identical to yours */}
+      {/* ─── TOP 3 PODIUM ─── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 40 }}>
         {filtered.slice(0, 3).map((v, i) => {
           const colors = [C.gold, C.gray, C.cyan];
-          const sizes = ['2rem', '1.6rem', '1.4rem'];
           return (
             <div key={v.name} onClick={() => toggle(v.name)} style={{
               background: `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(colors[i], 0.08)})`,
@@ -2205,30 +2255,29 @@ function VenuesTab({ concerts }) {
             }}>
               <div style={{ position: 'absolute', right: -10, bottom: -20, fontFamily: "'Bebas Neue'", fontSize: '6rem', color: hexToRgba(colors[i], 0.05), pointerEvents: 'none' }}>{v.count}×</div>
               <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: colors[i], marginBottom: 8 }}>{VENUE_MEDALS[i]} #{i + 1}</div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: sizes[i], color: C.white, lineHeight: 1.1, marginBottom: 6 }}>{v.name}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.white, lineHeight: 1.1, marginBottom: 6 }}>{v.name}</div>
               <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginBottom: 12 }}>{[v.city, v.state].filter(Boolean).join(', ')}</div>
               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: colors[i], lineHeight: 1 }}>{v.count}<span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, marginLeft: 4 }}>shows</span></div>
               <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <Badge color={colors[i]}>{v.artists.length} artists</Badge>
                 {v.festivals > 0 && <Badge color={C.gold}>{v.festivals} fest days</Badge>}
               </div>
-              <div style={{ marginTop: 6, fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>{expanded[v.name] ? '▲ collapse' : '▼ view shows'}</div>
             </div>
           );
         })}
       </div>
 
-      {/* Filters remain identical to yours */}
+      {/* ─── FILTERS ─── */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
         <input placeholder="Search venues or cities..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...inputSt, flex: '1 1 240px' }} />
         <div style={{ display: 'flex', background: C.bgCardAlt, borderRadius: 4, padding: 2, border: `1px solid ${C.border}` }}>
-          {[['count','Most Visited'],['alpha','A–Z'],['recent','Most Recent']].map(([val, label]) => (
+          {[['count','Most Visited'],['alpha','A–Z'],['recent','Most Recent'],['first','Oldest First']].map(([val, label]) => (
             <button key={val} onClick={() => setSortBy(val)} style={{ padding: '5px 12px', fontSize: 9, fontFamily: "'Space Mono'", letterSpacing: '0.08em', textTransform: 'uppercase', background: sortBy === val ? C.teal : 'transparent', color: sortBy === val ? C.bg : C.gray, border: 'none', cursor: 'pointer', borderRadius: 3 }}>{label}</button>
           ))}
         </div>
       </div>
 
-      {/* 🟢 STABILIZED LIST & ARTIFACT RENDERING */}
+      {/* ─── STABILIZED LIST & ARTIFACT RENDERING ─── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {filtered.map((v, i) => {
           const rowColor = i < 3 ? [C.gold, C.gray, C.cyan][i] : C.teal;
@@ -2243,7 +2292,6 @@ function VenuesTab({ concerts }) {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: rowColor, lineHeight: 1 }}>{v.count}</div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, textTransform: 'uppercase' }}>shows</div>
                 </div>
                 <div style={{ fontSize: 9, color: C.grayDim }}>{isOpen ? '▲' : '▼'}</div>
               </div>
@@ -2252,14 +2300,14 @@ function VenuesTab({ concerts }) {
                 <div style={{ borderTop: `1px solid ${C.border}`, padding: '40px 20px', background: 'rgba(0,0,0,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '40px' }}>
                   {v.shows.map((show, idx) => {
                     const hasImg = show.image_url && show.image_url.trim() !== "";
-                    const rotation = idx < 20 ? (idx % 2 === 0 ? 1.5 : -1.5) : 0; // Cap rotations to save performance
+                    const rotation = idx < 20 ? (idx % 2 === 0 ? 1.5 : -1.5) : 0; // Performance optimization
                     
                     return (
                       <div key={show.id} style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s' }}>
                         {show.is_festival ? (
                           <PhysicalWristband color={C.gold} label={show.festival_name} year={getYear(show.date)} size="small" />
                         ) : hasImg ? (
-                          /* 📸 SHOW PHOTO ARTIFACT (Restored logic) */
+                          /* 📸 SHOW PHOTO ARTIFACT */
                           <div style={{ background: '#fff', padding: '5px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', borderRadius: 2 }}>
                             <div style={{ padding: '8px 2px', textAlign: 'center', background: '#111', color: '#fff', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', marginBottom: 5 }}>
                               {(show.bands || [])[0]?.toUpperCase()}
@@ -2268,7 +2316,7 @@ function VenuesTab({ concerts }) {
                               src={show.image_url.split(',')[0]} 
                               alt="setlist" 
                               loading="lazy"
-                              style={{ width: '100%', height: 'auto', maxHeight: '200px', objectFit: 'contain', background: '#000' }} 
+                              style={{ width: '100%', height: 'auto', maxHeight: '250px', objectFit: 'contain', background: '#000' }} 
                             />
                             <div style={{ padding: '8px 4px 2px', fontFamily: "'Space Mono'", fontSize: '9px', color: '#000', fontWeight: 900 }}>
                               {fmtDateShort(show.date)}
@@ -2286,25 +2334,6 @@ function VenuesTab({ concerts }) {
           );
         })}
       </div>
-    </div>
-  );
-}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {!filtered.length && (
-        <div style={{ textAlign: 'center', padding: 80, color: C.grayDim }}>
-          <div style={{ fontSize: '3rem', marginBottom: 16 }}>📍</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem' }}>NO VENUES FOUND</div>
-        </div>
-      )}
     </div>
   );
 }
