@@ -1763,8 +1763,7 @@ function GenreLegend() {
 
 // ─── 1. HORIZONTAL TIMELINE CARD (FIXED FOR 400+ DAYS) ───────────────────────
 // ─── 1. TIMELINE DOT ────────────────────────────────────────────────────────
-function TimelineDot({ item, globalIndex, onTeleport, genreMap }) {
-  const [isHovered, setIsHovered] = useState(false);
+function TimelineDot({ item, globalIndex, onTeleport, genreMap, xOverride }) {  const [isHovered, setIsHovered] = useState(false);
   const gi = getConcertGenreInfo(item, genreMap);
   const themeColor = gi.mixed ? '#9d00ff' : (gi.color || C.teal);
   const bands = item.bands || [];
@@ -1777,8 +1776,7 @@ function TimelineDot({ item, globalIndex, onTeleport, genreMap }) {
   const LANE_GAP = 28;
   const connectorHeight = MIN_CONNECTOR + lane * LANE_GAP;
 
-  const xPos = globalIndex * 100;
-
+const xPos = xOverride !== undefined ? xOverride : globalIndex * 100;
   return (
     <div
       onMouseEnter={() => setIsHovered(true)}
@@ -1935,196 +1933,65 @@ function TimelineDot({ item, globalIndex, onTeleport, genreMap }) {
 }
 
 // ─── 2. PANORAMIC TIMELINE TAB ───────────────────────────────────────────────
+// ─── 2. PANORAMIC TIMELINE TAB ───────────────────────────────────────────────
 function TimelineTab({ concerts, setActiveTab, genreMap }) {
-  const { years, totalWidth, sortedShows } = useMemo(() => {
-    if (!concerts || concerts.length === 0) return { years: [], totalWidth: 0, sortedShows: [] };
+  const scrollRef = useRef(null);
+  const [currentYear, setCurrentYear] = useState(null);
+  const [currentMonth, setCurrentMonth] = useState(null);
+
+  const { sortedShows, years, monthMarkers, totalWidth, showXPos } = useMemo(() => {
+    if (!concerts || concerts.length === 0) return { sortedShows: [], years: [], monthMarkers: [], totalWidth: 0, showXPos: () => 0 };
 
     const sorted = [...concerts].sort((a, b) => a.date.localeCompare(b.date));
-
-    // Assign absolute global index to each show
     const withIndex = sorted.map((s, i) => ({ ...s, globalIndex: i }));
 
-    // Group by year, preserving global index
+    // Group by year
     const yearMap = {};
     withIndex.forEach(s => {
       const yr = getYear(s.date);
       if (!yearMap[yr]) yearMap[yr] = [];
       yearMap[yr].push(s);
     });
-
     const years = Object.entries(yearMap).sort((a, b) => +a[0] - +b[0]);
 
-    // Total width: each show gets 100px, each year gets 120px padding buffer
-    const totalWidth = sorted.length * 100 + years.length * 120;
+    // Each year gets a 60px buffer before it starts
+    // Build cumulative offsets per year
+    const yearStartOffset = {};
+    let runningOffset = 40;
+    years.forEach(([yr, shows]) => {
+      yearStartOffset[yr] = runningOffset;
+      runningOffset += shows.length * 100 + 60;
+    });
 
-    return { years, totalWidth, sortedShows: withIndex };
-  }, [concerts]);
+    // showXPos = yearStartOffset[year] + (indexWithinYear * 100)
+    const showXPos = (show) => {
+      const yr = String(getYear(show.date));
+      const yearShows = yearMap[yr] || [];
+      const idxInYear = yearShows.findIndex(s => s.id === show.id);
+      return yearStartOffset[yr] + idxInYear * 100;
+    };
 
-  const teleport = (date) => {
-    setActiveTab('byDay');
-    setTimeout(() => {
-      const el = document.querySelector(`[data-date="${date}"]`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 150);
-  };
+    const totalWidth = runningOffset + 100;
 
-  if (!sortedShows.length) return (
-    <div style={{ color: C.white, padding: 100, textAlign: 'center' }}>No concerts yet.</div>
-  );
+    // Month markers — find first show of each month
+    const seenMonths = new Set();
+    const monthMarkers = [];
+    withIndex.forEach(show => {
+      const key = show.date?.slice(0, 7); // YYYY-MM
+      if (key && !seenMonths.has(key)) {
+        seenMonths.add(key);
+        const [yr, mo] = key.split('-');
+        const monthNames = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        monthMarkers.push({
+          x: showXPos(show),
+          label: monthNames[parseInt(mo) - 1],
+          year: yr,
+          month: mo,
+        });
+      }
+    });
 
-  // Calculate x offset per year block (each year starts after all prior shows * 100 + prior year buffers)
-  const yearOffsets = {};
-  let bufferAccum = 0;
-  years.forEach(([year, shows], yi) => {
-    yearOffsets[year] = bufferAccum;
-    bufferAccum += 120; // extra padding per year block
-  });
-
-  // Recalculate each show's true x position = (globalIndex * 100) + yearOffset[year]
-  const showXPos = (show) => {
-    const yr = getYear(show.date);
-    return show.globalIndex * 100 + (yearOffsets[yr] || 0);
-  };
-
-  // Year block x = first show's xpos in that year
-  const yearBlockX = (shows) => showXPos(shows[0]);
-
-  // Year block width = last show xpos - first show xpos + 100
-  const yearBlockWidth = (shows) => showXPos(shows[shows.length - 1]) - showXPos(shows[0]) + 100;
-
-  return (
-    <div style={{ padding: '24px 0 0' }} className="fade-in">
-      <GenreLegend />
-
-      <div style={{
-        width: '100%',
-        height: '70vh',
-        overflowX: 'auto',
-        overflowY: 'hidden',
-        background: 'rgba(0,0,0,0.3)',
-        border: `1px solid ${C.border}`,
-        borderRadius: 8,
-        position: 'relative',
-      }}>
-        {/* Absolute track */}
-        <div style={{
-          width: totalWidth,
-          height: '100%',
-          position: 'relative',
-        }}>
-          {/* Center rail */}
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: 0,
-            width: '100%',
-            height: 1,
-            background: `linear-gradient(90deg, transparent, ${C.teal}44, ${C.purple}44, ${C.gold}44, transparent)`,
-            transform: 'translateY(-50%)',
-            zIndex: 1,
-          }} />
-
-          {/* Year blocks — for sticky badges */}
-          {years.map(([year, shows], yi) => {
-            const color = yi % 2 === 0 ? C.teal : C.purple;
-            const blockX = yearBlockX(shows);
-            const blockW = yearBlockWidth(shows);
-
-            return (
-              <div
-                key={year}
-                style={{
-                  position: 'absolute',
-                  left: blockX,
-                  width: blockW,
-                  top: 0,
-                  height: '100%',
-                  zIndex: 2,
-                  pointerEvents: 'none',
-                }}
-              >
-                {/* Sticky top badge */}
-                <div style={{
-                  position: 'sticky',
-                  left: 12,
-                  top: 12,
-                  display: 'inline-block',
-                  zIndex: 5,
-                }}>
-                  <div style={{
-                    fontFamily: "'Bebas Neue'",
-                    fontSize: '1rem',
-                    color,
-                    background: C.bg,
-                    padding: '3px 10px',
-                    borderRadius: 4,
-                    border: `1.5px solid ${color}`,
-                    boxShadow: `0 0 12px ${hexToRgba(color, 0.4)}`,
-                    textShadow: `0 0 6px ${color}`,
-                    whiteSpace: 'nowrap',
-                  }}>
-                    {year}
-                  </div>
-                </div>
-
-                {/* Sticky bottom badge */}
-                <div style={{
-                  position: 'sticky',
-                  left: 12,
-                  bottom: 12,
-                  display: 'inline-block',
-                  zIndex: 5,
-                  marginTop: 'auto',
-                }}>
-                  <div style={{
-                    fontFamily: "'Bebas Neue'",
-                    fontSize: '1rem',
-                    color,
-                    background: C.bg,
-                    padding: '3px 10px',
-                    borderRadius: 4,
-                    border: `1.5px solid ${color}`,
-                    boxShadow: `0 0 12px ${hexToRgba(color, 0.4)}`,
-                    textShadow: `0 0 6px ${color}`,
-                    whiteSpace: 'nowrap',
-                    position: 'absolute',
-                    bottom: 12,
-                    left: 12,
-                  }}>
-                    {year}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-
-          {/* All 426 dots — absolutely positioned */}
-          {sortedShows.map((show) => (
-            <TimelineDot
-              key={show.id}
-              item={show}
-              globalIndex={show.globalIndex}
-              onTeleport={() => teleport(show.date)}
-              genreMap={genreMap}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div style={{
-        textAlign: 'center',
-        marginTop: 12,
-        fontFamily: "'Space Mono'",
-        fontSize: 9,
-        color: C.teal,
-        letterSpacing: '0.4em',
-        opacity: 0.6,
-      }}>
-        {sortedShows.length} SHOW DAYS · SCROLL HORIZONTALLY TO EXPLORE
-      </div>
-    </div>
-  );
-}
+    return { sortedShows: withIndex, years, month
 // ─── 4. BY DAY TAB ────────────────────────────────────────────────────────────
 function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, setYearFilter, festFilter, setFestFilter, genreFilter, setGenreFilter, concerts }) {
   return (
