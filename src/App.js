@@ -1650,67 +1650,45 @@ function DecorativeTicket({ event, templateIdx }) {
   );
 }
 
-function TicketStubCard({ event, onEdit, genreMap, stubIdx = 0 }) {
-  const bands = event.bands||[];
+// ─── CLEAN TICKET STUB (No Sidecar) ──────────────────────────────────────────
+function TicketStubCard({ event, onEdit, genreMap, stubIdx }) {
   const gi = getConcertGenreInfo(event, genreMap);
-  const borderColor = gi.mixed ? C.teal : (gi.color||C.border);
   return (
-    <div className="ticket-hover" onClick={() => onEdit && onEdit(event)} style={{ display:'flex', marginBottom:10, cursor:'pointer', filter:`drop-shadow(0 4px 12px rgba(0,0,0,0.5))`, gap: 10 }}>
-      <DecorativeTicket event={event} templateIdx={stubIdx} />
-      <div style={{ flex:1, background:`linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(borderColor,0.08)})`, border:`1px solid ${borderColor}44`, borderLeft:`3px solid ${borderColor}`, borderRadius:6, padding:'12px 16px', position:'relative', overflow:'hidden' }}>
-        <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.3rem', color:C.white }}>{fmtDate(event.date)}</div>
-        <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginTop:8 }}>
-          {bands.map((b,i) => (<span key={i} style={{ fontSize:i===0?'1rem':'0.78rem', fontFamily:i===0?"'Bebas Neue'":"'Space Mono'", color:C.white }}>{b}{i<bands.length-1&&i!==0?' •':''}</span>))}
-        </div>
-      </div>
+    <div 
+      onClick={() => onEdit(event)}
+      style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
+      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+    >
+      <DecorativeTicket event={event} templateIdx={stubIdx % 3} />
     </div>
   );
 }
 
-function WristbandCard({ event, genreMap, compact = false }) {
-  const bands = event.bands || [];
-  const STAGE_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green];
-  
-  // Logic: Multi-column grid for Festival Tab, single column/compact for elsewhere
-  const numCols = compact ? 1 : Math.max(1, bands.length <= 5 ? 3 : 4);
-  const columns = Array.from({ length: numCols }, () => []);
-  bands.forEach((b, i) => columns[i % numCols].push(b));
-  
+// ─── CLEAN WRISTBAND (No Sidecar) ────────────────────────────────────────────
+function WristbandCard({ event, genreMap, compact }) {
   const gi = getConcertGenreInfo(event, genreMap);
-  const wristColor = gi.mixed ? C.cyan : (gi.color || C.teal);
-
+  const themeColor = gi.mixed ? C.purple : (gi.color || C.teal);
+  
   return (
-    <div style={{ background: compact ? C.bgCardAlt : C.bgCard, border: `1px solid ${C.border}`, borderRadius: 6, marginBottom: compact ? 8 : 16, overflow: 'hidden' }}>
-      {/* 1. PHYSICAL WRISTBAND HEADER */}
-      <div style={{ padding: '12px 16px', background: hexToRgba(wristColor, 0.05), borderBottom: `1px solid ${C.border}` }}>
-        <PhysicalWristband color={wristColor} label={event.festival_name} year={getYear(event.date)} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.white }}>{fmtDate(event.date)}</div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <GenreBadge genre={gi.genre} color={gi.color} mixed={gi.mixed} small />
-            <Badge color={wristColor}>{event.festival_name || 'FESTIVAL'}</Badge>
-          </div>
+    <div style={{ 
+      width: '100%', 
+      background: '#1a1a1a', 
+      borderRadius: 8, 
+      border: `1.5px solid ${themeColor}`,
+      boxShadow: `0 0 20px ${hexToRgba(themeColor, 0.15)}`,
+      overflow: 'hidden'
+    }}>
+      {/* Mini Wristband Header */}
+      <div style={{ background: themeColor, height: 6 }} />
+      <div style={{ padding: '12px', textAlign: 'center' }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: themeColor, letterSpacing: '2px' }}>
+          {event.festival_name?.toUpperCase() || 'FESTIVAL'}
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: '#fff', marginTop: 4 }}>
+          {event.festival_day?.toUpperCase() || 'ALL DAYS'}
         </div>
       </div>
-      
-      {/* 2. THE LINEUP GRID (Restored for Festival Tab) */}
-      {!compact && columns.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns.length}, 1fr)`, borderTop: `1px solid ${C.border}`, background: 'rgba(0,0,0,0.15)' }}>
-          {columns.map((stageBands, ci) => (
-            <div key={ci} style={{ borderRight: ci < columns.length - 1 ? `1px solid ${C.border}` : 'none', padding: '12px' }}>
-              {/* Stage Accent Line */}
-              <div style={{ height: 2, background: STAGE_COLORS[ci % STAGE_COLORS.length], marginBottom: 10, opacity: 0.7 }} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                {stageBands.map((band, bi) => (
-                  <div key={bi} style={{ fontSize: '0.75rem', color: C.white, lineHeight: 1.2, fontFamily: "'Space Mono'", opacity: 0.9 }}>
-                    • {band}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
