@@ -9,6 +9,66 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+// ─── THE RETRO TICKET STUB (IDEA #1) ──────────────────────────────────────────
+const TicketStub = ({ show }) => {
+  if (!show) return null;
+
+  return (
+    <div style={{
+      width: '100%',
+      maxWidth: '450px',
+      height: '160px',
+      background: '#e0d8b0', // Classic "Manila" ticket color
+      borderRadius: '4px',
+      display: 'flex',
+      color: '#222',
+      fontFamily: "'Courier New', Courier, monospace", // The "Printer" font
+      boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+      position: 'relative',
+      overflow: 'hidden',
+      border: '1px solid #c0b890',
+      margin: '20px auto',
+      userSelect: 'none'
+    }}>
+      {/* Perforated Edge */}
+      <div style={{ position: 'absolute', left: '75%', top: 0, bottom: 0, width: '2px', borderLeft: '2px dotted #a09870' }} />
+      
+      {/* Left Section (The Main Info) */}
+      <div style={{ flex: 3, padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontSize: '9px', fontWeight: 'bold', marginBottom: '4px', opacity: 0.6 }}>ADMIT ONE - LIVE CONCERT</div>
+          <div style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-1px', lineHeight: 1, textTransform: 'uppercase' }}>
+            {show.artist || show.bands?.[0]}
+          </div>
+        </div>
+        
+        <div style={{ fontSize: '12px', fontWeight: 'bold' }}>
+          {show.venue?.toUpperCase()}<br/>
+          {show.city?.toUpperCase()}, {show.state}
+        </div>
+
+        <div style={{ display: 'flex', gap: '20px', fontSize: '10px', fontWeight: 'bold', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '8px' }}>
+          <div>DATE: {show.date}</div>
+          <div>PRICE: COMPLIMENTARY</div>
+        </div>
+      </div>
+
+      {/* Right Section (The Stub) */}
+      <div style={{ flex: 1, background: 'rgba(0,0,0,0.03)', padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+        <div style={{ fontSize: '8px', transform: 'rotate(-90deg)', width: '100px', whiteSpace: 'nowrap', marginBottom: '10px', fontWeight: 'bold' }}>
+           SECTION: GA  |  ROW: 01
+        </div>
+        {/* Fake Barcode */}
+        <div style={{ display: 'flex', gap: '1px', marginTop: 'auto' }}>
+          {[2,4,1,3,2,5,1,4,2].map((w, i) => (
+            <div key={i} style={{ width: w, height: '30px', background: '#333' }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── THEMES ───────────────────────────────────────────────────────────────────
 const THEMES = {
   'neon-noir': {
