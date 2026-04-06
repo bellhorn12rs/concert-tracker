@@ -2844,7 +2844,7 @@ function VenuesTab({ concerts }) {
   );
 }
 
-// ─── 1. POSTER CONSTANTS & GENERATORS ────────────────────────────────────────
+// ─── 1. POSTER STUDIO DATA & GENERATORS ──────────────────────────────────────
 
 const POSTER_TEMPLATES = [
   { id: 0, name: 'COACHELLA CLASSIC', layout: 'tiered', bg: '#fdfcf0', accent: '#111', font: "'Bebas Neue'", texture: 'grain' },
@@ -2872,7 +2872,7 @@ function generateFestName(dominantGenre) {
   return `${a} ${b} ${suffixes[Math.floor(Math.random()*suffixes.length)]}`;
 }
 
-// ─── 2. POSTER UI ATOMS ───────────────────────────────────────────────────────
+// ─── 2. POSTER DESIGN ATOMS ──────────────────────────────────────────────────
 
 const PosterTexture = ({ type }) => (
   <div style={{
@@ -2894,7 +2894,7 @@ const JustifiedRow = ({ text, color, fontSize, font }) => (
   </div>
 );
 
-// ─── 3. THE POSTER PREVIEW COMPONENT ─────────────────────────────────────────
+// ─── 3. THE POSTER PREVIEW ENGINE ────────────────────────────────────────────
 
 const PosterPreview = ({ tpl, artists, name, headlinerCount, dnaScores }) => {
   const hls = artists.slice(0, headlinerCount);
@@ -2909,24 +2909,24 @@ const PosterPreview = ({ tpl, artists, name, headlinerCount, dnaScores }) => {
     }}>
       <PosterTexture type={tpl.texture} />
       
-      {/* BACKGROUND DNA */}
+      {/* BACKGROUND DNA WATERMARK */}
       <div style={{ position: 'absolute', top: '55%', left: '50%', transform: 'translate(-50%, -50%) scale(1.6)', opacity: 0.1, pointerEvents: 'none' }}>
          <GenreRadar scores={dnaScores} />
       </div>
 
-      {/* HEADER */}
+      {/* HEADER SECTION */}
       <div style={{ textAlign: tpl.layout === 'vertical' ? 'left' : 'center', zIndex: 20, marginBottom: 30 }}>
         <div style={{ fontFamily: tpl.font, fontSize: '3.8rem', color: tpl.accent, lineHeight: 0.8 }}>
           {name.toUpperCase()}
         </div>
         <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: tpl.accent, opacity: 0.6, letterSpacing: '0.5em', marginTop: 10 }}>
-          EST. 1999 // COLLECTOR NO. {artists.length}
+          EST. 1999 // ARCHIVE RECALL {artists.length}
         </div>
       </div>
 
       <div style={{ flex: 1, zIndex: 20, position: 'relative' }}>
-        {/* LAYOUT: TIERED (Coachella/Glasto) */}
-        {(tpl.layout === 'tiered' || tpl.layout === 'folk') && (
+        {/* LAYOUT: TIERED (Coachella / Glasto / Swiss) */}
+        {(tpl.layout === 'tiered' || tpl.layout === 'folk' || tpl.layout === 'swiss') && (
           <>
             {hls.map(a => <JustifiedRow key={a.artist} text={a.artist} fontSize="2.6rem" color={tpl.accent} font={tpl.font} />)}
             <div style={{ height: 2, background: tpl.accent, margin: '15px 0' }} />
@@ -2976,7 +2976,7 @@ const PosterPreview = ({ tpl, artists, name, headlinerCount, dnaScores }) => {
         )}
       </div>
 
-      {/* FOOTER */}
+      {/* FOOTER ARTIFACT */}
       <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: `1px solid ${tpl.accent}33`, paddingTop: 15, zIndex: 20 }}>
         <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: tpl.accent, opacity: 0.5 }}>NEON NOIR DESIGN STUDIO // ID: {name.toUpperCase()}</div>
         <div style={{ display: 'flex', gap: 1 }}>
@@ -2987,139 +2987,8 @@ const PosterPreview = ({ tpl, artists, name, headlinerCount, dnaScores }) => {
   );
 };
 
-// ─── 1. POSTER STUDIO CONSTANTS ──────────────────────────────────────────────
-const POSTER_TEMPLATES = [
-  { id: 0, name: 'COACHELLA CLASSIC', layout: 'tiered', bg: '#fdfcf0', accent: '#111', font: "'Bebas Neue'", texture: 'grain' },
-  { id: 1, name: 'NEON NOIR XEROX', layout: 'zine', bg: '#050505', accent: '#00ffcc', font: "'Space Mono'", texture: 'grunge' },
-  { id: 2, name: 'MODERNIST SWISS', layout: 'swiss', bg: '#ffffff', accent: '#ff4400', font: "'Bebas Neue'", texture: 'clean' },
-  { id: 3, name: 'GLASTO MUD', layout: 'folk', bg: '#2d3b2d', accent: '#e8dfa0', font: "'Bebas Neue'", texture: 'grain' },
-  { id: 4, name: 'INDUSTRIAL TECHNO', layout: 'vertical', bg: '#1a1a1a', accent: '#bc13fe', font: "'Space Mono'", texture: 'grunge' },
-  { id: 5, name: 'PSYCHEDELIC MELT', layout: 'wavy', bg: '#12002b', accent: '#ff00ff', font: "'Bebas Neue'", texture: 'grain' },
-  { id: 6, name: '80S RETROWAVE', layout: 'grid80', bg: '#000033', accent: '#00e5cc', font: "'Space Mono'", texture: 'grunge' }
-];
+// ─── 4. THE MAIN POSTER STUDIO TAB ───────────────────────────────────────────
 
-const FEST_NAME_PARTS = {
-  'Indie Rock':[['Cedar','Silver','Hollow','Petal'],['Wire','Bloom','Pines','Dusk']],
-  'Electronic':[['Neon','Circuit','Static','Pulse'],['Grid','Wave','Surge','Flux']],
-  'Jam':[['Rolling','Wandering','Spiral','Endless'],['Current','River','Flow','Grove']],
-  'Folk':[['Timber','Ember','Moss','Willow'],['Creek','Ridge','Vale','Hearth']],
-  'default':[['Open','Free','Wild','Lost'],['Ground','Field','Valley','Plains']],
-};
-
-function generateFestName(dominantGenre) {
-  const parts = FEST_NAME_PARTS[dominantGenre] || FEST_NAME_PARTS['default'];
-  const a = parts[0][Math.floor(Math.random()*parts[0].length)];
-  const b = parts[1][Math.floor(Math.random()*parts[1].length)];
-  const suffixes = ['Festival','Fest','Gathering','Sessions','Archive'];
-  return `${a} ${b} ${suffixes[Math.floor(Math.random()*suffixes.length)]}`;
-}
-
-// ─── 2. POSTER UI ATOMS ───────────────────────────────────────────────────────
-const PosterTexture = ({ type }) => (
-  <div style={{
-    position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10, 
-    opacity: type === 'grain' ? 0.15 : 0.25,
-    backgroundImage: type === 'grain' 
-      ? `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`
-      : type === 'grunge' ? `repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 4px)` : 'none'
-  }} />
-);
-
-const JustifiedRow = ({ text, color, fontSize, font }) => (
-  <div style={{
-    width: '100%', display: 'flex', justifyContent: 'space-between', 
-    fontSize, fontFamily: font, color, textTransform: 'uppercase', 
-    lineHeight: 1, marginBottom: 5, letterSpacing: '0.1em'
-  }}>
-    {text.split('').map((c, i) => <span key={i}>{c === ' ' ? '\u00A0' : c}</span>)}
-  </div>
-);
-
-// ─── 3. THE POSTER PREVIEW ENGINE ────────────────────────────────────────────
-const PosterPreview = ({ tpl, artists, name, headlinerCount, dnaScores }) => {
-  const hls = artists.slice(0, headlinerCount);
-  const mid = artists.slice(headlinerCount, headlinerCount + 8);
-  const uc = artists.slice(headlinerCount + 8);
-
-  return (
-    <div style={{ 
-      width: '100%', maxWidth: '480px', height: '680px', background: tpl.bg, 
-      position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column',
-      padding: '40px 30px', boxShadow: '0 40px 100px rgba(0,0,0,0.8)', border: `1px solid rgba(255,255,255,0.1)`
-    }}>
-      <PosterTexture type={tpl.texture} />
-      <div style={{ position: 'absolute', top: '55%', left: '50%', transform: 'translate(-50%, -50%) scale(1.6)', opacity: 0.1, pointerEvents: 'none' }}>
-         <GenreRadar scores={dnaScores} />
-      </div>
-
-      <div style={{ textAlign: tpl.layout === 'vertical' ? 'left' : 'center', zIndex: 20, marginBottom: 30 }}>
-        <div style={{ fontFamily: tpl.font, fontSize: '3.8rem', color: tpl.accent, lineHeight: 0.8 }}>
-          {name.toUpperCase()}
-        </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: tpl.accent, opacity: 0.6, letterSpacing: '0.5em', marginTop: 10 }}>
-          EST. 1999 // COLLECTOR NO. {artists.length}
-        </div>
-      </div>
-
-      <div style={{ flex: 1, zIndex: 20, position: 'relative' }}>
-        {(tpl.layout === 'tiered' || tpl.layout === 'folk') && (
-          <>
-            {hls.map(a => <JustifiedRow key={a.artist} text={a.artist} fontSize="2.6rem" color={tpl.accent} font={tpl.font} />)}
-            <div style={{ height: 2, background: tpl.accent, margin: '15px 0' }} />
-            {mid.map((a, i) => i % 2 === 0 && <JustifiedRow key={i} text={`${a.artist}  ${mid[i+1]?.artist || ''}`} fontSize="1.1rem" color={tpl.accent} font={tpl.font} />)}
-            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '5px 12px', marginTop: 20 }}>
-              {uc.map(a => <span key={a.artist} style={{ fontFamily: "'Space Mono'", fontSize: 8, color: tpl.accent, opacity: 0.7 }}>{a.artist.toUpperCase()}</span>)}
-            </div>
-          </>
-        )}
-
-        {tpl.layout === 'zine' && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {artists.map((a, i) => (
-              <div key={a.artist} style={{
-                background: i < headlinerCount ? tpl.accent : 'transparent',
-                color: i < headlinerCount ? '#000' : tpl.accent,
-                padding: '2px 6px', border: i >= headlinerCount ? `1px solid ${tpl.accent}` : 'none',
-                fontFamily: "'Space Mono'", fontSize: i < headlinerCount ? '1.4rem' : '0.8rem',
-                transform: `rotate(${(i%2 === 0 ? 1 : -1) * (i%4)}deg)`, fontWeight: 900
-              }}>{a.artist.toUpperCase()}</div>
-            ))}
-          </div>
-        )}
-
-        {tpl.layout === 'vertical' && (
-          <div style={{ display: 'flex', height: '100%' }}>
-            <div style={{ writingMode: 'vertical-rl', fontFamily: tpl.font, fontSize: '4rem', color: tpl.accent, fontWeight: 900, lineHeight: 1 }}>{hls[0]?.artist.toUpperCase()}</div>
-            <div style={{ flex: 1, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
-               {artists.slice(1, 15).map(a => <div key={a.artist} style={{ fontFamily: "'Space Mono'", fontSize: 9, color: tpl.accent, borderBottom: `1px solid ${tpl.accent}33`, paddingBottom: 2 }}>{a.artist.toUpperCase()}</div>)}
-            </div>
-          </div>
-        )}
-
-        {(tpl.layout === 'wavy' || tpl.layout === 'grid80') && (
-           <div style={{ textAlign: 'center' }}>
-             {artists.map((a, i) => (
-               <div key={a.artist} style={{ 
-                 fontFamily: tpl.font, color: tpl.accent, fontSize: i < headlinerCount ? '2.4rem' : '1rem',
-                 transform: tpl.layout === 'wavy' ? `skewX(${Math.sin(i) * 15}deg)` : 'none', 
-                 marginBottom: 4, letterSpacing: tpl.layout === 'grid80' ? '0.3em' : 'normal'
-               }}>{a.artist.toUpperCase()}</div>
-             ))}
-           </div>
-        )}
-      </div>
-
-      <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: `1px solid ${tpl.accent}33`, paddingTop: 15, zIndex: 20 }}>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: tpl.accent, opacity: 0.5 }}>NEON NOIR DESIGN STUDIO // ID: {name.toUpperCase()}</div>
-        <div style={{ display: 'flex', gap: 1 }}>
-          {[1,4,2,1,5,2,1].map((w, i) => <div key={i} style={{ width: w, height: 12, background: tpl.accent, opacity: 0.4 }} />)}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─── 4. THE SINGLE MAIN TAB COMPONENT ─────────────────────────────────────────
 function PosterGeneratorTab({ concerts, genreMap, allSetsList, dnaScores }) {
   const [genreMix, setGenreMix] = useState({ 'Indie Rock': 30, 'Electronic': 20, 'Rock': 20, 'Folk': 10, 'Alternative': 10, 'Experimental': 10 });
   const [templateIdx, setTemplateIdx] = useState(0);
@@ -3150,7 +3019,7 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList, dnaScores }) {
     setGenerated({ tpl, artists: picked.slice(0, totalActs), name: festName.trim() || generateFestName(dominantGenre), headlinerCount, dnaScores });
   };
 
-  // Makes the design update instantly when you click a different archetype button
+  // Auto-refresh the design when the Archetype (Visual Style) changes
   useEffect(() => {
     if (generated) generate();
   }, [templateIdx]);
@@ -3158,6 +3027,7 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList, dnaScores }) {
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40 }}>
+        {/* LEFT PANEL: CONTROLS */}
         <div style={{ height: '700px', overflowY: 'auto', paddingRight: 15 }}>
           <Card neon style={{ marginBottom: 16 }}>
             <CardTitle>Genre DNA Allocation</CardTitle>
@@ -3203,6 +3073,7 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList, dnaScores }) {
           <Btn onClick={generate} style={{ width: '100%', padding: 20, fontSize: 14 }}>⚡ COMPILE DESIGN</Btn>
         </div>
 
+        {/* RIGHT PANEL: CANVAS */}
         <div style={{ display: 'flex', justifyContent: 'center', background: '#0a0a0a', borderRadius: 15, padding: 30, border: `1px solid ${C.border}`, position: 'relative', overflow: 'hidden' }}>
           {generated ? (
             <PosterPreview {...generated} />
