@@ -2893,12 +2893,12 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
   );
 }
 
-// ─── 5. EDIT MODAL (STABILITY VERSION) ──────────────────────────────────────
+// ─── 5. EDIT MODAL (STABILITY VERSION - FIXED) ────────────────────────────────
 function EditModal({ concert, onClose, onSave, onDelete }) {
   // 1. Setup Form State
   const [form, setForm] = useState({ 
     date: concert?.date || '', 
-    bands: Array.isArray(concert?.bands) ? concert.bands.join(', ') : '', 
+    bands: Array.isArray(concert?.bands) ? concert.bands.join(', ') : (concert?.bands || ''), 
     venue: concert?.venue || '', 
     city: concert?.city || '', 
     state: concert?.state || '', 
@@ -2914,7 +2914,7 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   
-  // 2. Safety Fallbacks (Prevents White Screen if globals are missing)
+  // 2. Safety Fallbacks
   const safeC = typeof C !== 'undefined' ? C : { teal: '#00d2ff', bgCard: '#1a1a1a', border: '#333', gray: '#888' };
   const safeGenres = typeof GENRES !== 'undefined' ? GENRES : ['Rock', 'Electronic', 'Jazz', 'Pop', 'Metal'];
   
@@ -2922,7 +2922,10 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
 
   const handleSave = async () => { 
     setSaving(true); 
-    const bandList = form.bands.split(',').map(b => b.trim()).filter(Boolean); 
+    // Handle both string and array inputs for bands
+    const bandList = typeof form.bands === 'string' 
+      ? form.bands.split(',').map(b => b.trim()).filter(Boolean)
+      : form.bands;
     
     await onSave(concert?.id, {
       ...form,
@@ -2963,12 +2966,13 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
         
         {/* FESTIVAL TOGGLE */}
         <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <input type="checkbox" id="is_fest" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} />
+          <input type="checkbox" id="is_fest" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} style={{ cursor: 'pointer' }} />
           <label htmlFor="is_fest" style={{ ...lbl, marginBottom: 0, cursor: 'pointer' }}>Festival Day</label>
         </div>
         
         {form.is_festival && (
-          <div style={{ display: grid, gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+          /* 🟢 FIXED: added quotes around 'grid' below */
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
             <div><label style={lbl}>Festival Name</label><input style={inpSt} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} /></div>
             <div><label style={lbl}>Day Label</label><input style={inpSt} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} /></div>
           </div>
@@ -2992,15 +2996,17 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
           {concert?.id && (
             <button 
               onClick={() => confirming ? onDelete(concert.id) : setConfirming(true)}
+              type="button"
               style={{ background: confirming ? '#ff4444' : 'transparent', border: '1px solid #ff4444', color: confirming ? '#fff' : '#ff4444', padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1rem' }}
             >
               {confirming ? 'CONFIRM DELETE?' : 'DELETE'}
             </button>
           )}
-          <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${safeC.gray}`, color: safeC.gray, padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1rem' }}>CANCEL</button>
+          <button onClick={onClose} type="button" style={{ background: 'transparent', border: `1px solid ${safeC.gray}`, color: safeC.gray, padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1rem' }}>CANCEL</button>
           <button 
             onClick={handleSave} 
             disabled={saving}
+            type="button"
             style={{ background: safeC.teal, border: 'none', color: '#000', padding: '8px 24px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', opacity: saving ? 0.5 : 1 }}
           >
             {saving ? 'SAVING...' : 'SAVE'}
@@ -3009,97 +3015,7 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
       </div>
     </div>
   );
-}
-function ShareCard({ artist, shows, onClose }) {
-  const festCount=shows.filter(s=>s.is_festival).length, cities=[...new Set(shows.map(s=>s.city).filter(Boolean))], years=[...new Set(shows.map(s=>getYear(s.date)).filter(Boolean))].sort(), firstDate=fmtDate(shows[shows.length-1]?.date), lastDate=fmtDate(shows[0]?.date);
-  return (
-    <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,0.9)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20 }} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="fade-in" style={{ width:'100%',maxWidth:420 }}>
-        <div style={{ background:`linear-gradient(135deg,${C.bg},${C.bgCard},${C.bgCardAlt})`,border:`1px solid ${C.teal}`,borderRadius:12,padding:'28px 24px',boxShadow:`0 0 40px ${C.tealGlow}` }}>
-          <div style={{ fontFamily:"'Space Mono',monospace",fontSize:8,letterSpacing:'0.25em',textTransform:'uppercase',color:C.tealDim,marginBottom:8 }}>🎸 Eric's Concert History</div>
-          <div style={{ fontFamily:"'Bebas Neue'",fontSize:'clamp(1.8rem,6vw,2.6rem)',color:C.white,lineHeight:1,marginBottom:16 }}>{artist}</div>
-          <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16 }}>
-            {[[shows.length,'Times Seen'],[festCount,'Festival Sets'],[shows.length-festCount,'Standalone'],[cities.length,cities.length===1?'City':'Cities']].map(([val,label])=>(
-              <div key={label} style={{ background:'rgba(255,255,255,0.04)',borderRadius:6,padding:'10px 12px',border:`1px solid ${C.border}` }}>
-                <div style={{ fontFamily:"'Bebas Neue'",fontSize:'1.8rem',color:C.teal,lineHeight:1 }}>{val}</div>
-                <div style={{ fontFamily:"'Space Mono',monospace",fontSize:7,color:C.gray,textTransform:'uppercase',marginTop:2 }}>{label}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{ display:'flex',flexWrap:'wrap',gap:3,marginBottom:12 }}>{years.map(y=><span key={y} style={{ fontFamily:"'Space Mono',monospace",fontSize:7,background:`${C.teal}22`,color:C.teal,border:`1px solid ${C.teal}44`,padding:'2px 5px',borderRadius:3 }}>{y}</span>)}</div>
-          <div style={{ fontFamily:"'Space Mono',monospace",fontSize:7,color:C.grayDim }}>First: {firstDate} · Last: {lastDate}</div>
-        </div>
-        <div style={{ display:'flex',gap:8,marginTop:12,justifyContent:'center' }}>
-          <button onClick={()=>navigator.clipboard?.writeText(`I've seen ${artist} ${shows.length} times. First: ${firstDate}. Last: ${lastDate}. #ConcertHistory`).then(()=>alert('Copied!'))} style={{ fontFamily:"'Space Mono',monospace",fontSize:9,textTransform:'uppercase',background:C.teal,color:C.bg,border:'none',borderRadius:4,padding:'8px 16px',cursor:'pointer' }}>📋 Copy Stats</button>
-          <button onClick={onClose} style={{ fontFamily:"'Space Mono',monospace",fontSize:9,textTransform:'uppercase',background:C.bgCard,color:C.gray,border:`1px solid ${C.border}`,borderRadius:4,padding:'8px 16px',cursor:'pointer' }}>Close</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── THEME SWITCHER ───────────────────────────────────────────────────────────
-function ThemeSwitcher() {
-  const { themeId, setThemeId } = useTheme();
-  const [open, setOpen] = useState(false);
-  const current = THEMES[themeId];
-
-  return (
-    <div style={{ position:'relative', display:'flex', alignItems:'center', padding:'0 12px', borderLeft:`1px solid ${C.border}`, flexShrink:0 }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        title="Switch theme"
-        style={{ display:'flex', alignItems:'center', gap:7, background:'none', border:`1px solid ${C.border}`, borderRadius:20, padding:'5px 10px', cursor:'pointer', transition:'all 0.2s' }}
-        onMouseEnter={e => e.currentTarget.style.borderColor = C.teal}
-        onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
-      >
-        <div style={{ width:10, height:10, borderRadius:'50%', background:current.dot, boxShadow:`0 0 6px ${current.dot}` }} />
-        <span style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, letterSpacing:'0.1em', textTransform:'uppercase', whiteSpace:'nowrap' }}>{current.name}</span>
-        <span style={{ color:C.grayDim, fontSize:8 }}>{open ? '▲' : '▼'}</span>
-      </button>
-
-      {open && (
-        <div style={{ position:'absolute', top:'calc(100% + 8px)', right:0, background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:8, padding:8, minWidth:160, zIndex:300, boxShadow:`0 8px 32px rgba(0,0,0,0.6)` }}
-          className="fade-in">
-          <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:C.grayDim, letterSpacing:'0.15em', textTransform:'uppercase', padding:'4px 8px 8px', borderBottom:`1px solid ${C.border}`, marginBottom:6 }}>Theme</div>
-          {THEME_ORDER.map(id => {
-            const t = THEMES[id];
-            const isActive = id === themeId;
-            return (
-              <button key={id} onClick={() => { setThemeId(id); setOpen(false); }}
-                style={{ display:'flex', alignItems:'center', gap:10, width:'100%', background:isActive?`${t.dot}15`:'none', border:'none', borderRadius:4, padding:'8px 10px', cursor:'pointer', transition:'all 0.15s' }}
-                onMouseEnter={e => { if(!isActive)e.currentTarget.style.background=`${t.dot}0a`; }}
-                onMouseLeave={e => { if(!isActive)e.currentTarget.style.background='none'; }}>
-                <div style={{ width:12, height:12, borderRadius:'50%', background:t.dot, boxShadow:isActive?`0 0 8px ${t.dot}`:'none', flexShrink:0 }} />
-                <span style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:isActive?t.dot:C.gray, letterSpacing:'0.08em' }}>{t.name}</span>
-                {isActive && <span style={{ marginLeft:'auto', fontSize:10, color:t.dot }}>✓</span>}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── TAB CONFIG ───────────────────────────────────────────────────────────────
-// [id, label, group, color]
-const TABS = [
-  ['dashboard','⚡ Dashboard',null,C.teal],
-  ['timeline','⏳ Timeline',null,C.cyan],
-  ['byDay','📅 By Day',null,C.teal],
-  ['byFest','🎪 By Festival','fest',C.gold],
-  ['passport','🗺️ Passport','fest',C.gold],
-  ['hof','🏆 Hall of Fame',null,C.purple],
-  ['vault','📋 Setlist Vault',null,C.green],
-['venues','📍 Venues',null,C.cyan],
-  ['poster','🎨 Poster Generator',null,'#ff6699'],  
-  ['browse','🔍 Browse','right',C.cyan],
-  ['manage','⚙️ Manage','right',C.gray],
-];
-
-// ─── MAIN APP ─────────────────────────────────────────────────────────────────
-// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+}// ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   // ── THEME ────────────────────────────────────────────────────────────────────
   const [themeId, setThemeIdRaw] = useState(() => localStorage.getItem('concert-theme') || 'neon-noir');
