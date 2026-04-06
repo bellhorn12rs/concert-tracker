@@ -240,26 +240,33 @@ const daysSince = d => { if (!d) return 0; return Math.floor((Date.now() - new D
 // ─── MASTER LANYARD ───────────────────────────────────────────────────────────
 // ─── MASTER LANYARD ───────────────────────────────────────────────────────────
 function MasterLanyard({ concerts, artistGenres, genreStats }) {
+  const [hovered, setHovered] = useState(false);
   const totalShows = concerts.length;
   const festDays = concerts.filter(c => c.is_festival).length;
   const festPct = totalShows ? Math.round((festDays / totalShows) * 100) : 0;
 
   const getRank = (n) => {
-    if (n <= 5) return 'THE GATE CRASHER';
+    if (n <= 5) return 'GATE CRASHER';
     if (n <= 15) return 'BARRICADE REGULAR';
-    if (n <= 30) return 'THE SOUNDBOARD SHADOW';
+    if (n <= 30) return 'SOUNDBOARD SHADOW';
     if (n <= 50) return 'TOUR BUS TAILGATER';
+    if (n <= 75) return 'BACKSTAGE REGULAR';
     if (n <= 100) return 'ALL-ACCESS AUTHORITY';
-    return 'THE LIVING ARCHIVE';
+    if (n <= 150) return 'FLOOR SECTION LEGEND';
+    if (n <= 200) return 'PRODUCTION INSIDER';
+    if (n <= 300) return 'THE CIRCUIT RIDER';
+    if (n <= 500) return 'THE LIVING ARCHIVE';
+    return 'CONCERT IMMORTAL';
   };
 
   const getArchetype = () => {
     const ac = {};
     concerts.forEach(c => (c.bands || []).forEach(b => { if (b) ac[b] = (ac[b] || 0) + 1; }));
     const top = Object.entries(ac).sort((a, b) => b[1] - a[1])[0];
-    if (top && top[1] >= 10) return `${top[0].toUpperCase()} SUPERFAN`;
-    if (festPct >= 50) return 'THE FESTIVAL OWL';
+    if (top && top[1] >= 10) return `${top[0].split(' ')[0].toUpperCase()} SUPERFAN`;
+    if (festPct >= 50) return 'FESTIVAL OWL';
     if (festPct <= 10) return 'CLUB RAT';
+    if (festPct >= 30) return 'FESTIVAL PILGRIM';
     return 'STADIUM SPECIALIST';
   };
 
@@ -286,10 +293,8 @@ function MasterLanyard({ concerts, artistGenres, genreStats }) {
   const getSerial = () => {
     const first = [...concerts].sort((a, b) => a.date.localeCompare(b.date))[0];
     const firstYear = first ? new Date(first.date + 'T12:00:00').getFullYear() : '????';
-    const city = first?.city?.slice(0, 3).toUpperCase() || 'XXX';
-    const code = String(totalShows).padStart(3, '0');
-    const suffix = (first?.id || 'AA').slice(0, 2).toUpperCase();
-    return `${city}-${firstYear}-${code}-${suffix}`;
+    const city = (first?.city || 'XXX').slice(0, 3).toUpperCase();
+    return `${city}-${String(totalShows).padStart(3,'0')}-${firstYear}`;
   };
 
   if (!totalShows) return null;
@@ -298,63 +303,193 @@ function MasterLanyard({ concerts, artistGenres, genreStats }) {
   const rank = getRank(totalShows);
   const archetype = getArchetype();
   const serial = getSerial();
+  const badgeWidth = 120;
 
   return (
-    <div style={{
-      position: 'absolute',
-      top: 0,
-      right: 40,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      zIndex: 50,
-      pointerEvents: 'none',
-    }}>
-      <svg width="60" height="60" viewBox="0 0 60 60" style={{ display: 'block' }}>
-        <rect x="22" y="0" width="16" height="6" rx="3" fill={color} opacity="0.7" />
-        <path d="M30 6 C10 20, 50 35, 30 60" stroke={color} strokeWidth="2.5" fill="none" opacity="0.6" strokeLinecap="round" />
-      </svg>
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        right: 32,
+        zIndex: 9999,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        transform: hovered ? 'translateY(0px)' : 'translateY(-272px)',
+        transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        cursor: 'pointer',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Lanyard strap */}
       <div style={{
-        width: 110,
-        background: '#0a0a12',
-        border: `2px solid ${color}`,
-        borderRadius: 6,
+        width: 10,
+        height: 80,
+        background: `linear-gradient(180deg, ${color} 0%, ${hexToRgba(color, 0.6)} 100%)`,
+        borderRadius: '0 0 3px 3px',
+        boxShadow: `0 0 8px ${hexToRgba(color, 0.4)}`,
+        flexShrink: 0,
+      }} />
+
+      {/* Metal clip */}
+      <div style={{
+        width: 18,
+        height: 8,
+        background: 'linear-gradient(180deg, #d0d0d0 0%, #888 100%)',
+        borderRadius: 2,
+        border: '1px solid #555',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+        flexShrink: 0,
+        marginTop: -1,
+      }} />
+
+      {/* Hole punch */}
+      <div style={{
+        width: 14,
+        height: 14,
+        borderRadius: '50%',
+        background: '#050508',
+        border: `2px solid ${hexToRgba(color, 0.4)}`,
+        boxShadow: `inset 0 1px 3px rgba(0,0,0,0.8), 0 0 6px ${hexToRgba(color, 0.3)}`,
+        flexShrink: 0,
+        marginTop: 4,
+        zIndex: 2,
+      }} />
+
+      {/* Badge body */}
+      <div style={{
+        width: badgeWidth,
+        background: 'linear-gradient(160deg, #1a1a2e 0%, #0d0d1a 60%, #111128 100%)',
+        border: `1.5px solid ${hexToRgba(color, 0.6)}`,
+        borderRadius: 10,
         overflow: 'hidden',
-        boxShadow: `0 0 20px ${hexToRgba(color, 0.5)}, 0 0 40px ${hexToRgba(color, 0.2)}, inset 0 0 20px rgba(0,0,0,0.5)`,
-        pointerEvents: 'all',
+        boxShadow: `0 0 30px ${hexToRgba(color, 0.4)}, 0 8px 32px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1)`,
+        position: 'relative',
+        marginTop: -2,
       }}>
-        <div style={{ background: color, padding: '4px 6px', textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#000', fontWeight: 900, letterSpacing: 2 }}>
+        {/* Plastic sheen overlay */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%, rgba(255,255,255,0.02) 100%)',
+          pointerEvents: 'none',
+          zIndex: 10,
+          borderRadius: 10,
+        }} />
+
+        {/* Color header bar */}
+        <div style={{
+          background: `linear-gradient(90deg, ${color}, ${hexToRgba(color, 0.6)})`,
+          padding: '6px 8px',
+          textAlign: 'center',
+          boxShadow: `0 0 12px ${hexToRgba(color, 0.5)}`,
+        }}>
+          <div style={{
+            fontFamily: "'Space Mono'",
+            fontSize: 7,
+            color: '#000',
+            fontWeight: 900,
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+          }}>
             ACCESS ALL AREAS
           </div>
         </div>
-        <div style={{ padding: '8px 8px 6px', textAlign: 'center' }}>
-          <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>🎫</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.75rem', color: color, letterSpacing: '0.05em', lineHeight: 1.1, marginBottom: 4, textShadow: `0 0 8px ${hexToRgba(color, 0.6)}` }}>
+
+        {/* Badge content */}
+        <div style={{ padding: '10px 10px 8px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+          {/* Icon */}
+          <div style={{ fontSize: '1.8rem', marginBottom: 6, filter: `drop-shadow(0 0 6px ${hexToRgba(color, 0.6)})` }}>🎫</div>
+
+          {/* Rank title */}
+          <div style={{
+            fontFamily: "'Bebas Neue'",
+            fontSize: '0.9rem',
+            color: color,
+            letterSpacing: '0.05em',
+            lineHeight: 1.1,
+            marginBottom: 3,
+            textShadow: `0 0 10px ${hexToRgba(color, 0.7)}`,
+          }}>
             {rank}
           </div>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: hexToRgba(color, 0.7), letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8, lineHeight: 1.3 }}>
+
+          {/* Archetype */}
+          <div style={{
+            fontFamily: "'Space Mono'",
+            fontSize: 6,
+            color: hexToRgba(color, 0.6),
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            marginBottom: 10,
+            lineHeight: 1.4,
+          }}>
             {archetype}
           </div>
-          <div style={{ height: 1, background: `${color}33`, marginBottom: 6 }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-            <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: hexToRgba(color, 0.5) }}>SHOWS</span>
-            <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#fff', fontWeight: 900 }}>{totalShows}</span>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${color}55, transparent)`, marginBottom: 8 }} />
+
+          {/* Stats row */}
+          <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: 10 }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: color, lineHeight: 1 }}>{totalShows}</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: hexToRgba(color, 0.4), letterSpacing: '0.1em', textTransform: 'uppercase' }}>shows</div>
+            </div>
+            <div style={{ width: 1, background: `${color}33` }} />
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: color, lineHeight: 1 }}>{festDays}</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: hexToRgba(color, 0.4), letterSpacing: '0.1em', textTransform: 'uppercase' }}>fests</div>
+            </div>
+            <div style={{ width: 1, background: `${color}33` }} />
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: color, lineHeight: 1 }}>{festPct}%</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: hexToRgba(color, 0.4), letterSpacing: '0.1em', textTransform: 'uppercase' }}>ratio</div>
+            </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: hexToRgba(color, 0.5) }}>FESTS</span>
-            <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#fff', fontWeight: 900 }}>{festDays}</span>
-          </div>
+
+          {/* Barcode */}
           <div style={{ display: 'flex', gap: '1.5px', justifyContent: 'center', marginBottom: 4 }}>
-            {[2,1,3,1,2,4,1,2,1,3,1,2,1].map((w, i) => (
-              <div key={i} style={{ width: w, height: 18, background: color, opacity: 0.8 }} />
+            {[2,1,3,1,2,4,1,2,1,3,1,2,1,3,2,1].map((w, i) => (
+              <div key={i} style={{ width: w, height: 20, background: color, opacity: 0.7 }} />
             ))}
           </div>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: hexToRgba(color, 0.5), letterSpacing: '0.05em', marginTop: 2 }}>
+
+          {/* Serial */}
+          <div style={{
+            fontFamily: "'Space Mono'",
+            fontSize: 5.5,
+            color: hexToRgba(color, 0.45),
+            letterSpacing: '0.08em',
+            marginTop: 3,
+          }}>
             {serial}
           </div>
         </div>
       </div>
+
+      {/* Peek tab — always visible at top when collapsed */}
+      {!hovered && (
+        <div style={{
+          position: 'absolute',
+          bottom: -1,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: color,
+          borderRadius: '0 0 6px 6px',
+          padding: '3px 12px',
+          fontFamily: "'Space Mono'",
+          fontSize: 6,
+          color: '#000',
+          fontWeight: 900,
+          letterSpacing: '0.15em',
+          whiteSpace: 'nowrap',
+          boxShadow: `0 4px 12px ${hexToRgba(color, 0.5)}`,
+        }}>
+          ▼ ID
+        </div>
+      )}
     </div>
   );
 }
