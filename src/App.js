@@ -1578,6 +1578,16 @@ function HallOfFame({ sets, genreMap, onShare }) {
               <div style={{ fontSize: '1rem', fontWeight: 700, color: C.white, marginBottom: 4, lineHeight: 1.1 }}>{a.artist}</div>
               {a.genre && <GenreBadge genre={a.genre} color={gc} small />}
               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: cardColor || C.white, lineHeight: 1, marginTop: 10 }}>{a.shows.length}×</div>
+              {(() => {
+                const setlistCount = a.shows.filter(s => s.has_setlist || s.has_setlist_names?.trim()).length;
+                if (!setlistCount) return null;
+                return (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 6, background: `${C.gold}22`, border: `1px solid ${C.gold}44`, borderRadius: 10, padding: '2px 8px' }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.gold, boxShadow: `0 0 6px ${C.gold}` }} />
+                    <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold, fontWeight: 700 }}>{setlistCount} SETLIST{setlistCount > 1 ? 'S' : ''}</span>
+                  </div>
+                );
+              })()}
               <div style={{ marginTop: 12, height: 3, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${pct}%`, background: cardColor || C.teal, borderRadius: 2 }} />
               </div>
@@ -1615,7 +1625,7 @@ function DecorativeTicket({ event, templateIdx }) {
 
   return (
     <div style={{
-      width: 130,
+      width: 260,
       flexShrink: 0,
       background: tpl.bg,
       borderRadius: 3,
@@ -2369,25 +2379,6 @@ function ByFestTab({ festGroupings, genreMap = {} }) {
 // ─── PASSPORT TAB ─────────────────────────────────────────────────────────────
 function PassportTab({ passport, genreStats, onNavigateToFest }) {  return (
     <div style={{ padding:'24px 0' }} className="fade-in">
-      {genreStats && genreStats.length >= 3 && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 40 }}>
-          <Card neon style={{ display: 'flex', gap: 32, alignItems: 'center', padding: 32, maxWidth: 600, width: '100%' }}>
-            <SetlistDNA genreScores={Object.fromEntries(genreStats.slice(0,6).map(g => [g.name, Math.round((g.count/(genreStats[0]?.count||1))*100)]))} />
-            <div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.white, marginBottom: 8 }}>Your Sonic DNA</div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, lineHeight: 1.8 }}>
-                {genreStats.slice(0,4).map(g => (
-                  <div key={g.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: g.color }} />
-                    <span style={{ color: g.color }}>{g.name}</span>
-                    <span style={{ color: C.grayDim }}>— {g.count} sets</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
       <div style={{ fontFamily:"'Space Mono',monospace", fontSize:10, color:C.gray, marginBottom:20, letterSpacing:'0.1em', textTransform:'uppercase' }}>Your festival attendance record — click any card to view full history</div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:14 }}>
         {passport.map(f => (
@@ -2496,10 +2487,88 @@ function BrowseTab({ browseView, setBrowseView, search, setSearch, yearFilter, s
   );
 }
 
+// ─── VENUE DONUT CARD ─────────────────────────────────────────────────────────
+function VenueDonutCard({ concerts, onNavigateToVenues }) {
+  const venueData = useMemo(() => {
+    const m = {};
+    concerts.forEach(c => {
+      if (!c.venue) return;
+      const key = c.venue.trim();
+      m[key] = (m[key] || 0) + 1;
+    });
+    const sorted = Object.entries(m).sort((a, b) => b[1] - a[1]);
+    const top5 = sorted.slice(0, 5);
+    const otherCount = sorted.slice(5).reduce((acc, [, n]) => acc + n, 0);
+    if (otherCount > 0) top5.push(['Other Venues', otherCount]);
+    return top5;
+  }, [concerts]);
+
+  const total = venueData.reduce((acc, [, n]) => acc + n, 0) || 1;
+  const COLORS = ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88', '#445566'];
+
+  const cx = 70, cy = 70, r = 52;
+  const circ = 2 * Math.PI * r;
+
+  let cumulative = 0;
+  const slices = venueData.map(([name, count], i) => {
+    const pct = count / total;
+    const dash = pct * circ;
+    const offset = -cumulative * circ;
+    cumulative += pct;
+    return { name, count, pct, dash, offset, color: COLORS[i % COLORS.length] };
+  });
+
+  return (
+    <Card neon onClick={onNavigateToVenues} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+      className="card-texture">
+      <CardTitle>Top Venues 📍</CardTitle>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
+        <svg width={140} height={140} viewBox="0 0 140 140" style={{ flexShrink: 0 }}>
+          {slices.map((s, i) => (
+            <circle
+              key={i}
+              cx={cx} cy={cy} r={r}
+              fill="none"
+              stroke={s.color}
+              strokeWidth={14}
+              strokeDasharray={`${s.dash} ${circ}`}
+              strokeDashoffset={s.offset}
+              transform={`rotate(-90 ${cx} ${cy})`}
+              style={{ filter: `drop-shadow(0 0 4px ${s.color}66)` }}
+            />
+          ))}
+          <text x={cx} y={cy - 6} textAnchor="middle" style={{ fontFamily: "'Bebas Neue'", fontSize: 16, fill: C.white }}>
+            {new Set(concerts.map(c => c.venue).filter(Boolean)).size}
+          </text>
+          <text x={cx} y={cy + 10} textAnchor="middle" style={{ fontFamily: "'Space Mono'", fontSize: 7, fill: C.gray }}>
+            VENUES
+          </text>
+        </svg>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {slices.map((s, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: s.color, flexShrink: 0, boxShadow: `0 0 4px ${s.color}` }} />
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {s.name.length > 18 ? s.name.slice(0, 18) + '…' : s.name}
+              </div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: s.color, flexShrink: 0 }}>{s.count}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.tealDim, textAlign: 'center', marginTop: 10, letterSpacing: '0.1em' }}>
+        ↗ CLICK TO VIEW ALL VENUES
+      </div>
+    </Card>
+  );
+}
 // ─── VENUES TAB ───────────────────────────────────────────────────────────────
 function VenuesTab({ concerts }) {
   const [sortBy, setSortBy] = useState('count');
   const [search, setSearch] = useState('');
+  const [expanded, setExpanded] = useState({});
+
+  const toggle = (name) => setExpanded(p => ({ ...p, [name]: !p[name] }));
 
   const venues = useMemo(() => {
     const m = {};
@@ -2529,11 +2598,11 @@ function VenuesTab({ concerts }) {
       if (c.is_festival) m[key].festivals++;
       m[key].shows.push(c);
     });
-
     return Object.values(m).map(v => ({
       ...v,
       years: [...v.years].sort(),
       artists: [...v.artists],
+      shows: [...v.shows].sort((a, b) => b.date.localeCompare(a.date)),
     }));
   }, [concerts]);
 
@@ -2550,11 +2619,13 @@ function VenuesTab({ concerts }) {
     return list;
   }, [venues, sortBy, search]);
 
-  const topVenue = filtered[0];
   const totalVenues = venues.length;
   const totalCities = new Set(venues.map(v => v.city).filter(Boolean)).size;
-
   const VENUE_MEDALS = ['🥇','🥈','🥉'];
+  const STUB_COLORS = ['#e8dfa0','#d4e8d4','#d0d8f0','#f0d8cc','#e8e8e8'];
+  const STUB_INKS = ['#1a1a1a','#1a2a1a','#0a0a2a','#2a0a00','#111'];
+  const STUB_ACCENTS = ['#8b0000','#004400','#000080','#8b3300','#444'];
+  const STUB_LABELS = ['TICKETMASTER','TICKETRON','BASS TICKETS','GOOD TIMES','CONCERT TICKET'];
 
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
@@ -2574,14 +2645,12 @@ function VenuesTab({ concerts }) {
           const colors = [C.gold, C.gray, C.cyan];
           const sizes = ['2rem', '1.6rem', '1.4rem'];
           return (
-            <div key={v.name} style={{
+            <div key={v.name} onClick={() => toggle(v.name)} style={{
               background: `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(colors[i], 0.08)})`,
               border: `1px solid ${hexToRgba(colors[i], 0.5)}`,
-              borderRadius: 8,
-              padding: 20,
-              position: 'relative',
-              overflow: 'hidden',
-              boxShadow: `0 0 20px ${hexToRgba(colors[i], 0.15)}`,
+              borderRadius: 8, padding: 20, position: 'relative', overflow: 'hidden',
+              boxShadow: `0 0 20px ${hexToRgba(colors[i], 0.15)}`, cursor: 'pointer',
+              transition: 'all 0.2s',
             }}>
               <div style={{ position: 'absolute', right: -10, bottom: -20, fontFamily: "'Bebas Neue'", fontSize: '6rem', color: hexToRgba(colors[i], 0.05), pointerEvents: 'none' }}>{v.count}×</div>
               <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: colors[i], marginBottom: 8 }}>{VENUE_MEDALS[i]} #{i + 1}</div>
@@ -2592,8 +2661,8 @@ function VenuesTab({ concerts }) {
                 <Badge color={colors[i]}>{v.artists.length} artists</Badge>
                 {v.festivals > 0 && <Badge color={C.gold}>{v.festivals} fest days</Badge>}
               </div>
-              <div style={{ marginTop: 10, fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>
-                {fmtDateShort(v.firstDate)} → {fmtDateShort(v.lastDate)}
+              <div style={{ marginTop: 6, fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>
+                {expanded[v.name] ? '▲ collapse' : '▼ view shows'}
               </div>
             </div>
           );
@@ -2602,12 +2671,7 @@ function VenuesTab({ concerts }) {
 
       {/* Filters */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
-        <input
-          placeholder="Search venues or cities..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ ...inputSt, flex: '1 1 240px' }}
-        />
+        <input placeholder="Search venues or cities..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...inputSt, flex: '1 1 240px' }} />
         <div style={{ display: 'flex', background: C.bgCardAlt, borderRadius: 4, padding: 2, border: `1px solid ${C.border}` }}>
           {[['count','Most Visited'],['alpha','A–Z'],['recent','Most Recent'],['first','Oldest First']].map(([val, label]) => (
             <button key={val} onClick={() => setSortBy(val)} style={{
@@ -2625,49 +2689,122 @@ function VenuesTab({ concerts }) {
           const pct = Math.round((v.count / (filtered[0]?.count || 1)) * 100);
           const isTop = i < 3;
           const rowColor = isTop ? [C.gold, C.gray, C.cyan][i] : C.teal;
+          const isOpen = expanded[v.name];
+
           return (
             <div key={v.name} style={{
               background: C.bgCard,
               border: `1px solid ${isTop ? hexToRgba(rowColor, 0.4) : C.border}`,
               borderLeft: `4px solid ${rowColor}`,
               borderRadius: 6,
-              padding: '12px 16px',
-              position: 'relative',
               overflow: 'hidden',
               transition: 'all 0.2s',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = rowColor; e.currentTarget.style.boxShadow = `0 0 12px ${hexToRgba(rowColor, 0.2)}`; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = isTop ? hexToRgba(rowColor, 0.4) : C.border; e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              {/* Progress bar background */}
-              <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: hexToRgba(rowColor, 0.04), pointerEvents: 'none' }} />
-
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 16 }}>
-                {/* Rank */}
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: rowColor, width: 28, flexShrink: 0, textAlign: 'center' }}>
-                  {i < 3 ? VENUE_MEDALS[i] : `#${i + 1}`}
-                </div>
-
-                {/* Name + location */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.white, lineHeight: 1, marginBottom: 2 }}>{v.name}</div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray }}>{[v.city, v.state].filter(Boolean).join(', ')}</div>
-                </div>
-
-                {/* Years */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, maxWidth: 140, justifyContent: 'flex-end' }}>
-                  {v.years.slice(-6).map(yr => (
-                    <span key={yr} style={{ fontFamily: "'Space Mono'", fontSize: 7, background: hexToRgba(rowColor, 0.12), color: rowColor, border: `1px solid ${hexToRgba(rowColor, 0.3)}`, padding: '1px 4px', borderRadius: 2 }}>{yr}</span>
-                  ))}
-                  {v.years.length > 6 && <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>+{v.years.length - 6}</span>}
-                </div>
-
-                {/* Artists count */}
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: rowColor, lineHeight: 1 }}>{v.count}</div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, textTransform: 'uppercase' }}>shows</div>
+            }}>
+              {/* Row header — always visible */}
+              <div
+                onClick={() => toggle(v.name)}
+                style={{ padding: '12px 16px', position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
+                onMouseEnter={e => { e.currentTarget.style.background = hexToRgba(rowColor, 0.04); }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+              >
+                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: hexToRgba(rowColor, 0.04), pointerEvents: 'none' }} />
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: rowColor, width: 28, flexShrink: 0, textAlign: 'center' }}>
+                    {i < 3 ? VENUE_MEDALS[i] : `#${i + 1}`}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.white, lineHeight: 1, marginBottom: 2 }}>{v.name}</div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray }}>{[v.city, v.state].filter(Boolean).join(', ')}</div>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, maxWidth: 140, justifyContent: 'flex-end' }}>
+                    {v.years.slice(-5).map(yr => (
+                      <span key={yr} style={{ fontFamily: "'Space Mono'", fontSize: 7, background: hexToRgba(rowColor, 0.12), color: rowColor, border: `1px solid ${hexToRgba(rowColor, 0.3)}`, padding: '1px 4px', borderRadius: 2 }}>{yr}</span>
+                    ))}
+                    {v.years.length > 5 && <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>+{v.years.length - 5}</span>}
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: rowColor, lineHeight: 1 }}>{v.count}</div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, textTransform: 'uppercase' }}>shows</div>
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, flexShrink: 0 }}>
+                    {isOpen ? '▲' : '▼'}
+                  </div>
                 </div>
               </div>
+
+              {/* Expanded ticket stub grid */}
+              {isOpen && (
+                <div style={{ borderTop: `1px solid ${C.border}`, padding: '20px 16px', background: hexToRgba(C.bgCardAlt, 0.5) }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0 30px', alignItems: 'start' }}>
+                    {[[], [], []].map((_, colIdx) => (
+                      <div key={colIdx} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                        {v.shows.filter((_, idx) => idx % 3 === colIdx).map((show, showIdx) => {
+                          const tIdx = (i + showIdx) % 5;
+                          const bg = STUB_COLORS[tIdx];
+                          const ink = STUB_INKS[tIdx];
+                          const accent = STUB_ACCENTS[tIdx];
+                          const label = STUB_LABELS[tIdx];
+                          const headliner = (show.bands || [])[0] || 'UNKNOWN';
+                          const rot = (showIdx % 2 === 0 ? 1 : -1) * ((showIdx % 3) + 0.5);
+                          const barWidths = [2,1,3,1,2,1,4,1,2,3,1,2,1];
+                          return (
+                            <div key={show.id} style={{
+                              position: 'relative',
+                              transform: `rotate(${rot}deg)`,
+                              marginBottom: 28,
+                              zIndex: 1,
+                            }}>
+                              {/* Tape */}
+                              <div style={{
+                                position: 'absolute', top: -10, left: '50%',
+                                transform: 'translateX(-50%)',
+                                width: 44, height: 14,
+                                background: ['#ffcc00','#00e5cc','#9966ff','#ff4466','#00cfff'][tIdx],
+                                opacity: 0.8, borderRadius: 1, zIndex: 10,
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                              }} />
+
+                              {/* The stub */}
+                              <div style={{
+                                background: bg,
+                                borderRadius: 3,
+                                overflow: 'hidden',
+                                boxShadow: '2px 6px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.6)',
+                                border: `1px solid ${hexToRgba(ink, 0.15)}`,
+                                fontFamily: "'Courier New', Courier, monospace",
+                                color: ink,
+                              }}>
+                                <div style={{ background: accent, height: 7 }} />
+                                <div style={{ padding: '4px 8px 0', fontSize: 6, fontWeight: 900, letterSpacing: '0.15em', color: accent, opacity: 0.8 }}>{label}</div>
+                                <div style={{ padding: '2px 8px', fontSize: 13, fontWeight: 900, lineHeight: 1.1, textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
+                                  {headliner.length > 14 ? headliner.slice(0,14)+'…' : headliner}
+                                </div>
+                                <div style={{ padding: '2px 8px', fontSize: 6, lineHeight: 1.5, opacity: 0.75 }}>
+                                  <div style={{ fontWeight: 'bold' }}>{fmtDateShort(show.date).toUpperCase()}</div>
+                                  {show.city && <div>{[show.city, show.state].filter(Boolean).join(', ').toUpperCase()}</div>}
+                                </div>
+                                <div style={{ margin: '3px 8px', paddingTop: 3, borderTop: `1px dashed ${hexToRgba(ink, 0.25)}`, display: 'flex', justifyContent: 'space-between', fontSize: 6, opacity: 0.65 }}>
+                                  <span>PRICE: COMPLIMENTARY</span><span>GA</span>
+                                </div>
+                                <div style={{ borderTop: `1px dashed ${hexToRgba(ink, 0.2)}`, margin: '2px 0' }} />
+                                <div style={{ padding: '4px 8px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                                  <div style={{ display: 'flex', gap: '1px' }}>
+                                    {barWidths.map((w, bi) => (
+                                      <div key={bi} style={{ width: w, height: bi % 3 === 0 ? 16 : 12, background: ink, opacity: 0.8 }} />
+                                    ))}
+                                  </div>
+                                  <div style={{ fontSize: 5, opacity: 0.4 }}>{String(show.id || '').slice(0,12).toUpperCase()}</div>
+                                </div>
+                                <div style={{ background: accent, height: 4, opacity: 0.4 }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
@@ -3629,7 +3766,7 @@ async function handleUpcomingDelete(id) {
                 <RandomShow concerts={concerts} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: 16, marginBottom: 16 }}>
-                <SonicDNA stats={genreStats} onGenreClick={handleGenreClick} />
+                <VenueDonutCard concerts={concerts} onNavigateToVenues={() => setActiveTab('venues')} />
                 <Card neon>
                   <CardTitle>Sets Per Year — click a bar to jump to that year</CardTitle>
                   <ResponsiveContainer width="100%" height={200}>
