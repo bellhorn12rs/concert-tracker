@@ -237,7 +237,40 @@ const fmtDateShort = d => { if (!d) return '—'; const dt = new Date(d + 'T12:0
 const getYear = d => d ? new Date(d + 'T12:00:00').getFullYear() : null;
 const daysSince = d => { if (!d) return 0; return Math.floor((Date.now() - new Date(d + 'T12:00:00')) / 86400000); };
 
+// ─── MASTER LANYARD ───────────────────────────────────────────────────────────
+function MasterLanyard({ concerts, artistGenres, genreStats }) {
+  const totalShows = concerts.length;
+  const festDays = concerts.filter(c => c.is_festival).length;
+  const festPct = totalShows ? Math.round((festDays / totalShows) * 100) : 0;
 
+  // Rank based on total shows
+  const getRank = (n) => {
+    if (n <= 5) return 'THE GATE CRASHER';
+    if (n <= 15) return 'BARRICADE REGULAR';
+    if (n <= 30) return 'THE SOUNDBOARD SHADOW';
+    if (n <= 50) return 'TOUR BUS TAILGATER';
+    if (n <= 100) return 'ALL-ACCESS AUTHORITY';
+    return 'THE LIVING ARCHIVE';
+  };
+
+  // Archetype based on behavior
+  const getArchetype = () => {
+    // Check for superfan (any artist seen 10+ times)
+    const artistCounts = {};
+    concerts.forEach(c => (c.bands || []).forEach(b => { if (b) artistCounts[b] = (artistCounts[b] || 0) + 1; }));
+    const topArtist = Object.entries(artistCounts).sort((a, b) => b[1] - a[1])[0];
+    if (topArtist && topArtist[1] >= 10) return `${topArtist[0].toUpperCase()} SUPERFAN`;
+    if (festPct >= 50) return 'THE FESTIVAL OWL';
+    if (festPct <= 10) return 'CLUB RAT';
+    return 'STADIUM SPECIALIST';
+  };
+
+  // Color based on top genre
+  const getColor = () => {
+    const topGenre = genreStats?.[0]?.name;
+    const map = {
+      'Indie Rock': '#00f2ff', 'Alternative': '#9d00ff', 'Experimental': '#ff00ff',
+      'Electronic': '#9900ff', 'Jam'
 // ─── STYLES (POSTER & TEXTURE EDITION) ─────────────────────────────────────────
 const MarqueeStyles = () => (
   <style>{`
@@ -2928,8 +2961,7 @@ async function handleUpcomingDelete(id) {
         {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
 
         {/* ── HERO HEADER ── */}
-        <div style={{ background: `linear-gradient(180deg,#050508 0%,${C.bgCard} 100%)`, borderBottom: `1px solid ${C.teal}22`, padding: '36px 24px 0', textAlign: 'center' }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+            <div style={{ background: `linear-gradient(180deg,#050508 0%,${C.bgCard} 100%)`, borderBottom: `1px solid ${C.teal}22`, padding: '36px 24px 0', textAlign: 'center', position: 'relative' }}>          <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative' }}>
             <h1 style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(3rem,8vw,6rem)', color: C.white, margin: '0 0 8px', lineHeight: 1, letterSpacing: '0.04em' }}>
               🎸 LIVE <span style={{ color: C.gray, fontSize: '0.7em' }}>//</span> <span style={{ color: C.teal }}>IN CONCERT</span>
             </h1>
@@ -2961,6 +2993,8 @@ async function handleUpcomingDelete(id) {
               ))}
             </div>
           </div>
+           <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
+            </div>
         </div>
 
         {/* ── NAV ── */}
