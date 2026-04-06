@@ -2911,6 +2911,74 @@ const JustifiedRow = ({ text, color, fontSize, weight = 400, font }) => {
   );
 };
 
+// ─── POSTER STUDIO CONSTANTS ──────────────────────────────────────────────────
+const POSTER_TEMPLATES = [
+  { 
+    id: 0, name: 'COACHELLA CLASSIC', layout: 'tiered', 
+    bg: '#fdfcf0', accent: '#111', accent2: '#444', 
+    font: "'Bebas Neue'", texture: 'grain', dark: false 
+  },
+  { 
+    id: 1, name: 'NEON NOIR XEROX', layout: 'zine', 
+    bg: '#050505', accent: '#00ffcc', accent2: '#fff', 
+    font: "'Space Mono'", texture: 'grunge', dark: true 
+  },
+  { 
+    id: 2, name: 'MODERNIST GRID', layout: 'swiss', 
+    bg: '#e8e8e8', accent: '#ff4400', accent2: '#000', 
+    font: "'Bebas Neue'", texture: 'clean', dark: false 
+  }
+];
+
+// ─── POSTER UTILITIES ─────────────────────────────────────────────────────────
+
+const TextureOverlay = ({ type }) => {
+  const styles = {
+    grain: {
+      position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10, opacity: 0.15,
+      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+    },
+    grunge: {
+      position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10, opacity: 0.2,
+      background: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
+      backgroundSize: '3px 3px',
+    }
+  };
+  
+  return (
+    <>
+      <div style={styles[type] || {}} />
+      {/* Fold Line */}
+      <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.1)', boxShadow: '0 1px 2px rgba(0,0,0,0.1)', zIndex: 11 }} />
+    </>
+  );
+};
+
+// Helper to justify text by stretching letter spacing
+const JustifiedRow = ({ text, color, fontSize, weight = 400, font }) => {
+  // A rough heuristic: shorter strings need wider letter-spacing to fill the row
+  const spacing = text.length > 20 ? '0.05em' : text.length > 10 ? '0.2em' : '0.5em';
+  
+  return (
+    <div style={{
+      width: '100%',
+      display: 'flex',
+      justifyContent: 'space-between',
+      fontSize,
+      fontFamily: font,
+      color,
+      fontWeight: weight,
+      letterSpacing: spacing,
+      textAlign: 'justify',
+      textTransform: 'uppercase',
+      lineHeight: 1,
+      marginBottom: 8
+    }}>
+      {text.split('').map((char, i) => <span key={i}>{char === ' ' ? '\u00A0' : char}</span>)}
+    </div>
+  );
+};
+
 // ─── POSTER GENERATOR TAB ─────────────────────────────────────────────────────
 
 function PosterGeneratorTab({ concerts, genreMap, allSetsList, dnaScores }) {
