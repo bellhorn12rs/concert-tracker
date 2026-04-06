@@ -1762,18 +1762,14 @@ function GenreLegend() {
 }
 
 // ─── 1. TIMELINE DOT ────────────────────────────────────────────────────────
-// ─── 1. TIMELINE DOT (With Safety Checks) ───────────────────────────────────
 function TimelineDot({ item, onTeleport, genreMap, xPos }) {
   const [isHovered, setIsHovered] = useState(false);
   
-  // Safety: If no item or no date, don't render
   if (!item || !item.date) return null;
 
   const gi = getConcertGenreInfo(item, genreMap);
   const themeColor = gi.mixed ? '#9d00ff' : (gi.color || C.teal);
   const bands = item.bands || [];
-  const dateParts = item.date.split('-');
-  const displayDate = dateParts.length > 2 ? `${dateParts[1]}.${dateParts[2]}` : '';
 
   return (
     <div
@@ -1806,42 +1802,61 @@ function TimelineDot({ item, onTeleport, genreMap, xPos }) {
         transform: 'translateY(-50%)',
       }} />
 
-      {/* 🔴 HOVER CARD */}
+      {/* 🔴 THE HOVER CARD */}
       {isHovered && (
         <div className="fade-in" style={{
           position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          width: 340, padding: 20, background: C.bgCard, borderRadius: 12,
+          width: 380, padding: 20, background: C.bgCard, borderRadius: 12,
           border: `2px solid ${themeColor}`, boxShadow: `0 0 60px rgba(0,0,0,0.95)`,
           zIndex: 9999, pointerEvents: 'none',
         }}>
+          
           {item.is_festival ? (
-            <WristbandCard event={item} genreMap={genreMap} compact={false} />
+            /* FESTIVAL VIEW: The WristbandCard (compact={false}) shows the full grid. 
+               We don't need to add anything else below it! */
+            <div style={{ marginBottom: 0 }}>
+              <WristbandCard event={item} genreMap={genreMap} compact={false} />
+              <div style={{ marginTop: 12, borderTop: `1px dashed ${C.border}`, paddingTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray }}>{item.venue?.toUpperCase()}</div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: themeColor, letterSpacing: '0.1em' }}>{fmtDateShort(item.date)}</div>
+              </div>
+            </div>
           ) : (
-            <div style={{ background: '#e8dfa0', borderRadius: 3, overflow: 'hidden', fontFamily: "'Courier New', monospace", color: '#1a1a1a', marginBottom: 12 }}>
-              <div style={{ background: '#8b0000', height: 6 }} />
-              <div style={{ padding: '6px 10px' }}>
-                <div style={{ fontSize: 7, fontWeight: 900, letterSpacing: '0.15em', color: '#8b0000', marginBottom: 2 }}>CONCERT TICKET</div>
-                <div style={{ fontSize: 16, fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.1, marginBottom: 4 }}>{bands[0] || 'ACT'}</div>
-                <div style={{ fontSize: 7, opacity: 0.75 }}>{fmtDateShort(item.date).toUpperCase()} · {item.venue?.toUpperCase() || 'VENUE'}</div>
+            /* SOLO SHOW VIEW: Shows the ticket and a clean text block */
+            <div>
+              <div style={{ background: '#e8dfa0', borderRadius: 3, overflow: 'hidden', fontFamily: "'Courier New', monospace", color: '#1a1a1a', marginBottom: 15 }}>
+                <div style={{ background: '#8b0000', height: 6 }} />
+                <div style={{ padding: '8px 12px' }}>
+                  <div style={{ fontSize: 7, fontWeight: 900, letterSpacing: '0.15em', color: '#8b0000', marginBottom: 2 }}>ADMIT ONE</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, textTransform: 'uppercase', lineHeight: 1 }}>{bands[0] || 'CONCERT'}</div>
+                  <div style={{ fontSize: 8, opacity: 0.7, marginTop: 4 }}>{item.venue?.toUpperCase()}</div>
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ flex: 1 }}>
+                   <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: C.white, lineHeight: 1 }}>
+                     {bands[0]?.toUpperCase()}
+                   </div>
+                   {bands.length > 1 && (
+                     <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 4 }}>
+                       w/ {bands.slice(1, 3).join(' & ')}
+                     </div>
+                   )}
+                </div>
+                <GenreBadge genre={gi.genre} color={gi.color} small />
               </div>
             </div>
           )}
           
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-            <div style={{ flex: 1, paddingRight: 10 }}>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: C.white, lineHeight: 1.1 }}>
-                {bands.length > 0 ? bands.slice(0, 3).join(' · ') : 'No lineup data'}
-              </div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 4 }}>{item.venue?.toUpperCase()}</div>
-            </div>
-            <GenreBadge genre={gi.genre} color={gi.color} small />
+          <div style={{ marginTop: 15, fontFamily: "'Space Mono'", fontSize: 7, color: themeColor, letterSpacing: '0.2em', textAlign: 'center', opacity: 0.5 }}>
+            CLICK TO VIEW SETLIST
           </div>
         </div>
       )}
     </div>
   );
 }
-
 // ─── 2. PANORAMIC TIMELINE TAB (Stability Version) ─────────────────────────
 function TimelineTab({ concerts, setActiveTab, genreMap }) {
   const scrollRef = useRef(null);
