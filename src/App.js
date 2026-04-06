@@ -2232,91 +2232,196 @@ function ByDayTab({ dayGroups, onEdit, genreMap }) {
     </div>
   );
 }
-function ByFestTab({ festGroupings, genreMap = {} }) {
-  const [collapsed, setCollapsed] = useState({});
-  const toggle = (name, year) => setCollapsed(p => ({ ...p, [`${name}-${year}`]: !p[`${name}-${year}`] }));
+// ─── HELPER: COLOR STAIRCASE ────────────────────────────────────────────────
+// This makes sure Day 1 is bright and Day 3 is a deep, moody variant of the same color
+const getDayColor = (baseHex, index) => {
+  const variants = [1.0, 0.8, 0.6, 0.45, 0.3]; 
+  return hexToRgba(baseHex || C.teal, variants[index % variants.length]);
+};
+
+// ─── 1. THE DRILL-DOWN (BYFESTTAB - THE BOX SET ARCHIVE) ────────────────────
+function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
   const FEST_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699', '#ff4400', '#a2ff00'];
 
+  if (!festGroupings.length) return <div style={{ textAlign: 'center', color: C.gray, padding: 60 }}>No festival data yet.</div>;
+
   return (
-    <div style={{ marginTop: 20 }} className="fade-in">
+    <div style={{ marginTop: 40 }} className="fade-in">
       {festGroupings.map((fest, fi) => {
-        const color = FEST_COLORS[fi % FEST_COLORS.length];
-        const allShows = Object.values(fest.years).flat();
+        const themeColor = FEST_COLORS[fi % FEST_COLORS.length];
         const yearsSorted = Object.keys(fest.years).sort((a, b) => b.localeCompare(a));
-        const firstYear = yearsSorted[yearsSorted.length - 1], lastYear = yearsSorted[0];
-        const uniqueArtists = new Set(allShows.flatMap(s => s.bands || [])).size;
+        const allShows = Object.values(fest.years).flat();
 
         return (
-          <div key={fest.name} style={{ marginBottom: 48 }}>
-            {/* Festival Passport Header (No changes to your styles) */}
-            <div id={`fest-${fest.name.replace(/\s+/g, '-')}`} style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', marginBottom: 20, background: `linear-gradient(135deg,${hexToRgba(color, 0.12)},${C.bgCard})`, border: `1px solid ${hexToRgba(color, 0.5)}`, boxShadow: `0 0 40px ${hexToRgba(color, 0.2)},0 4px 20px rgba(0,0,0,0.6)`, padding: '32px 36px' }}>
-              <div style={{ position: 'absolute', top: -60, right: -60, width: 300, height: 300, background: `radial-gradient(circle,${hexToRgba(color, 0.15)},transparent)`, pointerEvents: 'none' }} />
-              <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: `linear-gradient(to bottom,${color},${hexToRgba(color, 0.2)})`, borderRadius: '12px 0 0 12px' }} />
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: '0.3em', textTransform: 'uppercase', color: hexToRgba(color, 0.8), marginBottom: 10 }}>🎪 FESTIVAL PASSPORT</div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(2.5rem,6vw,4.5rem)', letterSpacing: '0.06em', color: C.white, lineHeight: 1, marginBottom: 16, textShadow: `0 0 30px ${hexToRgba(color, 0.4)}` }}>{fest.name}</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, marginBottom: 20 }}>
-                  {[[allShows.length, allShows.length === 1 ? 'DAY' : 'DAYS ATTENDED'], [yearsSorted.length, yearsSorted.length === 1 ? 'YEAR' : 'YEARS'], [uniqueArtists, 'UNIQUE ARTISTS'], [firstYear === lastYear ? firstYear : `${firstYear}–${lastYear}`, 'SPAN']].map(([val, label]) => (
-                    <div key={label}><div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color, lineHeight: 1 }}>{val}</div><div style={{ fontFamily: "'Space Mono',monospace", fontSize: 8, color: C.gray, textTransform: 'uppercase', letterSpacing: '0.12em', marginTop: 2 }}>{label}</div></div>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {yearsSorted.map(yr => <span key={yr} onClick={() => toggle(fest.name, yr)} style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, background: hexToRgba(color, 0.18), color, border: `1px solid ${hexToRgba(color, 0.45)}`, padding: '3px 10px', borderRadius: 4, cursor: 'pointer' }}>{yr} {collapsed[`${fest.name}-${yr}`] ? '▸' : '▾'}</span>)}
-                </div>
+          <div key={fest.name} style={{ marginBottom: 120 }}>
+            
+            {/* 🏆 CINEMATIC FESTIVAL HEADER */}
+            <div style={{ marginBottom: '60px', borderLeft: `10px solid ${themeColor}`, paddingLeft: '30px' }}>
+              <div style={{ 
+                fontFamily: "'Bebas Neue'", 
+                fontSize: 'clamp(3rem, 8vw, 6rem)', 
+                lineHeight: 0.8, 
+                color: C.white, 
+                textShadow: `0 0 40px ${hexToRgba(themeColor, 0.4)}` 
+              }}>
+                {fest.name.toUpperCase()}
+              </div>
+              <div style={{ 
+                fontFamily: "'Space Mono'", 
+                fontSize: '11px', 
+                color: themeColor, 
+                marginTop: '15px', 
+                letterSpacing: '5px', 
+                fontWeight: 900 
+              }}>
+                {allShows.length} DAYS ATTENDED // {yearsSorted.length} YEARS ARCHIVED
               </div>
             </div>
 
-            {/* Individual Years */}
-            {yearsSorted.map(yr => {
-              const isCollapsed = collapsed[`${fest.name}-${yr}`];
-              const shows = fest.years[yr];
-              return (
-                <div key={yr} style={{ marginBottom: 16 }}>
-                  <div onClick={() => toggle(fest.name, yr)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', background: hexToRgba(color, 0.07), border: `1px solid ${hexToRgba(color, 0.2)}`, borderRadius: 6, cursor: 'pointer', marginBottom: isCollapsed ? 0 : 10 }}>
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color, lineHeight: 1 }}>{yr}</div>
-                    <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 8, color: C.gray }}>{shows.length} {shows.length === 1 ? 'DAY' : 'DAYS'} · {new Set(shows.flatMap(s => s.bands || [])).size} ARTISTS</div>
-                    <div style={{ marginLeft: 'auto', color: C.grayDim, fontSize: 10 }}>{isCollapsed ? '▸' : '▾'}</div>
+            {/* 📦 THE YEAR BOX SETS */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '80px' }}>
+              {yearsSorted.map(yr => {
+                const shows = fest.years[yr].sort((a, b) => a.date.localeCompare(b.date));
+                
+                return (
+                  <div key={yr} style={{ 
+                    position: 'relative',
+                    border: `6px solid ${hexToRgba(themeColor, 0.3)}`, // THE HEAVY BOX BORDER
+                    borderRadius: '24px',
+                    padding: '80px 40px 40px 40px',
+                    background: 'rgba(255,255,255,0.01)',
+                    boxShadow: `0 30px 100px rgba(0,0,0,0.5), inset 0 0 50px ${hexToRgba(themeColor, 0.05)}`
+                  }}>
+                    
+                    {/* FLOATING YEAR TAB */}
+                    <div style={{ position: 'absolute', top: '-40px', left: '40px', display: 'flex', alignItems: 'baseline', gap: '15px' }}>
+                      <div style={{ 
+                        background: themeColor, 
+                        color: '#000', 
+                        fontFamily: "'Bebas Neue'", 
+                        fontSize: '4rem', 
+                        padding: '0 30px', 
+                        borderRadius: '8px', 
+                        boxShadow: `0 10px 30px rgba(0,0,0,0.5)` 
+                      }}>
+                        {yr}
+                      </div>
+                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, opacity: 0.5 }}>
+                        {fest.name.toUpperCase()}
+                      </div>
+                    </div>
+
+                    {/* THE DAY ROWS (STAIRCASE COLORING) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      {shows.map((show, idx) => {
+                        const dayColor = getDayColor(themeColor, idx);
+                        const bands = show.bands || [];
+                        
+                        return (
+                          <div key={show.id}
+                            onClick={isAdmin ? () => onEdit(show) : null}
+                            style={{ 
+                              width: '100%', 
+                              background: 'rgba(0,0,0,0.4)', 
+                              borderRadius: '16px', 
+                              border: `2px solid ${dayColor}`,
+                              overflow: 'hidden', 
+                              cursor: isAdmin ? 'pointer' : 'default', 
+                              transition: 'all 0.3s ease', 
+                              display: 'flex', 
+                              flexDirection: 'column'
+                            }}
+                            onMouseEnter={(e) => { if(isAdmin) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.borderColor = '#fff'; } }}
+                            onMouseLeave={(e) => { if(isAdmin) { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = dayColor; } }}
+                          >
+                            <div style={{ height: '6px', background: dayColor }} />
+                            <div style={{ padding: '25px 35px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                                <div>
+                                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: dayColor, lineHeight: 1 }}>
+                                    {show.festival_day?.toUpperCase() || `DAY ${idx + 1}`}
+                                  </div>
+                                  <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: '5px' }}>
+                                    {fmtDateShort(show.date)}
+                                  </div>
+                                </div>
+                                
+                                {/* 📸 Mini Polaroid Thumbnail if photo exists */}
+                                {show.personal_photo_url && (
+                                  <div style={{ 
+                                    background: '#fff', padding: '3px', transform: 'rotate(5deg)', 
+                                    boxShadow: '0 4px 15px rgba(0,0,0,0.4)', width: '32px', height: '32px' 
+                                  }}>
+                                    <div style={{ width: '100%', height: '100%', background: `url(${show.personal_photo_url}) center/cover` }} />
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div style={{ 
+                                fontFamily: "'Space Mono'", 
+                                fontSize: '12px', 
+                                color: '#fff', 
+                                lineHeight: 1.6, 
+                                borderTop: `1px solid ${hexToRgba(dayColor, 0.2)}`, 
+                                paddingTop: '15px',
+                                opacity: 0.9 
+                              }}>
+                                {bands.join(' · ').toUpperCase()}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  
-                  {/* 🟢 FIXED: compact={false} ensures the grid shows up here */}
-                  {!isCollapsed && shows.sort((a, b) => a.date.localeCompare(b.date)).map(s => (
-                    <WristbandCard key={s.id} event={s} genreMap={genreMap} compact={false} />
-                  ))}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         );
       })}
-      {!festGroupings.length && <div style={{ textAlign: 'center', color: C.gray, padding: 60 }}>No festival data yet.</div>}
     </div>
   );
 }
-// ─── PASSPORT TAB ─────────────────────────────────────────────────────────────
-function PassportTab({ passport, genreStats, onNavigateToFest }) {  return (
-    <div style={{ padding:'24px 0' }} className="fade-in">
-      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:10, color:C.gray, marginBottom:20, letterSpacing:'0.1em', textTransform:'uppercase' }}>Your festival attendance record — click any card to view full history</div>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:14 }}>
-        {passport.map(f => (
-          <div key={f.name} onClick={()=>onNavigateToFest(f.name)}
-            style={{ background:C.bgCard, border:`1px solid ${C.teal}33`, borderRadius:8, padding:16, cursor:'pointer', transition:'all 0.18s' }}
-            onMouseEnter={e=>{e.currentTarget.style.border=`1px solid ${C.teal}88`;e.currentTarget.style.boxShadow=`0 0 16px ${C.tealGlow}`;}}
-            onMouseLeave={e=>{e.currentTarget.style.border=`1px solid ${C.teal}33`;e.currentTarget.style.boxShadow='none';}}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
-              <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.3rem', color:C.gold, lineHeight:1 }}>{f.name}</div>
-              <div style={{ textAlign:'right' }}><div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.6rem', color:C.teal, lineHeight:1 }}>{f.days}</div><div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:C.gray, textTransform:'uppercase' }}>days</div></div>
+
+// ─── 2. THE OVERVIEW (PASSPORTTAB - THE GRID) ───────────────────────────────
+function PassportTab({ passport, onNavigateToFest }) {  
+  return (
+    <div style={{ padding:'40px 0' }} className="fade-in">
+      <div style={{ fontFamily:"'Space Mono'", fontSize:11, color:C.teal, marginBottom:30, letterSpacing:'0.2em', textAlign: 'center' }}>
+        // SELECT A STAMP TO VIEW COLLECTION //
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))', gap:25 }}>
+        {passport.map((f, i) => {
+          const color = [C.teal, C.purple, C.gold, C.cyan, C.green, C.pink][i % 6];
+          return (
+            <div key={f.name} onClick={()=>onNavigateToFest(f.name)}
+              style={{ 
+                background: `linear-gradient(135deg, ${C.bgCard}, #000)`, 
+                border:`2px solid ${hexToRgba(color, 0.3)}`, borderRadius:20, padding:30, cursor:'pointer', transition:'all 0.3s ease',
+                position: 'relative', overflow: 'hidden', boxShadow: `0 10px 30px rgba(0,0,0,0.3)`
+              }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=color; e.currentTarget.style.transform='translateY(-8px)'; e.currentTarget.style.boxShadow=`0 15px 50px ${hexToRgba(color, 0.25)}`;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=hexToRgba(color, 0.3); e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow=`0 10px 30px rgba(0,0,0,0.3)`;}}>
+              
+              <div style={{ fontFamily:"'Bebas Neue'", fontSize:'2.5rem', color: C.white, lineHeight:1, marginBottom: 5 }}>{f.name}</div>
+              <div style={{ fontFamily:"'Space Mono'", fontSize:9, color: color, letterSpacing: '2px', marginBottom: 20, fontWeight: 900 }}>{f.years.length} YEARS RECORDED</div>
+              
+              <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:25 }}>
+                {f.years.map(y=><span key={y} style={{ fontFamily:"'Space Mono'", fontSize:9, background:`${color}15`, color: color, border:`1px solid ${color}44`, padding:'4px 10px', borderRadius:5 }}>{y}</span>)}
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${hexToRgba(color, 0.15)}`, paddingTop: 20 }}>
+                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: color }}>{f.days} <span style={{ fontSize: '0.9rem', color: C.gray }}>DAYS</span></div>
+                 <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, letterSpacing: '1px' }}>EXPLORE BOX SET ↗</div>
+              </div>
             </div>
-            <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, marginBottom:8, textTransform:'uppercase' }}>{f.years.length} {f.years.length===1?'year':'years'} attended</div>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:10 }}>{f.years.map(y=><span key={y} style={{ fontFamily:"'Space Mono',monospace", fontSize:8, background:`${C.gold}22`, color:C.gold, border:`1px solid ${C.gold}44`, padding:'2px 6px', borderRadius:3 }}>{y}</span>)}</div>
-            <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:C.tealDim, textTransform:'uppercase', letterSpacing:'0.1em' }}>↗ View full festival history</div>
-          </div>
-        ))}
-        {!passport.length && <div style={{ color:C.gray, textAlign:'center', gridColumn:'1/-1', padding:60 }}>No festival passport stamps yet.</div>}
+          );
+        })}
       </div>
     </div>
   );
 }
-
 // ─── BROWSE TAB ───────────────────────────────────────────────────────────────
 // ─── BROWSE TAB (Fixed for Artist Genres) ─────────────────────────────────────
 function BrowseTab({ browseView, setBrowseView, search, setSearch, yearFilter, setYearFilter, festFilter, setFestFilter, sortCol, setSortCol, sortDir, setSortDir, paged, page, setPage, totalPages, artistRows, years, onShare, onEdit, onSetGenre, genreMap, genreFilter, setGenreFilter }) {
