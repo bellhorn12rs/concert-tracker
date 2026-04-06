@@ -1991,7 +1991,8 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
       }
     });
 
-    return { sortedShows: withIndex, years, month
+    return { sortedShows: withIndex, years, monthMarkers, totalWidth, showXPos };
+  }, [concerts]);
 // ─── 4. BY DAY TAB ────────────────────────────────────────────────────────────
 function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, setYearFilter, festFilter, setFestFilter, genreFilter, setGenreFilter, concerts }) {
   return (
