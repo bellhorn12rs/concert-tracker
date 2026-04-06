@@ -1732,131 +1732,134 @@ function GenreLegend() {
   );
 }
 
+// ─── 1. TIMELINE CARD (Updated to show ALL bands) ───────────────────────────
 function TimelineCard({ item, isLeft, marginTop, onTeleport, genreMap }) {
   const [hovered, setHovered] = useState(false);
   const gi = getConcertGenreInfo(item, genreMap);
-  const themeColor = gi.mixed ? '#9d00ff' : (gi.color||C.teal);
+  const themeColor = gi.mixed ? '#9d00ff' : (gi.color || C.teal);
+  const bands = item.bands || [];
+
   return (
-    <div onMouseEnter={()=>setHovered(true)} onMouseLeave={()=>setHovered(false)} onClick={onTeleport}
-      style={{ marginTop, display:'flex', justifyContent:isLeft?'flex-start':'flex-end', alignItems:'center', width:'100%', position:'relative', cursor:'pointer' }}>
-      <div style={{ position:'absolute', left:'calc(50% - 6px)', width:12, height:12, borderRadius:'50%', background:themeColor, zIndex:5, boxShadow:`0 0 ${hovered?'20px':'10px'} ${themeColor}`, border:`2px solid ${C.bg}`, transition:'0.3s' }} />
-      <div style={{ width:'43%', padding:20, borderRadius:12, background: hovered ? hexToRgba(themeColor, 0.12) : C.bgCard, border: `1px solid ${hovered ? themeColor : C.border}`, borderLeft: isLeft ? `6px solid ${themeColor}` : `1px solid ${C.border}`, borderRight: !isLeft ? `6px solid ${themeColor}` : `1px solid ${C.border}`, transform: hovered ? 'scale(1.03) translateY(-5px)' : 'scale(1)', transition: 'all 0.4s ease', zIndex: hovered ? 20 : 1, position: 'relative' }}>
-        <div style={{ marginBottom: 15, opacity: hovered ? 1 : 0.8 }}>
-          {item.is_festival ? <PhysicalWristband color={themeColor} label={item.festival_name} year={getYear(item.date)} size="small" /> : <DecorativeTicket event={item} templateIdx={0} />}
+    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onClick={onTeleport}
+      style={{ marginTop, display: 'flex', justifyContent: isLeft ? 'flex-start' : 'flex-end', alignItems: 'center', width: '100%', position: 'relative', cursor: 'pointer' }}>
+      
+      <div style={{ position: 'absolute', left: 'calc(50% - 6px)', width: 12, height: 12, borderRadius: '50%', background: themeColor, zIndex: 5, boxShadow: `0 0 10px ${themeColor}`, border: `2px solid ${C.bg}` }} />
+
+      <div style={{ 
+        width: '45%', padding: 20, borderRadius: 12, background: C.bgCard, 
+        border: `1px solid ${themeColor}44`, borderLeft: isLeft ? `6px solid ${themeColor}` : `1px solid ${C.border}`, borderRight: !isLeft ? `6px solid ${themeColor}` : `1px solid ${C.border}`,
+        transform: hovered ? 'scale(1.03)' : 'scale(1)', transition: '0.3s ease', zIndex: hovered ? 20 : 1, position: 'relative' 
+      }}>
+        <div style={{ marginBottom: 15 }}>
+          {item.is_festival ? <PhysicalWristband color={themeColor} label={item.festival_name} year={getYear(item.date)} size="small" /> : <div style={{ transform: 'scale(0.75)', transformOrigin: 'left' }}><DecorativeTicket event={item} templateIdx={0} /></div>}
         </div>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.white, lineHeight: 1 }}>{(item.bands||[])[0]?.toUpperCase()}</div>
-        <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <GenreBadge genre={gi.genre} color={gi.color} mixed={gi.mixed} small />
-          <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: themeColor, fontWeight: 700 }}>{daysSince(item.date)} DAYS AGO</span>
+
+        {/* 🟢 FIXED: Now displays ALL bands in the entry */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {bands.map((band, idx) => (
+            <div key={idx} style={{ 
+              fontFamily: idx === 0 ? "'Bebas Neue'" : "'Space Mono'", 
+              fontSize: idx === 0 ? '1.8rem' : '0.8rem', 
+              color: idx === 0 ? C.white : C.gray, 
+              lineHeight: 1,
+              letterSpacing: idx === 0 ? '0.05em' : 'normal'
+            }}>
+              {band.toUpperCase()}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: themeColor, fontWeight: 700, marginTop: 12, borderTop: `1px solid ${C.border}`, paddingTop: 8 }}>
+          {item.venue?.toUpperCase()} // {daysSince(item.date)} DAYS AGO
         </div>
       </div>
     </div>
   );
 }
 
+// ─── 2. TIMELINE TAB (Updated with Month Markers & Docking) ──────────────────
 function TimelineTab({ concerts, setActiveTab, genreMap }) {
   const yearsData = useMemo(() => {
     if (!concerts.length) return [];
-    const sorted = [...concerts].sort((a,b)=>b.date.localeCompare(a.date));
+    const sorted = [...concerts].sort((a, b) => b.date.localeCompare(a.date));
     const groups = {};
-    sorted.forEach(show => { 
-      const yr = new Date(show.date+'T12:00:00').getFullYear(); 
-      if(!groups[yr]) groups[yr]=[]; 
-      groups[yr].push(show); 
+    
+    sorted.forEach(show => {
+      const yr = getYear(show.date);
+      if (!groups[yr]) groups[yr] = [];
+      groups[yr].push(show);
     });
-    // Sorting years descending (2026, 2025...)
-    return Object.entries(groups).sort((a,b)=>b[0]-a[0]).map(([year, yearShows]) => {
-      const flow = yearShows.map((s, i) => ({ ...s, type: 'SHOW', side: i % 2 === 0 ? 'left' : 'right' }));
-      return [year, flow];
+
+    const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+    return Object.entries(groups).sort((a, b) => b[0] - a[0]).map(([year, yearShows]) => {
+      const flowWithMonths = [];
+      let lastMonth = -1;
+
+      yearShows.forEach((s, i) => {
+        const currentMonth = new Date(s.date + 'T12:00:00').getMonth();
+        
+        // 🟢 Inject Month Marker when month changes
+        if (currentMonth !== lastMonth) {
+          flowWithMonths.push({ type: 'MONTH', label: monthNames[currentMonth], id: `month-${year}-${currentMonth}` });
+          lastMonth = currentMonth;
+        }
+
+        flowWithMonths.push({ ...s, type: 'SHOW', side: i % 2 === 0 ? 'left' : 'right' });
+      });
+
+      return [year, flowWithMonths];
     });
   }, [concerts]);
 
-  const teleport = date => { 
-    setActiveTab('byDay');
-    setTimeout(() => {
-      const el = document.querySelector(`[data-date="${date}"]`);
-      if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
-    }, 150);
-  };
-
-  if (!yearsData.length) return <div style={{ color:C.white, padding:100, textAlign:'center' }}>No concerts yet.</div>;
+  if (!yearsData.length) return <div style={{ color: C.white, padding: 100, textAlign: 'center' }}>No concerts yet.</div>;
 
   return (
-    <div style={{ padding:'40px 0 80px', position: 'relative' }} className="fade-in">
-      <GenreLegend />
-      
-      <div style={{ maxWidth:1100, margin:'0 auto', position:'relative' }}>
-        {/* The Spine line */}
-        <div style={{ position:'absolute', left:'50%', top:0, bottom:0, width:2, background:C.border, transform:'translateX(-50%)', opacity:0.15 }} />
-
-        {yearsData.map(([year, flow], yIdx) => (
-          <div key={year} style={{ 
-            position:'relative', 
-            marginBottom:140, 
-            display: 'flex', 
-            alignItems: 'flex-start' 
-          }}>
-            
-            {/* ── STICKY YEAR LABEL (LEFT) ── */}
-            <div style={{ 
-              position: 'sticky', 
-              top: '180px', // Where it "docks" on the screen
-              width: '120px', 
-              zIndex: 10, 
-              flexShrink: 0,
-              pointerEvents: 'none'
-            }}>
+    <div style={{ padding: '40px 0 80px' }} className="fade-in">
+      <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
+        <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2, background: C.border, transform: 'translateX(-50%)', opacity: 0.15 }} />
+        
+        {yearsData.map(([year, flow]) => (
+          <div key={year} style={{ position: 'relative', marginBottom: 120, display: 'flex' }}>
+            {/* 🟡 BRIGHT STICKY YEAR */}
+            <div style={{ position: 'sticky', top: '150px', height: 'fit-content', width: '100px', zIndex: 10, alignSelf: 'flex-start' }}>
               <div style={{ 
-                fontFamily: "'Bebas Neue'", 
-                fontSize: '8rem', 
-                lineHeight: 0.8,
-                color: yIdx % 2 === 0 ? C.teal : C.purple,
-                // Bright Neon Glow
-                filter: `drop-shadow(0 0 12px ${hexToRgba(yIdx % 2 === 0 ? C.teal : C.purple, 0.7)})`,
-                writingMode: 'vertical-rl',
-                transform: 'rotate(180deg)',
-                opacity: 1
-              }}>
-                {year}
-              </div>
+                fontFamily: "'Bebas Neue'", fontSize: '6.5rem', color: C.teal, 
+                filter: `drop-shadow(0 0 15px ${hexToRgba(C.teal, 0.8)})`, 
+                writingMode: 'vertical-rl', transform: 'rotate(180deg)', opacity: 1 
+              }}>{year}</div>
             </div>
 
-            {/* MAIN LIST OF SHOWS */}
-            <div style={{ flex: 1, padding: '0 20px' }}>
-              {flow.map(item => (
-                <TimelineCard 
-                  key={item.id} 
-                  item={item} 
-                  isLeft={item.side === 'left'} 
-                  marginTop={50} 
-                  onTeleport={() => teleport(item.date)} 
-                  genreMap={genreMap} 
-                />
-              ))}
+            <div style={{ flex: 1, padding: '0 40px' }}>
+              {flow.map(item => {
+                if (item.type === 'MONTH') {
+                  return (
+                    <div key={item.id} style={{ 
+                      textAlign: 'center', margin: '60px 0 30px', position: 'relative', zIndex: 2 
+                    }}>
+                      <span style={{ 
+                        fontFamily: "'Space Mono'", fontSize: '10px', color: C.white, 
+                        background: C.bgCard, padding: '5px 20px', borderRadius: '20px', 
+                        border: `1px solid ${C.border}`, letterSpacing: '4px', fontWeight: 900
+                      }}>
+                        {item.label}
+                      </span>
+                    </div>
+                  );
+                }
+                return (
+                  <TimelineCard key={item.id} item={item} isLeft={item.side === 'left'} marginTop={40} onTeleport={() => setActiveTab('byDay')} genreMap={genreMap} />
+                );
+              })}
             </div>
 
-            {/* ── STICKY YEAR LABEL (RIGHT SIDE MIRROR) ── */}
-            <div style={{ 
-              position: 'sticky', 
-              top: '180px', 
-              width: '120px', 
-              zIndex: 10, 
-              flexShrink: 0,
-              pointerEvents: 'none'
-            }}>
+            <div style={{ position: 'sticky', top: '150px', height: 'fit-content', width: '100px', zIndex: 10, alignSelf: 'flex-start' }}>
               <div style={{ 
-                fontFamily: "'Bebas Neue'", 
-                fontSize: '8rem', 
-                lineHeight: 0.8,
-                color: yIdx % 2 === 0 ? C.teal : C.purple,
-                filter: `drop-shadow(0 0 12px ${hexToRgba(yIdx % 2 === 0 ? C.teal : C.purple, 0.7)})`,
-                writingMode: 'vertical-lr',
-                opacity: 1
-              }}>
-                {year}
-              </div>
+                fontFamily: "'Bebas Neue'", fontSize: '6.5rem', color: C.purple, 
+                filter: `drop-shadow(0 0 15px ${hexToRgba(C.purple, 0.8)})`, 
+                writingMode: 'vertical-lr', opacity: 1 
+              }}>{year}</div>
             </div>
-
           </div>
         ))}
       </div>
