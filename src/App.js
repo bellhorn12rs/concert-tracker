@@ -238,12 +238,12 @@ const getYear = d => d ? new Date(d + 'T12:00:00').getFullYear() : null;
 const daysSince = d => { if (!d) return 0; return Math.floor((Date.now() - new Date(d + 'T12:00:00')) / 86400000); };
 
 // ─── MASTER LANYARD ───────────────────────────────────────────────────────────
+// ─── MASTER LANYARD ───────────────────────────────────────────────────────────
 function MasterLanyard({ concerts, artistGenres, genreStats }) {
   const totalShows = concerts.length;
   const festDays = concerts.filter(c => c.is_festival).length;
   const festPct = totalShows ? Math.round((festDays / totalShows) * 100) : 0;
 
-  // Rank based on total shows
   const getRank = (n) => {
     if (n <= 5) return 'THE GATE CRASHER';
     if (n <= 15) return 'BARRICADE REGULAR';
@@ -253,24 +253,111 @@ function MasterLanyard({ concerts, artistGenres, genreStats }) {
     return 'THE LIVING ARCHIVE';
   };
 
-  // Archetype based on behavior
   const getArchetype = () => {
-    // Check for superfan (any artist seen 10+ times)
-    const artistCounts = {};
-    concerts.forEach(c => (c.bands || []).forEach(b => { if (b) artistCounts[b] = (artistCounts[b] || 0) + 1; }));
-    const topArtist = Object.entries(artistCounts).sort((a, b) => b[1] - a[1])[0];
-    if (topArtist && topArtist[1] >= 10) return `${topArtist[0].toUpperCase()} SUPERFAN`;
+    const ac = {};
+    concerts.forEach(c => (c.bands || []).forEach(b => { if (b) ac[b] = (ac[b] || 0) + 1; }));
+    const top = Object.entries(ac).sort((a, b) => b[1] - a[1])[0];
+    if (top && top[1] >= 10) return `${top[0].toUpperCase()} SUPERFAN`;
     if (festPct >= 50) return 'THE FESTIVAL OWL';
     if (festPct <= 10) return 'CLUB RAT';
     return 'STADIUM SPECIALIST';
   };
 
-  // Color based on top genre
   const getColor = () => {
     const topGenre = genreStats?.[0]?.name;
     const map = {
-      'Indie Rock': '#00f2ff', 'Alternative': '#9d00ff', 'Experimental': '#ff00ff',
-      'Electronic': '#9900ff', 'Jam'
+      'Indie Rock': '#00f2ff',
+      'Alternative': '#9d00ff',
+      'Experimental': '#ff00ff',
+      'Electronic': '#9900ff',
+      'Jam': '#ffcc00',
+      'Folk': '#ffaa00',
+      'Classic Rock': '#ff4400',
+      'Pop': '#00e5ff',
+      'Hip Hop': '#a2ff00',
+      'Punk': '#ff3300',
+      'R&B': '#ff66cc',
+      'Country': '#cc8800',
+      'Metal': '#888888',
+    };
+    return map[topGenre] || '#00e5cc';
+  };
+
+  const getSerial = () => {
+    const first = [...concerts].sort((a, b) => a.date.localeCompare(b.date))[0];
+    const firstYear = first ? new Date(first.date + 'T12:00:00').getFullYear() : '????';
+    const city = first?.city?.slice(0, 3).toUpperCase() || 'XXX';
+    const code = String(totalShows).padStart(3, '0');
+    const suffix = (first?.id || 'AA').slice(0, 2).toUpperCase();
+    return `${city}-${firstYear}-${code}-${suffix}`;
+  };
+
+  if (!totalShows) return null;
+
+  const color = getColor();
+  const rank = getRank(totalShows);
+  const archetype = getArchetype();
+  const serial = getSerial();
+
+  return (
+    <div style={{
+      position: 'absolute',
+      top: 0,
+      right: 40,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      zIndex: 50,
+      pointerEvents: 'none',
+    }}>
+      <svg width="60" height="60" viewBox="0 0 60 60" style={{ display: 'block' }}>
+        <rect x="22" y="0" width="16" height="6" rx="3" fill={color} opacity="0.7" />
+        <path d="M30 6 C10 20, 50 35, 30 60" stroke={color} strokeWidth="2.5" fill="none" opacity="0.6" strokeLinecap="round" />
+      </svg>
+      <div style={{
+        width: 110,
+        background: '#0a0a12',
+        border: `2px solid ${color}`,
+        borderRadius: 6,
+        overflow: 'hidden',
+        boxShadow: `0 0 20px ${hexToRgba(color, 0.5)}, 0 0 40px ${hexToRgba(color, 0.2)}, inset 0 0 20px rgba(0,0,0,0.5)`,
+        pointerEvents: 'all',
+      }}>
+        <div style={{ background: color, padding: '4px 6px', textAlign: 'center' }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#000', fontWeight: 900, letterSpacing: 2 }}>
+            ACCESS ALL AREAS
+          </div>
+        </div>
+        <div style={{ padding: '8px 8px 6px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>🎫</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.75rem', color: color, letterSpacing: '0.05em', lineHeight: 1.1, marginBottom: 4, textShadow: `0 0 8px ${hexToRgba(color, 0.6)}` }}>
+            {rank}
+          </div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: hexToRgba(color, 0.7), letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8, lineHeight: 1.3 }}>
+            {archetype}
+          </div>
+          <div style={{ height: 1, background: `${color}33`, marginBottom: 6 }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+            <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: hexToRgba(color, 0.5) }}>SHOWS</span>
+            <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#fff', fontWeight: 900 }}>{totalShows}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: hexToRgba(color, 0.5) }}>FESTS</span>
+            <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#fff', fontWeight: 900 }}>{festDays}</span>
+          </div>
+          <div style={{ display: 'flex', gap: '1.5px', justifyContent: 'center', marginBottom: 4 }}>
+            {[2,1,3,1,2,4,1,2,1,3,1,2,1].map((w, i) => (
+              <div key={i} style={{ width: w, height: 18, background: color, opacity: 0.8 }} />
+            ))}
+          </div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: hexToRgba(color, 0.5), letterSpacing: '0.05em', marginTop: 2 }}>
+            {serial}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 // ─── STYLES (POSTER & TEXTURE EDITION) ─────────────────────────────────────────
 const MarqueeStyles = () => (
   <style>{`
