@@ -1173,7 +1173,7 @@ function DecadeBlocks({ sets }) {
   );
 }
 
-// ─── HALL OF FAME (THE GOLDEN EDITION) ───────────────────────────────────────────
+// ─── HALL OF FAME (CLEANUP EDITION) ───────────────────────────────────────────
 function HallOfFame({ sets, genreMap, onShare }) {
   const [selected, setSelected] = useState(null);
   const topRef = useRef(null);
@@ -1199,22 +1199,17 @@ function HallOfFame({ sets, genreMap, onShare }) {
   const handleSelect = (artist, isSelected) => { 
     if (isSelected) { setSelected(null); return; } 
     setSelected(artist); 
-    // Smooth scroll to the top of the detail view
     setTimeout(() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); 
   };
 
-  // ── Helper: Finds all setlist images for this specific artist ──
   const artistMemories = useMemo(() => {
     if (!selectedData) return [];
     const pics = [];
     selectedData.shows.forEach(s => {
       const bandNames = s.has_setlist_names?.split(',').map(b => b.trim()) || [];
       const imageLinks = (s.image_url || '').split(',').map(img => img.trim()).filter(Boolean);
-      
       const bandIdx = bandNames.indexOf(selectedData.artist);
-      // Map band index to image index (or fallback to first image if only one exists)
       const img = imageLinks[bandIdx] || (imageLinks.length === 1 ? imageLinks[0] : null);
-      
       if (img) pics.push({ url: img, date: s.date, venue: s.venue });
     });
     return pics;
@@ -1228,14 +1223,6 @@ function HallOfFame({ sets, genreMap, onShare }) {
 
       {selectedData && (() => {
         const gc = selectedData.genre ? (GENRE_COLORS[selectedData.genre] || C.teal) : C.teal;
-        
-        // Calculate data for the Lanyard
-        const passStats = {
-          totalShows: selectedData.shows.length,
-          topArtist: selectedData.artist,
-          dominantGenre: selectedData.genre || 'LIVE MUSIC'
-        };
-
         return (
           <div className="fade-in" style={{ 
             background: `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(gc, 0.08)})`, 
@@ -1243,18 +1230,15 @@ function HallOfFame({ sets, genreMap, onShare }) {
             borderRadius: 8, 
             padding: '30px', 
             marginBottom: 32, 
-            boxShadow: `0 0 40px ${hexToRgba(gc, 0.2)}`,
+            boxShadow: `0 0 40px ${hexToRgba(gc, 0.25)}`,
             position: 'relative',
             overflow: 'hidden'
           }}>
-            {/* 1. THE BACKSTAGE PASS (WOW FACTOR) */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '30px' }}>
-               <BackstagePass stats={passStats} />
+            {/* Background stats watermark */}
+            <div style={{ position: 'absolute', right: -10, bottom: -20, fontFamily: "'Bebas Neue'", fontSize: '10rem', color: hexToRgba(gc, 0.04), pointerEvents: 'none', userSelect: 'none' }}>
+              {selectedData.shows.length}X
             </div>
 
-            <hr style={{ border: 'none', borderTop: `1px solid ${hexToRgba(gc, 0.2)}`, margin: '0 0 30px 0' }} />
-
-            {/* 2. HEADER AREA */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, position: 'relative', zIndex: 1 }}>
               <div>
                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', letterSpacing: '0.08em', color: gc, marginBottom: 4, lineHeight: 1 }}>
@@ -1273,10 +1257,8 @@ function HallOfFame({ sets, genreMap, onShare }) {
               </div>
             </div>
 
-            {/* 3. THE SPLIT VIEW (TIMELINE + GALLERY) */}
             <div style={{ display: 'flex', gap: '40px', position: 'relative', zIndex: 1 }}>
-              
-              {/* LEFT: THE TIMELINE */}
+              {/* TIMELINE */}
               <div style={{ flex: 1.2, position: 'relative', paddingLeft: 20 }}>
                 <div style={{ position: 'absolute', left: 5, top: 0, bottom: 0, width: 1, background: `linear-gradient(to bottom, ${gc}, ${C.grayDim})`, opacity: 0.3 }} />
                 {[...selectedData.shows].reverse().map((s, i) => {
@@ -1294,7 +1276,7 @@ function HallOfFame({ sets, genreMap, onShare }) {
                 })}
               </div>
 
-              {/* RIGHT: THE MEMORY GALLERY */}
+              {/* MEMORY GALLERY */}
               <div style={{ flex: 1, borderLeft: '1px solid rgba(255,255,255,0.05)', paddingLeft: '24px' }}>
                 <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: gc, letterSpacing: 2, marginBottom: 20, opacity: 0.6, textTransform: 'uppercase' }}>
                    Captured Artifacts ({artistMemories.length})
@@ -1302,29 +1284,11 @@ function HallOfFame({ sets, genreMap, onShare }) {
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignContent: 'start' }}>
                   {artistMemories.length > 0 ? (
                     artistMemories.map((m, idx) => (
-                      <div key={idx} style={{
-                        width: '110px',
-                        background: '#fff',
-                        padding: '5px 5px 12px 5px',
-                        boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-                        transform: `rotate(${(idx % 2 === 0 ? 2 : -2)}deg)`,
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer'
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.transform = 'scale(1.25) rotate(0deg)';
-                        e.currentTarget.style.zIndex = 10;
-                        e.currentTarget.style.boxShadow = '0 15px 35px rgba(0,0,0,0.6)';
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.transform = `rotate(${(idx % 2 === 0 ? 2 : -2)}deg)`;
-                        e.currentTarget.style.zIndex = 1;
-                        e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
-                      }}>
+                      <div key={idx} style={{ width: '110px', background: '#fff', padding: '5px 5px 12px 5px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', transform: `rotate(${(idx % 2 === 0 ? 2 : -2)}deg)`, transition: 'all 0.3s ease', cursor: 'pointer' }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.25) rotate(0deg)'; e.currentTarget.style.zIndex = 10; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = `rotate(${(idx % 2 === 0 ? 2 : -2)}deg)`; e.currentTarget.style.zIndex = 1; }}>
                         <img src={m.url} alt="setlist" style={{ width: '100%', height: '85px', objectFit: 'cover', display: 'block' }} />
-                        <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: '#000', marginTop: '6px', textAlign: 'center', fontWeight: 900 }}>
-                          {fmtDateShort(m.date)}
-                        </div>
+                        <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: '#000', marginTop: '6px', textAlign: 'center', fontWeight: 900 }}>{fmtDateShort(m.date)}</div>
                       </div>
                     ))
                   ) : (
@@ -1335,7 +1299,6 @@ function HallOfFame({ sets, genreMap, onShare }) {
                   )}
                 </div>
               </div>
-
             </div>
           </div>
         );
@@ -1349,21 +1312,13 @@ function HallOfFame({ sets, genreMap, onShare }) {
           const festCount = a.shows.filter(s => s.is_festival).length;
           const pct = Math.round((festCount / a.shows.length) * 100);
           const cardColor = isSelected ? (gc || C.teal) : gc;
-          
           return (
-            <div key={a.artist} onClick={() => handleSelect(a.artist, isSelected)}
-              className="card-texture"
-              style={{ 
-                background: cardColor ? `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(cardColor, 0.1)})` : C.bgCard, 
-                border: `1px solid ${cardColor ? hexToRgba(cardColor, 0.6) : C.border}`, 
-                boxShadow: cardColor ? `0 0 14px ${hexToRgba(cardColor, 0.25)}` : 'none', 
-                borderRadius: 8, padding: '15px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative', overflow: 'hidden' 
-              }}>
+            <div key={a.artist} onClick={() => handleSelect(a.artist, isSelected)} className="card-texture"
+              style={{ background: cardColor ? `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(cardColor, 0.1)})` : C.bgCard, border: `1px solid ${cardColor ? hexToRgba(cardColor, 0.6) : C.border}`, boxShadow: cardColor ? `0 0 14px ${hexToRgba(cardColor, 0.25)}` : 'none', borderRadius: 8, padding: '15px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative', overflow: 'hidden' }}>
               <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, color: cardColor || C.tealDim, marginBottom: 4 }}>{MEDAL[i] || '🎤'} #{i + 1}</div>
               <div style={{ fontSize: '1rem', fontWeight: 700, color: C.white, marginBottom: 4, lineHeight: 1.1 }}>{a.artist}</div>
               {a.genre && <GenreBadge genre={a.genre} color={gc} small />}
               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: cardColor || C.white, lineHeight: 1, marginTop: 10 }}>{a.shows.length}×</div>
-              
               <div style={{ marginTop: 12, height: 3, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${pct}%`, background: cardColor || C.teal, borderRadius: 2 }} />
               </div>
