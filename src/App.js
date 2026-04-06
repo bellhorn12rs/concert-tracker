@@ -1955,7 +1955,7 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
 
 // ─── 4. BY DAY TAB (SCRAPBOOK EDITION) ────────────────────────────────────────
 
-// Helper Component for the Personal Photo (Single Declaration)
+// 📸 Helper Component for the Personal Photo
 function PersonalPolaroid({ src, caption }) {
   if (!src) return null;
   return (
@@ -1963,15 +1963,15 @@ function PersonalPolaroid({ src, caption }) {
       style={{
         padding: '10px 10px 28px 10px',
         background: '#fff',
-        boxShadow: '0 8px 20px rgba(0,0,0,0.6)',
-        transform: 'rotate(-2deg)', // Slight tilt for that "tossed on the table" look
+        boxShadow: '0 8px 25px rgba(0,0,0,0.7)',
+        transform: 'rotate(-2deg)', 
         width: '160px',
         flexShrink: 0,
         border: '1px solid #ddd',
         zIndex: 10,
         transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
         cursor: 'zoom-in',
-        marginLeft: 'auto' // Pushes it to the far right
+        marginLeft: '20px' 
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'rotate(0deg) scale(1.1)';
@@ -1996,7 +1996,7 @@ function PersonalPolaroid({ src, caption }) {
         color: '#333', 
         textAlign: 'center',
         marginTop: '10px',
-        opacity: 0.7,
+        opacity: 0.8,
         textTransform: 'uppercase',
         letterSpacing: '1px'
       }}>
@@ -2006,12 +2006,11 @@ function PersonalPolaroid({ src, caption }) {
   );
 }
 
-// ─── 4. BY DAY TAB (CLEAN SCRAPBOOK) ──────────────────────────────────────────
-
-function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, setYearFilter, festFilter, setFestFilter, genreFilter, setGenreFilter, concerts }) {
+// 🗓 Main By Day View
+function ByDayTab({ dayGroups, onEdit, genreMap, concerts }) {
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
-      {/* HEADER HUD */}
+      {/* HEADER */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -2031,20 +2030,19 @@ function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, 
       </div>
 
       {/* ENTRIES LIST */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
         {dayGroups.map((event, idx) => (
           <div 
             key={event.id} 
             style={{ 
               display: 'flex', 
               alignItems: 'center', 
-              gap: '30px', // Tightened gap
               padding: '24px',
               background: 'rgba(255,255,255,0.02)',
               borderRadius: '16px',
               border: `1px solid ${C.border}`,
-              position: 'relative',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s ease',
+              overflow: 'hidden'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = C.teal;
@@ -2055,7 +2053,7 @@ function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, 
               e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
             }}
           >
-            {/* 1. LEFT SIDE: THE ARTIFACT (Ticket or Wristband) */}
+            {/* 1. LEFT SIDE: THE ARTIFACT (Strict Width) */}
             <div style={{ flexShrink: 0, width: '300px' }}>
               {event.is_festival 
                 ? <WristbandCard event={event} genreMap={genreMap} compact={true} /> 
@@ -2063,11 +2061,11 @@ function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, 
               }
             </div>
 
-            {/* 2. MIDDLE: THE INFO (Band & Venue) */}
-            <div style={{ flex: 1, paddingLeft: '10px' }}>
+            {/* 2. MIDDLE: THE INFO (Pushed away from the ticket) */}
+            <div style={{ flex: 1, paddingLeft: '40px' }}>
               <div style={{ 
                 fontFamily: "'Bebas Neue'", 
-                fontSize: '2.2rem', 
+                fontSize: '2.5rem', 
                 color: C.white, 
                 lineHeight: 1,
                 letterSpacing: '1px'
@@ -2079,11 +2077,11 @@ function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, 
                 display: 'flex', 
                 alignItems: 'center', 
                 gap: '12px', 
-                marginTop: 12 
+                marginTop: 15 
               }}>
                 <div style={{ 
                   fontFamily: "'Space Mono'", 
-                  fontSize: '11px', 
+                  fontSize: '12px', 
                   color: C.teal, 
                   fontWeight: 900,
                   textTransform: 'uppercase'
@@ -2093,7 +2091,7 @@ function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, 
                 <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
                 <div style={{ 
                   fontFamily: "'Space Mono'", 
-                  fontSize: '10px', 
+                  fontSize: '11px', 
                   color: C.gray,
                   letterSpacing: '0.5px'
                 }}>
@@ -2108,9 +2106,10 @@ function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, 
                      fontFamily: "'Space Mono'", 
                      color: C.gold, 
                      border: `1px solid ${hexToRgba(C.gold, 0.3)}`, 
-                     padding: '3px 8px', 
+                     padding: '3px 10px', 
                      borderRadius: 4,
-                     background: 'rgba(212,175,55,0.05)'
+                     background: 'rgba(212,175,55,0.05)',
+                     letterSpacing: '1px'
                    }}>
                      {event.festival_name?.toUpperCase()}
                    </span>
@@ -2120,10 +2119,12 @@ function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, 
 
             {/* 3. RIGHT SIDE: THE PERSONAL PHOTO */}
             {event.personal_photo_url && (
-              <PersonalPolaroid 
-                src={event.personal_photo_url} 
-                caption={event.date?.split('-')[0] + " MEMORY"} 
-              />
+              <div style={{ flexShrink: 0 }}>
+                <PersonalPolaroid 
+                  src={event.personal_photo_url} 
+                  caption={event.date?.split('-')[0] + " MEMORY"} 
+                />
+              </div>
             )}
           </div>
         ))}
