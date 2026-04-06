@@ -2000,7 +2000,7 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
       </div>
     </div>
   );
-}
+}.
 // ─── 4. BY DAY TAB ────────────────────────────────────────────────────────────
 function ByDayTab({ dayGroups, onEdit, genreMap, search, setSearch, yearFilter, setYearFilter, festFilter, setFestFilter, genreFilter, setGenreFilter, concerts }) {
   return (
