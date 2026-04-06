@@ -2905,8 +2905,9 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
     festival_day: concert?.festival_day || '', 
     has_setlist_names: concert?.has_setlist_names || '', 
     genre: concert?.genre || '', 
-    // FIXED: Changed key to 'image_url' to match database column
-    image_url: concert?.image_url || '' 
+    image_url: concert?.image_url || '',
+    // 🟢 ADDED: New field for your personal photo
+    personal_photo_url: concert?.personal_photo_url || '' 
   });
 
   const [saving, setSaving] = useState(false), [confirming, setConfirming] = useState(false);
@@ -2917,7 +2918,7 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
     setSaving(true); 
     const bandList = form.bands.split(',').map(b => b.trim()).filter(Boolean); 
     
-    // This sends the updated form (including image_url) to the handleSave in App.js
+    // This sends the full form (including BOTH URLs) to your database
     await onSave(concert?.id, {
       ...form,
       bands: bandList,
@@ -2960,7 +2961,7 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
         
         <div style={{ marginBottom: 14 }}><label style={lbl}>Setlists Obtained (band names, comma separated)</label><input style={inp} value={form.has_setlist_names} onChange={e => set('has_setlist_names', e.target.value)} /></div>
         
-        {/* FIXED: Input field now correctly targets image_url */}
+        {/* 1. ORIGINAL FIELD (For Setlists/Posters) */}
         <div style={{ marginBottom: 14 }}>
           <label style={lbl}>Gig Photo / Poster URL (Imgur Direct Link)</label>
           <input 
@@ -2969,6 +2970,20 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
             onChange={e => set('image_url', e.target.value)} 
             placeholder="https://i.imgur.com/abc123.jpg" 
           />
+        </div>
+
+        {/* 🟢 2. NEW FIELD: PERSONAL MEMORY (For the Polaroid) */}
+        <div style={{ marginBottom: 14, padding: '12px', background: 'rgba(157, 0, 255, 0.05)', borderRadius: '6px', border: '1px dashed rgba(157, 0, 255, 0.2)' }}>
+          <label style={{ ...lbl, color: '#9d00ff' }}>Personal Memory Photo URL (Imgur Direct Link)</label>
+          <input 
+            style={{ ...inp, borderBottomColor: '#9d00ff' }} 
+            value={form.personal_photo_url} 
+            onChange={e => set('personal_photo_url', e.target.value)} 
+            placeholder="https://i.imgur.com/your-shot.jpg" 
+          />
+          <div style={{ fontSize: 7, color: '#9d00ff', opacity: 0.6, marginTop: 4, fontFamily: "'Space Mono', monospace" }}>
+            * This powers the Polaroid memory in the Daily Archive.
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', marginTop: 20 }}>
@@ -2985,7 +3000,6 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
     </div>
   );
 }
-
 function ShareCard({ artist, shows, onClose }) {
   const festCount=shows.filter(s=>s.is_festival).length, cities=[...new Set(shows.map(s=>s.city).filter(Boolean))], years=[...new Set(shows.map(s=>getYear(s.date)).filter(Boolean))].sort(), firstDate=fmtDate(shows[shows.length-1]?.date), lastDate=fmtDate(shows[0]?.date);
   return (
@@ -3092,7 +3106,7 @@ export default function App() {
 
   // ── DATA STATE ───────────────────────────────────────────────────────────────
   const [concerts, setConcerts]         = useState([]);
-  const [artistGenres, setArtistGenres] = useState({}); // <── THIS WAS MISSING
+  const [artistGenres, setArtistGenres] = useState({});
   const [upcoming, setUpcoming]         = useState([]);
   const [loading, setLoading]           = useState(true);
   
@@ -3113,7 +3127,6 @@ export default function App() {
   const [page, setPage]                 = useState(1);
 
   // ── INITIAL FETCH ───────────────────────────────────────────────────────────
-  // This replaces your old useEffect to make sure genres load first
   useEffect(() => { 
     const init = async () => {
       setLoading(true);
@@ -3122,9 +3135,8 @@ export default function App() {
     };
     init();
   }, []);
+
   // ── DERIVED DATA ────────────────────────────────────────────────────────────
-  // ── DERIVED DATA ────────────────────────────────────────────────────────────
-  // This now pulls from the dedicated artist_genres table instead of concert rows
   const genreMap = useMemo(() => artistGenres, [artistGenres]);
 
   const allSetsList = useMemo(() => {
@@ -3137,7 +3149,6 @@ export default function App() {
   }, [concerts]);
 
   const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
-  const stateCounts = useMemo(() => { const m = {}; concerts.forEach(c => { if (c.state) m[c.state] = (m[c.state] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); }, [concerts]);
 
   const headerStats = useMemo(() => ({
     totalShows: concerts.length,
@@ -3147,7 +3158,6 @@ export default function App() {
     setlistCount: concerts.filter(c => c.has_setlist || c.has_setlist_names).length,
   }), [concerts, allSetsList]);
 
-  // Per-band genre counts (Now using the dedicated genre table)
   const genreStats = useMemo(() => {
     const counts = {};
     allSetsList.forEach(s => { 
@@ -3171,18 +3181,6 @@ export default function App() {
     return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
   }, [allSetsList]);
 
-  const festBreakdown = useMemo(() => {
-    const m = {};
-    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { m[c.festival_name] = (m[c.festival_name] || 0) + 1; });
-    return Object.entries(m).sort((a, b) => b[1] - a[1]);
-  }, [concerts]);
-
-  const passport = useMemo(() => {
-    const m = {};
-    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { if (!m[c.festival_name]) m[c.festival_name] = { name: c.festival_name, days: 0, years: new Set() }; m[c.festival_name].days++; const y = getYear(c.date); if (y) m[c.festival_name].years.add(y); });
-    return Object.values(m).map(f => ({ ...f, years: [...f.years].sort() })).sort((a, b) => b.days - a.days);
-  }, [concerts]);
-
   const festGroupings = useMemo(() => {
     const m = {};
     concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { const yr = getYear(c.date) || 'Unknown'; if (!m[c.festival_name]) m[c.festival_name] = { name: c.festival_name, years: {} }; if (!m[c.festival_name].years[yr]) m[c.festival_name].years[yr] = []; m[c.festival_name].years[yr].push(c); });
@@ -3205,28 +3203,9 @@ export default function App() {
     return d;
   }, [yearFilter, festFilter, genreFilter, search, artistGenres]);
 
-  const filteredSets = useMemo(() => {
-    const d = applyFilters(allSetsList, true);
-    return [...d].sort((a, b) => { const av = sortCol === 'artist' ? (a.artist || '').toLowerCase() : (String(a[sortCol] || '')).toLowerCase(); const bv = sortCol === 'artist' ? (b.artist || '').toLowerCase() : (String(b[sortCol] || '')).toLowerCase(); if (sortCol === 'date') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av); if (av < bv) return sortDir === 'asc' ? -1 : 1; if (av > bv) return sortDir === 'asc' ? 1 : -1; return 0; });
-  }, [allSetsList, applyFilters, sortCol, sortDir]);
-
-  const artistRows = useMemo(() => {
-    if (browseView !== 'artists') return [];
-    const m = {};
-    applyFilters(allSetsList, true).forEach(s => { if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; m[s.artist].shows.push(s); });
-    return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
-  }, [allSetsList, applyFilters, browseView]);
-
   const dayGroups = useMemo(() => applyFilters(concerts).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [concerts, applyFilters]);
-  const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE), totalPages = Math.ceil(filteredSets.length / PER_PAGE);
 
   // ── DB ACTIONS ──────────────────────────────────────────────────────────────
-
-  async function fetchInitialData() {
-    setLoading(true);
-    await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]);
-    setLoading(false);
-  }
 
   async function fetchConcerts() {
     const { data } = await supabase.from('concerts').select('*').order('date', { ascending: false });
@@ -3247,6 +3226,7 @@ export default function App() {
     if (data) setUpcoming(data);
   }
 
+  // 🟢 This function is already "future-proof" for your new photo field!
   async function handleSave(id, payload) {
     if (id) await supabase.from('concerts').update(payload).eq('id', id);
     else await supabase.from('concerts').insert([payload]);
@@ -3275,31 +3255,20 @@ export default function App() {
   }
 
   async function handleUpcomingSave(id, payload) {
-  const cleanPayload = {
-    artist: payload.artist,
-    venue: payload.venue,
-    date: payload.date,
-    status: payload.status,
-  };
-  if (id) {
-    const { data, error } = await supabase
-      .from('upcoming_concerts')
-      .update(cleanPayload)
-      .eq('id', id)
-      .select();
-    if (error) alert('Save failed: ' + error.message);
-    console.log('update result:', data, error);
-  } else {
-    const { data, error } = await supabase
-      .from('upcoming_concerts')
-      .insert([cleanPayload])
-      .select();
-    if (error) alert('Insert failed: ' + error.message);
-    console.log('insert result:', data, error);
+    const cleanPayload = {
+      artist: payload.artist,
+      venue: payload.venue,
+      date: payload.date,
+      status: payload.status,
+    };
+    if (id) {
+      await supabase.from('upcoming_concerts').update(cleanPayload).eq('id', id);
+    } else {
+      await supabase.from('upcoming_concerts').insert([cleanPayload]);
+    }
+    await fetchUpcoming();
+    setUpcomingModal(null);
   }
-  await fetchUpcoming();
-  setUpcomingModal(null);
-}
 
 async function handleUpcomingDelete(id) {
   if (window.confirm('Remove this show?')) {
