@@ -652,32 +652,55 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
     </div>
   );
 };
-// ─── MAIN SETLIST SPOTLIGHT COMPONENT (HORIZONTAL EDITION) ──────────────────
+// ─── MAIN SETLIST SPOTLIGHT COMPONENT (HORIZONTAL MULTI-IMAGE EDITION) ──────
 function SetlistSpotlight({ concerts, onVault }) {
   const [topIdx, setTopIdx] = useState(0);
   const [botIdx, setBotIdx] = useState(1);
 
-  const vault = useMemo(() => concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()), [concerts]);
+  const vault = useMemo(() => 
+    concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()), 
+    [concerts]
+  );
+  
   const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
 
   const slides = useMemo(() => {
     if (!vault.length) return [];
-    const sorted = [...vault].sort((a, b) => b.date.localeCompare(a.date));
-    const randomPool = [...vault].sort(() => 0.5 - Math.random());
     
-    return [sorted[0], ...randomPool.slice(0, 19)].map(s => ({
-      id: s.id,
-      band: s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0] || '?',
-      date: s.date,
-      venue: s.venue,
-      is_festival: s.is_festival,
-      festival_name: s.festival_name,
-      image_url: s.image_url, 
-      sfmUrl: `https://www.setlist.fm/search?query=${encodeURIComponent(s.has_setlist_names?.split(',')[0]?.trim() || s.bands?.[0])}+${encodeURIComponent(s.date)}`
-    }));
+    // 1. Flatten the vault into individual band slides
+    const flattened = [];
+    vault.forEach(s => {
+      const bandNames = s.has_setlist_names?.split(',').map(b => b.trim()).filter(Boolean) || [];
+      const imageLinks = (s.image_url || '').split(',').map(img => img.trim()).filter(Boolean);
+
+      bandNames.forEach((band, idx) => {
+        // Pair band with its image, or fall back to the first image
+        const img = imageLinks[idx] || (imageLinks.length === 1 ? imageLinks[0] : null);
+        
+        flattened.push({
+          id: `${s.id}-${band}`, // Unique ID for this specific setlist
+          band: band,
+          date: s.date,
+          venue: s.venue,
+          is_festival: s.is_festival,
+          festival_name: s.festival_name,
+          image_url: img, 
+          sfmUrl: `https://www.setlist.fm/search?query=${encodeURIComponent(band)}+${encodeURIComponent(s.date)}`
+        });
+      });
+    });
+
+    // 2. Sort by date so the newest is always available for the first slot
+    const sorted = [...flattened].sort((a, b) => b.date.localeCompare(a.date));
+    
+    // 3. Keep the newest, and shuffle the rest for the remaining 19 slots
+    const newest = sorted[0];
+    const pool = sorted.slice(1).sort(() => 0.5 - Math.random());
+    
+    return [newest, ...pool].slice(0, 20);
   }, [vault]);
 
-  // THE RECURSIVE SYNC-KILLER (Logic remains untouched so it doesn't break)
+  // Logic remains untouched (Recursive Sync-Killer)
   useEffect(() => {
     if (slides.length < 2) return;
     let timer;
@@ -698,30 +721,32 @@ function SetlistSpotlight({ concerts, onVault }) {
 
   if (!slides.length) return null;
 
+  const leftSlide = slides[topIdx % slides.length];
+  const rightSlide = slides[botIdx % slides.length];
+
   return (
     <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
       <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 20, textTransform: 'uppercase', textAlign: 'center', opacity: 0.4 }}>
         📋 BACKSTAGE LOG
       </div>
       
-      {/* ── CHANGED TO ROW LAYOUT ── */}
       <div style={{ 
         flex: 1, 
         display: 'flex', 
-        flexDirection: 'row', // Horizontal!
-        gap: '12px',         // Space between left and right cards
+        flexDirection: 'row', 
+        gap: '12px',         
         padding: '0 4px',
         alignItems: 'flex-start' 
       }}>
         <SpotlightScrap 
-          key={`left-${topIdx}`} 
-          data={slides[topIdx % slides.length]} 
+          key={`left-${leftSlide.id}`} // Using slide ID ensures the "peel-and-stick" animation triggers correctly
+          data={leftSlide} 
           isTop={true} 
           TAPE_COLORS={TAPE_COLORS} 
         />
         <SpotlightScrap 
-          key={`right-${botIdx}`} 
-          data={slides[botIdx % slides.length]} 
+          key={`right-${rightSlide.id}`} 
+          data={rightSlide} 
           isTop={false} 
           TAPE_COLORS={TAPE_COLORS} 
         />
@@ -1236,22 +1261,33 @@ function SetlistVaultTab({ concerts, genreMap }) {
     const results = [];
     concerts.forEach(c => {
       if (!c.has_setlist_names?.trim()) return;
-      c.has_setlist_names.split(',').map(b=>b.trim()).filter(Boolean).forEach(band => {
+
+      // 1. Split the bands into an array
+      const bands = c.has_setlist_names.split(',').map(b => b.trim()).filter(Boolean);
+      
+      // 2. Split the image URLs into an array
+      const images = (c.image_url || '').split(',').map(img => img.trim()).filter(Boolean);
+
+      bands.forEach((band, bandIdx) => {
+        // 3. Logic: Try to find image at this index. 
+        // If not found (e.g. only 1 image provided for 2 bands), fall back to the first image.
+        const specificImage = images[bandIdx] || (images.length === 1 ? images[0] : null);
+
         results.push({ 
-          id:`${c.id}-${band}`, 
+          id: `${c.id}-${band}`, 
           band, 
-          date:c.date, 
-          venue:c.venue, 
-          city:c.city, 
-          state:c.state, 
-          festival_name:c.festival_name, 
-          is_festival:c.is_festival, 
-          genre:c.genre, 
-          image_url: c.image_url||null 
+          date: c.date, 
+          venue: c.venue, 
+          city: c.city, 
+          state: c.state, 
+          festival_name: c.festival_name, 
+          is_festival: c.is_festival, 
+          genre: c.genre, 
+          image_url: specificImage 
         });
       });
     });
-    return results.sort((a,b) => b.date.localeCompare(a.date));
+    return results.sort((a, b) => b.date.localeCompare(a.date));
   }, [concerts]);
 
   const ROTATIONS = [-3,-1.5,2,0.5,-2.5,1,-0.5,2.5,-1,3,-2,1.5];
@@ -1275,31 +1311,23 @@ function SetlistVaultTab({ concerts, genreMap }) {
     const sfmDate = s.date ? s.date.split('-').reverse().join('-') : '';
     const sfmUrl = `https://www.setlist.fm/search?query=${encodeURIComponent(s.band + ' ' + sfmDate)}`;
 
-    // ─── OPTION A: THE POSTER (IF IMAGE EXISTS) ───
     if (s.image_url) {
       return (
         <div className="paper-float" style={{ '--r':`${rot}deg`, '--dur':dur, position:'relative', transform:`rotate(${rot}deg)`, marginBottom:50, zIndex:1 }}>
-          {/* Physical Tape */}
           <div style={{ position:'absolute', top:-10, left:'50%', transform:'translateX(-50%)', width:50, height:18, background:tapeColor, opacity:0.85, borderRadius:2, zIndex:30, boxShadow:'0 2px 4px rgba(0,0,0,0.2)' }} />
-          
           <div style={{ background: '#fff', padding: '5px', boxShadow: '0 12px 35px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', borderRadius: 2, border: '1px solid #ddd' }}>
-            {/* Header */}
             <div style={{ padding: '10px 4px 8px', textAlign: 'center', background: '#111', marginBottom: 5 }}>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.08em', lineHeight: 1 }}>
                 {s.band.toUpperCase()}
               </div>
             </div>
-
-            {/* Image Box */}
             <div style={{ background: '#000', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '200px' }}>
               <img 
                 src={s.image_url} 
                 alt={s.band} 
-                style={{ width: '100%', height: 'auto', maxHeight: '350px', objectFit: 'contain' }} 
+                style={{ width: '100%', height: 'auto', maxHeight: '450px', objectFit: 'contain' }} 
               />
             </div>
-
-            {/* Footer */}
             <div style={{ padding: '12px 8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 <div>
@@ -1310,7 +1338,6 @@ function SetlistVaultTab({ concerts, genreMap }) {
                     {fmtDateShort(s.date).toUpperCase()} • {[s.city, s.state].filter(Boolean).join(', ').toUpperCase()}
                   </div>
                 </div>
-                
                 <a href={sfmUrl} target="_blank" rel="noopener noreferrer" style={{ background: C.gold, color: '#000', fontSize: 8, fontFamily: "'Space Mono'", padding: '4px 8px', borderRadius: 2, textDecoration: 'none', fontWeight: 900 }}>
                   SETLIST ↗
                 </a>
@@ -1326,7 +1353,6 @@ function SetlistVaultTab({ concerts, genreMap }) {
       );
     }
 
-    // ─── OPTION B: THE NOTEBOOK (IF NO IMAGE) ───
     return (
       <div className="paper-float" style={{ '--r':`${rot}deg`, '--dur':dur, position:'relative', transform:`rotate(${rot}deg)`, marginBottom:40 }}>
         <div style={{ position:'absolute', top:-12, left:'50%', transform:'translateX(-50%)', width:56, height:22, background:tapeColor, opacity:0.75, borderRadius:3, zIndex:10 }} />
