@@ -1808,7 +1808,7 @@ function TimelineDot({ item, onTeleport, genreMap, xPos }) {
   );
 }
 
-// ─── 2. PANORAMIC TIMELINE TAB ──────────────────────────────────────────────
+// ─── 2. PANORAMIC TIMELINE TAB (High-Contrast Years & Months) ──────────────
 function TimelineTab({ concerts, setActiveTab, genreMap }) {
   const scrollRef = useRef(null);
   const [currentYear, setCurrentYear] = useState(null);
@@ -1836,7 +1836,7 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
       yearBlocks.push({ year: yr, x: xStart, width: xEnd - xStart, isAlt: yr % 2 === 1 });
     }
 
-    // ─── MONTH MARKERS ───
+    // ─── MONTH MARKERS (Bigger & Louder) ───
     const monthMarkers = [];
     const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     let iter = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
@@ -1885,7 +1885,6 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
     return { sortedShows: withX, yearBlocks, monthMarkers, highlights, totalWidth };
   }, [concerts, genreMap]);
 
-  // Year HUD Tracker
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || !data.sortedShows.length) return;
@@ -1905,33 +1904,33 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
     <div style={{ padding: '20px 0' }} className="fade-in">
       <GenreLegend />
 
-      {/* Persistent HUD Year */}
       <div style={{ position: 'absolute', top: 80, left: 40, zIndex: 1000, pointerEvents: 'none' }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: C.teal, opacity: 0.4, lineHeight: 1 }}>{currentYear}</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: C.teal, opacity: 0.6, textShadow: `0 0 20px ${C.teal}44` }}>{currentYear}</div>
       </div>
 
       <div ref={scrollRef} style={{ 
         width: '100%', height: '750px', overflowX: 'auto', overflowY: 'hidden', 
-        background: 'rgba(0,0,0,0.4)', border: `1px solid ${C.border}`, borderRadius: 16, position: 'relative' 
+        background: 'rgba(0,0,0,0.5)', border: `1px solid ${C.border}`, borderRadius: 16, position: 'relative' 
       }}>
         <div style={{ width: data.totalWidth, height: '100%', position: 'relative' }}>
 
           {/* 🛤 RAIL */}
-          <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 2, background: `linear-gradient(90deg, transparent, ${C.teal}33, ${C.purple}33, transparent)`, zIndex: 10, transform: 'translateY(-50%)' }} />
+          <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 2, background: `linear-gradient(90deg, transparent, ${C.teal}66, ${C.purple}66, transparent)`, zIndex: 10, transform: 'translateY(-50%)' }} />
 
-          {/* 📅 STICKY YEAR BLOCKS */}
+          {/* 📅 STICKY YEAR BLOCKS: Higher Opacity & Vibrant Glow */}
           {data.yearBlocks.map(yb => (
             <div key={yb.year} style={{ 
               position: 'absolute', left: yb.x, top: 0, bottom: 0, width: yb.width, 
-              zIndex: 5, pointerEvents: 'none', borderLeft: `1px solid ${yb.isAlt ? C.purple : C.teal}22` 
+              zIndex: 5, pointerEvents: 'none', borderLeft: `2px solid ${yb.isAlt ? C.purple : C.teal}44` 
             }}>
               <div style={{ 
-                position: 'sticky', left: 20, width: 'fit-content',
-                top: yb.isAlt ? 'calc(50% + 120px)' : 'calc(50% - 240px)', 
+                position: 'sticky', left: 40, width: 'fit-content',
+                top: yb.isAlt ? '62%' : '22%', 
               }}>
                 <div style={{ 
-                  fontFamily: "'Bebas Neue'", fontSize: '8rem', 
-                  color: `${yb.isAlt ? C.purple : C.teal}15`,
+                  fontFamily: "'Bebas Neue'", fontSize: '9rem', 
+                  color: `${yb.isAlt ? C.purple : C.teal}33`, // Boosted from 15 to 33
+                  textShadow: `0 0 30px ${yb.isAlt ? C.purple : C.teal}22`,
                   whiteSpace: 'nowrap'
                 }}>
                   {yb.year}
@@ -1940,14 +1939,23 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
             </div>
           ))}
 
-          {/* 🗓 MONTH MARKERS */}
+          {/* 🗓 MONTH MARKERS: Taller, Bolder, Larger Text */}
           {data.monthMarkers.map(mm => (
             <div key={`${mm.x}-${mm.label}`} style={{ position: 'absolute', left: mm.x, top: '50%', transform: 'translateY(-50%)', zIndex: 11 }}>
-              <div style={{ width: 1, height: mm.isJan ? 25 : 12, background: mm.isJan ? C.teal : C.grayDim, opacity: 0.4 }} />
               <div style={{ 
-                position: 'absolute', top: 18, left: -10, 
-                fontFamily: "'Space Mono'", fontSize: '8px', color: C.grayDim, 
-                opacity: 0.5, transform: 'rotate(-45deg)', whiteSpace: 'nowrap'
+                width: 2, // Thicker tick
+                height: mm.isJan ? 35 : 18, // Taller ticks
+                background: mm.isJan ? C.teal : C.grayDim, 
+                boxShadow: mm.isJan ? `0 0 10px ${C.teal}` : 'none',
+                opacity: 0.8 
+              }} />
+              <div style={{ 
+                position: 'absolute', top: 22, left: -12, 
+                fontFamily: "'Space Mono'", fontSize: '11px', // Bumped size
+                color: mm.isJan ? C.teal : C.gray, 
+                fontWeight: 900,
+                opacity: 0.9, 
+                transform: 'rotate(-45deg)', whiteSpace: 'nowrap'
               }}>
                 {mm.label}
               </div>
@@ -1961,8 +1969,8 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
               <div key={i} style={{ position: 'absolute', left: h.x, top: h.side === 'up' ? `${50 - laneH}%` : '50%', height: `${laneH}%`, zIndex: 100, pointerEvents: 'none' }}>
                 <div style={{ width: 2, height: '100%', background: `linear-gradient(${h.side === 'up' ? 'to top' : 'to bottom'}, ${h.color}, transparent)`, boxShadow: `0 0 15px ${h.color}`, opacity: 0.8 }} />
                 <div style={{ position: 'absolute', left: 12, [h.side === 'up' ? 'top' : 'bottom']: -15, whiteSpace: 'nowrap' }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff', textShadow: '2px 2px 4px #000' }}>{h.label?.toUpperCase()}</div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: h.color, fontWeight: 900 }}>{fmtDateShort(h.date)}</div>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff', textShadow: '2px 2px 4px #000' }}>{h.label?.toUpperCase()}</div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: h.color, fontWeight: 900 }}>{fmtDateShort(h.date)}</div>
                 </div>
               </div>
             );
