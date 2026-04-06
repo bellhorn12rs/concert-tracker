@@ -2973,7 +2973,7 @@ async function handleUpcomingDelete(id) {
               <span style={{ color: C.white, fontWeight: 700 }}>{headerStats.totalSets.toLocaleString()} SETS 🤘</span>
             </div>
 
-            {/* Neon stat tiles */}
+           {/* Neon stat tiles */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 0, borderTop: `1px solid ${C.border}`, marginTop: 0 }}>
               {[
                 { value: headerStats.totalSets, label: 'TOTAL SETS', sub: 'individual performances', color: C.teal, icon: '🎵' },
@@ -2992,9 +2992,8 @@ async function handleUpcomingDelete(id) {
                 </div>
               ))}
             </div>
+            <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
           </div>
-           <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
-          
         </div>
 
         {/* ── NAV ── */}
