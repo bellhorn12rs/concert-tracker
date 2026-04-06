@@ -1762,16 +1762,17 @@ function GenreLegend() {
 }
 
 // ─── 1. HORIZONTAL TIMELINE CARD (FIXED FOR 400+ DAYS) ───────────────────────
-// ─── 1. DENSE STACKED CARD (10 LANES) ────────────────────────────────────────
-function TimelineCard({ item, isUp, lane, leftPos, onTeleport, genreMap }) {
+// ─── 1. STACKED DATA-POINT CARD (10 LANES) ──────────────────────────────────
+function TimelineCard({ item, isUp, lane, onTeleport, genreMap }) {
   const [isHovered, setIsHovered] = useState(false);
   const gi = getConcertGenreInfo(item, genreMap);
   const themeColor = gi.mixed ? '#9d00ff' : (gi.color || C.teal);
   const bands = item.bands || [];
 
-  // 🟢 10 Vertical Lanes: Spaced 35px apart
-  // Tier 0 is closest to the spine, Tier 9 is furthest out.
-  const connectorHeight = 40 + (lane * 35);
+  // 🟢 10 Vertical Lanes: Spaced tightly. 
+  // This allows 10 shows in a row to "stack" before repeating a height.
+  const laneGap = 32; 
+  const connectorHeight = 45 + (lane * laneGap);
 
   return (
     <div 
@@ -1779,28 +1780,29 @@ function TimelineCard({ item, isUp, lane, leftPos, onTeleport, genreMap }) {
       onMouseLeave={() => setIsHovered(false)}
       onClick={onTeleport}
       style={{ 
-        position: 'absolute',
-        left: leftPos,
-        height: '100%',
-        width: '80px',
-        display: 'flex',
-        alignItems: 'center',
+        position: 'relative', 
+        height: '100%', 
+        width: '85px', // Fixed horizontal pitch
+        flexShrink: 0, 
+        display: 'flex', 
+        alignItems: 'center', 
         justifyContent: 'center',
-        zIndex: isHovered ? 1000 : 50, // Higher than year badges (which are 10)
+        zIndex: isHovered ? 1000 : 50, // Cards stay ABOVE year badges (which are zIndex 10)
         cursor: 'pointer'
       }}
     >
-      {/* RAIL DOT */}
+      {/* DOT ON SPINE */}
       <div style={{ 
-        width: isHovered ? '14px' : '6px', height: isHovered ? '14px' : '6px', 
+        width: isHovered ? '12px' : '6px', height: isHovered ? '12px' : '6px', 
         borderRadius: '50%', background: themeColor, zIndex: 60,
         boxShadow: isHovered ? `0 0 15px ${themeColor}` : `0 0 5px ${themeColor}66`,
-        border: `1.5px solid ${C.bg}`, position: 'absolute', top: '50%', transform: 'translateY(-50%)'
+        border: `1.5px solid ${C.bg}`
       }} />
 
       {/* CONNECTOR LINE */}
       <div style={{ 
-        position: 'absolute', left: '50%', bottom: isUp ? '50%' : 'auto', top: isUp ? 'auto' : '50%',
+        position: 'absolute', left: '50%', 
+        bottom: isUp ? '50%' : 'auto', top: isUp ? 'auto' : '50%',
         width: '1px', height: isHovered ? connectorHeight + 20 : connectorHeight,
         background: `linear-gradient(${isUp ? 'to top' : 'to bottom'}, ${themeColor}, transparent)`,
         opacity: isHovered ? 1 : 0.2, transition: 'all 0.3s ease'
@@ -1819,20 +1821,20 @@ function TimelineCard({ item, isUp, lane, leftPos, onTeleport, genreMap }) {
         transform: isHovered ? 'scale(1.1)' : 'none',
         transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
         boxShadow: isHovered ? `0 20px 50px rgba(0,0,0,1)` : 'none',
-        pointerEvents: 'none', zIndex: isHovered ? 100 : 1
+        pointerEvents: 'none'
       }}>
         {!isHovered ? (
           <div className="fade-in">
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.85rem', color: C.white, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: C.white, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {bands[0]?.toUpperCase()}
             </div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: themeColor, opacity: 0.6, letterSpacing: 1 }}>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: themeColor, opacity: 0.6, letterSpacing: 0.5 }}>
               {item.date.split('-')[1]}.{item.date.split('-')[2]}
             </div>
           </div>
         ) : (
           <div className="fade-in">
-             <div style={{ marginBottom: 10, transform: 'scale(0.85)', transformOrigin: 'left' }}>
+             <div style={{ marginBottom: 10, transform: 'scale(0.8)', transformOrigin: 'left' }}>
                 {item.is_festival ? <WristbandCard event={item} genreMap={genreMap} compact={true} /> : <DecorativeTicket event={item} templateIdx={0} />}
              </div>
              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: C.white, lineHeight: 1.1 }}>{bands[0]?.toUpperCase()}</div>
@@ -1850,93 +1852,93 @@ function TimelineCard({ item, isUp, lane, leftPos, onTeleport, genreMap }) {
 // ─── 2. THE PANORAMIC TIMELINE TAB ──────────────────────────────────────────
 function TimelineTab({ concerts, setActiveTab, genreMap }) {
   const horizontalData = useMemo(() => {
-    if (!concerts || concerts.length === 0) return { years: [], totalWidth: 0 };
-    const sorted = [...concerts].sort((a, b) => a.date.localeCompare(b.date));
+    if (!concerts || concerts.length === 0) return [];
     
-    const years = {};
-    let globalX = 0;
+    // 1. Force Chronological Order
+    const sorted = [...concerts].sort((a, b) => a.date.localeCompare(b.date));
+    const yearGroups = {};
 
     sorted.forEach((s, i) => {
       const yr = getYear(s.date);
-      if (!years[yr]) years[yr] = { label: yr, shows: [], startX: globalX };
+      if (!yearGroups[yr]) yearGroups[yr] = [];
       
-      // Calculate stacking lane (0-9 rotation)
+      // Calculate Side and Lane
       const side = i % 2 === 0 ? 'up' : 'down';
+      // Rotate through 10 heights per side to prevent collision
       const lane = Math.floor(i / 2) % 10; 
       
-      years[yr].shows.push({ ...s, left: globalX, side, lane });
-      globalX += 90; // Every single show gets exactly 90px of width
-      if (i < sorted.length - 1 && getYear(sorted[i+1].date) !== yr) globalX += 250; // Year gap
+      yearGroups[yr].push({ ...s, side, lane });
     });
 
-    return { 
-      years: Object.values(years), 
-      totalWidth: globalX + 400 
-    };
+    return Object.entries(yearGroups).sort((a, b) => a[0].localeCompare(b[0]));
   }, [concerts]);
 
   return (
-    <div style={{ height: '90vh', position: 'relative', marginTop: 10 }} className="fade-in">
+    <div style={{ height: '850px', position: 'relative', marginTop: 10 }} className="fade-in">
       <GenreLegend />
       
       <div style={{ 
         width: '100%', height: '100%', overflowX: 'auto', overflowY: 'hidden',
-        background: 'rgba(0,0,0,0.6)', borderTop: `1px solid ${C.border}`, position: 'relative'
+        background: 'rgba(0,0,0,0.4)', borderTop: `1px solid ${C.border}`,
+        borderBottom: `1px solid ${C.border}`, position: 'relative'
       }}>
         
-        <div style={{ width: horizontalData.totalWidth, height: '100%', position: 'relative' }}>
-          {/* THE SPINE RAIL */}
-          <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: C.border, opacity: 0.15, zIndex: 1 }} />
+        {/* THE INFINITE DATA TRACK */}
+        <div style={{ display: 'flex', height: '100%', width: 'max-content', padding: '0 200px', position: 'relative' }}>
+          
+          {/* THE CENTER SPINE (Perfectly Centered) */}
+          <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: C.border, opacity: 0.2, zIndex: 1 }} />
 
-          {horizontalData.years.map((y, yIdx) => {
+          {horizontalData.map(([year, shows], yIdx) => {
             const color = yIdx % 2 === 0 ? C.teal : C.purple;
+            
             return (
-              <div key={y.label} style={{ 
-                position: 'absolute', left: y.startX, 
-                width: y.shows.length * 90, height: '100%' 
-              }}>
+              <div key={year} style={{ display: 'flex', position: 'relative', height: '100%', borderLeft: `1px solid ${C.border}22` }}>
+                
                 {/* 🟢 NEON STICKY YEAR (TOP) */}
-                <div style={{ position: 'sticky', left: 20, top: 20, zIndex: 10, height: 0, width: 0, overflow: 'visible' }}>
+                <div style={{ position: 'sticky', left: 20, top: 40, zIndex: 10, height: 0, width: 0, overflow: 'visible' }}>
                   <div style={{ 
-                    fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color, background: C.bg,
-                    padding: '2px 10px', borderRadius: 4, border: `1px solid ${color}`,
+                    fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color, background: C.bg,
+                    padding: '4px 10px', borderRadius: 4, border: `1px solid ${color}`,
                     boxShadow: `0 0 15px ${hexToRgba(color, 0.4)}`, textShadow: `0 0 8px ${color}`, width: 'max-content'
                   }}>
-                    {y.label}
+                    {year}
                   </div>
                 </div>
 
                 {/* 🟢 NEON STICKY YEAR (BOTTOM) */}
-                <div style={{ position: 'sticky', left: 20, bottom: 20, zIndex: 10, height: 0, width: 0, overflow: 'visible', marginTop: '80vh' }}>
+                <div style={{ position: 'sticky', left: 20, bottom: 40, zIndex: 10, height: 0, width: 0, overflow: 'visible' }}>
                   <div style={{ 
-                    fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color, background: C.bg,
-                    padding: '2px 10px', borderRadius: 4, border: `1px solid ${color}`,
-                    boxShadow: `0 0 15px ${hexToRgba(color, 0.4)}`, textShadow: `0 0 8px ${color}`, width: 'max-content'
+                    fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color, background: C.bg,
+                    padding: '4px 10px', borderRadius: 4, border: `1px solid ${color}`,
+                    boxShadow: `0 0 15px ${hexToRgba(color, 0.4)}`, textShadow: `0 0 8px ${color}`, 
+                    width: 'max-content', position: 'absolute', bottom: 0 
                   }}>
-                    {y.label}
+                    {year}
                   </div>
                 </div>
 
-                {/* THE SHOWS */}
-                {y.shows.map((s, si) => (
-                  <TimelineCard 
-                    key={s.id} 
-                    item={s} 
-                    isUp={s.side === 'up'} 
-                    lane={s.lane} 
-                    leftPos={s.left - y.startX}
-                    onTeleport={() => setActiveTab('byDay')} 
-                    genreMap={genreMap} 
-                  />
-                ))}
+                {/* THE SHOWS FOR THIS YEAR */}
+                <div style={{ display: 'flex', padding: '0 100px 0 140px' }}>
+                  {shows.map((s, si) => (
+                    <TimelineCard 
+                      key={s.id} 
+                      item={s} 
+                      isUp={s.side === 'up'} 
+                      lane={s.lane} 
+                      onTeleport={() => setActiveTab('byDay')} 
+                      genreMap={genreMap} 
+                    />
+                  ))}
+                </div>
               </div>
             );
           })}
         </div>
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: 10, fontFamily: "'Space Mono'", fontSize: 9, color: C.teal, opacity: 0.6, letterSpacing: '0.4em' }}>
-        426 DAYS DOCUMENTED // HORIZONTAL DATASTREAM
+      <div style={{ textAlign: 'center', marginTop: 15, fontFamily: "'Space Mono'", fontSize: 9, color: C.teal, opacity: 0.6, letterSpacing: '0.4em' }}>
+        ↔ 426 SHOWS LOGGED // PANORAMIC DATASTREAM
       </div>
     </div>
   );
