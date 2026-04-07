@@ -4135,7 +4135,7 @@ async function handleUpcomingDelete(id) {
               )}
               <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
             </div>
-          )}.
+          )}
 
           {/* ════ TIMELINE ════ */}
           {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
