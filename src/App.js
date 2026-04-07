@@ -1636,7 +1636,7 @@ function DecadeBlocks({ sets }) {
   const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '320px', gap: 12, overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '340px', gap: 12, overflow: 'hidden' }}>
       
       <style>{`
         @keyframes woofer-pulse {
@@ -1655,7 +1655,7 @@ function DecadeBlocks({ sets }) {
         }
       `}</style>
 
-      {/* DATA ROWS */}
+      {/* 🟢 DATA ROWS */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {Object.entries(counts).map(([decade, count]) => {
           const m = media[decade];
@@ -1677,74 +1677,43 @@ function DecadeBlocks({ sets }) {
         })}
       </div>
 
-      {/* THE CONCERT GROUNDS */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 2.2fr', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 15 }}>
+      {/* 🔵 THE CONCERT GROUNDS (Matching Heights) */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.2fr 2fr', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 15, alignItems: 'end' }}>
         
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px dashed rgba(255,255,255,0.1)' }}>
-           <FerrisWheel size={85} />
+        {/* FERRIS WHEEL (Scaled up to 150) */}
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '150px', borderRight: '1px dashed rgba(255,255,255,0.1)' }}>
+           <FerrisWheel size={150} />
+           {/* Ground glow under wheel */}
+           <div style={{ position: 'absolute', bottom: 0, width: '100px', height: '20px', background: 'radial-gradient(circle, rgba(255,204,0,0.15), transparent 70%)', filter: 'blur(10px)', zIndex: 0 }} />
         </div>
 
         {/* 🎭 THE MAIN STAGE */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 10px', height: '150px' }}>
           <div style={{ 
-            width: '100%', height: '150px', background: '#000', borderRadius: 6, 
+            width: '100%', height: '100%', background: '#000', borderRadius: 6, 
             border: '1px solid #333', position: 'relative', overflow: 'hidden',
             boxShadow: 'inset 0 0 80px #000, 0 20px 50px rgba(0,0,0,1)'
           }}>
             
-            {/* 1. THE BACK WALL (Adds Depth) */}
+            {/* 1. BACK WALL STRUCTURE */}
             <div style={{ position: 'absolute', inset: '0 40px 45px 40px', background: '#050505', border: '1px solid #111', zIndex: 1, display: 'flex', justifyContent: 'space-around' }}>
               {[1,2,3,4].map(i => <div key={i} style={{ width: 1, height: '100%', background: 'rgba(255,255,255,0.03)' }} />)}
             </div>
 
-            {/* 2. ULTRA BRIGHT MOVING BEAMS */}
+            {/* 2. BEAMS (Bolder & Brighter) */}
             <div style={{ position: 'absolute', inset: 0, zIndex: 5 }}>
-              <div className="stage-light ultra-beam" style={{ position: 'absolute', left: '10%', top: -20, width: 120, height: 250, background: 'linear-gradient(to bottom, #9d00ff, transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', mixBlendMode: 'screen', opacity: 0.8 }} />
-              <div className="stage-light ultra-beam" style={{ position: 'absolute', left: '30%', top: -20, width: 120, height: 250, background: 'linear-gradient(to bottom, #00f2ff, transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', mixBlendMode: 'screen', opacity: 0.8, animationDelay: '0.5s' }} />
-              <div className="stage-light ultra-beam" style={{ position: 'absolute', right: '30%', top: -20, width: 120, height: 250, background: 'linear-gradient(to bottom, #ff00ff, transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', mixBlendMode: 'screen', opacity: 0.8, animationDelay: '1s' }} />
-              <div className="stage-light ultra-beam" style={{ position: 'absolute', right: '10%', top: -20, width: 120, height: 250, background: 'linear-gradient(to bottom, #00ffaa, transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', mixBlendMode: 'screen', opacity: 0.8, animationDelay: '1.5s' }} />
+              <div className="stage-light ultra-beam" style={{ position: 'absolute', left: '5%', top: -20, width: 120, height: 250, background: 'linear-gradient(to bottom, #9d00ff, transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', mixBlendMode: 'screen', opacity: 0.9 }} />
+              <div className="stage-light ultra-beam" style={{ position: 'absolute', left: '30%', top: -20, width: 120, height: 250, background: 'linear-gradient(to bottom, #00f2ff, transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', mixBlendMode: 'screen', opacity: 0.9, animationDelay: '0.5s' }} />
+              <div className="stage-light ultra-beam" style={{ position: 'absolute', right: '30%', top: -20, width: 120, height: 250, background: 'linear-gradient(to bottom, #ff00ff, transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', mixBlendMode: 'screen', opacity: 0.9, animationDelay: '1s' }} />
+              <div className="stage-light ultra-beam" style={{ position: 'absolute', right: '5%', top: -20, width: 120, height: 250, background: 'linear-gradient(to bottom, #00ffaa, transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', mixBlendMode: 'screen', opacity: 0.9, animationDelay: '1.5s' }} />
             </div>
 
-            {/* 3. PULSING NEON SPEAKERS (Standalone & High Contrast) */}
+            {/* 3. PULSING SPEAKERS */}
             {[ {side: 'left'}, {side: 'right'} ].map(s => (
-              <div key={s.side} style={{ position: 'absolute', [s.side]: 8, bottom: 12, width: 30, height: 110, background: 'linear-gradient(to bottom, #111, #050505)', border: `1px solid #00f2ff66`, borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 8, padding: 5, zIndex: 20, boxShadow: `0 0 25px rgba(0,242,255,0.15)` }}>
+              <div key={s.side} style={{ position: 'absolute', [s.side]: 8, bottom: 12, width: 32, height: '115px', background: 'linear-gradient(to bottom, #111, #050505)', border: `1px solid #00f2ff88`, borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 8, padding: 5, zIndex: 20, boxShadow: `0 0 30px rgba(0,242,255,0.2)` }}>
                 {[1,2,3].map(i => (
                   <div key={i} style={{ flex: 1, background: '#000', borderRadius: '50%', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div className="speaker-cone" style={{ width: 18, height: 18, borderRadius: '50%', border: `2.5px solid #00f2ff`, background: 'radial-gradient(circle, #00f2ff44, #000)', boxShadow: '0 0 10px #00f2ff' }} />
-                  </div>
-                ))}
-              </div>
-            ))}
-
-            {/* 4. PERSPECTIVE FLOOR (The Depth Engine) */}
-            <div style={{ 
-              position: 'absolute', bottom: 0, width: '100%', height: '55px', 
-              background: 'linear-gradient(to bottom, #111, #000)', borderTop: '2.5px solid #444', 
-              zIndex: 15, perspective: '100px'
-            }}>
-               {/* Converging Floor Lines */}
-               <div style={{ 
-                 position: 'absolute', inset: 0, 
-                 backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 30px)',
-                 transform: 'rotateX(45deg)', transformOrigin: 'top center'
-               }} />
-               
-               {/* Glow Pool in center */}
-               <div style={{ position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)', width: '120px', height: '40px', background: 'radial-gradient(circle, rgba(0,242,255,0.2), transparent 70%)', filter: 'blur(15px)' }} />
-            </div>
-
-            {/* TRUSS RIGGING BULBS (Sequential Chasing) */}
-            <div style={{ position: 'absolute', top: 0, width: '100%', height: '20px', background: 'linear-gradient(to bottom, #222, #000)', borderBottom: '1.5px solid #555', zIndex: 30, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-               {[1,2,3,4,5,6,7,8,9,10].map(i => <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: '#fff', boxShadow: '0 0 10px #fff', animation: `chasing-bulb 1.2s infinite ${i*0.12}s` }} />)}
-            </div>
-
-          </div>
-        </div>
-
-      </div>
-    </div>
-  );
-}
+                    <div className="speaker-cone" style={{ width: 20, height: 20, borderRadius: '50%', border: `2.5px solid #00f2ff`, background: 'radial-gradient(circle, #00f
 // ─── HALL OFFAME (RESTORED & ARMORED) ───────────────────────────────────────
 function HallOfFame({ sets, genreMap, onShare }) {
   const [selected, setSelected] = useState(null);
