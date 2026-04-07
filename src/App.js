@@ -236,6 +236,15 @@ const fmtDate = d => { if (!d) return '—'; const dt = new Date(d + 'T12:00:00'
 const fmtDateShort = d => { if (!d) return '—'; const dt = new Date(d + 'T12:00:00'); return `${MONTHS_SHORT[dt.getMonth()]} ${dt.getDate()}, ${dt.getFullYear()}`; };
 const getYear = d => d ? new Date(d + 'T12:00:00').getFullYear() : null;
 const daysSince = d => { if (!d) return 0; return Math.floor((Date.now() - new Date(d + 'T12:00:00')) / 86400000); };
+// Helper to generate the exact setlist.fm search link
+const getSetlistFmUrl = (artist, date) => {
+  if (!artist || !date) return "#";
+  // Convert YYYY-MM-DD to DD-MM-YYYY for setlist.fm search precision
+  const [y, m, d] = date.split('-');
+  const formattedDate = `${d}-${m}-${y}`;
+  const query = encodeURIComponent(`artist:("${artist}") date:(${formattedDate})`);
+  return `https://www.setlist.fm/search?query=${query}`;
+};
 
 // ─── MASTER LANYARD ───────────────────────────────────────────────────────────
 // ─── MASTER LANYARD ───────────────────────────────────────────────────────────
@@ -1747,34 +1756,123 @@ function WristbandCard({ event, genreMap, compact, onEdit }) {
     </div>
   );
 }
-// ─── 2. SETLIST VAULT (CLEAN IMAGE LOGIC) ────────────────────────────────────
+// ─── 2. SETLIST VAULT (CLEAN IMAGE & FM-LINK LOGIC) ───────────────────────────
 function SetlistVaultTab({ concerts, genreMap }) {
+  
+  // Helper for setlist.fm precision search
+  const getSetlistFmUrl = (artist, date) => {
+    if (!artist || !date) return "#";
+    const [y, m, d] = date.split('-');
+    const formattedDate = `${d}-${m}-${y}`;
+    const query = encodeURIComponent(`artist:("${artist}") date:(${formattedDate})`);
+    return `https://www.setlist.fm/search?query=${query}`;
+  };
+
   const setlists = useMemo(() => {
     const results = [];
     concerts.forEach(c => {
+      // Only include shows where you've explicitly named the bands seen
       if (!c.has_setlist_names?.trim()) return;
+      
       const bands = c.has_setlist_names.split(',').map(b => b.trim()).filter(Boolean);
-      const images = (c.image_url || '').split(',').map(img => img.trim()).filter(Boolean);
+      
+      // 🟢 Try new setlist bucket first, fallback to old image_url bucket
+      const rawImages = c.setlist_image_url || c.image_url || '';
+      const images = rawImages.split(',').map(img => img.trim()).filter(Boolean);
+      
       bands.forEach((band, idx) => {
+        // Map image to band by index, or use first image if it's a solo shot
         const img = images[idx] || (images.length === 1 ? images[0] : null);
-        results.push({ id: `${c.id}-${band}`, band, date: c.date, venue: c.venue, city: c.city, state: c.state, festival_name: c.festival_name, is_festival: c.is_festival, image_url: img });
+        
+        results.push({ 
+          id: `${c.id}-${band}`, 
+          band, 
+          date: c.date, 
+          venue: c.venue, 
+          city: c.city, 
+          state: c.state, 
+          festival_name: c.festival_name, 
+          is_festival: c.is_festival, 
+          image_url: img 
+        });
       });
     });
     return results.sort((a, b) => b.date.localeCompare(a.date));
   }, [concerts]);
 
-  if (!setlists.length) return <div style={{ padding:'80px 0', textAlign:'center' }}><div style={{ fontSize:'4rem' }}>📋</div><div style={{ fontFamily:"'Bebas Neue'", fontSize:'2rem', color:C.white }}>VAULT IS EMPTY</div></div>;
+  if (!setlists.length) {
+    return (
+      <div style={{ padding: '80px 0', textAlign: 'center' }}>
+        <div style={{ fontSize: '4rem', marginBottom: 20 }}>📁</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white }}>
+          THE VAULT IS CURRENTLY <span style={{ color: C.teal }}>EMPTY</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding:'40px 0' }} className="fade-in">
-      <div style={{ textAlign:'center', marginBottom:48 }}><div style={{ fontFamily:"'Bebas Neue'", fontSize:'4rem', color:C.white }}>SETLIST <span style={{ color:C.teal }}>VAULT</span></div></div>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'40px' }}>
+    <div style={{ padding: '40px 0' }} className="fade-in">
+      <div style={{ textAlign: 'center', marginBottom: 60 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: C.white, letterSpacing: '2px' }}>
+          SETLIST <span style={{ color: C.gold }}>VAULT</span>
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: 10, letterSpacing: '4px' }}>
+          {setlists.length} STAGE ARTIFACTS ARCHIVED
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '50px' }}>
         {setlists.map((s, i) => (
-          <div key={s.id} style={{ position:'relative', transform:`rotate(${(i%2===0?1:-1)*(i%3)}deg)`, marginBottom:30 }}>
-            <div style={{ background: '#fff', padding: '5px', boxShadow: '0 10px 20px rgba(0,0,0,0.5)', borderRadius: 2 }}>
-              <div style={{ padding: '8px 4px', textAlign: 'center', background: '#111', color: '#fff', fontFamily: "'Bebas Neue'", fontSize: '1.2rem' }}>{s.band.toUpperCase()}</div>
-              {s.image_url ? <img src={s.image_url} alt={s.band} style={{ width: '100%', height: 'auto', maxHeight: '300px', objectFit: 'contain', background: '#000' }} /> : <div style={{ height: '150px', background: '#f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: '10px' }}>NO IMAGE</div>}
-              <div style={{ padding: '10px 6px', color: '#000', fontSize: '9px', fontFamily: "'Space Mono'" }}>{fmtDateShort(s.date)} • {s.venue}</div>
+          <div key={s.id} style={{ 
+            position: 'relative', 
+            transform: `rotate(${(i % 2 === 0 ? 1.5 : -1.5) * (i % 3 + 1)}deg)`,
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05) rotate(0deg)'}
+          onMouseLeave={e => e.currentTarget.style.transform = `rotate(${(i % 2 === 0 ? 1.5 : -1.5) * (i % 3 + 1)}deg)`}
+          >
+            {/* The "Taped Paper" look for each Vault item */}
+            <div style={{ background: '#fdfdfd', padding: '10px', boxShadow: '0 15px 35px rgba(0,0,0,0.6)', borderRadius: 2 }}>
+              {/* Tape on top */}
+              <div style={{ position: 'absolute', top: -8, left: '35%', width: '30%', height: '16px', background: 'rgba(0, 110, 255, 0.3)', backdropFilter: 'blur(1px)', transform: 'rotate(-1deg)', zIndex: 10 }} />
+              
+              <div style={{ padding: '12px 6px', textAlign: 'center', background: '#111', color: '#fff', fontFamily: "'Bebas Neue'", fontSize: '1.5rem', marginBottom: 10 }}>
+                {s.band.toUpperCase()}
+              </div>
+
+              {s.image_url ? (
+                <div style={{ width: '100%', height: '350px', background: `url(${s.image_url}) center/cover no-repeat`, filter: 'sepia(0.1) contrast(1.1)', border: '1px solid #eee' }} />
+              ) : (
+                <div style={{ height: '200px', background: '#f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: '9px', fontFamily: "'Space Mono'", textAlign: 'center', padding: 20 }}>
+                  NO STAGE PHOTO FOUND
+                </div>
+              )}
+
+              <div style={{ padding: '15px 10px 5px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div style={{ color: '#000', fontSize: '10px', fontFamily: "'Space Mono'", fontWeight: 'bold', lineHeight: 1.4 }}>
+                  {fmtDateShort(s.date)}<br/>
+                  <span style={{ opacity: 0.6 }}>{s.venue?.toUpperCase()}</span>
+                </div>
+                
+                {/* 🔗 THE SETLIST.FM LINK */}
+                <a 
+                  href={getSetlistFmUrl(s.band, s.date)} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  style={{ 
+                    fontFamily: "'Space Mono'", 
+                    fontSize: '9px', 
+                    color: '#006eff', 
+                    textDecoration: 'none', 
+                    borderBottom: '1px solid rgba(0,110,255,0.3)',
+                    paddingBottom: 2,
+                    fontWeight: 900
+                  }}
+                >
+                  DIGITAL LOG ↗
+                </a>
+              </div>
             </div>
           </div>
         ))}
@@ -1782,7 +1880,6 @@ function SetlistVaultTab({ concerts, genreMap }) {
     </div>
   );
 }
-
 // ─── 3. TIMELINE TAB ──────────────────────────────────────────────────────────
 function GenreLegend() {
   return (
@@ -2266,28 +2363,50 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
                 }
               </div>
 
-              {/* 2. MIDDLE: THE INFO */}
-              <div style={{ flex: 1, paddingLeft: '40px' }}>
-                <div style={{ 
-                  fontFamily: "'Bebas Neue'", 
-                  fontSize: '2.5rem', 
-                  color: C.white, 
-                  lineHeight: 1,
-                  letterSpacing: '1px'
-                }}>
-                  {event.bands?.slice(0, 3).join(' · ').toUpperCase()}
-                </div>
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: 12 }}>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: C.teal, fontWeight: 900 }}>
-                    {fmtDateShort(event.date)}
-                  </div>
-                  <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>
-                    {event.venue?.toUpperCase()}
-                  </div>
-                </div>
-              </div>
+             // Inside your ByDayTab map loop, replace the "Middle Info" div with this:
+
+{/* 2. MIDDLE: THE INFO */}
+<div style={{ flex: 1, paddingLeft: '40px' }}>
+  <div style={{ 
+    fontFamily: "'Bebas Neue'", 
+    fontSize: '2.5rem', 
+    color: C.white, 
+    lineHeight: 1,
+    letterSpacing: '1px'
+  }}>
+    {event.bands?.slice(0, 3).join(' · ').toUpperCase()}
+  </div>
+  
+  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: 12 }}>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: C.teal, fontWeight: 900 }}>
+      {fmtDateShort(event.date)}
+    </div>
+    <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
+    <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>
+      {event.venue?.toUpperCase()}
+    </div>
+    <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
+    
+    {/* 🔗 THE NEW LINK */}
+    <a 
+      href={getSetlistFmUrl(event.bands?.[0], event.date)} 
+      target="_blank" 
+      rel="noreferrer"
+      style={{ 
+        fontFamily: "'Space Mono'", 
+        fontSize: '10px', 
+        color: C.gold, 
+        textDecoration: 'none',
+        borderBottom: `1px solid ${C.gold}44`,
+        paddingBottom: 1
+      }}
+      onMouseEnter={e => e.target.style.color = C.white}
+      onMouseLeave={e => e.target.style.color = C.gold}
+    >
+      SETLIST.FM ↗
+    </a>
+  </div>
+</div>
 
               {/* 3. RIGHT SIDE: THE MEDIA CLUSTER */}
               <div style={{ 
