@@ -1638,18 +1638,24 @@ function DecadeBlocks({ sets }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '320px', gap: 12, overflow: 'hidden' }}>
       
-      {/* ── CSS FOR PULSING SPEAKERS ── */}
       <style>{`
         @keyframes woofer-pulse {
-          0%, 100% { transform: scale(1); opacity: 0.6; }
-          50% { transform: scale(1.15); opacity: 1; filter: brightness(1.5); }
+          0%, 100% { transform: scale(1); opacity: 0.8; }
+          50% { transform: scale(1.2); opacity: 1; filter: brightness(1.8) drop-shadow(0 0 8px #00f2ff); }
         }
         .speaker-cone {
-          animation: woofer-pulse 0.6s ease-in-out infinite;
+          animation: woofer-pulse 0.5s ease-in-out infinite;
+        }
+        @keyframes beam-flare {
+          0%, 100% { opacity: 0.6; filter: blur(20px); }
+          50% { opacity: 1; filter: blur(12px); }
+        }
+        .ultra-beam {
+          animation: beam-flare 2s ease-in-out infinite;
         }
       `}</style>
 
-      {/* 🟢 DATA ROWS */}
+      {/* DATA ROWS */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {Object.entries(counts).map(([decade, count]) => {
           const m = media[decade];
@@ -1671,7 +1677,7 @@ function DecadeBlocks({ sets }) {
         })}
       </div>
 
-      {/* 🔵 THE CONCERT GROUNDS */}
+      {/* THE CONCERT GROUNDS */}
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 2.2fr', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 15 }}>
         
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px dashed rgba(255,255,255,0.1)' }}>
@@ -1681,55 +1687,57 @@ function DecadeBlocks({ sets }) {
         {/* 🎭 THE MAIN STAGE */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 10px' }}>
           <div style={{ 
-            width: '100%', height: '140px', background: '#010101', borderRadius: 6, 
+            width: '100%', height: '150px', background: '#000', borderRadius: 6, 
             border: '1px solid #333', position: 'relative', overflow: 'hidden',
-            boxShadow: 'inset 0 0 60px #000, 0 15px 40px rgba(0,0,0,1)'
+            boxShadow: 'inset 0 0 80px #000, 0 20px 50px rgba(0,0,0,1)'
           }}>
             
-            {/* TRUSS RAIL WITH BULBS */}
-            <div style={{ position: 'absolute', top: 0, width: '100%', height: '16px', background: 'linear-gradient(to bottom, #222, #000)', borderBottom: '1px solid #444', zIndex: 30, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-               {[1,2,3,4,5,6,7,8].map(i => <div key={i} style={{ width: 3, height: 3, borderRadius: '50%', background: '#ffdd88', boxShadow: '0 0 8px #ffaa00', animation: `chasing-bulb 1s infinite ${i*0.1}s` }} />)}
+            {/* 1. THE BACK WALL (Adds Depth) */}
+            <div style={{ position: 'absolute', inset: '0 40px 45px 40px', background: '#050505', border: '1px solid #111', zIndex: 1, display: 'flex', justifyContent: 'space-around' }}>
+              {[1,2,3,4].map(i => <div key={i} style={{ width: 1, height: '100%', background: 'rgba(255,255,255,0.03)' }} />)}
             </div>
 
-            {/* 🔊 PULSING NEON SPEAKERS */}
+            {/* 2. ULTRA BRIGHT MOVING BEAMS */}
+            <div style={{ position: 'absolute', inset: 0, zIndex: 5 }}>
+              <div className="stage-light ultra-beam" style={{ position: 'absolute', left: '10%', top: -20, width: 120, height: 250, background: 'linear-gradient(to bottom, #9d00ff, transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', mixBlendMode: 'screen', opacity: 0.8 }} />
+              <div className="stage-light ultra-beam" style={{ position: 'absolute', left: '30%', top: -20, width: 120, height: 250, background: 'linear-gradient(to bottom, #00f2ff, transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', mixBlendMode: 'screen', opacity: 0.8, animationDelay: '0.5s' }} />
+              <div className="stage-light ultra-beam" style={{ position: 'absolute', right: '30%', top: -20, width: 120, height: 250, background: 'linear-gradient(to bottom, #ff00ff, transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', mixBlendMode: 'screen', opacity: 0.8, animationDelay: '1s' }} />
+              <div className="stage-light ultra-beam" style={{ position: 'absolute', right: '10%', top: -20, width: 120, height: 250, background: 'linear-gradient(to bottom, #00ffaa, transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', mixBlendMode: 'screen', opacity: 0.8, animationDelay: '1.5s' }} />
+            </div>
+
+            {/* 3. PULSING NEON SPEAKERS (Standalone & High Contrast) */}
             {[ {side: 'left'}, {side: 'right'} ].map(s => (
-              <div key={s.side} style={{ position: 'absolute', [s.side]: 6, bottom: 10, width: 26, height: 100, background: '#050505', border: `1px solid #00f2ff44`, borderRadius: 3, display: 'flex', flexDirection: 'column', gap: 6, padding: 4, zIndex: 25, boxShadow: `0 0 15px rgba(0,242,255,0.1)` }}>
+              <div key={s.side} style={{ position: 'absolute', [s.side]: 8, bottom: 12, width: 30, height: 110, background: 'linear-gradient(to bottom, #111, #050505)', border: `1px solid #00f2ff66`, borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 8, padding: 5, zIndex: 20, boxShadow: `0 0 25px rgba(0,242,255,0.15)` }}>
                 {[1,2,3].map(i => (
-                  <div key={i} style={{ flex: 1, background: '#000', borderRadius: '50%', border: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                    <div className="speaker-cone" style={{ width: 14, height: 14, borderRadius: '50%', border: `1px solid #00f2ff`, background: 'radial-gradient(circle, #00f2ff22, #000)' }} />
+                  <div key={i} style={{ flex: 1, background: '#000', borderRadius: '50%', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="speaker-cone" style={{ width: 18, height: 18, borderRadius: '50%', border: `2.5px solid #00f2ff`, background: 'radial-gradient(circle, #00f2ff44, #000)', boxShadow: '0 0 10px #00f2ff' }} />
                   </div>
                 ))}
               </div>
             ))}
 
-            {/* 🔦 BACKGROUND MOVING LIGHTS (BRIGHTER) */}
-            <div className="stage-light" style={{ position: 'absolute', left: '15%', top: 0, width: 100, height: 200, background: 'linear-gradient(to bottom, rgba(157, 0, 255, 0.4), transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', filter: 'blur(25px)', mixBlendMode: 'screen' }} />
-            <div className="stage-light" style={{ position: 'absolute', right: '15%', top: 0, width: 100, height: 200, background: 'linear-gradient(to bottom, rgba(0, 229, 204, 0.4), transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', filter: 'blur(25px)', mixBlendMode: 'screen', animationDelay: '1.5s' }} />
-
-            {/* 🎤 CENTER SPOTLIGHT & MIC STAND */}
-            <div style={{ position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none' }}>
-               {/* The "Supernova" Center Beam */}
-               <div style={{ position: 'absolute', left: '50%', top: 0, width: 120, height: 180, transform: 'translateX(-50%)', background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent)', clipPath: 'polygon(50% 0%, 10% 100%, 90% 100%)', filter: 'blur(15px)', mixBlendMode: 'overlay' }} />
-               
-               {/* Mic Stand */}
-               <div style={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)', width: 2, height: 55, background: '#fff', boxShadow: '0 0 10px rgba(255,255,255,0.5)' }}>
-                  <div style={{ position: 'absolute', top: 5, left: -12, width: 25, height: 2, background: '#fff', transform: 'rotate(-30deg)' }} /> {/* Boom */}
-                  <div style={{ position: 'absolute', top: -3, left: -15, width: 6, height: 6, borderRadius: '50%', background: '#fff', boxShadow: '0 0 15px #fff' }} /> {/* Mic Head */}
-               </div>
-            </div>
-
-            {/* STAGE FLOOR */}
-            <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '40px', background: 'linear-gradient(to bottom, #111, #000)', borderTop: '2px solid #444', zIndex: 20 }}>
-               {/* Spotlight floor pool */}
-               <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 60, height: 20, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', filter: 'blur(10px)' }} />
-            </div>
-            
+            {/* 4. PERSPECTIVE FLOOR (The Depth Engine) */}
             <div style={{ 
-              position: 'absolute', bottom: 2, width: '100%', textAlign: 'center', 
-              fontFamily: "'Space Mono'", fontSize: 5, color: '#666', letterSpacing: 5, zIndex: 40 
+              position: 'absolute', bottom: 0, width: '100%', height: '55px', 
+              background: 'linear-gradient(to bottom, #111, #000)', borderTop: '2.5px solid #444', 
+              zIndex: 15, perspective: '100px'
             }}>
-              PRODUCTION_LIVE // STAGE_MAIN // SYSTEM_OK
+               {/* Converging Floor Lines */}
+               <div style={{ 
+                 position: 'absolute', inset: 0, 
+                 backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 30px)',
+                 transform: 'rotateX(45deg)', transformOrigin: 'top center'
+               }} />
+               
+               {/* Glow Pool in center */}
+               <div style={{ position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)', width: '120px', height: '40px', background: 'radial-gradient(circle, rgba(0,242,255,0.2), transparent 70%)', filter: 'blur(15px)' }} />
             </div>
+
+            {/* TRUSS RIGGING BULBS (Sequential Chasing) */}
+            <div style={{ position: 'absolute', top: 0, width: '100%', height: '20px', background: 'linear-gradient(to bottom, #222, #000)', borderBottom: '1.5px solid #555', zIndex: 30, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+               {[1,2,3,4,5,6,7,8,9,10].map(i => <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: '#fff', boxShadow: '0 0 10px #fff', animation: `chasing-bulb 1.2s infinite ${i*0.12}s` }} />)}
+            </div>
+
           </div>
         </div>
 
