@@ -2399,6 +2399,8 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
 
 // ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With Multi-Artist Setlinks) ─────────────
 
+// ─── 🖼️ THE UPDATED ROW COMPONENT (CLICKABLE HEADLINES) ─────────────
+
 function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
   const venueLabel = event.is_festival ? event.festival_name : event.venue;
   
@@ -2408,16 +2410,12 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
 
   return (
     <div style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      padding: isClustered ? '20px' : '30px',
+      display: 'flex', alignItems: 'center', padding: isClustered ? '20px' : '30px',
       background: isClustered ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.02)',
-      borderRadius: '16px',
-      border: `1px solid ${isClustered ? hexToRgba(clusterColor, 0.3) : C.border}`,
-      position: 'relative',
-      transition: 'all 0.3s ease',
-      overflow: 'visible'
+      borderRadius: '16px', border: `1px solid ${isClustered ? hexToRgba(clusterColor, 0.3) : C.border}`,
+      position: 'relative', transition: 'all 0.3s ease', overflow: 'visible'
     }}>
+      
       {/* 1. LEFT: THE ARTIFACT */}
       <div style={{ flexShrink: 0, width: '300px' }}>
         {event.is_festival 
@@ -2426,21 +2424,44 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
         }
       </div>
 
-      {/* 2. MIDDLE: THE FULL LINEUP & INFO */}
+      {/* 2. MIDDLE: THE INTERACTIVE LINEUP */}
       <div style={{ flex: 1, paddingLeft: '40px', paddingRight: '20px' }}>
         <div style={{ 
           fontFamily: "'Bebas Neue'", 
-          fontSize: isClustered ? '1.8rem' : '2.5rem', 
-          color: C.white, 
+          fontSize: isClustered ? '2rem' : '2.8rem', 
           lineHeight: 1.1,
           letterSpacing: '1px',
-          marginBottom: '15px'
+          marginBottom: '10px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          columnGap: '12px'
         }}>
-          {event.bands?.join(' · ').toUpperCase()}
+          {event.bands?.map((band, bIdx) => (
+            <React.Fragment key={`${event.id}-headline-${bIdx}`}>
+              <a 
+                href={getSetlistFmUrl(band, event.date)} 
+                target="_blank" rel="noreferrer"
+                style={{ 
+                  color: C.white, 
+                  textDecoration: 'none',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={e => { e.target.style.color = C.gold; e.target.style.textDecoration = 'underline'; }}
+                onMouseLeave={e => { e.target.style.color = C.white; e.target.style.textDecoration = 'none'; }}
+              >
+                {band.toUpperCase()}
+              </a>
+              {/* Add the dot separator only between names */}
+              {bIdx < event.bands.length - 1 && (
+                <span style={{ color: 'rgba(255,255,255,0.2)', pointerEvents: 'none' }}>·</span>
+              )}
+            </React.Fragment>
+          ))}
         </div>
         
-        {/* Info Bar with Multi-Setlink Mapping */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', rowGap: '10px' }}>
+        {/* Clean Metadata Row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: clusterColor || C.teal, fontWeight: 900 }}>
             {(isClustered && event.festival_day) ? event.festival_day.toUpperCase() : fmtDateShort(event.date)}
           </div>
@@ -2448,52 +2469,32 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
           <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>
             {event.venue?.toUpperCase()}
           </div>
-          
-          {/* 🟢 GENERATE INDIVIDUAL LINKS FOR EACH BAND */}
-          {event.bands?.map((band, bIdx) => (
-            <React.Fragment key={`${event.id}-link-${bIdx}`}>
+          {/* 🟢 Click-to-edit hint for admins */}
+          {isAdmin && (
+            <>
               <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
-              <a 
-                href={getSetlistFmUrl(band, event.date)} 
-                target="_blank" rel="noreferrer"
-                style={{ 
-                  fontFamily: "'Space Mono'", 
-                  fontSize: '10px', 
-                  color: C.gold, 
-                  textDecoration: 'none', 
-                  borderBottom: `1px solid ${C.gold}44`,
-                  paddingBottom: 1, 
-                  fontWeight: 700,
-                  whiteSpace: 'nowrap' // Keeps "ARTIST SET" on one line
-                }}
-                onMouseEnter={e => e.target.style.color = C.white}
-                onMouseLeave={e => e.target.style.color = C.gold}
+              <button 
+                onClick={() => onEdit(event)}
+                style={{ background: 'none', border: 'none', color: C.teal, fontFamily: "'Space Mono'", fontSize: '10px', cursor: 'pointer', padding: 0, opacity: 0.6 }}
               >
-                {band.toUpperCase()} SET ↗
-              </a>
-            </React.Fragment>
-          ))}
+                EDIT ARCHIVE
+              </button>
+            </>
+          )}
         </div>
       </div>
 
       {/* 3. RIGHT: THE MEDIA CLUSTER */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'flex-end',
-        minWidth: '400px',
-        marginLeft: 'auto'
-      }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minWidth: '400px', marginLeft: 'auto' }}>
         {rawSetlists.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={{ display: 'flex' }}>
             {rawSetlists.map((url, sIdx) => (
               <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={rawSetlists.length} />
             ))}
           </div>
         )}
-
         {finalPhotos.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={{ display: 'flex' }}>
             {finalPhotos.map((url, pIdx) => (
               <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
             ))}
