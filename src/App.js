@@ -1298,6 +1298,7 @@ function ArtistInsights({ concerts }) {
 }
 
 // ─── RANDOM SHOW (FULL FESTIVAL & SCROLLABLE EDITION) ────────────────────────
+// ─── RANDOM SHOW (SPECIFIC FESTIVAL & WATERMARK FIX) ────────────────────────
 function RandomShow({ concerts }) {
   const [show, setShow] = useState(null);
   const [spinning, setSpinning] = useState(false);
@@ -1322,40 +1323,29 @@ function RandomShow({ concerts }) {
   if (!show) return null;
 
   const bands = show.bands || [show.artist];
-  
-  // Logic to find ANY available image (Personal first, then Setlist)
   const displayImg = (show.personal_photo_url?.split(',')[0]) || (show.image_url?.split(',')[0]);
+  
+  // Use specific festival name if it exists, otherwise fallback to "FESTIVAL"
+  const festLabel = show.festival_name || "FESTIVAL";
 
   return (
     <Card neon className="card-texture" style={{ 
-      minHeight: 220, 
+      minHeight: 240, 
       position: 'relative', 
       overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column'
     }}>
-      {/* 🗓 THE BIG FAINT YEAR WATERMARK (Restored) */}
-      <div className="big-watermark" style={{ 
-        position: 'absolute', 
-        right: -10, 
-        bottom: -15, 
-        fontSize: '10rem',
-        zIndex: 0,
-        opacity: 0.12,
-        pointerEvents: 'none'
-      }}>
-        {getYear(show.date)}
-      </div>
-
-      {/* 📸 THE IMAGE (Right-aligned artifact) */}
+      
+      {/* 📸 THE IMAGE (Placed in the black space on the right) */}
       {displayImg && !spinning && (
         <div style={{
           position: 'absolute',
           right: 15,
           top: '50%',
           transform: 'translateY(-50%)',
-          width: '130px',
-          height: '150px',
+          width: '140px',
+          height: '160px',
           background: `url(${displayImg}) center/cover no-repeat`,
           borderRadius: '4px',
           border: `1px solid ${show.is_festival ? C.gold : C.purple}44`,
@@ -1365,7 +1355,24 @@ function RandomShow({ concerts }) {
         }} />
       )}
 
-      <div style={{ position: 'relative', zIndex: 2, height: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
+      {/* 🗓 THE BIG FAINT YEAR WATERMARK (Moved to z-index 2 so it shows over the image/card) */}
+      <div style={{ 
+        position: 'absolute', 
+        right: 10, 
+        bottom: -10, 
+        fontFamily: "'Bebas Neue'",
+        fontSize: '10rem',
+        zIndex: 2,
+        color: show.is_festival ? C.gold : C.purple,
+        opacity: 0.1,
+        pointerEvents: 'none',
+        lineHeight: 1,
+        userSelect: 'none'
+      }}>
+        {getYear(show.date)}
+      </div>
+
+      <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
         {/* Header Row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: show.is_festival ? C.gold : C.purple, letterSpacing: 2, fontWeight: 700 }}>
@@ -1377,7 +1384,7 @@ function RandomShow({ concerts }) {
         </div>
 
         <div className={spinning ? "spinning-text" : "fade-in"} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {/* DATE & FESTIVAL BADGE */}
+          {/* DATE & SPECIFIC FESTIVAL NAME */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <span style={{ background: C.white, color: C.bg, fontFamily: "'Bebas Neue'", fontSize: '1.4rem', padding: '0 8px' }}>
               {getYear(show.date)}
@@ -1392,32 +1399,33 @@ function RandomShow({ concerts }) {
                 border: `1px solid ${C.gold}`, 
                 fontFamily: "'Space Mono'", 
                 fontSize: '7px', 
-                padding: '2px 6px', 
+                padding: '2px 8px', 
                 borderRadius: '4px',
                 fontWeight: 900,
                 letterSpacing: '1px',
                 boxShadow: `0 0 10px ${hexToRgba(C.gold, 0.3)}`
               }}>
-                FESTIVAL
+                {festLabel.toUpperCase()}
               </span>
             )}
           </div>
 
-          {/* ARTISTS (Scrollable list for long festival lineups) */}
+          {/* ARTISTS (Scrollable list) */}
           <div style={{ 
             display: 'flex', 
             flexDirection: 'column', 
             gap: 4, 
             marginBottom: 10, 
-            maxWidth: displayImg ? '55%' : '100%',
-            maxHeight: '100px',
+            maxWidth: displayImg ? '50%' : '100%',
+            maxHeight: '110px',
             overflowY: 'auto',
-            paddingRight: '5px'
+            paddingRight: '5px',
+            scrollbarWidth: 'none'
           }}>
             {bands.map((b, i) => (
               <div key={i} style={{ 
                 fontFamily: "'Bebas Neue'", 
-                fontSize: bands.length > 3 ? '1.2rem' : '1.8rem', 
+                fontSize: bands.length > 3 ? '1.3rem' : '1.8rem', 
                 color: C.white, 
                 lineHeight: 1, 
                 letterSpacing: '0.05em',
@@ -1430,11 +1438,11 @@ function RandomShow({ concerts }) {
             ))}
           </div>
 
-          {/* VENUE PIN (Bottom Left) */}
+          {/* VENUE PIN */}
           <div style={{ marginTop: 'auto' }}>
             <div style={{ 
               fontFamily: "'Bebas Neue'", 
-              fontSize: '1.4rem', 
+              fontSize: '1.5rem', 
               color: show.is_festival ? C.gold : C.purple, 
               letterSpacing: '1px',
               lineHeight: 1.1 
