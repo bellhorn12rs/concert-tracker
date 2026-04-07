@@ -555,12 +555,28 @@ const MarqueeStyles = () => (
       letter-spacing: -0.05em;
     }
 
-@keyframes record-spin {
+/* Replaces/Adds to MarqueeStyles */
+@keyframes spin-record {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
-.record-container:hover svg {
-  animation: record-spin 5s linear infinite;
+.record-platter-continuous { 
+  animation: spin-record 8s linear infinite; 
+  transform-origin: center;
+}
+.crate-sleeve {
+  transition: transform 0.3s ease;
+}
+.crate-sleeve:hover {
+  transform: translateY(-15px) rotate(-2deg);
+  z-index: 10;
+}
+.wristband-bin::-webkit-scrollbar { width: 4px; }
+.wristband-bin::-webkit-scrollbar-thumb { background: ${C.teal}44; border-radius: 10px; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 .pass-float {
   animation: float 3s ease-in-out infinite;
@@ -1494,108 +1510,134 @@ function SonicDNA({ stats, onGenreClick }) {
   );
 }
 
-// ─── STABILIZED DONUT ──────────────────────────────────────
+// ─── 1. THE TURNTABLE (INFINITE SPIN + CRATE) ─────────────────────────
 function DonutChart({ fest, solo }) {
   const total = (fest + solo) || 1;
   const festPct = fest / total;
-  const r = 52; const cx = 70; const cy = 70;
+  const r = 50; const cx = 70; const cy = 70;
   const circ = 2 * Math.PI * r;
   const festDash = festPct * circ;
   
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:20 }}>
-      <div className="record-container" style={{ position: 'relative' }}>
-        <svg width={140} height={140} viewBox="0 0 140 140">
-          <circle cx={cx} cy={cy} r={r+4} fill="none" stroke="#111" strokeWidth={1} />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.border} strokeWidth={14} />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.grayDim} strokeWidth={14} opacity={0.2} />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.teal} strokeWidth={14} 
+    <div style={{ display:'flex', flexDirection:'column', height: '100%', gap: 20 }}>
+      <div className="turntable" style={{ 
+        position: 'relative', width: 160, height: 160, background: '#181818', 
+        borderRadius: 4, border: '1px solid #222', padding: 10, alignSelf: 'center',
+        boxShadow: 'inset 0 0 30px #000, 0 10px 30px rgba(0,0,0,0.5)'
+      }}>
+        <div style={{ position:'absolute', inset: 8, borderRadius: '50%', background: '#111', border: '2px solid #222' }} />
+        <svg className="record-platter-continuous" width="140" height="140" viewBox="0 0 140 140">
+          <circle cx={cx} cy={cy} r={68} fill="#050505" />
+          {[60, 55, 50, 45, 40].map(rad => (
+            <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#111" strokeWidth={0.5} />
+          ))}
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.border} strokeWidth={10} opacity={0.2} />
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.teal} strokeWidth={10} 
             strokeDasharray={`${festDash} ${circ}`} strokeLinecap="round" 
-            transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 5px ${C.teal})` }} 
+            transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 8px ${C.teal})` }} 
           />
-          <circle cx={cx} cy={cy} r={18} fill="#050508" stroke={C.border} strokeWidth={1} />
-          <text x={cx} y={cy+5} textAnchor="middle" style={{ fontFamily:"'Bebas Neue'", fontSize:18, fill:C.teal }}>{Math.round(festPct*100)}%</text>
+          <circle cx={cx} cy={cy} r={18} fill={C.teal} stroke="#000" strokeWidth={1} />
+          <circle cx={cx} cy={cy} r={3} fill="#000" />
+          <text x={cx} y={cy+25} textAnchor="middle" style={{ fontFamily:"'Space Mono'", fontSize:5, fill:C.white, fontWeight: 900 }}>{Math.round(festPct*100)}% FEST</text>
         </svg>
+        <div style={{ position:'absolute', top:15, right:15, width:6, height:70, background:'linear-gradient(to bottom, #555, #222)', transform:'rotate(25deg)', transformOrigin:'top', borderRadius:4, border:'1px solid #111', zIndex: 5 }} />
       </div>
-      <div style={{ flex:1 }}>
-        {[[C.teal,'FESTIVAL',fest],[C.grayDim,'STANDALONE',solo]].map(([color,label,val]) => (
-          <div key={label} style={{ marginBottom:12 }}>
-            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-               <span style={{ fontFamily:"'Space Mono'", fontSize:8, color:C.gray }}>{label}</span>
-               <span style={{ fontFamily:"'Bebas Neue'", fontSize:'1.2rem', color }}>{val}</span>
-            </div>
-            <div style={{ height:4, background:C.border, borderRadius:2, overflow:'hidden' }}>
-              <div style={{ height:'100%', width:`${(val/total)*100}%`, background:color }} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
-// ─── STABILIZED FEST BLOCKS ────────────────────────────────
-function TopFestBlocks({ festBreakdown }) {
-  const top3 = festBreakdown.slice(0,3);
-  const colors = [C.teal, C.cyan, C.purple];
-  return (
-    <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-      {top3.map(([name,count], i) => (
-        <div key={name} className="pass-float" style={{ 
-          display:'flex', alignItems:'center', gap:15, 
-          background:`linear-gradient(90deg, ${colors[i]}15, transparent)`, 
-          border:`1px solid ${colors[i]}33`, borderLeft:`4px solid ${colors[i]}`, 
-          borderRadius:'4px 12px 12px 4px', padding:'12px 16px'
-        }}>
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#000', border: `2px solid ${colors[i]}` }} />
-          <div style={{ flex:1 }}>
-            <div style={{ fontFamily:"'Space Mono'", fontSize:7, color:colors[i] }}>VIP ACCESS</div>
-            <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.1rem', color:C.white }}>{name.toUpperCase()}</div>
-          </div>
-          <div style={{ textAlign:'right' }}>
-            <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.6rem', color:colors[i], lineHeight:1 }}>{count}</div>
-            <div style={{ fontFamily:"'Space Mono'", fontSize:7, color:C.gray }}>DAYS</div>
-          </div>
+      <div style={{ marginTop: 'auto', padding: '0 10px' }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, marginBottom: 8, letterSpacing: 2 }}>COLLECTION_LOG.BIN</div>
+        <div style={{ display: 'flex', gap: 4, height: 60, alignItems: 'flex-end', paddingBottom: 5, borderBottom: `2px solid ${C.border}` }}>
+          {[C.teal, C.purple, C.gold, C.cyan, C.green, C.teal].map((col, i) => (
+            <div key={i} className="crate-sleeve" style={{ 
+              flex: 1, height: `${40 + (i % 3) * 10}px`, 
+              background: `linear-gradient(to bottom, ${col}44, ${col}11)`, 
+              border: `1px solid ${col}66`, borderRadius: '2px 2px 0 0',
+              position: 'relative'
+            }}>
+              <div style={{ position:'absolute', top:4, left:'50%', transform:'translateX(-50%)', width: '60%', height: 2, background: col, opacity: 0.5 }} />
+            </div>
+          ))}
         </div>
-      ))}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+           <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.teal }}>{fest + solo} <span style={{ fontSize: 8, color: C.gray, fontFamily: "'Space Mono'" }}>LTD SHOWS</span></span>
+        </div>
+      </div>
     </div>
   );
 }
 
-// ─── STABILIZED DECADES ──────────────────────────────────
+// ─── 2. THE WRISTBAND BIN (SCROLLABLE LOG) ──────────────────────────
+function TopFestBlocks({ festBreakdown, concerts }) {
+  const colors = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699'];
+  const getFestStats = (name) => {
+    const festShows = concerts.filter(c => c.festival_name === name);
+    const artists = new Set(festShows.flatMap(s => s.bands || []));
+    return { sets: festShows.length, acts: artists.size };
+  };
+
+  return (
+    <div className="wristband-bin" style={{ display:'flex', flexDirection:'column', gap:10, maxHeight: 290, overflowY: 'auto', paddingRight: 8, scrollbarWidth: 'none' }}>
+      {festBreakdown.map(([name, days], i) => {
+        const color = colors[i % colors.length];
+        const stats = getFestStats(name);
+        return (
+          <div key={name} style={{ display:'flex', alignItems:'center', background: '#080808', border: `1px solid ${color}22`, borderRadius: 6, height: 50, overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
+            <div style={{ width: 45, height: '100%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#000', lineHeight: 0.8 }}>{days}</div>
+               <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#000', fontWeight: 900 }}>LOGS</div>
+            </div>
+            <div style={{ flex: 1, padding: '0 15px', background: `repeating-linear-gradient(45deg, transparent, transparent 5px, ${color}03 5px, ${color}03 10px)` }}>
+               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', letterSpacing: 1 }}>{name.toUpperCase()}</div>
+               <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: color, opacity: 0.7 }}>{stats.acts} UNIQUE ACTS ARCHIVED</div>
+            </div>
+            <div style={{ padding: '0 12px', textAlign: 'right', borderLeft: '1px dashed #222' }}>
+               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.white }}>{stats.sets}</div>
+               <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.gray }}>SETS</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── 3. THE DECADE MEDIA STACK ──────────────────────────────────────
 function DecadeBlocks({ sets }) {
   const counts = {'90s':0,'00s':0,'10s':0,'20s':0};
   sets.forEach(s => { 
-    const y = getYear(s.date); 
-    if(!y) return; 
-    if(y < 2000) counts['90s']++; 
-    else if(y < 2010) counts['00s']++; 
-    else if(y < 2020) counts['10s']++; 
-    else counts['20s']++; 
+    const y = getYear(s.date); if(!y) return; 
+    if(y < 2000) counts['90s']++; else if(y < 2010) counts['00s']++; else if(y < 2020) counts['10s']++; else counts['20s']++; 
   });
-
-  const colors = [C.purple, C.cyan, C.teal, C.gold];
+  const media = {
+    '90s': { label: 'ANALOG', icon: '📼', color: C.purple, bg: '#1a0a1a' },
+    '00s': { label: 'DIGITAL', icon: '💿', color: C.cyan, bg: '#0a1a1a' },
+    '10s': { label: 'STREAM', icon: '📱', color: C.teal, bg: '#0a1a0a' },
+    '20s': { label: 'HYPER', icon: '🧬', color: C.gold, bg: '#1a1a0a' }
+  };
   const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
-    <div style={{ display:'flex', flexDirection: 'column', gap:8 }}>
-      {Object.entries(counts).map(([decade, count], i) => (
-        <div key={decade} style={{ 
-          height: 38, background: '#0a0a0a', border: `1px solid ${colors[i]}44`,
-          borderRadius: 4, display: 'flex', alignItems: 'center', overflow: 'hidden'
-        }}>
-          <div style={{ width: 45, height: '100%', background: colors[i], color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Bebas Neue'", fontSize: '1.2rem' }}>
-            {decade}
+    <div style={{ display:'flex', flexDirection: 'column', gap:10 }}>
+      {Object.entries(counts).map(([decade, count]) => {
+        const m = media[decade];
+        return (
+          <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: 10, background: m.bg, border: `1px solid ${m.color}33`, borderRadius: 6, padding: '8px 12px' }}>
+            <div style={{ fontSize: '1.5rem', filter: `drop-shadow(0 0 5px ${m.color}66)` }}>{m.icon}</div>
+            <div style={{ flex: 1 }}>
+               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: m.color, letterSpacing: 1 }}>{m.label} ERA</span>
+                  <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#fff' }}>{decade}</span>
+               </div>
+               <div style={{ height: 3, background: '#000', borderRadius: 2 }}>
+                  <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.color, boxShadow: `0 0 8px ${m.color}` }} />
+               </div>
+            </div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.white, width: 40, textAlign: 'right' }}>{count}</div>
           </div>
-          <div style={{ flex: 1, height: '100%', position: 'relative' }}>
-             <div style={{ position:'absolute', left:0, top:0, bottom:0, width:`${(count/maxVal)*100}%`, background: `${colors[i]}15`, borderRight: `2px solid ${colors[i]}` }} />
-             <div style={{ position: 'relative', zIndex: 2, padding: '0 12px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray }}>ARCHIVE</span>
-                <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff' }}>{count} SETS</span>
-             </div>
-          </div>
-        </div>
-      ))}
+        );
+      })}
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
+         <FerrisWheel size={80} />
+      </div>
     </div>
   );
 }
@@ -4256,8 +4298,7 @@ async function handleUpcomingDelete(id) {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
                 <Card neon><CardTitle>Fest vs Standalone</CardTitle><DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} /></Card>
-                <Card neon><CardTitle>Top Festivals</CardTitle><TopFestBlocks festBreakdown={festBreakdown} /></Card>
-                <Card neon>
+<Card neon><CardTitle>Festival Passports</CardTitle><TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} /></Card>                <Card neon>
                   <CardTitle>By Decade</CardTitle>
                   <DecadeBlocks sets={allSetsList} />
                   <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
