@@ -1429,7 +1429,7 @@ function DecadeBlocks({ sets }) {
 }
 
 // ─── HALL OF FAME (TRIPLE-THREAT MEDIA EDITION) ──────────────────────────────
-// ─── HALL OF FAME (TRIPLE-THREAT MEDIA EDITION) ──────────────────────────────
+// ─── HALL OFFAME (RESTORED & ARMORED) ───────────────────────────────────────
 function HallOfFame({ sets, genreMap, onShare }) {
   const [selected, setSelected] = useState(null);
   const topRef = useRef(null);
@@ -1446,6 +1446,7 @@ function HallOfFame({ sets, genreMap, onShare }) {
       const masterGenre = genreMap[a.artist];
       return { ...a, genre: masterGenre || null };
     })
+    // Use a fallback for the MIN constant if it's missing
     .filter(a => a.shows.length >= (typeof HALL_OF_FAME_MIN !== 'undefined' ? HALL_OF_FAME_MIN : 3))
     .sort((a, b) => b.shows.length - a.shows.length);
   }, [sets, genreMap]);
@@ -1459,8 +1460,8 @@ function HallOfFame({ sets, genreMap, onShare }) {
     setTimeout(() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); 
   };
 
-  // 2. 🟢 MEDIA ARCHIVE LOGIC (The Typhoon Fix)
-  // We collect every setlist and photo associated with this specific artist's history
+  // 2. 🟢 ROBUST MEDIA ARCHIVE
+  // This checks EVERY bucket. Even if it's in the old "image_url" slot, we find it.
   const archive = useMemo(() => {
     if (!selectedData) return { setlists: [], photos: [] };
     
@@ -1468,11 +1469,19 @@ function HallOfFame({ sets, genreMap, onShare }) {
     const photos = [];
 
     selectedData.shows.forEach(s => {
-      if (s.setlist_image_url) {
-        s.setlist_image_url.split(',').forEach(url => setlists.push({ url: url.trim(), date: s.date }));
+      // Logic for Setlists: Check new bucket FIRST, then fallback to old image_url
+      const slSource = s.setlist_image_url || s.image_url;
+      if (slSource && typeof slSource === 'string') {
+        slSource.split(',').forEach(url => {
+          if (url.trim()) setlists.push({ url: url.trim(), date: s.date });
+        });
       }
-      if (s.personal_photo_url) {
-        s.personal_photo_url.split(',').forEach(url => photos.push({ url: url.trim(), date: s.date }));
+      
+      // Logic for Polaroids
+      if (s.personal_photo_url && typeof s.personal_photo_url === 'string') {
+        s.personal_photo_url.split(',').forEach(url => {
+          if (url.trim()) photos.push({ url: url.trim(), date: s.date });
+        });
       }
     });
 
@@ -1482,7 +1491,7 @@ function HallOfFame({ sets, genreMap, onShare }) {
   return (
     <div ref={topRef} style={{ padding: '24px 0' }} className="fade-in">
       <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 10, color: C.gray, marginBottom: 20, letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'center' }}>
-        // LEGENDARY STATUS: ARTISTS SEEN {HALL_OF_FAME_MIN || 3}+ TIMES //
+        // ARTISTS SEEN {HALL_OF_FAME_MIN || 3}+ TIMES //
       </div>
 
       {selectedData && (() => {
@@ -1492,33 +1501,34 @@ function HallOfFame({ sets, genreMap, onShare }) {
             background: `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(gc, 0.05)})`, 
             border: `2px solid ${gc}44`, borderRadius: 16, padding: '40px', marginBottom: 40, 
             boxShadow: `0 30px 100px rgba(0,0,0,0.5), 0 0 40px ${hexToRgba(gc, 0.15)}`,
-            position: 'relative', overflow: 'visible'
+            position: 'relative'
           }}>
-            {/* Background stats watermark */}
+            {/* Watermark */}
             <div style={{ position: 'absolute', right: 20, bottom: -10, fontFamily: "'Bebas Neue'", fontSize: '12rem', color: hexToRgba(gc, 0.03), pointerEvents: 'none', userSelect: 'none', lineHeight: 1 }}>
               {selectedData.shows.length}X
             </div>
 
+            {/* Header Area */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, position: 'relative', zIndex: 5 }}>
               <div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', letterSpacing: '0.05em', color: C.white, marginBottom: 8, lineHeight: 0.9 }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: C.white, lineHeight: 0.9 }}>
                   {selectedData.artist.toUpperCase()}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 15, marginTop: 10 }}>
                   {selectedData.genre && <GenreBadge genre={selectedData.genre} color={gc} />}
-                  <span style={{ fontFamily: "'Space Mono'", fontSize: 11, color: gc, fontWeight: 900, letterSpacing: '2px' }}>
-                    ESTABLISHED {fmtDate(selectedData.shows[0].date)}
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 11, color: gc, fontWeight: 900 }}>
+                    {selectedData.shows.length} SETS IN ARCHIVE
                   </span>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
-                {onShare && <button onClick={() => onShare(selectedData.artist, selectedData.shows)} style={{ fontFamily: "'Space Mono'", fontSize: 10, background: hexToRgba(gc, 0.2), border: `2px solid ${gc}`, color: '#fff', borderRadius: 6, padding: '8px 16px', cursor: 'pointer', fontWeight: 700 }}>📤 EXPORT HISTORY</button>}
-                <button onClick={() => setSelected(null)} style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid rgba(255,255,255,0.1)`, color: '#fff', fontSize: 10, borderRadius: 6, padding: '8px 16px', cursor: 'pointer' }}>CLOSE ARCHIVE</button>
+                {onShare && <button onClick={() => onShare(selectedData.artist, selectedData.shows)} style={{ fontFamily: "'Space Mono'", fontSize: 10, background: hexToRgba(gc, 0.2), border: `2px solid ${gc}`, color: '#fff', borderRadius: 6, padding: '8px 16px', cursor: 'pointer', fontWeight: 700 }}>SHARE HISTORY</button>}
+                <button onClick={() => setSelected(null)} style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid rgba(255,255,255,0.1)`, color: '#fff', fontSize: 10, borderRadius: 6, padding: '8px 16px', cursor: 'pointer' }}>CLOSE</button>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '60px', position: 'relative', zIndex: 5 }}>
-              {/* 📜 COLUMN 1: THE PERFORMANCE LOG */}
+            <div style={{ display: 'flex', gap: '50px', position: 'relative', zIndex: 5 }}>
+              {/* TIMELINE */}
               <div style={{ flex: 1, position: 'relative', paddingLeft: 25 }}>
                 <div style={{ position: 'absolute', left: 5, top: 0, bottom: 0, width: 2, background: `linear-gradient(to bottom, ${gc}, transparent)`, opacity: 0.4 }} />
                 {[...selectedData.shows].reverse().map((s, i) => (
@@ -1526,54 +1536,33 @@ function HallOfFame({ sets, genreMap, onShare }) {
                     <div style={{ position: 'absolute', left: -24, top: 4, width: 10, height: 10, borderRadius: '50%', background: s.is_festival ? gc : '#fff', boxShadow: `0 0 15px ${s.is_festival ? gc : '#fff'}` }} />
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
                       <span style={{ fontFamily: "'Space Mono'", fontSize: 11, color: gc, fontWeight: 900 }}>{fmtDate(s.date)}</span>
-                      <span style={{ fontSize: '1.1rem', color: C.white, fontWeight: 500 }}>{s.venue}</span>
+                      <span style={{ fontSize: '1.1rem', color: C.white }}>{s.venue}</span>
                     </div>
-                    {s.is_festival && <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginTop: 4 }}>{s.festival_name.toUpperCase()} // {s.festival_day}</div>}
                   </div>
                 ))}
               </div>
 
-              {/* 🖼️ COLUMN 2: THE MEDIA VAULT (Setlists & Polaroids) */}
-              <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '40px' }}>
-                
-                {/* SETLISTS */}
+              {/* MEDIA VAULT (REPAIRED) */}
+              <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '30px' }}>
                 {archive.setlists.length > 0 && (
                   <div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: gc, letterSpacing: 3, marginBottom: 20, fontWeight: 900 }}>
-                       // STAGE ARTIFACTS
-                    </div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: gc, letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// STAGE ARTIFACTS</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
                       {archive.setlists.map((m, idx) => (
-                        <SetlistPaper key={idx} src={m.url} index={idx} total={archive.setlists.length} />
+                        <SetlistPaper key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.setlists.length} />
                       ))}
                     </div>
                   </div>
                 )}
-
-                {/* POLAROIDS */}
+                
                 {archive.photos.length > 0 && (
                   <div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#9d00ff', letterSpacing: 3, marginBottom: 20, fontWeight: 900 }}>
-                       // PERSONAL MEMORIES
-                    </div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#9d00ff', letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// PERSONAL MEMORIES</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
                       {archive.photos.map((m, idx) => (
-                        <PersonalPolaroid 
-                          key={idx} 
-                          src={m.url} 
-                          index={idx} 
-                          total={archive.photos.length} 
-                          caption={fmtDateShort(m.date)} 
-                        />
+                        <PersonalPolaroid key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.photos.length} caption={fmtDateShort(m.date)} />
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {archive.setlists.length === 0 && archive.photos.length === 0 && (
-                  <div style={{ padding: '60px 0', textAlign: 'center', opacity: 0.3, border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 12 }}>
-                    <div style={{ fontSize: '2rem', marginBottom: 10 }}>📼</div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9 }}>NO VISUAL ARTIFACTS IN VAULT</div>
                   </div>
                 )}
               </div>
@@ -1582,36 +1571,42 @@ function HallOfFame({ sets, genreMap, onShare }) {
         );
       })()}
 
-      {/* THE GRID VIEW */}
+      {/* 3. 🟡 THE GRID VIEW (Restored Badge & Counter) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 15 }}>
         {artists.map((a, i) => {
           const gc = a.genre ? (GENRE_COLORS[a.genre] || C.teal) : null;
           const isSelected = selected === a.artist;
           const cardColor = isSelected ? (gc || C.teal) : gc;
-          const mediaCount = a.shows.filter(s => s.setlist_image_url || s.personal_photo_url).length;
+          
+          // 🟢 RESTORED COUNTER LOGIC
+          // Checks ALL possible setlist indicators
+          const setlistCount = a.shows.filter(s => 
+            s.has_setlist || 
+            (s.has_setlist_names && s.has_setlist_names.trim().length > 0) || 
+            s.setlist_image_url || 
+            s.image_url
+          ).length;
 
           return (
             <div key={a.artist} onClick={() => handleSelect(a.artist, isSelected)}
               style={{ 
                 background: cardColor ? `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(cardColor, 0.12)})` : C.bgCard, 
                 border: `1px solid ${cardColor ? hexToRgba(cardColor, 0.5) : C.border}`, 
-                borderRadius: 12, padding: '20px', cursor: 'pointer', transition: 'all 0.3s ease', position: 'relative', overflow: 'hidden' 
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-5px)'; if(cardColor) e.currentTarget.style.boxShadow = `0 10px 30px ${hexToRgba(cardColor, 0.2)}`; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-            >
+                borderRadius: 12, padding: '20px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative'
+              }}>
               <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: cardColor || C.tealDim, marginBottom: 8, fontWeight: 900 }}>{MEDAL[i] || 'RECORD'} #{i + 1}</div>
               <div style={{ fontSize: '1.2rem', fontWeight: 800, color: C.white, marginBottom: 4, lineHeight: 1 }}>{a.artist.toUpperCase()}</div>
               {a.genre && <GenreBadge genre={a.genre} color={gc} small />}
               
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 15 }}>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: cardColor || C.white, lineHeight: 1 }}>{a.shows.length}×</div>
-                {mediaCount > 0 && (
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, background: `${C.gold}15`, padding: '2px 6px', borderRadius: 4, border: `1px solid ${C.gold}33` }}>
-                    {mediaCount} ARCHIVED
-                  </div>
-                )}
-              </div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: cardColor || C.white, lineHeight: 1, marginTop: 10 }}>{a.shows.length}×</div>
+              
+              {/* 🟡 RESTORED YELLOW BADGE */}
+              {setlistCount > 0 && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10, background: `${C.gold}15`, border: `1px solid ${C.gold}44`, borderRadius: 10, padding: '4px 10px' }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.gold, boxShadow: `0 0 8px ${C.gold}` }} />
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, fontWeight: 900, textTransform: 'uppercase' }}>{setlistCount} SETLISTS</span>
+                </div>
+              )}
             </div>
           );
         })}
