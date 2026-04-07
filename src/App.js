@@ -1572,55 +1572,70 @@ function DecadeBlocks({ sets }) {
   const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '320px', gap: 12 }}>
       
-      {/* 🟢 TOP SECTION: NEON HIGHLIGHT ROWS */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* 🟢 TOP SECTION: DATA ROWS (Compressed to save height) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {Object.entries(counts).map(([decade, count]) => {
           const m = media[decade];
           return (
             <div key={decade} style={{ 
-              display: 'flex', alignItems: 'center', gap: 12, 
-              background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: 4, 
-              border: `1px solid ${m.color}33`,
-              boxShadow: `inset 0 0 10px ${m.color}11`
+              display: 'flex', alignItems: 'center', gap: 10, 
+              background: 'rgba(255,255,255,0.02)', padding: '6px 12px', borderRadius: 4, 
+              border: `1px solid ${m.color}22`
             }}>
-              <span style={{ fontSize: '1.2rem', filter: `drop-shadow(0 0 5px ${m.color})` }}>{m.icon}</span>
+              <span style={{ fontSize: '1rem', filter: `drop-shadow(0 0 3px ${m.color})` }}>{m.icon}</span>
               <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: m.color, fontWeight: 900, letterSpacing: 1 }}>{m.label}</span>
-                  <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#fff' }}>{decade}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: m.color, fontWeight: 900 }}>{m.label}</span>
+                  <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: '#fff' }}>{decade}</span>
                 </div>
-                <div style={{ height: 4, background: '#000', borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.color, boxShadow: `0 0 10px ${m.color}` }} />
+                <div style={{ height: 3, background: '#000', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.color, boxShadow: `0 0 8px ${m.color}` }} />
                 </div>
               </div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', width: 30, textAlign: 'right' }}>{count}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', width: 25, textAlign: 'right' }}>{count}</div>
             </div>
           );
         })}
       </div>
 
-      {/* 🔵 BOTTOM SECTION: 50/50 SPLIT */}
+      {/* 🔵 BOTTOM SECTION: VISUAL SPLIT (Fixed Height) */}
       <div style={{ 
-        flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', 
-        borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 20, minHeight: 120 
+        flex: 1, display: 'grid', gridTemplateColumns: '1fr 1.2fr', 
+        borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 10
       }}>
         
-        {/* LEFT SIDE: FERRIS WHEEL */}
+        {/* LEFT: FERRIS WHEEL */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px dashed rgba(255,255,255,0.1)' }}>
-           <FerrisWheel size={80} />
+           <FerrisWheel size={70} />
         </div>
 
-        {/* RIGHT SIDE: RENDERED STAGE */}
-        <div style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ width: '80%', height: '60px', background: '#050505', borderRadius: 4, border: '1px solid #333', position: 'relative' }}>
-             {/* Stage Floor */}
-             <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '8px', background: '#111' }} />
-             {/* Stage Lights (Static for now, using your existing beam logic) */}
-             <div className="stage-light" style={{ position: 'absolute', left: '20%', top: -5, width: 20, height: 40, background: 'radial-gradient(circle at top, #00e5cc44, transparent 70%)', filter: 'blur(5px)' }} />
-             <div className="stage-light" style={{ position: 'absolute', right: '20%', top: -5, width: 20, height: 40, background: 'radial-gradient(circle at top, #9966ff44, transparent 70%)', filter: 'blur(5px)' }} />
-             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Space Mono'", fontSize: 6, color: '#444' }}>LIVE_FEED</div>
+        {/* RIGHT: RENDERED STAGE */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 10px' }}>
+          <div style={{ 
+            width: '100%', height: '70px', background: '#000', borderRadius: 4, 
+            border: '1px solid #222', position: 'relative', overflow: 'hidden',
+            boxShadow: 'inset 0 0 15px #000'
+          }}>
+             {/* Volumetric Stage Lights */}
+             <div className="stage-light" style={{ position: 'absolute', left: '15%', top: -10, width: 30, height: 60, background: 'radial-gradient(circle at top, rgba(0, 229, 204, 0.4), transparent 70%)', filter: 'blur(6px)' }} />
+             <div className="stage-light" style={{ position: 'absolute', left: '40%', top: -10, width: 30, height: 60, background: 'radial-gradient(circle at top, rgba(153, 102, 255, 0.4), transparent 70%)', filter: 'blur(6px)' }} />
+             <div className="stage-light" style={{ position: 'absolute', right: '15%', top: -10, width: 30, height: 60, background: 'radial-gradient(circle at top, rgba(255, 204, 0, 0.4), transparent 70%)', filter: 'blur(6px)' }} />
+             
+             {/* Stage Floor (3D perspective) */}
+             <div style={{ 
+               position: 'absolute', bottom: 0, width: '100%', height: '15px', 
+               background: 'linear-gradient(to top, #111, #050505)', 
+               borderTop: '1px solid #333' 
+             }} />
+             
+             <div style={{ 
+               position: 'absolute', bottom: 4, width: '100%', textAlign: 'center', 
+               fontFamily: "'Space Mono'", fontSize: 5, color: '#444', letterSpacing: 2 
+             }}>
+               FRONT_OF_HOUSE // SYSTEM_OK
+             </div>
           </div>
         </div>
 
