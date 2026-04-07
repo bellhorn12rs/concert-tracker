@@ -1636,64 +1636,90 @@ function DecadeBlocks({ sets }) {
   const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '250px', gap: 8, overflow: 'hidden' }}>
-      {/* DATA ROWS */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '260px', gap: 10, overflow: 'hidden' }}>
+      
+      {/* 🟢 DATA ROWS */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {Object.entries(counts).map(([decade, count]) => {
           const m = media[decade];
           return (
-            <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.02)', padding: '4px 10px', borderRadius: 4, border: `1px solid ${m.color}22` }}>
-              <span style={{ fontSize: '0.8rem' }}>{m.icon}</span>
+            <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.02)', padding: '5px 12px', borderRadius: 4, border: `1px solid ${m.color}22` }}>
+              <span style={{ fontSize: '0.8rem', filter: `drop-shadow(0 0 5px ${m.color})` }}>{m.icon}</span>
               <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1 }}>
                   <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: m.color, fontWeight: 900 }}>{m.label}</span>
-                  <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.7rem', color: '#fff' }}>{decade}</span>
+                  <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.75rem', color: '#fff' }}>{decade}</span>
                 </div>
-                <div style={{ height: 2, background: '#000', borderRadius: 1 }}>
-                  <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.color, boxShadow: `0 0 8px ${m.color}` }} />
+                <div style={{ height: 2, background: '#000', borderRadius: 1, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.color, boxShadow: `0 0 10px ${m.color}` }} />
                 </div>
               </div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#fff', width: 25, textAlign: 'right' }}>{count}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', width: 30, textAlign: 'right' }}>{count}</div>
             </div>
           );
         })}
       </div>
 
-      {/* THE RIGGED STAGE SECTION */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1.8fr', borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: 5, paddingTop: 10 }}>
+      {/* 🔵 THE VENUE RENDER */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 2fr', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 12 }}>
+        
+        {/* FERRIS WHEEL (Festival Grounds) */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px dashed rgba(255,255,255,0.1)' }}>
-           <FerrisWheel size={55} />
+           <FerrisWheel size={65} />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>
-          <div style={{ width: '100%', height: '80px', background: '#000', borderRadius: 4, border: '1px solid #222', position: 'relative', overflow: 'hidden' }}>
+        {/* 🎭 THE MAIN STAGE (Structural Build) */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 10px' }}>
+          <div style={{ 
+            width: '100%', height: '100px', background: '#050505', borderRadius: 4, 
+            border: '1px solid #222', position: 'relative', overflow: 'hidden',
+            boxShadow: 'inset 0 0 30px #000, 0 10px 30px rgba(0,0,0,0.5)'
+          }}>
             
-            {/* Structural Truss Roof & Sides */}
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '12px', background: '#111', borderBottom: '1px solid #333', zIndex: 5, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-               {[1,2,3,4,5].map(i => <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: '#333' }} />)}
-            </div>
-            
-            {/* Side Speaker Stacks */}
-            <div style={{ position: 'absolute', left: 2, bottom: 10, width: 12, height: 40, background: '#111', border: '1px solid #222', display: 'flex', flexDirection: 'column', gap: 2, padding: 2 }}>
-               {[1,2,3].map(i => <div key={i} style={{ flex: 1, background: '#050505', borderRadius: 1, border: '1px solid #1a1a1a' }} />)}
-            </div>
-            <div style={{ position: 'absolute', right: 2, bottom: 10, width: 12, height: 40, background: '#111', border: '1px solid #222', display: 'flex', flexDirection: 'column', gap: 2, padding: 2 }}>
-               {[1,2,3].map(i => <div key={i} style={{ flex: 1, background: '#050505', borderRadius: 1, border: '1px solid #1a1a1a' }} />)}
+            {/* 1. THE RIGGING (Top Truss) */}
+            <div style={{ position: 'absolute', top: 0, width: '100%', height: '14px', background: '#111', borderBottom: '2px solid #333', zIndex: 10, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+               {[1,2,3,4,5,6].map(i => <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: '#ffdd88', boxShadow: '0 0 5px #ffaa00' }} />)}
             </div>
 
-            {/* Neon Star + Lights */}
-            <div style={{ position: 'absolute', left: '50%', top: '45%', transform: 'translate(-50%, -50%)', fontSize: '1.4rem', filter: 'drop-shadow(0 0 10px #00f2ff)', color: '#00f2ff', zIndex: 2 }}>⭐</div>
-            
-            <div className="stage-light" style={{ position: 'absolute', left: '20%', top: 5, width: 30, height: 70, background: 'radial-gradient(circle at top, #9d00ff66, transparent 80%)', filter: 'blur(8px)', mixBlendMode: 'screen' }} />
-            <div className="stage-light" style={{ position: 'absolute', right: '20%', top: 5, width: 30, height: 70, background: 'radial-gradient(circle at top, #ffcc0066, transparent 80%)', filter: 'blur(8px)', mixBlendMode: 'screen' }} />
-            
-            {/* Stage Steps */}
-            <div style={{ position: 'absolute', bottom: 0, width: '40%', left: '30%', height: '18px', background: '#151515', border: '1px solid #333', borderBottom: 'none', zIndex: 4 }} />
-            <div style={{ position: 'absolute', bottom: 0, width: '60%', left: '20%', height: '8px', background: '#0a0a0a', border: '1px solid #222', zIndex: 3 }} />
-            
-            <div style={{ position: 'absolute', bottom: 1, width: '100%', textAlign: 'center', fontFamily: "'Space Mono'", fontSize: 4, color: '#444', letterSpacing: 1, zIndex: 10 }}>ARCHIVE_RIGGING // LIVE_FEED</div>
+            {/* 2. SPEAKER STACKS (Depth on sides) */}
+            <div style={{ position: 'absolute', left: 4, bottom: 10, width: 14, height: 60, display: 'flex', flexDirection: 'column', gap: 2 }}>
+               {[1,2,3].map(i => <div key={i} style={{ flex: 1, background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 1 }} />)}
+            </div>
+            <div style={{ position: 'absolute', right: 4, bottom: 10, width: 14, height: 60, display: 'flex', flexDirection: 'column', gap: 2 }}>
+               {[1,2,3].map(i => <div key={i} style={{ flex: 1, background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 1 }} />)}
+            </div>
+
+            {/* 3. THE BACKDROP (LED Wall Effect) */}
+            <div style={{ 
+              position: 'absolute', inset: '15px 25px 35px 25px', 
+              background: 'radial-gradient(circle at center, #111 0%, #000 100%)',
+              border: '1px solid #111'
+            }}>
+               <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translateX(-50%)', fontSize: '1.8rem', filter: 'drop-shadow(0 0 15px #00f2ff)', color: '#00f2ff', opacity: 0.6 }}>★</div>
+            </div>
+
+            {/* 4. VOLUMETRIC BEAMS (Sweeping from top) */}
+            <div className="stage-light" style={{ position: 'absolute', left: '25%', top: 0, width: 40, height: 120, background: 'linear-gradient(to bottom, rgba(157, 0, 255, 0.4), transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', filter: 'blur(12px)', mixBlendMode: 'screen' }} />
+            <div className="stage-light" style={{ position: 'absolute', right: '25%', top: 0, width: 40, height: 120, background: 'linear-gradient(to bottom, rgba(0, 242, 255, 0.4), transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', filter: 'blur(12px)', mixBlendMode: 'screen', animationDelay: '1.5s' }} />
+
+            {/* 5. THE FLOOR (Perspective Platform) */}
+            <div style={{ 
+              position: 'absolute', bottom: 0, left: '15%', right: '15%', height: '35px', 
+              background: '#0a0a0a', border: '1px solid #333', borderBottom: 'none',
+              transform: 'perspective(40px) rotateX(10deg)', zIndex: 5,
+              boxShadow: '0 -10px 20px rgba(0,255,200,0.05)'
+            }} />
+
+            {/* FOH Text Overlay */}
+            <div style={{ 
+              position: 'absolute', bottom: 2, width: '100%', textAlign: 'center', 
+              fontFamily: "'Space Mono'", fontSize: 5, color: '#444', letterSpacing: 3, zIndex: 20 
+            }}>
+              SYSTEM_READY // ARCHIVE_RIGGING // LIVE_FEED
+            </div>
           </div>
         </div>
+
       </div>
     </div>
   );
