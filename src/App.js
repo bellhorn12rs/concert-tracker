@@ -553,9 +553,9 @@ const MarqueeStyles = () => (
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
-    .record-vinyl { 
+    .record-vinyl-spinning { 
       animation: spin-record 4s linear infinite; 
-      transform-origin: center;
+      transform-origin: center center;
     }
 
     /* 🔘 INTERACTIVE STAT CRATE */
@@ -564,17 +564,16 @@ const MarqueeStyles = () => (
       transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, filter 0.2s; 
       will-change: transform;
     }
-    .crate-sleeve:hover { transform: translateY(-5px); filter: brightness(1.2); }
-    .crate-sleeve:active { transform: translateY(-2px); }
+    .crate-sleeve:hover { transform: translateY(-5px) !important; filter: brightness(1.2); }
 
     /* 🎭 STAGE LIGHTS */
     @keyframes beam-sweep {
-      0%, 100% { transform: rotate(-15deg) scaleY(1); opacity: 0.2; }
-      50% { transform: rotate(15deg) scaleY(1.1); opacity: 0.5; }
+      0%, 100% { transform: rotate(-15deg); opacity: 0.2; }
+      50% { transform: rotate(15deg); opacity: 0.5; }
     }
     .stage-light {
       animation: beam-sweep 4s ease-in-out infinite;
-      transform-origin: top;
+      transform-origin: top center;
     }
 
     /* 🎫 WRISTBAND BIN */
@@ -582,7 +581,7 @@ const MarqueeStyles = () => (
     .wristband-bin::-webkit-scrollbar-track { background: transparent; }
     .wristband-bin::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
 
-    /* ⏳ ANIMATIONS */
+    /* ⏳ ANIMATIONS & TRANSITIONS */
     @keyframes float {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-6px); }
@@ -595,13 +594,12 @@ const MarqueeStyles = () => (
       100% { transform: translateY(0) scale(1) rotate(var(--r, 0deg)); opacity: 1; }
     }
 
-    @keyframes tape-slam {
-      0% { transform: scale(3) translateY(-20px) translateX(-50%); opacity: 0; }
-      100% { transform: scale(1) translateY(0) translateX(-50%); opacity: 0.8; }
-    }
-
     .fade-in { animation: fade-in-kf 0.4s ease both; }
     @keyframes fade-in-kf { from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
+
+    /* 🎢 FERRIS WHEEL */
+    @keyframes ferris-rotate { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    .ferris-wheel-ring { animation: ferris-rotate 20s linear infinite; transform-origin: center center; }
 
     /* 🏛️ ARCHIVE UI ELEMENTS */
     .scrap-paper {
@@ -613,16 +611,10 @@ const MarqueeStyles = () => (
       position: relative;
     }
 
-    .marquee-text { display: inline-block; padding-left: 100%; animation: marquee 75s linear infinite; }
-    @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-    @keyframes chasing-bulb { 0%,100%{opacity:0.3; transform:scale(0.8)} 50%{opacity:1; transform:scale(1.1)} }
-    @keyframes ferris-rotate { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-    .ferris-wheel-ring { animation: ferris-rotate 20s linear infinite; transform-origin: center; }
-
     .tab-active::after { 
       content: ''; position: absolute; bottom: 0; left: 15%; right: 15%; height: 2px; 
-      background: var(--tab-color, #00e5cc); 
-      box-shadow: 0 0 10px var(--tab-color, #00e5cc);
+      background: #00e5cc; 
+      box-shadow: 0 0 10px #00e5cc;
     }
 
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -1487,59 +1479,43 @@ function DonutChart({ fest, solo, concerts }) {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', height: '100%' }}>
-      {/* 🏷️ HEADER LEGEND */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 15, marginBottom: 15, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 15, marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: stats.color, letterSpacing: 1 }}>{stats.label}</div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: stats.color }}>{stats.label}</div>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{stats.val1}</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#444', letterSpacing: 1 }}>OTHER</div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#444' }}>OTHER</div>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#444' }}>{stats.val2}</div>
         </div>
       </div>
 
-      {/* 📀 THE PLAYER */}
-      <div style={{ position: 'relative', width: 150, height: 150, background: '#111', borderRadius: 4, border: '1px solid #222', padding: 5, alignSelf: 'center', boxShadow: 'inset 0 0 20px #000, 0 10px 20px rgba(0,0,0,0.5)' }}>
-        <svg className="record-vinyl" width="140" height="140" viewBox="0 0 140 140">
+      <div style={{ position: 'relative', width: 150, height: 150, background: '#111', borderRadius: 4, border: '1px solid #222', padding: 5, alignSelf: 'center', boxShadow: 'inset 0 0 20px #000' }}>
+        <svg className="record-vinyl-spinning" width="140" height="140" viewBox="0 0 140 140">
           <circle cx={cx} cy={cy} r={66} fill="#050505" stroke="#181818" strokeWidth={1} />
-          {[60, 54, 48, 42].map(rad => <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#111" strokeWidth={0.5} />)}
+          {[60, 54, 48].map(rad => <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#111" strokeWidth={0.5} />)}
           <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={8} />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={8} 
-            strokeDasharray={`${pct * circ} ${circ}`} strokeLinecap="round" 
-            transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 6px ${stats.color})`, transition: 'all 0.5s' }} 
-          />
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={8} strokeDasharray={`${pct * circ} ${circ}`} strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} />
           <circle cx={cx} cy={cy} r={15} fill={stats.color} stroke="#000" strokeWidth={2} />
           <circle cx={cx} cy={cy} r={2} fill="#000" />
         </svg>
-        <div style={{ position:'absolute', top:10, right:10, width:4, height:65, background:'#333', transform:'rotate(20deg)', transformOrigin:'top', borderRadius:2 }} />
       </div>
 
-      {/* 🔘 SWITCHER BUTTONS */}
-      <div style={{ display: 'flex', gap: 5, height: 40, marginTop: 20 }}>
+      <div style={{ display: 'flex', gap: 4, height: 35, marginTop: 15 }}>
         {[
           { id: 'fest', col: '#00e5cc', icon: '🎪' },
           { id: 'legacy', col: '#ffcc00', icon: '📜' },
           { id: 'city', col: '#00cfff', icon: '📍' },
           { id: 'weekend', col: '#9966ff', icon: '🍺' }
         ].map((item) => (
-          <div key={item.id} 
-            onMouseDown={() => setMode(item.id)}
-            className="crate-sleeve" 
-            style={{ 
-              flex: 1, height: mode === item.id ? '100%' : '80%', 
-              background: mode === item.id ? item.col : 'rgba(255,255,255,0.05)', 
-              border: `1px solid ${mode === item.id ? item.col : 'rgba(255,255,255,0.1)'}`, 
-              borderRadius: '2px 2px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
-            <span style={{ filter: mode === item.id ? 'none' : 'grayscale(100%) opacity(0.5)' }}>{item.icon}</span>
+          <div key={item.id} onMouseDown={() => setMode(item.id)} className="crate-sleeve" style={{ flex: 1, height: mode === item.id ? '100%' : '80%', background: mode === item.id ? item.col : 'rgba(255,255,255,0.05)', border: `1px solid ${mode === item.id ? item.col : 'rgba(255,255,255,0.1)'}`, borderRadius: '2px 2px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
+            {item.icon}
           </div>
         ))}
       </div>
     </div>
   );
 }
-
 // ─── 2. THE PHYSICAL WRISTBANDS (MIDDLE) ──────────────────────────
 function TopFestBlocks({ festBreakdown, concerts }) {
   if (!concerts || !festBreakdown || festBreakdown.length === 0) return null;
@@ -1574,12 +1550,16 @@ function TopFestBlocks({ festBreakdown, concerts }) {
 
 // ─── 3. THE DECADE STAGE (RIGHT) ────────────────────────────────
 function DecadeBlocks({ sets }) {
-  if (!sets) return null;
-  const counts = {'90s':0,'00s':0,'10s':0,'20s':0};
-  sets.forEach(s => { 
-    const y = getYear(s.date); if(!y) return; 
-    if(y < 2000) counts['90s']++; else if(y < 2010) counts['00s']++; else if(y < 2020) counts['10s']++; else counts['20s']++; 
-  });
+  const counts = useMemo(() => {
+    const c = {'90s':0,'00s':0,'10s':0,'20s':0};
+    if (!sets) return c;
+    sets.forEach(s => { 
+      const y = getYear(s.date); if(!y) return; 
+      if(y < 2000) c['90s']++; else if(y < 2010) c['00s']++; 
+      else if(y < 2020) c['10s']++; else c['20s']++; 
+    });
+    return c;
+  }, [sets]);
 
   const media = {
     '90s': { label: 'TAPE', icon: '📼', color: '#9966ff' },
@@ -1590,26 +1570,25 @@ function DecadeBlocks({ sets }) {
   const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
-    <div style={{ display:'flex', flexDirection: 'column', height: '100%', gap: 15 }}>
-      {/* 🎭 MINI STAGE WITH LIGHTS */}
-      <div style={{ height: 60, background: '#050505', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ display:'flex', flexDirection: 'column', height: '100%', gap: 12 }}>
+      {/* 🎭 MINI STAGE */}
+      <div style={{ height: 50, background: '#050505', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', position: 'relative', overflow: 'hidden' }}>
         {[ '#00e5cc', '#9966ff', '#ffcc00', '#00cfff' ].map((col, i) => (
           <div key={i} className="stage-light" style={{ 
-            position: 'absolute', left: `${20 + i * 20}%`, top: -10, width: 30, height: 80, 
-            background: `radial-gradient(circle at top, ${col}44, transparent 70%)`, filter: 'blur(8px)' 
+            position: 'absolute', left: `${20 + i * 20}%`, top: -5, width: 25, height: 60, 
+            background: `radial-gradient(circle at top, ${col}44, transparent 70%)`, filter: 'blur(6px)' 
           }} />
         ))}
-        <div style={{ position: 'absolute', bottom: 0, width: '100%', height: 4, background: '#111' }} />
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff', opacity: 0.4 }}>ARCHIVE_STAGE_01</div>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Space Mono'", fontSize: '7px', color: '#fff', opacity: 0.3, letterSpacing: 2 }}>STAGE_01 // ACTIVE</div>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns: '1fr 60px', flex: 1, gap: 10 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display:'grid', gridTemplateColumns: '1fr 50px', flex: 1, gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {Object.entries(counts).map(([decade, count]) => {
             const m = media[decade];
             return (
-              <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.02)', padding: '6px 10px', borderRadius: 4, borderLeft: `3px solid ${m.color}` }}>
-                <div style={{ fontSize: '1.1rem' }}>{m.icon}</div>
+              <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.02)', padding: '6px 10px', borderRadius: 4, borderLeft: `2px solid ${m.color}` }}>
+                <span style={{ fontSize: '1rem' }}>{m.icon}</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
                     <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: m.color }}>{m.label}</span>
@@ -1619,14 +1598,13 @@ function DecadeBlocks({ sets }) {
                     <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.color }} />
                   </div>
                 </div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#fff', width: 20, textAlign: 'right' }}>{count}</div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff', width: 15, textAlign: 'right' }}>{count}</div>
               </div>
             );
           })}
         </div>
-        {/* Balanced Ferris Wheel */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderLeft: '1px dashed rgba(255,255,255,0.1)' }}>
-           <FerrisWheel size={45} />
+           <FerrisWheel size={40} />
         </div>
       </div>
     </div>
