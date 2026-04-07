@@ -585,12 +585,15 @@ const MarqueeStyles = () => (
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
-.record-platter-continuous { 
-  animation: spin-record 8s linear infinite; 
+.record-vinyl { 
+  animation: spin-record 4s linear infinite; 
   transform-origin: center;
 }
+/* Stops the buttons from jumping layout when hovered */
 .crate-sleeve {
-  transition: transform 0.3s ease;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+  will-change: transform;
 }
 .crate-sleeve:hover {
   transform: translateY(-15px) rotate(-2deg);
@@ -1535,15 +1538,15 @@ function SonicDNA({ stats, onGenreClick }) {
   );
 }
 
-// ─── 1. THE TURNTABLE (LEFT) ───────────────────────────────────────────
+// ─── 1. THE HIGH-DEF TURNTABLE (LEFT) ─────────────────────────
 function DonutChart({ fest, solo, concerts }) {
-  const [mode, setMode] = useState('fest'); 
+  const [mode, setMode] = useState('fest');
+  // Safety guard to prevent white screen crash
+  if (!concerts || concerts.length === 0) return null;
 
   const stats = useMemo(() => {
-    // 🟢 NEW STAT: LEGACY RATIO (Shows > 10 years old)
     if (mode === 'legacy') {
-      const tenYrsAgo = new Date().getFullYear() - 10;
-      const legacy = concerts.filter(c => getYear(c.date) <= tenYrsAgo).length;
+      const legacy = concerts.filter(c => getYear(c.date) <= 2014).length;
       return { val1: legacy, val2: concerts.length - legacy, label: 'LEGACY', sub: 'CLASSICS', color: C.gold };
     }
     if (mode === 'city') {
@@ -1559,43 +1562,50 @@ function DonutChart({ fest, solo, concerts }) {
 
   const total = stats.val1 + stats.val2 || 1;
   const pct = stats.val1 / total;
-  const r = 50, cx = 70, cy = 70, circ = 2 * Math.PI * r;
+  const r = 48, cx = 70, cy = 70, circ = 2 * Math.PI * r;
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', height: '100%' }}>
-      {/* 🏷️ BETTER LEGEND CALLOUT */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 15, borderBottom: `1px solid ${C.border}`, pb: 10 }}>
+    <div style={{ display:'flex', flexDirection:'column', height: '100%', userSelect: 'none' }}>
+      {/* HEADER LEGEND */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 15, marginBottom: 15, paddingBottom: 10, borderBottom: `1px solid ${C.border}` }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: stats.color, letterSpacing: 2 }}>{stats.label}</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', lineHeight: 1 }}>{stats.val1}</div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: stats.color, letterSpacing: 1 }}>{stats.label}</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{stats.val1}</div>
         </div>
-        <div style={{ width: 1, background: C.border, height: 20, alignSelf: 'center' }} />
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, letterSpacing: 2 }}>OTHER</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: C.gray, lineHeight: 1 }}>{stats.val2}</div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 1 }}>OTHER</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.grayDim }}>{stats.val2}</div>
         </div>
       </div>
 
-      <div className="turntable" style={{ 
-        position: 'relative', width: 160, height: 160, background: '#121212', 
-        borderRadius: 4, border: '1px solid #222', padding: 10, alignSelf: 'center',
-        boxShadow: 'inset 0 0 30px #000, 0 10px 30px rgba(0,0,0,0.5)'
+      {/* THE PLAYER */}
+      <div style={{ 
+        position: 'relative', width: 150, height: 150, background: '#111', 
+        borderRadius: 4, border: '1px solid #222', padding: 5, alignSelf: 'center',
+        boxShadow: 'inset 0 0 20px #000, 0 10px 20px rgba(0,0,0,0.5)'
       }}>
-        <svg className="record-platter-continuous" width="140" height="140" viewBox="0 0 140 140">
-          <circle cx={cx} cy={cy} r={68} fill="#050505" />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.border} strokeWidth={10} opacity={0.1} />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={10} 
+        <svg className="record-vinyl" width="140" height="140" viewBox="0 0 140 140">
+          {/* Deep Black Vinyl Disc */}
+          <circle cx={cx} cy={cy} r={66} fill="#050505" stroke="#181818" strokeWidth={1} />
+          {/* Subtle Grooves */}
+          {[60, 54, 48, 42].map(rad => (
+            <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#111" strokeWidth={0.5} />
+          ))}
+          {/* The Progress Lightring */}
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={8} 
             strokeDasharray={`${pct * circ} ${circ}`} strokeLinecap="round" 
-            transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 8px ${stats.color})`, transition: 'all 0.5s ease' }} 
+            transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 6px ${stats.color})`, transition: 'all 0.5s' }} 
           />
-          <circle cx={cx} cy={cy} r={14} fill={stats.color} stroke="#000" strokeWidth={1} />
-          <text x={cx} y={cy+4} textAnchor="middle" style={{ fontFamily:"'Bebas Neue'", fontSize: 10, fill:'#000', fontWeight: 900 }}>{Math.round(pct*100)}%</text>
+          {/* Center Label */}
+          <circle cx={cx} cy={cy} r={15} fill={stats.color} stroke="#000" strokeWidth={2} />
+          <circle cx={cx} cy={cy} r={2} fill="#000" />
         </svg>
-        <div style={{ position:'absolute', top:15, right:15, width:6, height:70, background:'linear-gradient(to bottom, #555, #222)', transform:'rotate(25deg)', transformOrigin:'top', borderRadius:4, zIndex: 5 }} />
+        {/* Tone Arm */}
+        <div style={{ position:'absolute', top:10, right:10, width:4, height:65, background:'#333', transform:'rotate(20deg)', transformOrigin:'top', borderRadius:2, zIndex: 5 }} />
       </div>
 
-      {/* 🔘 FIXED CRATE BUTTONS */}
-      <div style={{ display: 'flex', gap: 6, height: 45, alignItems: 'flex-end', marginTop: 20 }}>
+      {/* STAT SWITCHER CRATE */}
+      <div style={{ display: 'flex', gap: 5, height: 40, marginTop: 20 }}>
         {[
           { id: 'fest', col: C.teal, icon: '🎪' },
           { id: 'legacy', col: C.gold, icon: '📜' },
@@ -1604,12 +1614,12 @@ function DonutChart({ fest, solo, concerts }) {
         ].map((item) => (
           <div key={item.id} 
             onMouseDown={() => setMode(item.id)}
-            className={`crate-sleeve ${mode === item.id ? 'active' : ''}`} 
+            className="crate-sleeve" 
             style={{ 
-              flex: 1, height: mode === item.id ? 45 : 32, 
-              background: mode === item.id ? item.col : `${item.col}22`, 
-              border: `1px solid ${item.col}`, borderRadius: '2px 2px 0 0',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14
+              flex: 1, height: mode === item.id ? '100%' : '80%', 
+              background: mode === item.id ? item.col : `${item.col}15`, 
+              border: `1px solid ${item.col}${mode === item.id ? '' : '44'}`, 
+              borderRadius: '2px 2px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14
             }}>
             {item.icon}
           </div>
@@ -1619,30 +1629,27 @@ function DonutChart({ fest, solo, concerts }) {
   );
 }
 
-// ─── 2. THE PHYSICAL WRISTBANDS (MIDDLE) ──────────────────────────
+// ─── 2. THE WRISTBAND BIN (MIDDLE) ──────────────────────────
 function TopFestBlocks({ festBreakdown, concerts }) {
+  if (!concerts || !festBreakdown || festBreakdown.length === 0) return null;
   const colors = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699'];
+
   return (
-    <div className="wristband-bin" style={{ display:'flex', flexDirection:'column', gap:12, height: 320, overflowY: 'auto', paddingRight: 8 }}>
+    <div className="wristband-bin" style={{ display:'flex', flexDirection:'column', gap:10, height: 310, overflowY: 'auto', paddingRight: 5 }}>
       {festBreakdown.map(([name, days], i) => {
         const color = colors[i % colors.length];
         const festShows = concerts.filter(c => c.festival_name === name);
         const uniqueActs = new Set(festShows.flatMap(s => s.bands || [])).size;
         return (
-          <div key={name} style={{ display:'flex', alignItems:'center', position: 'relative', height: 50 }}>
-            {/* The Clasp/Lock */}
-            <div style={{ position:'absolute', left: 40, width: 14, height: 22, background: '#111', border: `1px solid ${color}`, borderRadius: 3, zIndex: 10, boxShadow: '0 2px 5px #000' }} />
-            
-            {/* The RFID Chip */}
-            <div style={{ width: 45, height: 40, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', borderRadius: 4, zIndex: 5, boxShadow: `0 0 15px ${color}44` }}>
-               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#000', lineHeight: 0.8 }}>{days}</div>
-               <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#000', fontWeight: 900 }}>DAYS</div>
+          <div key={name} style={{ display:'flex', alignItems:'center', position: 'relative' }}>
+            <div style={{ position:'absolute', left: 38, width: 14, height: 20, background: '#111', border: `1px solid ${color}`, borderRadius: 2, zIndex: 10 }} />
+            <div style={{ width: 45, height: 42, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', borderRadius: 4, zIndex: 5 }}>
+               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#000', lineHeight: 0.8 }}>{days}</div>
+               <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: '#000', fontWeight: 900 }}>DAYS</div>
             </div>
-
-            {/* The Fabric Band */}
-            <div style={{ flex: 1, height: 32, marginLeft: -10, padding: '0 25px 0 35px', background: color, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '0 4px 4px 0', border: '1px solid rgba(0,0,0,0.2)', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2)' }}>
-               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#000', letterSpacing: 0.5 }}>{name.toUpperCase()}</div>
-               <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: 'rgba(0,0,0,0.5)', fontWeight: 900 }}>{uniqueActs} ACTS</div>
+            <div style={{ flex: 1, height: 30, marginLeft: -10, padding: '0 20px 0 35px', background: color, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '0 4px 4px 0', boxShadow: 'inset 0 0 15px rgba(0,0,0,0.2)' }}>
+               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#000', letterSpacing: 0.5 }}>{name.toUpperCase()}</div>
+               <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: 'rgba(0,0,0,0.4)', fontWeight: 900 }}>{uniqueActs} ACTS</div>
             </div>
           </div>
         );
@@ -1651,50 +1658,47 @@ function TopFestBlocks({ festBreakdown, concerts }) {
   );
 }
 
-// ─── 3. THE STAGE & DECADES (RIGHT) ────────────────────────────────
+// ─── 3. THE DECADE STACK (RIGHT) ────────────────────────────────
 function DecadeBlocks({ sets }) {
-  const counts = useMemo(() => {
-    const c = {'90s':0,'00s':0,'10s':0,'20s':0};
-    sets.forEach(s => { 
-      const y = getYear(s.date); if(!y) return; 
-      if(y < 2000) c['90s']++; else if(y < 2010) c['00s']++; 
-      else if(y < 2020) c['10s']++; else c['20s']++; 
-    });
-    return c;
-  }, [sets]);
+  if (!sets) return null;
+  const counts = {'90s':0,'00s':0,'10s':0,'20s':0};
+  sets.forEach(s => { 
+    const y = getYear(s.date); if(!y) return; 
+    if(y < 2000) counts['90s']++; else if(y < 2010) counts['00s']++; else if(y < 2020) counts['10s']++; else counts['20s']++; 
+  });
 
+  const media = {
+    '90s': { label: 'TAPE', icon: '📼', color: C.purple },
+    '00s': { label: 'DISC', icon: '💿', color: C.cyan },
+    '10s': { label: 'STREAM', icon: '📱', color: C.teal },
+    '20s': { label: 'HYPER', icon: '🧬', color: C.gold }
+  };
   const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
-    <div style={{ display:'flex', flexDirection: 'column', height: '100%' }}>
-      {/* 🎭 THE MINI STAGE (TOP) */}
-      <div style={{ height: 80, background: '#050505', borderRadius: 8, border: `1px solid ${C.border}`, position: 'relative', overflow: 'hidden', marginBottom: 15 }}>
-        <div style={{ position: 'absolute', bottom: 0, width: '100%', height: 10, background: '#111', borderTop: `2px solid ${C.grayDim}` }} />
-        {/* Lights */}
-        {[C.teal, C.purple, C.gold, C.cyan].map((col, i) => (
-          <div key={i} className="stage-light" style={{ position: 'absolute', left: `${20 + i * 20}%`, top: -10, width: 40, height: 100, background: `radial-gradient(circle at top, ${col}44, transparent 70%)`, filter: 'blur(10px)' }} />
-        ))}
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.white, opacity: 0.8 }}>STAGE_01 ACTIVE</div>
-      </div>
-
-      {/* DECADE ROWS */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {Object.entries(counts).map(([decade, count], i) => {
-          const colors = [C.purple, C.cyan, C.teal, C.gold];
+    <div style={{ display:'grid', gridTemplateColumns: '1fr 60px', height: '100%', gap: 15 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {Object.entries(counts).map(([decade, count]) => {
+          const m = media[decade];
           return (
-            <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.02)', padding: '6px 10px', borderRadius: 4 }}>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: colors[i], width: 35 }}>{decade}</div>
-              <div style={{ flex: 1, height: 4, background: '#000', borderRadius: 2 }}>
-                <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: colors[i], boxShadow: `0 0 8px ${colors[i]}` }} />
+            <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.02)', padding: '8px 10px', borderRadius: 4, borderLeft: `3px solid ${m.color}` }}>
+              <div style={{ fontSize: '1.2rem' }}>{m.icon}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: m.color }}>{m.label}</span>
+                  <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff' }}>{decade}</span>
+                </div>
+                <div style={{ height: 3, background: '#000', borderRadius: 2 }}>
+                  <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.color }} />
+                </div>
               </div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#fff' }}>{count}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', width: 25, textAlign: 'right' }}>{count}</div>
             </div>
           );
         })}
       </div>
-
-      <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
-         <FerrisWheel size={60} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderLeft: `1px dashed ${C.border}` }}>
+         <FerrisWheel size={50} />
       </div>
     </div>
   );
