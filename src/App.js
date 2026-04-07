@@ -2299,154 +2299,212 @@ function PersonalPolaroid({ src, index = 0, total = 1, caption }) {
   );
 }
 // ─── 4. BY DAY TAB (SCRAPBOOK EDITION - FULL MULTI-MEDIA) ────────────────────
-// ─── 4. BY DAY TAB (DE-DUPLICATED & CLEANED) ────────────────────────────────
+// ─── 4. BY DAY TAB (SCRAPBOOK TIMELINE & FESTIVAL CLUSTERS) ──────────────────
+
 function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
+  
+  // 1. 🟢 CLUSTER LOGIC: Group linear shows into "Box Sets" (Solo vs Festival Streaks)
+  const clusters = useMemo(() => {
+    const results = [];
+    let currentFestKey = null;
+    let currentGroup = [];
+
+    dayGroups.forEach((event) => {
+      // Create a unique key for the fest + year (e.g., "ACL-2022")
+      const festKey = event.is_festival 
+        ? `${event.festival_name}-${new Date(event.date).getFullYear()}` 
+        : null;
+
+      if (festKey && festKey === currentFestKey) {
+        currentGroup.push(event);
+      } else {
+        // Push the previous group if it existed
+        if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
+        
+        if (festKey) {
+          currentFestKey = festKey;
+          currentGroup = [event];
+        } else {
+          currentFestKey = null;
+          currentGroup = [];
+          results.push({ type: 'solo', event });
+        }
+      }
+    });
+    // Don't forget the last group
+    if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
+    return results;
+  }, [dayGroups]);
+
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
-      {/* HEADER HUD */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: '30px', 
-        padding: '15px 20px', 
-        background: 'rgba(255,255,255,0.03)', 
-        border: `1px solid ${C.border}`, 
-        borderRadius: '8px' 
-      }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: C.white }}>
-          DAILY <span style={{ color: C.teal }}>ARCHIVE</span>
-        </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: '9px', color: C.gray }}>
-          {dayGroups.length} ENTRIES FOUND
-        </div>
-      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '60px' }}>
+        {clusters.map((cluster, ci) => {
+          
+          // ─── A: SOLO SHOW ───
+          if (cluster.type === 'solo') {
+            return (
+              <ScrapbookRow 
+                key={cluster.event.id} 
+                event={cluster.event} 
+                idx={ci} 
+                isAdmin={isAdmin} 
+                onEdit={onEdit} 
+                genreMap={genreMap} 
+              />
+            );
+          }
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-        {dayGroups.map((event, idx) => {
-          
-          // 1. 🟢 Get Setlists (Checks "Setlist Image URL" box / image_url)
-          const rawSetlists = (event.image_url || "")
-            .split(',')
-            .map(u => u.trim())
-            .filter(Boolean);
-          
-          // 2. 🟢 Get Polaroids (Checks "Personal Photo URL" box)
-          const rawPhotos = (event.personal_photo_url || "")
-            .split(',')
-            .map(u => u.trim())
-            .filter(Boolean);
-
-          // 3. 🟢 DE-DUPLICATION
-          // If a URL is already in the setlist stack, don't show it in the photo stack.
-          const finalPhotos = rawPhotos.filter(url => !rawSetlists.includes(url));
-          
-          const venueLabel = event.is_festival ? event.festival_name : event.venue;
+          // ─── B: FESTIVAL CLUSTER (The Box Set) ───
+          const firstEvent = cluster.events[0];
+          const festColor = GENRE_COLORS[genreMap[firstEvent.bands?.[0]]] || C.teal;
 
           return (
-            <div 
-              key={event.id} 
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                padding: '24px',
-                background: 'rgba(255,255,255,0.02)',
-                borderRadius: '16px',
-                border: `1px solid ${C.border}`,
-                position: 'relative',
-                transition: 'all 0.3s ease',
-                overflow: 'visible' 
-              }}
-            >
-              {/* 1. LEFT SIDE: THE ARTIFACT (Ticket or Wristband) */}
-              <div style={{ flexShrink: 0, width: '300px' }}>
-                {event.is_festival 
-                  ? <WristbandCard event={event} genreMap={genreMap} compact={true} onEdit={isAdmin ? onEdit : null} /> 
-                  : <TicketStubCard event={event} onEdit={isAdmin ? onEdit : null} genreMap={genreMap} stubIdx={idx} />
-                }
+            <div key={`cluster-${ci}`} style={{ 
+              position: 'relative', 
+              padding: '40px', 
+              background: 'rgba(255,255,255,0.01)', 
+              border: `1px solid ${hexToRgba(festColor, 0.2)}`, 
+              borderRadius: '24px',
+              boxShadow: `inset 0 0 60px ${hexToRgba(festColor, 0.03)}`
+            }}>
+              {/* SHARED FESTIVAL HEADER AREA */}
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '25px', marginBottom: '40px' }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '5rem', color: festColor, lineHeight: 1, textShadow: `0 0 30px ${hexToRgba(festColor, 0.3)}` }}>
+                  {firstEvent.festival_name.toUpperCase()}
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: C.gray, letterSpacing: '4px', fontWeight: 900 }}>
+                  {new Date(firstEvent.date).getFullYear()} // ARCHIVE: {cluster.events.length} DAYS
+                </div>
               </div>
 
-      
-
-{/* 2. MIDDLE: THE INFO */}
-
-<div style={{ flex: 1, paddingLeft: '40px' }}>
-  <div style={{ 
-    fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.white, 
-    lineHeight: 1, letterSpacing: '1px'
-  }}>
-    {event.bands?.slice(0, 3).join(' · ').toUpperCase()}
-  </div>
-  
-  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: 12 }}>
-    <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: C.teal, fontWeight: 900 }}>
-      {fmtDateShort(event.date)}
-    </div>
-    <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
-    <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>
-      {event.venue?.toUpperCase()}
-    </div>
-    
-    <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
-    
-    {/* 🔗 THE MM/DD/YYYY LINK */}
-    <a 
-      href={getSetlistFmUrl(event.bands?.[0], event.date)} 
-      target="_blank" rel="noreferrer"
-      style={{ 
-        fontFamily: "'Space Mono'", fontSize: '10px', color: C.gold, 
-        textDecoration: 'none', borderBottom: `1px solid ${C.gold}44`,
-        paddingBottom: 1, fontWeight: 700
-      }}
-      onMouseEnter={e => e.target.style.color = C.white}
-      onMouseLeave={e => e.target.style.color = C.gold}
-    >
-      VERIFY SETLIST ↗
-    </a>
-  </div>
-</div>
-
-              {/* 3. RIGHT SIDE: THE MEDIA CLUSTER */}
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'flex-end',
-                minWidth: '400px',
-                marginLeft: 'auto'
-              }}>
-                
-                {/* 📄 Setlist Stack (Taped Paper) */}
-                {rawSetlists.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    {rawSetlists.map((url, sIdx) => (
-                      <SetlistPaper 
-                        key={`${event.id}-s-${sIdx}`} 
-                        src={url} 
-                        index={sIdx} 
-                        total={rawSetlists.length}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* 📸 Photo Stack (Polaroids - Deduplicated) */}
-                {finalPhotos.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    {finalPhotos.map((url, pIdx) => (
-                      <PersonalPolaroid 
-                        key={`${event.id}-p-${pIdx}`}
-                        src={url} 
-                        index={pIdx}
-                        total={finalPhotos.length}
-                        caption={venueLabel?.split(',')[0].toUpperCase()}
-                      />
-                    ))}
-                  </div>
-                )}
+              {/* STACKED DAYS WITHIN THE FESTIVAL */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {cluster.events.map((event, ei) => (
+                  <ScrapbookRow 
+                    key={event.id} 
+                    event={event} 
+                    idx={ei} 
+                    isAdmin={isAdmin} 
+                    onEdit={onEdit} 
+                    genreMap={genreMap} 
+                    isClustered={true}
+                    clusterColor={festColor}
+                  />
+                ))}
               </div>
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (Refactored for maintainability) ────────
+
+function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
+  const venueLabel = event.is_festival ? event.festival_name : event.venue;
+  
+  // 🟢 Data Prep (De-duplication logic preserved)
+  const rawSetlists = (event.image_url || "").split(',').map(u => u.trim()).filter(Boolean);
+  const rawPhotos = (event.personal_photo_url || "").split(',').map(u => u.trim()).filter(Boolean);
+  const finalPhotos = rawPhotos.filter(url => !rawSetlists.includes(url));
+
+  return (
+    <div style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      padding: isClustered ? '20px' : '30px',
+      background: isClustered ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.02)',
+      borderRadius: '16px',
+      border: `1px solid ${isClustered ? hexToRgba(clusterColor, 0.3) : C.border}`,
+      position: 'relative',
+      transition: 'all 0.3s ease',
+      overflow: 'visible'
+    }}>
+      {/* 1. LEFT: THE ARTIFACT */}
+      <div style={{ flexShrink: 0, width: '300px' }}>
+        {event.is_festival 
+          ? <WristbandCard event={event} genreMap={genreMap} compact={true} onEdit={isAdmin ? onEdit : null} /> 
+          : <TicketStubCard event={event} onEdit={isAdmin ? onEdit : null} genreMap={genreMap} stubIdx={idx} />
+        }
+      </div>
+
+      {/* 2. MIDDLE: THE FULL LINEUP & INFO */}
+      <div style={{ flex: 1, paddingLeft: '40px', paddingRight: '20px' }}>
+        <div style={{ 
+          fontFamily: "'Bebas Neue'", 
+          fontSize: isClustered ? '1.8rem' : '2.5rem', 
+          color: C.white, 
+          lineHeight: 1.1,
+          letterSpacing: '1px',
+          marginBottom: '12px'
+        }}>
+          {/* 🟢 FULL LINEUP (No slice!) */}
+          {event.bands?.join(' · ').toUpperCase()}
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: clusterColor || C.teal, fontWeight: 900 }}>
+            {/* Adaptive: Show "Friday/Saturday" if in cluster, else Date */}
+            {(isClustered && event.festival_day) ? event.festival_day.toUpperCase() : fmtDateShort(event.date)}
+          </div>
+          <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
+          <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>
+            {event.venue?.toUpperCase()}
+          </div>
+          
+          <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
+          
+          <a 
+            href={getSetlistFmUrl(event.bands?.[0], event.date)} 
+            target="_blank" rel="noreferrer"
+            style={{ 
+              fontFamily: "'Space Mono'", fontSize: '10px', color: C.gold, 
+              textDecoration: 'none', borderBottom: `1px solid ${C.gold}44`,
+              paddingBottom: 1, fontWeight: 700
+            }}
+          >
+            VERIFY SETLIST ↗
+          </a>
+        </div>
+      </div>
+
+      {/* 3. RIGHT: THE MEDIA CLUSTER */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'flex-end',
+        minWidth: '400px',
+        marginLeft: 'auto'
+      }}>
+        {rawSetlists.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            {rawSetlists.map((url, sIdx) => (
+              <SetlistPaper 
+                key={`${event.id}-s-${sIdx}`} 
+                src={url} 
+                index={sIdx} 
+                total={rawSetlists.length}
+              />
+            ))}
+          </div>
+        )}
+
+        {finalPhotos.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            {finalPhotos.map((url, pIdx) => (
+              <PersonalPolaroid 
+                key={`${event.id}-p-${pIdx}`}
+                src={url} 
+                index={pIdx}
+                total={finalPhotos.length}
+                caption={venueLabel?.split(',')[0].toUpperCase()}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
