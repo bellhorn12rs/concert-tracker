@@ -238,18 +238,16 @@ const getYear = d => d ? new Date(d + 'T12:00:00').getFullYear() : null;
 const daysSince = d => { if (!d) return 0; return Math.floor((Date.now() - new Date(d + 'T12:00:00')) / 86400000); };
 // Helper to generate the exact setlist.fm search link
 // Optimized helper for setlist.fm search precision
+// 🎯 The "Bullseye" Search Helper (Band + MM/DD/YYYY)
 const getSetlistFmUrl = (artist, date) => {
   if (!artist || !date) return "#";
   
-  // Create date object (adding T00:00:00 to avoid timezone shifts)
-  const d = new Date(date + 'T00:00:00');
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
+  // date comes in as "2025-11-14"
+  const [year, month, day] = date.split('-');
   
-  // Format: "Artist Name Month Day Year"
-  const searchString = `${artist} ${months[d.getMonth()]} ${d.getDate()} ${d.getFullYear()}`;
+  // Result: "Sigur Rós 11/14/2025"
+  const searchString = `${artist} ${month}/${day}/${year}`;
+  
   return `https://www.setlist.fm/search?query=${encodeURIComponent(searchString)}`;
 };
 
@@ -1856,30 +1854,27 @@ function SetlistVaultTab({ concerts, genreMap }) {
                 </div>
               )}
 
-              <div style={{ padding: '15px 10px 5px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                <div style={{ color: '#000', fontSize: '10px', fontFamily: "'Space Mono'", fontWeight: 'bold', lineHeight: 1.4 }}>
-                  {fmtDateShort(s.date)}<br/>
-                  <span style={{ opacity: 0.6 }}>{s.venue?.toUpperCase()}</span>
-                </div>
-                
-                {/* 🔗 THE SETLIST.FM LINK */}
-                <a 
-                  href={getSetlistFmUrl(s.band, s.date)} 
-                  target="_blank" 
-                  rel="noreferrer"
-                  style={{ 
-                    fontFamily: "'Space Mono'", 
-                    fontSize: '9px', 
-                    color: '#006eff', 
-                    textDecoration: 'none', 
-                    borderBottom: '1px solid rgba(0,110,255,0.3)',
-                    paddingBottom: 2,
-                    fontWeight: 900
-                  }}
-                >
-                  DIGITAL LOG ↗
-                </a>
-              </div>
+              <// Inside the SetlistVaultTab artifact card:
+
+<div style={{ padding: '15px 10px 5px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+  <div style={{ color: '#000', fontSize: '10px', fontFamily: "'Space Mono'", fontWeight: 'bold', lineHeight: 1.4 }}>
+    {fmtDateShort(s.date)}<br/>
+    <span style={{ opacity: 0.6 }}>{s.venue?.toUpperCase()}</span>
+  </div>
+  
+  {/* 🔗 THE MM/DD/YYYY LINK */}
+  <a 
+    href={getSetlistFmUrl(s.band, s.date)} 
+    target="_blank" rel="noreferrer"
+    style={{ 
+      fontFamily: "'Space Mono'", fontSize: '9px', color: '#006eff', 
+      textDecoration: 'none', borderBottom: '1px solid rgba(0,110,255,0.3)',
+      paddingBottom: 2, fontWeight: 900
+    }}
+  >
+    DIGITAL LOG ↗
+  </a>
+</div>
             </div>
           </div>
         ))}
@@ -2373,7 +2368,7 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
       
 
 {/* 2. MIDDLE: THE INFO */}
-// Inside the ByDayTab loop, update the Info section (Middle):
+// Inside ByDayTab, replace the "Middle Info" section:
 
 <div style={{ flex: 1, paddingLeft: '40px' }}>
   <div style={{ 
@@ -2394,7 +2389,7 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
     
     <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
     
-    {/* 🔗 THE REFORMATTED LINK */}
+    {/* 🔗 THE MM/DD/YYYY LINK */}
     <a 
       href={getSetlistFmUrl(event.bands?.[0], event.date)} 
       target="_blank" rel="noreferrer"
