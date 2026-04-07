@@ -2330,6 +2330,8 @@ const getDayColor = (baseHex, index) => {
 };
 
 // ─── 1. THE DRILL-DOWN (BYFESTTAB - THE BOX SET ARCHIVE) ────────────────────
+// ─── 1. BY FEST TAB (BOX SET EDITION + MEDIA CLUSTER) ───────────────────────
+
 function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
   const FEST_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699', '#ff4400', '#a2ff00'];
 
@@ -2345,25 +2347,12 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
         return (
           <div key={fest.name} style={{ marginBottom: 120 }}>
             
-            {/* 🏆 CINEMATIC FESTIVAL HEADER */}
+            {/* 🏆 FESTIVAL HEADER */}
             <div style={{ marginBottom: '60px', borderLeft: `10px solid ${themeColor}`, paddingLeft: '30px' }}>
-              <div style={{ 
-                fontFamily: "'Bebas Neue'", 
-                fontSize: 'clamp(3rem, 8vw, 6rem)', 
-                lineHeight: 0.8, 
-                color: C.white, 
-                textShadow: `0 0 40px ${hexToRgba(themeColor, 0.4)}` 
-              }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(3rem, 8vw, 6rem)', lineHeight: 0.8, color: C.white, textShadow: `0 0 40px ${hexToRgba(themeColor, 0.4)}` }}>
                 {fest.name.toUpperCase()}
               </div>
-              <div style={{ 
-                fontFamily: "'Space Mono'", 
-                fontSize: '11px', 
-                color: themeColor, 
-                marginTop: '15px', 
-                letterSpacing: '5px', 
-                fontWeight: 900 
-              }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: themeColor, marginTop: '15px', letterSpacing: '5px', fontWeight: 900 }}>
                 {allShows.length} DAYS ATTENDED // {yearsSorted.length} YEARS ARCHIVED
               </div>
             </div>
@@ -2375,89 +2364,75 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
                 
                 return (
                   <div key={yr} style={{ 
-                    position: 'relative',
-                    border: `6px solid ${hexToRgba(themeColor, 0.3)}`, // THE HEAVY BOX BORDER
-                    borderRadius: '24px',
-                    padding: '80px 40px 40px 40px',
-                    background: 'rgba(255,255,255,0.01)',
-                    boxShadow: `0 30px 100px rgba(0,0,0,0.5), inset 0 0 50px ${hexToRgba(themeColor, 0.05)}`
+                    position: 'relative', border: `6px solid ${hexToRgba(themeColor, 0.3)}`, borderRadius: '24px',
+                    padding: '80px 40px 40px 40px', background: 'rgba(255,255,255,0.01)',
+                    boxShadow: `0 30px 100px rgba(0,0,0,0.5), inset 0 0 50px ${hexToRgba(themeColor, 0.05)}`,
+                    overflow: 'visible' // Important for hovering photos!
                   }}>
                     
-                    {/* FLOATING YEAR TAB */}
+                    {/* YEAR TAB */}
                     <div style={{ position: 'absolute', top: '-40px', left: '40px', display: 'flex', alignItems: 'baseline', gap: '15px' }}>
-                      <div style={{ 
-                        background: themeColor, 
-                        color: '#000', 
-                        fontFamily: "'Bebas Neue'", 
-                        fontSize: '4rem', 
-                        padding: '0 30px', 
-                        borderRadius: '8px', 
-                        boxShadow: `0 10px 30px rgba(0,0,0,0.5)` 
-                      }}>
+                      <div style={{ background: themeColor, color: '#000', fontFamily: "'Bebas Neue'", fontSize: '4rem', padding: '0 30px', borderRadius: '8px', boxShadow: `0 10px 30px rgba(0,0,0,0.5)` }}>
                         {yr}
                       </div>
-                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, opacity: 0.5 }}>
-                        {fest.name.toUpperCase()}
-                      </div>
+                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, opacity: 0.5 }}>{fest.name.toUpperCase()}</div>
                     </div>
 
-                    {/* THE DAY ROWS (STAIRCASE COLORING) */}
+                    {/* DAY ROWS */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                       {shows.map((show, idx) => {
                         const dayColor = getDayColor(themeColor, idx);
-                        const bands = show.bands || [];
+                        const venueLabel = fest.name;
+                        
+                        // 🟢 SPLIT THE MEDIA LINKS
+                        const photos = show.personal_photo_url ? show.personal_photo_url.split(',').map(u => u.trim()).filter(Boolean) : [];
+                        const setlists = show.setlist_image_url ? show.setlist_image_url.split(',').map(u => u.trim()).filter(Boolean) : [];
                         
                         return (
                           <div key={show.id}
                             onClick={isAdmin ? () => onEdit(show) : null}
                             style={{ 
-                              width: '100%', 
-                              background: 'rgba(0,0,0,0.4)', 
-                              borderRadius: '16px', 
-                              border: `2px solid ${dayColor}`,
-                              overflow: 'hidden', 
-                              cursor: isAdmin ? 'pointer' : 'default', 
-                              transition: 'all 0.3s ease', 
-                              display: 'flex', 
-                              flexDirection: 'column'
+                              width: '100%', background: 'rgba(0,0,0,0.4)', borderRadius: '16px', border: `2px solid ${dayColor}`,
+                              overflow: 'visible', cursor: isAdmin ? 'pointer' : 'default', transition: 'all 0.3s ease', display: 'flex', alignItems: 'stretch'
                             }}
-                            onMouseEnter={(e) => { if(isAdmin) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.borderColor = '#fff'; } }}
-                            onMouseLeave={(e) => { if(isAdmin) { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = dayColor; } }}
                           >
-                            <div style={{ height: '6px', background: dayColor }} />
-                            <div style={{ padding: '25px 35px' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
-                                <div>
-                                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: dayColor, lineHeight: 1 }}>
-                                    {show.festival_day?.toUpperCase() || `DAY ${idx + 1}`}
-                                  </div>
-                                  <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: '5px' }}>
-                                    {fmtDateShort(show.date)}
-                                  </div>
+                            <div style={{ width: '8px', background: dayColor, flexShrink: 0 }} />
+                            
+                            <div style={{ padding: '25px 35px', flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              
+                              {/* Left: Info */}
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: dayColor, lineHeight: 1 }}>
+                                  {show.festival_day?.toUpperCase() || `DAY ${idx + 1}`}
                                 </div>
-                                
-                                {/* 📸 Mini Polaroid Thumbnail if photo exists */}
-                                {show.personal_photo_url && (
-                                  <div style={{ 
-                                    background: '#fff', padding: '3px', transform: 'rotate(5deg)', 
-                                    boxShadow: '0 4px 15px rgba(0,0,0,0.4)', width: '32px', height: '32px' 
-                                  }}>
-                                    <div style={{ width: '100%', height: '100%', background: `url(${show.personal_photo_url}) center/cover` }} />
+                                <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: '5px' }}>
+                                  {fmtDateShort(show.date)}
+                                </div>
+                                <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: '#fff', lineHeight: 1.5, borderTop: `1px solid ${hexToRgba(dayColor, 0.2)}`, marginTop: '15px', paddingTop: '10px' }}>
+                                  {show.bands?.join(' · ').toUpperCase()}
+                                </div>
+                              </div>
+
+                              {/* Right: Media Cluster (The Fix!) */}
+                              <div style={{ display: 'flex', alignItems: 'center', marginLeft: '30px' }}>
+                                {setlists.length > 0 && (
+                                  <div style={{ display: 'flex' }}>
+                                    {setlists.map((url, sIdx) => <SetlistPaper key={`${show.id}-s-${sIdx}`} src={url} index={sIdx} />)}
+                                  </div>
+                                )}
+                                {photos.length > 0 && (
+                                  <div style={{ display: 'flex' }}>
+                                    {photos.map((url, pIdx) => (
+                                      <PersonalPolaroid 
+                                        key={`${show.id}-p-${pIdx}`} 
+                                        src={url} index={pIdx} 
+                                        caption={venueLabel.toUpperCase()} 
+                                      />
+                                    ))}
                                   </div>
                                 )}
                               </div>
-                              
-                              <div style={{ 
-                                fontFamily: "'Space Mono'", 
-                                fontSize: '12px', 
-                                color: '#fff', 
-                                lineHeight: 1.6, 
-                                borderTop: `1px solid ${hexToRgba(dayColor, 0.2)}`, 
-                                paddingTop: '15px',
-                                opacity: 0.9 
-                              }}>
-                                {bands.join(' · ').toUpperCase()}
-                              </div>
+
                             </div>
                           </div>
                         );
