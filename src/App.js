@@ -3841,47 +3841,63 @@ function ThemeSwitcher() {
   const current = THEMES[themeId];
 
   return (
-    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12 }}>
+      {/* THE CALLOUT LABEL */}
+      <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.tealDim, letterSpacing: 2, fontWeight: 900, opacity: 0.8 }}>
+        UI_CONSOLE_VIBE:
+      </span>
+
       <button
         onClick={() => setOpen(o => !o)}
-        title="Switch theme"
         style={{ 
-          display: 'flex', alignItems: 'center', gap: 8, 
-          background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}`, 
-          borderRadius: 20, padding: '6px 12px', cursor: 'pointer', transition: 'all 0.2s' 
+          display: 'flex', alignItems: 'center', gap: 10, 
+          background: 'rgba(0,0,0,0.5)', border: `2px solid ${current.dot}`, 
+          borderRadius: '4px', padding: '8px 16px', cursor: 'pointer', 
+          transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+          boxShadow: `0 0 15px ${hexToRgba(current.dot, 0.3)}, inset 0 0 10px ${hexToRgba(current.dot, 0.1)}`
         }}
-        onMouseEnter={e => e.currentTarget.style.borderColor = C.teal}
-        onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
+        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
       >
-        <div style={{ width: 8, height: 8, borderRadius: '50%', background: current.dot, boxShadow: `0 0 8px ${current.dot}` }} />
-        <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, color: C.gray, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{current.name}</span>
-        <span style={{ color: C.grayDim, fontSize: 8 }}>{open ? '▲' : '▼'}</span>
+        <div style={{ 
+          width: 10, height: 10, borderRadius: '50%', background: current.dot, 
+          boxShadow: `0 0 12px ${current.dot}`, animation: 'pulse 2s infinite' 
+        }} />
+        <span style={{ 
+          fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', 
+          letterSpacing: '1.5px', textTransform: 'uppercase' 
+        }}>
+          {current.name}
+        </span>
+        <span style={{ color: C.gray, fontSize: 10, marginLeft: 5 }}>{open ? '▲' : '▼'}</span>
       </button>
 
       {open && (
         <div style={{ 
-          position: 'absolute', top: 'calc(100% + 10px)', right: 0, 
-          background: C.bgCard, border: `1px solid ${C.border}`, 
-          borderRadius: 8, padding: 8, minWidth: 160, zIndex: 1000, 
-          boxShadow: `0 10px 40px rgba(0,0,0,0.8)`,
+          position: 'absolute', top: 'calc(100% + 12px)', right: 0, 
+          background: '#050508', border: `1px solid ${C.border}`, 
+          borderRadius: 4, padding: 10, minWidth: 200, zIndex: 10000, 
+          boxShadow: `0 20px 50px rgba(0,0,0,0.9)`,
           animation: 'fade-in 0.2s ease-out'
         }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: '0.15em', textTransform: 'uppercase', padding: '4px 8px 8px', borderBottom: `1px solid ${C.border}`, marginBottom: 6 }}>Console Theme</div>
           {THEME_ORDER.map(id => {
             const t = THEMES[id];
-            const isActive = id === themeId;
             return (
               <button key={id} onClick={() => { setThemeId(id); setOpen(false); }}
                 style={{ 
-                  display: 'flex', alignItems: 'center', gap: 10, width: '100%', 
-                  background: isActive ? `${t.dot}15` : 'none', border: 'none', 
-                  borderRadius: 4, padding: '8px 10px', cursor: 'pointer', transition: 'all 0.15s' 
+                  display: 'flex', alignItems: 'center', gap: 12, width: '100%', 
+                  background: id === themeId ? `${t.dot}22` : 'transparent', 
+                  border: 'none', borderRadius: 2, padding: '12px', cursor: 'pointer', 
+                  transition: '0.2s', marginBottom: 2
                 }}
-                onMouseEnter={e => { if(!isActive) e.currentTarget.style.background = `rgba(255,255,255,0.05)`; }}
-                onMouseLeave={e => { if(!isActive) e.currentTarget.style.background = 'none'; }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: t.dot, boxShadow: isActive ? `0 0 8px ${t.dot}` : 'none' }} />
-                <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: isActive ? '#fff' : C.gray, letterSpacing: '0.08em' }}>{t.name}</span>
-                {isActive && <span style={{ marginLeft: 'auto', fontSize: 10, color: t.dot }}>✓</span>}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseLeave={e => id !== themeId && (e.currentTarget.style.background = 'transparent')}
+              >
+                <div style={{ width: 12, height: 12, borderRadius: '50%', background: t.dot }} />
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#fff' }}>{t.name}</div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim }}>{t.desc || 'SYSTEM AESTHETIC'}</div>
+                </div>
               </button>
             );
           })}
@@ -3890,7 +3906,6 @@ function ThemeSwitcher() {
     </div>
   );
 }
-
 // ─── TAB CONFIG ───────────────────────────────────────────────────────────────
 // [id, label, group, color]
 const TAB_GROUPS = [
