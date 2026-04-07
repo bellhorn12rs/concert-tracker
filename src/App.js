@@ -2364,7 +2364,6 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
       
 
 {/* 2. MIDDLE: THE INFO */}
-// Inside ByDayTab, replace the "Middle Info" section:
 
 <div style={{ flex: 1, paddingLeft: '40px' }}>
   <div style={{ 
