@@ -3841,34 +3841,47 @@ function ThemeSwitcher() {
   const current = THEMES[themeId];
 
   return (
-    <div style={{ position:'relative', display:'flex', alignItems:'center', padding:'0 12px', borderLeft:`1px solid ${C.border}`, flexShrink:0 }}>
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
       <button
         onClick={() => setOpen(o => !o)}
         title="Switch theme"
-        style={{ display:'flex', alignItems:'center', gap:7, background:'none', border:`1px solid ${C.border}`, borderRadius:20, padding:'5px 10px', cursor:'pointer', transition:'all 0.2s' }}
+        style={{ 
+          display: 'flex', alignItems: 'center', gap: 8, 
+          background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}`, 
+          borderRadius: 20, padding: '6px 12px', cursor: 'pointer', transition: 'all 0.2s' 
+        }}
         onMouseEnter={e => e.currentTarget.style.borderColor = C.teal}
         onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
       >
-        <div style={{ width:10, height:10, borderRadius:'50%', background:current.dot, boxShadow:`0 0 6px ${current.dot}` }} />
-        <span style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, letterSpacing:'0.1em', textTransform:'uppercase', whiteSpace:'nowrap' }}>{current.name}</span>
-        <span style={{ color:C.grayDim, fontSize:8 }}>{open ? '▲' : '▼'}</span>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: current.dot, boxShadow: `0 0 8px ${current.dot}` }} />
+        <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, color: C.gray, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{current.name}</span>
+        <span style={{ color: C.grayDim, fontSize: 8 }}>{open ? '▲' : '▼'}</span>
       </button>
 
       {open && (
-        <div style={{ position:'absolute', top:'calc(100% + 8px)', right:0, background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:8, padding:8, minWidth:160, zIndex:300, boxShadow:`0 8px 32px rgba(0,0,0,0.6)` }}
-          className="fade-in">
-          <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:C.grayDim, letterSpacing:'0.15em', textTransform:'uppercase', padding:'4px 8px 8px', borderBottom:`1px solid ${C.border}`, marginBottom:6 }}>Theme</div>
+        <div style={{ 
+          position: 'absolute', top: 'calc(100% + 10px)', right: 0, 
+          background: C.bgCard, border: `1px solid ${C.border}`, 
+          borderRadius: 8, padding: 8, minWidth: 160, zIndex: 1000, 
+          boxShadow: `0 10px 40px rgba(0,0,0,0.8)`,
+          animation: 'fade-in 0.2s ease-out'
+        }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: '0.15em', textTransform: 'uppercase', padding: '4px 8px 8px', borderBottom: `1px solid ${C.border}`, marginBottom: 6 }}>Console Theme</div>
           {THEME_ORDER.map(id => {
             const t = THEMES[id];
             const isActive = id === themeId;
             return (
               <button key={id} onClick={() => { setThemeId(id); setOpen(false); }}
-                style={{ display:'flex', alignItems:'center', gap:10, width:'100%', background:isActive?`${t.dot}15`:'none', border:'none', borderRadius:4, padding:'8px 10px', cursor:'pointer', transition:'all 0.15s' }}
-                onMouseEnter={e => { if(!isActive)e.currentTarget.style.background=`${t.dot}0a`; }}
-                onMouseLeave={e => { if(!isActive)e.currentTarget.style.background='none'; }}>
-                <div style={{ width:12, height:12, borderRadius:'50%', background:t.dot, boxShadow:isActive?`0 0 8px ${t.dot}`:'none', flexShrink:0 }} />
-                <span style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:isActive?t.dot:C.gray, letterSpacing:'0.08em' }}>{t.name}</span>
-                {isActive && <span style={{ marginLeft:'auto', fontSize:10, color:t.dot }}>✓</span>}
+                style={{ 
+                  display: 'flex', alignItems: 'center', gap: 10, width: '100%', 
+                  background: isActive ? `${t.dot}15` : 'none', border: 'none', 
+                  borderRadius: 4, padding: '8px 10px', cursor: 'pointer', transition: 'all 0.15s' 
+                }}
+                onMouseEnter={e => { if(!isActive) e.currentTarget.style.background = `rgba(255,255,255,0.05)`; }}
+                onMouseLeave={e => { if(!isActive) e.currentTarget.style.background = 'none'; }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: t.dot, boxShadow: isActive ? `0 0 8px ${t.dot}` : 'none' }} />
+                <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: isActive ? '#fff' : C.gray, letterSpacing: '0.08em' }}>{t.name}</span>
+                {isActive && <span style={{ marginLeft: 'auto', fontSize: 10, color: t.dot }}>✓</span>}
               </button>
             );
           })}
@@ -4357,7 +4370,7 @@ async function handleUpcomingDelete(id) {
         
         {/* ── HIGH-FIDELITY STAT CONSOLE ── */}
         <header style={{ 
-          padding: '20px 40px', 
+          padding: '15px 40px', 
           background: `linear-gradient(to bottom, ${C.bg} 90%, transparent)`, 
           position: 'sticky', 
           top: 0, 
@@ -4367,6 +4380,7 @@ async function handleUpcomingDelete(id) {
           alignItems: 'center',
           borderBottom: `1px solid ${C.border}`
         }}>
+           {/* LEFT: THE BIG 5 STATS */}
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 0, flex: 1, maxWidth: '1000px' }}>
               {[
                 { 
@@ -4412,7 +4426,7 @@ async function handleUpcomingDelete(id) {
               ].map((s, i) => (
                 <div key={s.label} onClick={s.onClick}
                   style={{ 
-                    padding: '10px 15px', 
+                    padding: '8px 15px', 
                     borderRight: i < 4 ? `1px solid ${C.border}` : 'none', 
                     textAlign: 'center', 
                     cursor: 'pointer', 
@@ -4424,15 +4438,24 @@ async function handleUpcomingDelete(id) {
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                 >
                   <div style={{ position: 'absolute', bottom: 0, left: '15%', right: '15%', height: 2, background: s.color, boxShadow: `0 0 10px ${s.color}`, borderRadius: 2 }} />
-                  <div style={{ fontSize: '1rem', marginBottom: 2, opacity: 0.8 }}>{s.icon}</div>
+                  <div style={{ fontSize: '0.9rem', marginBottom: 2, opacity: 0.8 }}>{s.icon}</div>
                   <CountUpStat value={s.value} label={s.label} sub={s.sub} color={s.color} />
                 </div>
               ))}
            </div>
            
-           {/* Master Lanyard Pinned to the Right */}
-           <div style={{ marginLeft: '40px', flexShrink: 0 }}>
-              <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
+           {/* RIGHT: THEME SWITCHER + LANYARD GROUP */}
+           <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginLeft: '40px' }}>
+              <ThemeSwitcher />
+              
+              {/* Vertical Divider */}
+              <div style={{ width: 1, height: 30, background: C.border }} />
+
+              <div style={{ position: 'relative', height: '40px', width: '100px' }}>
+                <div style={{ position: 'absolute', top: '-110px', right: 0 }}>
+                   <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
+                </div>
+              </div>
            </div>
         </header>
 
