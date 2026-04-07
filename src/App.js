@@ -3611,129 +3611,74 @@ export default function App() {
 
   // ─── DASHBOARD STATS (INTERACTIVE COMMAND CENTER) ──────────────────────────
 
-function DashboardStats({ concerts, sets, setActiveTab }) {
-  
-  // Calculate the 5th Stat: Unique Venues
-  const venueCount = useMemo(() => {
-    return new Set(concerts.map(c => c.venue?.trim()).filter(Boolean)).size;
-  }, [concerts]);
+// ─── DASHBOARD STATS (BULLSEYE 5-CARD VERSION) ──────────────────────────────
 
-  // Stat definitions for easy mapping
-  const statCards = [
-    { 
-      label: 'TOTAL SETS', 
-      sub: 'individual performances', 
-      val: sets.length, 
-      icon: '🎵', 
-      tab: 'Timeline', 
-      color: C.teal 
-    },
-    { 
-      label: 'UNIQUE ARTISTS', 
-      sub: 'bands & performers', 
-      val: new Set(sets.map(s => s.artist)).size, 
-      icon: '🎤', 
-      tab: 'Hall of Fame', 
-      color: '#4db5ff' 
-    },
-    { 
-      label: 'SHOW DAYS', 
-      sub: `${concerts.filter(c => c.is_festival).length} fest · ${concerts.filter(c => !c.is_festival).length} solo`, 
-      val: concerts.length, 
-      icon: '📅', 
-      tab: 'By Day', 
-      color: '#9d00ff' 
-    },
-    { 
-      label: 'VENUES', 
-      sub: 'unique locations', 
-      val: venueCount, 
-      icon: '📍', 
-      tab: 'Venues', 
-      color: '#ff4bab' 
-    },
-    { 
-      label: 'SETLISTS', 
-      sub: 'click to view vault', 
-      val: concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()).length, 
-      icon: '📋', 
-      tab: 'Setlist Vault', 
-      color: C.gold 
-    }
+function DashboardStats({ concerts, sets, setActiveTab }) {
+  const venueCount = useMemo(() => 
+    new Set(concerts.map(c => c.venue?.trim()).filter(Boolean)).size
+  , [concerts]);
+
+  const stats = [
+    { label: 'TOTAL SETS', val: sets.length, tab: 'Timeline', color: C.teal, icon: '🎵' },
+    { label: 'ARTISTS', val: new Set(sets.map(s => s.artist)).size, tab: 'Hall of Fame', color: '#4db5ff', icon: '🎤' },
+    { label: 'SHOW DAYS', val: concerts.length, tab: 'By Day', color: '#9d00ff', icon: '📅' },
+    { label: 'VENUES', val: venueCount, tab: 'Venues', color: '#ff4bab', icon: '📍' },
+    { label: 'SETLISTS', val: concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()).length, tab: 'Setlist Vault', color: C.gold, icon: '📋' }
   ];
 
   return (
-    <div style={{ marginBottom: 40 }}>
-      {/* Top Metadata HUD */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 40, fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginBottom: 25, letterSpacing: '2px', opacity: 0.8 }}>
-        <span>// {new Date().getFullYear() - 1999} YEARS OF LIVE MUSIC //</span>
-        <span>{new Set(concerts.map(c => c.state)).size} STATES</span>
-      </div>
-
-      {/* The 5-Card Grid */}
+    <div style={{ padding: '0 20px', marginBottom: 40 }}>
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(5, 1fr)', 
-        gap: '1px', 
-        background: 'rgba(255,255,255,0.1)', // Creates the divider line effect
-        borderTop: '1px solid rgba(255,255,255,0.1)',
-        borderBottom: '1px solid rgba(255,255,255,0.1)'
+        gap: '20px',
+        maxWidth: '1400px',
+        margin: '0 auto'
       }}>
-        {statCards.map((stat) => (
+        {stats.map((s) => (
           <div 
-            key={stat.label}
-            onClick={() => setActiveTab(stat.tab)}
+            key={s.label}
+            onClick={() => setActiveTab(s.tab)}
             style={{ 
-              padding: '40px 20px', 
-              textAlign: 'center', 
-              background: C.bg, 
+              background: 'rgba(255,255,255,0.03)',
+              border: `1px solid ${C.border}`,
+              borderRadius: '12px',
+              padding: '25px 15px',
+              textAlign: 'center',
               cursor: 'pointer',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              position: 'relative',
-              overflow: 'hidden'
+              transition: 'all 0.2s ease',
+              borderBottom: `4px solid ${s.color}44`
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
-              e.currentTarget.querySelector('.glow').style.opacity = '1';
+              e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+              e.currentTarget.style.borderColor = s.color;
+              e.currentTarget.style.transform = 'translateY(-5px)';
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.background = C.bg;
-              e.currentTarget.querySelector('.glow').style.opacity = '0';
+              e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+              e.currentTarget.style.borderColor = C.border;
+              e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
-            {/* The Interactive Glow Layer */}
-            <div className="glow" style={{ 
-              position: 'absolute', inset: 0, 
-              background: `radial-gradient(circle at center, ${hexToRgba(stat.color, 0.08)} 0%, transparent 70%)`,
-              opacity: 0, transition: 'opacity 0.3s ease', pointerEvents: 'none'
-            }} />
-
-            <div style={{ fontSize: '1.2rem', marginBottom: 15, opacity: 0.7 }}>{stat.icon}</div>
-            
+            <div style={{ fontSize: '1.2rem', marginBottom: 10 }}>{s.icon}</div>
             <div style={{ 
               fontFamily: "'Bebas Neue'", 
-              fontSize: '4.5rem', 
-              color: stat.color, 
-              lineHeight: 1,
-              marginBottom: 8,
-              textShadow: `0 0 20px ${hexToRgba(stat.color, 0.2)}`
+              fontSize: '3.5rem', 
+              color: s.color, 
+              lineHeight: 1 
             }}>
-              {stat.val.toLocaleString()}
+              {s.val}
             </div>
-
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.white, letterSpacing: '2px', fontWeight: 700, marginBottom: 4 }}>
-              {stat.label}
-            </div>
-            
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, fontStyle: 'italic', textTransform: 'lowercase' }}>
-              {stat.sub}
-            </div>
-
-            {/* Bottom Accent Bar */}
             <div style={{ 
-              position: 'absolute', bottom: 0, left: '20%', right: '20%', height: 2, 
-              background: stat.color, opacity: 0.4, borderRadius: '2px 2px 0 0' 
-            }} />
+              fontFamily: "'Space Mono'", 
+              fontSize: '9px', 
+              color: C.white, 
+              letterSpacing: '2px', 
+              marginTop: 10,
+              fontWeight: 700 
+            }}>
+              {s.label}
+            </div>
           </div>
         ))}
       </div>
@@ -4117,7 +4062,38 @@ async function handleUpcomingDelete(id) {
                 <Card neon>
                   <CardTitle>Sets Per Year — click a bar to jump to that year</CardTitle>
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={timelineData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }} onClick={data => { if (data?.activePayload?.[0]?.payload?.fullYear) { setActiveTab('timeline'); } }}>
+                    <BarChart 
+  data={timelineData} 
+  margin={{ top: 10, right: 10, bottom: 0, left: -20 }} 
+  onClick={data => { 
+    if (data?.activePayload?.[0]?.payload?.fullYear) { 
+      setActiveTab('Timeline'); // Ensure this matches your tab name exactly
+    } 
+  }}
+>
+  {/* 🟢 THE FIX: Add the Tooltip here */}
+  <Tooltip 
+    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+    isAnimationActive={false} // Prevents the "floating/stuck" box bug
+    contentStyle={{ 
+      background: C.bgCard, 
+      border: `1px solid ${C.teal}`, 
+      borderRadius: '8px',
+      fontSize: '12px',
+      fontFamily: "'Space Mono'",
+      boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+    }}
+    itemStyle={{ color: C.teal }}
+    labelStyle={{ display: 'none' }} // Removes the redundant year label inside the box
+  />
+
+  <Bar 
+    dataKey="count" 
+    fill={C.teal} 
+    radius={[4, 4, 0, 0]} 
+    onMouseEnter={(data, index) => { /* optional hover effects */ }}
+  />
+</BarChart>
                       <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
                       <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
                       <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
