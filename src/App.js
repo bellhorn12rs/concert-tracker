@@ -2199,6 +2199,7 @@ function PersonalPolaroid({ src, index = 0, total = 1, caption }) {
   );
 }
 // ─── 4. BY DAY TAB (SCRAPBOOK EDITION - FULL MULTI-MEDIA) ────────────────────
+// ─── 4. BY DAY TAB (DE-DUPLICATED & CLEANED) ────────────────────────────────
 function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
@@ -2223,13 +2224,22 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
         {dayGroups.map((event, idx) => {
-          const photos = event.personal_photo_url 
-            ? event.personal_photo_url.split(',').map(u => u.trim()).filter(Boolean)
-            : [];
           
-          const setlists = event.setlist_image_url
-            ? event.setlist_image_url.split(',').map(u => u.trim()).filter(Boolean)
-            : [];
+          // 1. Get Setlists (Check new bucket, fallback to old image_url)
+          const rawSetlists = (event.setlist_image_url || event.image_url || "")
+            .split(',')
+            .map(u => u.trim())
+            .filter(Boolean);
+          
+          // 2. Get Polaroids
+          const rawPhotos = (event.personal_photo_url || "")
+            .split(',')
+            .map(u => u.trim())
+            .filter(Boolean);
+
+          // 3. 🟢 THE FIX: DE-DUPLICATION
+          // If a URL is already in the setlist stack, don't show it in the photo stack.
+          const finalPhotos = rawPhotos.filter(url => !rawSetlists.includes(url));
           
           const venueLabel = event.is_festival ? event.festival_name : event.venue;
 
@@ -2245,7 +2255,7 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
                 border: `1px solid ${C.border}`,
                 position: 'relative',
                 transition: 'all 0.3s ease',
-                overflow: 'visible'
+                overflow: 'visible' 
               }}
             >
               {/* 1. LEFT SIDE: THE ARTIFACT */}
@@ -2268,33 +2278,15 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
                   {event.bands?.slice(0, 3).join(' · ').toUpperCase()}
                 </div>
                 
-                // Inside ByDayTab loop:
-<div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '20px' }}>
-  
-  {/* SETLIST STACK */}
-  {event.setlist_image_url && (
-    <div style={{ display: 'flex' }}>
-      {event.setlist_image_url.split(',').map((url, i, arr) => (
-        <SetlistPaper key={url} src={url.trim()} index={i} total={arr.length} />
-      ))}
-    </div>
-  )}
-
-  {/* PERSONAL STACK */}
-  {event.personal_photo_url && (
-    <div style={{ display: 'flex' }}>
-      {event.personal_photo_url.split(',').map((url, i, arr) => (
-        <PersonalPolaroid 
-          key={url} 
-          src={url.trim()} 
-          index={i} 
-          total={arr.length} 
-          caption={event.venue?.split(',')[0].toUpperCase()} 
-        />
-      ))}
-    </div>
-  )}
-</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: 12 }}>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: C.teal, fontWeight: 900 }}>
+                    {fmtDateShort(event.date)}
+                  </div>
+                  <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>
+                    {event.venue?.toUpperCase()}
+                  </div>
+                </div>
               </div>
 
               {/* 3. RIGHT SIDE: THE MEDIA CLUSTER */}
@@ -2305,29 +2297,30 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
                 minWidth: '400px',
                 marginLeft: 'auto'
               }}>
-                {setlists.length > 0 && (
+                
+                {/* Setlist Stack */}
+                {rawSetlists.length > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    {setlists.map((url, sIdx) => (
+                    {rawSetlists.map((url, sIdx) => (
                       <SetlistPaper 
-                        key={`${event.id}-setlist-${sIdx}`} 
+                        key={`${event.id}-s-${sIdx}`} 
                         src={url} 
                         index={sIdx} 
+                        total={rawSetlists.length}
                       />
                     ))}
                   </div>
                 )}
 
-                {photos.length > 0 && (
+                {/* Photo Stack (Deduplicated) */}
+                {finalPhotos.length > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    {photos.map((url, pIdx) => (
+                    {finalPhotos.map((url, pIdx) => (
                       <PersonalPolaroid 
-                        key={`${event.id}-photo-${pIdx}`}
+                        key={`${event.id}-p-${pIdx}`}
                         src={url} 
                         index={pIdx}
-                        venue={event.venue}
-                        festival={event.festival_name}
-                        date={event.date}
-                        isFestival={event.is_festival}
+                        total={finalPhotos.length}
                         caption={venueLabel?.split(',')[0].toUpperCase()}
                       />
                     ))}
