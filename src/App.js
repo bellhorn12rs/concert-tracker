@@ -4234,102 +4234,165 @@ async function handleUpcomingDelete(id) {
   );
 
   return (
-    <ThemeContext.Provider value={themeCtx}>
-      <div key={themeId} style={{ background: C.bg, minHeight: '100vh', paddingBottom: 60 }}>
-        <MarqueeStyles />
+  <ThemeContext.Provider value={themeCtx}>
+    {/* Main App Wrapper - Flex layout for Sidebar + Stage */}
+    <div key={themeId} style={{ 
+      background: C.bg, 
+      minHeight: '100vh', 
+      display: 'flex', // This puts Sidebar and Main side-by-side
+      color: C.white 
+    }}>
+      <MarqueeStyles />
 
-        {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
-        {editTarget && <EditModal concert={editTarget === 'new' ? null : editTarget} onClose={() => setEditTarget(null)} onSave={handleSave} onDelete={handleDelete} />}
-        {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
+      {/* ── VERTICAL SIDEBAR CONSOLE ── */}
+      <aside style={{
+        width: '280px',
+        height: '100vh',
+        position: 'sticky',
+        top: 0,
+        background: `linear-gradient(to right, ${C.bgCard} 0%, #050508 100%)`,
+        borderRight: `1px solid ${C.border}`,
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '30px 0',
+        zIndex: 1000,
+        boxShadow: '10px 0 30px rgba(0,0,0,0.5)'
+      }}>
+        {/* LOGO AREA */}
+        <div style={{ padding: '0 24px 40px', borderBottom: `1px solid ${C.border}`, marginBottom: 20 }}>
+           <h1 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', margin: 0, lineHeight: 1, letterSpacing: '1px' }}>
+             🎸 LIVE <span style={{ color: C.teal }}>// ARCHIVE</span>
+           </h1>
+           <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, letterSpacing: 2, marginTop: 8 }}>
+             V.2026.04.PRODUCTION
+           </div>
+        </div>
 
-        {/* ── HERO HEADER ── */}
-        <div style={{ background: `linear-gradient(180deg,#050508 0%,${C.bgCard} 100%)`, borderBottom: `1px solid ${C.teal}22`, padding: '36px 24px 0', textAlign: 'center', position: 'relative' }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative' }}>
-            <h1 style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(3rem,8vw,6rem)', color: C.white, margin: '0 0 8px', lineHeight: 1, letterSpacing: '0.04em' }}>
-              🎸 LIVE <span style={{ color: C.gray, fontSize: '0.7em' }}>//</span> <span style={{ color: C.teal }}>IN CONCERT</span>
-            </h1>
-            <div style={{ fontFamily: "'Space Mono',monospace", fontSize: '0.75rem', color: C.gray, display: 'flex', justifyContent: 'center', gap: 20, flexWrap: 'wrap', marginBottom: 28 }}>
-              <span>{years.length > 0 ? `${years[years.length - 1] - years[0]} YEARS` : '0 YEARS'}</span>
-              <span style={{ color: C.grayDim }}>·</span>
-              <span>{stateCounts.length} STATES</span>
-              <span style={{ color: C.grayDim }}>·</span>
-              <span style={{ color: C.white, fontWeight: 700 }}>{headerStats.totalSets.toLocaleString()} SETS 🤘</span>
+        {/* NAVIGATION SCROLL AREA */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px' }} className="wristband-bin">
+          {TAB_GROUPS.map((group) => (
+            <div key={group.header} style={{ marginBottom: 32 }}>
+              {/* Category Header - Now Large and Bold */}
+              <div style={{ 
+                fontFamily: "'Bebas Neue'", 
+                fontSize: '1rem', 
+                color: C.teal, 
+                letterSpacing: '3px', 
+                padding: '0 12px 12px',
+                opacity: 0.9,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10
+              }}>
+                <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.teal }} />
+                {group.header}
+              </div>
+
+              {/* Individual Tabs */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {group.tabs.map(([id, label, color]) => {
+                  const isActive = activeTab === id;
+                  return (
+                    <button key={id} onClick={() => setActiveTab(id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        fontFamily: "'Space Mono'", 
+                        fontSize: '11px',
+                        color: isActive ? '#fff' : C.gray,
+                        background: isActive ? hexToRgba(color, 0.15) : 'transparent', 
+                        border: 'none',
+                        borderLeft: `3px solid ${isActive ? color : 'transparent'}`,
+                        padding: '12px 16px', 
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.2s',
+                        borderRadius: '0 4px 4px 0',
+                        fontWeight: isActive ? 700 : 400,
+                        boxShadow: isActive ? `inset 10px 0 20px ${hexToRgba(color, 0.05)}` : 'none'
+                      }}
+                      onMouseEnter={e => !isActive && (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                      onMouseLeave={e => !isActive && (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <span style={{ fontSize: '1.1rem', filter: isActive ? 'none' : 'grayscale(100%) opacity(0.5)' }}>{label.split(' ')[0]}</span>
+                      <span>{label.split(' ').slice(1).join(' ')}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+          ))}
+        </div>
 
-            {/* Neon stat tiles */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 0, borderTop: `1px solid ${C.border}`, marginTop: 0 }}>
-              {[
-                { value: headerStats.totalSets, label: 'TOTAL SETS', sub: 'individual performances', color: C.teal, icon: '🎵', onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } },
-                { value: headerStats.uniqueArtists, label: 'UNIQUE ARTISTS', sub: 'bands & performers', color: C.cyan, icon: '🎤', onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } },
-                { value: headerStats.totalShows, label: 'SHOW DAYS', sub: `${headerStats.festDays} fest · solo`, color: C.purple, icon: '📅', onClick: () => setActiveTab('timeline') },
-                { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'TOTAL VENUES', sub: 'stages conquered', color: C.red, icon: '📍', onClick: () => setActiveTab('venues') },
-                { value: headerStats.setlistCount, label: 'SETLISTS', sub: 'archived artifacts', color: C.gold, icon: '📋', onClick: () => setActiveTab('vault') },
-              ].map((s, i) => (
-                <div key={s.label} onClick={s.onClick} style={{ padding: '20px 16px', borderRight: i < 4 ? `1px solid ${C.border}` : 'none', textAlign: 'center', cursor: 'pointer', position: 'relative', overflow: 'hidden', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = hexToRgba(s.color, 0.06)} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                  <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2, background: s.color, boxShadow: `0 0 8px ${s.color}, 0 0 16px ${s.color}`, borderRadius: 2 }} />
-                  <div style={{ fontSize: '1.2rem', marginBottom: 4 }}>{s.icon}</div>
-                  <CountUpStat value={s.value} label={s.label} sub={s.sub} color={s.color} />
-                  <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 6, color: s.color, letterSpacing: '0.15em', marginTop: 4, opacity: 0.5 }}>↗ VIEW SECTION</div>
-                </div>
-              ))}
+        {/* BOTTOM UTILITY / SYSTEM */}
+        <div style={{ padding: '20px 12px', borderTop: `1px solid ${C.border}`, background: 'rgba(0,0,0,0.2)' }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: C.grayDim, letterSpacing: 2, padding: '0 12px 10px' }}>SYSTEM</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {RIGHT_TABS.map(([id, label, color]) => {
+              const isActive = activeTab === id;
+              return (
+                <button key={id} onClick={() => setActiveTab(id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    fontFamily: "'Space Mono'", fontSize: '10px',
+                    color: isActive ? '#fff' : C.grayDim,
+                    background: isActive ? hexToRgba(color, 0.1) : 'transparent',
+                    border: 'none', borderLeft: `3px solid ${isActive ? color : 'transparent'}`,
+                    padding: '10px 16px', cursor: 'pointer', borderRadius: '0 4px 4px 0', textAlign: 'left'
+                  }}>
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+            <div style={{ padding: '10px 16px' }}>
+               <ThemeSwitcher />
             </div>
-            <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
           </div>
         </div>
+      </aside>
 
-        {/* ── NAV ── */}
-        <nav style={{ 
-  background: C.bgCard, 
-  borderBottom: `1px solid ${C.border}`, 
-  display: 'flex', 
-  position: 'sticky', 
-  top: 0, 
-  zIndex: 200,
-  justifyContent: 'space-between',
-  height: '60px'
-}}>
-  {/* ── LEFT SIDE: THE GROUPS ── */}
-  <div style={{ display: 'flex', alignItems: 'stretch' }}>
-    {TAB_GROUPS.map((group, gi) => (
-      <div key={group.header} style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        borderRight: gi === TAB_GROUPS.length - 1 ? 'none' : `1px solid ${C.border}`,
-        position: 'relative'
-      }}>
-        {/* The Group Header */}
-        <div style={{ 
-          fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, 
-          letterSpacing: '2px', textAlign: 'center', paddingTop: 6, 
-          opacity: 0.6, textTransform: 'uppercase' 
+      {/* ── THE MAIN STAGE (Right Side Content) ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto', position: 'relative' }}>
+        
+        {/* TOP STAT BAR (Floating over the content) */}
+        <header style={{ 
+          background: `linear-gradient(to bottom, ${C.bg} 80%, transparent)`, 
+          padding: '20px 40px', 
+          position: 'sticky', 
+          top: 0, 
+          zIndex: 100,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
         }}>
-          {group.header}
-        </div>
+           <div style={{ display: 'flex', gap: 40 }}>
+             <div style={{ textAlign: 'center' }}>
+               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.teal }}>{headerStats.totalSets}</div>
+               <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, letterSpacing: 1 }}>TOTAL SETS</div>
+             </div>
+             <div style={{ textAlign: 'center' }}>
+               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.cyan }}>{headerStats.uniqueArtists}</div>
+               <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, letterSpacing: 1 }}>ARTISTS</div>
+             </div>
+             <div style={{ textAlign: 'center' }}>
+               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.purple }}>{headerStats.totalShows}</div>
+               <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, letterSpacing: 1 }}>DAYS</div>
+             </div>
+           </div>
+           
+           <div style={{ marginRight: '60px' }}>
+              <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
+           </div>
+        </header>
 
-        {/* The Tabs in this group */}
-        <div style={{ display: 'flex', flex: 1 }}>
-          {group.tabs.map(([id, label, color]) => {
-            const isActive = activeTab === id;
-            return (
-              <button key={id} onClick={() => setActiveTab(id)}
-                style={{
-                  fontFamily: "'Space Mono'", fontSize: 9,
-                  color: isActive ? color : C.gray,
-                  background: isActive ? hexToRgba(color, 0.05) : 'none', 
-                  border: 'none',
-                  borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
-                  padding: '0 15px', cursor: 'pointer', whiteSpace: 'nowrap',
-                  transition: 'all 0.2s', fontWeight: isActive ? 700 : 400
-                }}>
-                {label}
-              </button>
-            );
-          })}
-        </div>
+        <main style={{ padding: '0 40px 100px' }}>
+           {/* All your activeTab === '...' logic goes here as usual */}
+        </main>
       </div>
-    ))}
-  </div>
-
+    </div>
+  </ThemeContext.Provider>
+);
   {/* ── RIGHT SIDE: THE BOOTH ── */}
   <div style={{ display: 'flex', borderLeft: `1px solid ${C.border}` }}>
     <div style={{ display: 'flex', flexDirection: 'column' }}>
