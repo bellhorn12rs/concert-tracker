@@ -1761,16 +1761,15 @@ function WristbandCard({ event, genreMap, compact, onEdit }) {
     </div>
   );
 }
-// ─── 2. SETLIST VAULT (CLEAN IMAGE & FM-LINK LOGIC) ───────────────────────────
+// ─── 2. SETLIST VAULT (BULLSEYE SEARCH & CLEAN LOGIC) ────────────────────────
 function SetlistVaultTab({ concerts, genreMap }) {
   
-  // Helper for setlist.fm precision search
+  // 🎯 The "Bullseye" Search Helper (Band + MM/DD/YYYY)
   const getSetlistFmUrl = (artist, date) => {
     if (!artist || !date) return "#";
-    const [y, m, d] = date.split('-');
-    const formattedDate = `${d}-${m}-${y}`;
-    const query = encodeURIComponent(`artist:("${artist}") date:(${formattedDate})`);
-    return `https://www.setlist.fm/search?query=${query}`;
+    const [year, month, day] = date.split('-');
+    const searchString = `${artist} ${month}/${day}/${year}`;
+    return `https://www.setlist.fm/search?query=${encodeURIComponent(searchString)}`;
   };
 
   const setlists = useMemo(() => {
@@ -1837,7 +1836,6 @@ function SetlistVaultTab({ concerts, genreMap }) {
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05) rotate(0deg)'}
           onMouseLeave={e => e.currentTarget.style.transform = `rotate(${(i % 2 === 0 ? 1.5 : -1.5) * (i % 3 + 1)}deg)`}
           >
-            {/* The "Taped Paper" look for each Vault item */}
             <div style={{ background: '#fdfdfd', padding: '10px', boxShadow: '0 15px 35px rgba(0,0,0,0.6)', borderRadius: 2 }}>
               {/* Tape on top */}
               <div style={{ position: 'absolute', top: -8, left: '35%', width: '30%', height: '16px', background: 'rgba(0, 110, 255, 0.3)', backdropFilter: 'blur(1px)', transform: 'rotate(-1deg)', zIndex: 10 }} />
@@ -1854,27 +1852,25 @@ function SetlistVaultTab({ concerts, genreMap }) {
                 </div>
               )}
 
-              <// Inside the SetlistVaultTab artifact card:
-
-<div style={{ padding: '15px 10px 5px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-  <div style={{ color: '#000', fontSize: '10px', fontFamily: "'Space Mono'", fontWeight: 'bold', lineHeight: 1.4 }}>
-    {fmtDateShort(s.date)}<br/>
-    <span style={{ opacity: 0.6 }}>{s.venue?.toUpperCase()}</span>
-  </div>
-  
-  {/* 🔗 THE MM/DD/YYYY LINK */}
-  <a 
-    href={getSetlistFmUrl(s.band, s.date)} 
-    target="_blank" rel="noreferrer"
-    style={{ 
-      fontFamily: "'Space Mono'", fontSize: '9px', color: '#006eff', 
-      textDecoration: 'none', borderBottom: '1px solid rgba(0,110,255,0.3)',
-      paddingBottom: 2, fontWeight: 900
-    }}
-  >
-    DIGITAL LOG ↗
-  </a>
-</div>
+              <div style={{ padding: '15px 10px 5px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div style={{ color: '#000', fontSize: '10px', fontFamily: "'Space Mono'", fontWeight: 'bold', lineHeight: 1.4 }}>
+                  {fmtDateShort(s.date)}<br/>
+                  <span style={{ opacity: 0.6 }}>{s.venue?.toUpperCase()}</span>
+                </div>
+                
+                {/* 🔗 THE MM/DD/YYYY LINK */}
+                <a 
+                  href={getSetlistFmUrl(s.band, s.date)} 
+                  target="_blank" rel="noreferrer"
+                  style={{ 
+                    fontFamily: "'Space Mono'", fontSize: '9px', color: '#006eff', 
+                    textDecoration: 'none', borderBottom: '1px solid rgba(0,110,255,0.3)',
+                    paddingBottom: 2, fontWeight: 900
+                  }}
+                >
+                  DIGITAL LOG ↗
+                </a>
+              </div>
             </div>
           </div>
         ))}
