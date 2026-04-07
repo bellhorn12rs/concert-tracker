@@ -3880,18 +3880,46 @@ function ThemeSwitcher() {
 
 // ─── TAB CONFIG ───────────────────────────────────────────────────────────────
 // [id, label, group, color]
-const TABS = [
-  ['dashboard','⚡ Dashboard',null,C.teal],
-  ['timeline','⏳ Timeline',null,C.cyan],
-  ['byDay','📅 By Day',null,C.teal],
-  ['byFest','🎪 By Festival','fest',C.gold],
-  ['passport','🗺️ Passport','fest',C.gold],
-  ['hof','🏆 Hall of Fame',null,C.purple],
-  ['vault','📋 Setlist Vault',null,C.green],
-['venues','📍 Venues',null,C.cyan],
-  ['poster','🎨 Poster Generator',null,'#ff6699'],  
-  ['browse','🔍 Browse','right',C.cyan],
-  ['manage','⚙️ Manage','right',C.gray],
+const TAB_GROUPS = [
+  {
+    header: "HEADLINER",
+    tabs: [
+      ['dashboard', '⚡ CENTER STAGE', '#00e5cc'],
+      ['timeline', '⏳ TIME MACHINE', '#00cfff'],
+    ]
+  },
+  {
+    header: "CHRONICLE",
+    tabs: [
+      ['byDay', '📅 PAPER TRAIL', '#00e5cc'],
+    ]
+  },
+  {
+    header: "TOUR BUS",
+    tabs: [
+      ['byFest', '🎪 BOX SETS', '#ffcc00'],
+      ['passport', '🗺️ STAMP BOOK', '#ffcc00'],
+    ]
+  },
+  {
+    header: "ARCHIVE",
+    tabs: [
+      ['hof', '🏆 HEAVY ROTATION', '#9966ff'],
+      ['vault', '📋 ARTIFACTS', '#00cc88'],
+      ['venues', '📍 STAGE DOOR', '#00cfff'],
+    ]
+  },
+  {
+    header: "STUDIO",
+    tabs: [
+      ['poster', '🎨 GIG POSTER', '#ff6699'],
+    ]
+  }
+];
+
+const RIGHT_TABS = [
+  ['browse', '🔍 DIGGING', '#00cfff'],
+  ['manage', '⚙️ THE OFFICE', '#888'],
 ];
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
@@ -4250,29 +4278,82 @@ async function handleUpcomingDelete(id) {
         </div>
 
         {/* ── NAV ── */}
-        <nav style={{ background: C.bgCard, borderBottom: `1px solid ${C.teal}22`, display: 'flex', position: 'sticky', top: 0, zIndex: 200 }}>
-          <div style={{ display: 'flex', flex: 1, overflowX: 'auto', scrollbarWidth: 'none', alignItems: 'stretch' }}>
-            {TABS.filter(([,, g]) => g !== 'right').map(([id, label,, color]) => {
-              const isActive = activeTab === id;
-              return (
-                <button key={id} onClick={() => setActiveTab(id)} style={{ fontFamily: "'Space Mono'", fontSize: 10, color: isActive ? color : C.gray, background: 'none', border: 'none', borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent', padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-          <div style={{ display: 'flex', borderLeft: `1px solid ${C.border}`, background: C.bgCard }}>
-            {TABS.filter(([,, g]) => g === 'right').map(([id, label,, color]) => {
-              const isActive = activeTab === id;
-              return (
-                <button key={id} onClick={() => setActiveTab(id)} style={{ fontFamily: "'Space Mono'", fontSize: 10, color: isActive ? color : C.grayDim, background: 'none', border: 'none', borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent', padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                  {label}
-                </button>
-              );
-            })}
-            <ThemeSwitcher />
-          </div>
-        </nav>
+        <nav style={{ 
+  background: C.bgCard, 
+  borderBottom: `1px solid ${C.border}`, 
+  display: 'flex', 
+  position: 'sticky', 
+  top: 0, 
+  zIndex: 200,
+  justifyContent: 'space-between',
+  height: '60px'
+}}>
+  {/* ── LEFT SIDE: THE GROUPS ── */}
+  <div style={{ display: 'flex', alignItems: 'stretch' }}>
+    {TAB_GROUPS.map((group, gi) => (
+      <div key={group.header} style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        borderRight: gi === TAB_GROUPS.length - 1 ? 'none' : `1px solid ${C.border}`,
+        position: 'relative'
+      }}>
+        {/* The Group Header */}
+        <div style={{ 
+          fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, 
+          letterSpacing: '2px', textAlign: 'center', paddingTop: 6, 
+          opacity: 0.6, textTransform: 'uppercase' 
+        }}>
+          {group.header}
+        </div>
+
+        {/* The Tabs in this group */}
+        <div style={{ display: 'flex', flex: 1 }}>
+          {group.tabs.map(([id, label, color]) => {
+            const isActive = activeTab === id;
+            return (
+              <button key={id} onClick={() => setActiveTab(id)}
+                style={{
+                  fontFamily: "'Space Mono'", fontSize: 9,
+                  color: isActive ? color : C.gray,
+                  background: isActive ? hexToRgba(color, 0.05) : 'none', 
+                  border: 'none',
+                  borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
+                  padding: '0 15px', cursor: 'pointer', whiteSpace: 'nowrap',
+                  transition: 'all 0.2s', fontWeight: isActive ? 700 : 400
+                }}>
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {/* ── RIGHT SIDE: THE BOOTH ── */}
+  <div style={{ display: 'flex', borderLeft: `1px solid ${C.border}` }}>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+       <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, letterSpacing: '2px', textAlign: 'center', paddingTop: 6, opacity: 0.6 }}>SYSTEM</div>
+       <div style={{ display: 'flex', flex: 1 }}>
+          {RIGHT_TABS.map(([id, label, color]) => {
+            const isActive = activeTab === id;
+            return (
+              <button key={id} onClick={() => setActiveTab(id)}
+                style={{
+                  fontFamily: "'Space Mono'", fontSize: 9, color: isActive ? color : C.grayDim,
+                  background: isActive ? hexToRgba(color, 0.05) : 'none', border: 'none',
+                  borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
+                  padding: '0 15px', cursor: 'pointer'
+                }}>
+                {label}
+              </button>
+            );
+          })}
+          <ThemeSwitcher />
+       </div>
+    </div>
+  </div>
+</nav>
 
         {/* ── THE MAIN STAGE ── */}
         <main style={{ maxWidth: 1300, margin: '20px auto', padding: '24px', background: `linear-gradient(180deg, ${hexToRgba(C.bgCard, 0.7)} 0%, ${hexToRgba(C.bg, 0.9)} 100%)`, border: `1px solid ${C.border}`, borderRadius: '16px', boxShadow: '0 30px 100px rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', position: 'relative', zIndex: 1, minHeight: '80vh' }}>
