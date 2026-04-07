@@ -1478,6 +1478,7 @@ function DonutChart({ fest, solo, concerts }) {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', height: '100%' }}>
+      {/* Header Legend */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 15, marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: stats.color }}>{stats.label}</div>
@@ -1489,26 +1490,34 @@ function DonutChart({ fest, solo, concerts }) {
         </div>
       </div>
 
-      <div style={{ position: 'relative', width: 150, height: 150, background: '#111', borderRadius: 4, border: '1px solid #222', padding: 5, alignSelf: 'center', boxShadow: 'inset 0 0 20px #000' }}>
-        <svg className="record-vinyl-spinning" width="140" height="140" viewBox="0 0 140 140">
-          <circle cx={cx} cy={cy} r={66} fill="#050505" stroke="#181818" strokeWidth={1} />
-          {[60, 54, 48].map(rad => <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#111" strokeWidth={0.5} />)}
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={8} />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={8} strokeDasharray={`${pct * circ} ${circ}`} strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} />
-          <circle cx={cx} cy={cy} r={15} fill={stats.color} stroke="#000" strokeWidth={2} />
-          <circle cx={cx} cy={cy} r={2} fill="#000" />
+      <div style={{ position: 'relative', width: 160, height: 160, background: '#111', borderRadius: 8, border: '1px solid #222', padding: 5, alignSelf: 'center', boxShadow: 'inset 0 0 30px #000, 0 10px 30px rgba(0,0,0,0.5)' }}>
+        <svg className="record-vinyl-spinning" width="150" height="150" viewBox="0 0 140 140" style={{ transform: 'translateX(-5px)' }}>
+          <circle cx={cx} cy={cy} r={66} fill="#020202" stroke="#111" strokeWidth={1} />
+          {[60, 54, 48, 42, 36].map(rad => <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#080808" strokeWidth={1} />)}
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth={10} />
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={10} strokeDasharray={`${pct * circ} ${circ}`} strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 5px ${stats.color})` }} />
+          <circle cx={cx} cy={cy} r={14} fill={stats.color} stroke="#000" strokeWidth={2} />
         </svg>
+
+        {/* 🔊 THE CHROME TONE ARM */}
+        <div style={{ 
+          position: 'absolute', top: 10, right: 10, width: 8, height: 80, 
+          background: 'linear-gradient(to right, #666, #fff, #444)', 
+          transform: 'rotate(25deg)', transformOrigin: 'top center', 
+          borderRadius: 10, zIndex: 10, border: '1px solid #111',
+          boxShadow: '4px 4px 10px rgba(0,0,0,0.8)'
+        }}>
+          {/* Needle Head */}
+          <div style={{ position: 'absolute', bottom: -5, left: -2, width: 12, height: 18, background: '#222', borderRadius: 2, border: '1px solid #444' }} />
+        </div>
+        {/* Arm Pivot Base */}
+        <div style={{ position: 'absolute', top: 5, right: 5, width: 24, height: 24, borderRadius: '50%', background: 'radial-gradient(circle, #444, #111)', border: '2px solid #222' }} />
       </div>
 
       <div style={{ display: 'flex', gap: 4, height: 35, marginTop: 15 }}>
-        {[
-          { id: 'fest', col: '#00e5cc', icon: '🎪' },
-          { id: 'legacy', col: '#ffcc00', icon: '📜' },
-          { id: 'city', col: '#00cfff', icon: '📍' },
-          { id: 'weekend', col: '#9966ff', icon: '🍺' }
-        ].map((item) => (
+        {[{ id: 'fest', col: '#00e5cc', icon: '🎪' }, { id: 'legacy', col: '#ffcc00', icon: '📜' }, { id: 'city', col: '#00cfff', icon: '📍' }, { id: 'weekend', col: '#9966ff', icon: '🍺' }].map((item) => (
           <div key={item.id} onMouseDown={() => setMode(item.id)} className="crate-sleeve" style={{ flex: 1, height: mode === item.id ? '100%' : '80%', background: mode === item.id ? item.col : 'rgba(255,255,255,0.05)', border: `1px solid ${mode === item.id ? item.col : 'rgba(255,255,255,0.1)'}`, borderRadius: '2px 2px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
-            {item.icon}
+            <span style={{ filter: mode === item.id ? 'none' : 'grayscale(100%) opacity(0.5)' }}>{item.icon}</span>
           </div>
         ))}
       </div>
@@ -1550,15 +1559,12 @@ function TopFestBlocks({ festBreakdown, concerts }) {
 // ─── 3. THE DECADE STAGE (RIGHT) ────────────────────────────────
 function DecadeBlocks({ sets }) {
   if (!sets) return null;
-
   const counts = useMemo(() => {
     const c = {'90s': 0, '00s': 0, '10s': 0, '20s': 0};
     sets.forEach(s => {
       const y = getYear(s.date); if (!y) return;
-      if (y < 2000) c['90s']++; 
-      else if (y < 2010) c['00s']++; 
-      else if (y < 2020) c['10s']++; 
-      else c['20s']++;
+      if (y < 2000) c['90s']++; else if (y < 2010) c['00s']++; 
+      else if (y < 2020) c['10s']++; else c['20s']++;
     });
     return c;
   }, [sets]);
@@ -1573,24 +1579,19 @@ function DecadeBlocks({ sets }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '240px', gap: 8, overflow: 'hidden' }}>
-      
-      {/* 🟢 COMPRESSED DATA ROWS */}
+      {/* 🟢 DATA ROWS */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {Object.entries(counts).map(([decade, count]) => {
           const m = media[decade];
           return (
-            <div key={decade} style={{ 
-              display: 'flex', alignItems: 'center', gap: 8, 
-              background: 'rgba(255,255,255,0.02)', padding: '4px 10px', borderRadius: 4, 
-              border: `1px solid ${m.color}22`
-            }}>
-              <span style={{ fontSize: '0.8rem', filter: `drop-shadow(0 0 3px ${m.color})` }}>{m.icon}</span>
+            <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.02)', padding: '4px 10px', borderRadius: 4, border: `1px solid ${m.color}22` }}>
+              <span style={{ fontSize: '0.8rem' }}>{m.icon}</span>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: m.color, fontWeight: 900 }}>{m.label}</span>
                   <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.7rem', color: '#fff' }}>{decade}</span>
                 </div>
-                <div style={{ height: 2, background: '#000', borderRadius: 1, overflow: 'hidden' }}>
+                <div style={{ height: 2, background: '#000', borderRadius: 1 }}>
                   <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.color, boxShadow: `0 0 8px ${m.color}` }} />
                 </div>
               </div>
@@ -1600,34 +1601,35 @@ function DecadeBlocks({ sets }) {
         })}
       </div>
 
-      {/* 🔵 THE SPLIT (Ferris Wheel + Lit Stage) */}
-      <div style={{ 
-        flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', 
-        borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: 4, paddingTop: 8
-      }}>
+      {/* 🔵 VISUAL SECTION */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1.5fr', borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: 4, paddingTop: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px dashed rgba(255,255,255,0.1)' }}>
-           <FerrisWheel size={50} />
+           <FerrisWheel size={60} />
         </div>
 
-        {/* 🎭 RENDERED STAGE (BRIGHTER) */}
+        {/* 🎭 THE NEON STAGE ARCHIVE */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>
-          <div style={{ 
-            width: '100%', height: '55px', background: '#000', borderRadius: 4, 
-            border: '1px solid #333', position: 'relative', overflow: 'hidden',
-            boxShadow: '0 0 20px rgba(0,0,0,1)'
-          }}>
-             {/* Extreme Light Beams */}
-             <div className="stage-light" style={{ position: 'absolute', left: '10%', top: -20, width: 40, height: 80, background: 'radial-gradient(circle at top, #00f2ff, transparent 70%)', filter: 'blur(10px)', mixBlendMode: 'screen', opacity: 0.8 }} />
-             <div className="stage-light" style={{ position: 'absolute', left: '40%', top: -20, width: 40, height: 80, background: 'radial-gradient(circle at top, #9d00ff, transparent 70%)', filter: 'blur(10px)', mixBlendMode: 'screen', opacity: 0.8 }} />
-             <div className="stage-light" style={{ position: 'absolute', right: '10%', top: -20, width: 40, height: 80, background: 'radial-gradient(circle at top, #ffcc00, transparent 70%)', filter: 'blur(10px)', mixBlendMode: 'screen', opacity: 0.8 }} />
-             
-             {/* Floor with Glow Reflection */}
-             <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '10px', background: '#111', borderTop: '1px solid #444', zIndex: 2 }} />
-             <div style={{ position: 'absolute', bottom: 10, width: '100%', height: '10px', background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.05))', zIndex: 1 }} />
-             
-             <div style={{ position: 'absolute', bottom: 1, width: '100%', textAlign: 'center', fontFamily: "'Space Mono'", fontSize: 4, color: '#888', letterSpacing: 2, zIndex: 3 }}>
-               LIVE_FEED // SYSTEM_OK
-             </div>
+          <div style={{ width: '100%', height: '75px', background: '#000', borderRadius: 4, border: '1px solid #333', position: 'relative', overflow: 'hidden', boxShadow: '0 0 20px #000' }}>
+            {/* Structural Truss */}
+            <div style={{ position: 'absolute', top: 0, left: 10, width: 2, height: '100%', background: '#222', borderLeft: '1px solid #444' }} />
+            <div style={{ position: 'absolute', top: 0, right: 10, width: 2, height: '100%', background: '#222', borderRight: '1px solid #444' }} />
+            <div style={{ position: 'absolute', top: 5, left: 0, width: '100%', height: 2, background: '#222' }} />
+            
+            {/* Neon Star Centerpiece */}
+            <div style={{ position: 'absolute', left: '50%', top: '40%', transform: 'translate(-50%, -50%)', fontSize: '1.2rem', filter: 'drop-shadow(0 0 8px #00f2ff)', color: '#00f2ff', opacity: 0.8 }}>⭐</div>
+            
+            {/* Beams */}
+            <div className="stage-light" style={{ position: 'absolute', left: '15%', top: -10, width: 20, height: 60, background: 'radial-gradient(circle at top, #9d00ff, transparent 80%)', filter: 'blur(10px)', mixBlendMode: 'screen' }} />
+            <div className="stage-light" style={{ position: 'absolute', right: '15%', top: -10, width: 20, height: 60, background: 'radial-gradient(circle at top, #ffcc00, transparent 80%)', filter: 'blur(10px)', mixBlendMode: 'screen' }} />
+            
+            {/* Stage Steps */}
+            <div style={{ position: 'absolute', bottom: 0, width: '40%', left: '30%', height: '15px', background: '#111', border: '1px solid #333', borderBottom: 'none', zIndex: 5 }} />
+            <div style={{ position: 'absolute', bottom: 0, width: '50%', left: '25%', height: '8px', background: '#080808', border: '1px solid #222', zIndex: 4 }} />
+            
+            {/* Reflection on floor */}
+            <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '10px', background: 'rgba(255,255,255,0.05)', filter: 'blur(5px)', zIndex: 1 }} />
+            
+            <div style={{ position: 'absolute', bottom: 1, width: '100%', textAlign: 'center', fontFamily: "'Space Mono'", fontSize: 4, color: '#444', letterSpacing: 2, zIndex: 10 }}>FESTIVAL_MODE // SYSTEM_ACTIVE</div>
           </div>
         </div>
       </div>
