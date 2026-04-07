@@ -4514,7 +4514,7 @@ async function handleUpcomingDelete(id) {
             </div>
           )}
 
-          {/* ════ OTHER TABS ════ */}
+         {/* ════ OTHER TABS ════ */}
           {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={true} onEdit={setEditTarget} />}
           
           {activeTab === 'passport' && (
@@ -4529,7 +4529,7 @@ async function handleUpcomingDelete(id) {
                   if (el) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
                   }
-                },}, 300); 
+                }, 300); 
               }} 
             />
           )}
