@@ -2301,16 +2301,17 @@ function PersonalPolaroid({ src, index = 0, total = 1, caption }) {
 // ─── 4. BY DAY TAB (SCRAPBOOK EDITION - FULL MULTI-MEDIA) ────────────────────
 // ─── 4. BY DAY TAB (SCRAPBOOK TIMELINE & FESTIVAL CLUSTERS) ──────────────────
 
+// ─── 4. BY DAY TAB (SCRAPBOOK TIMELINE & MULTI-SET LOGIC) ──────────────────
+
 function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
   
-  // 1. 🟢 CLUSTER LOGIC: Group linear shows into "Box Sets" (Solo vs Festival Streaks)
+  // 1. CLUSTER LOGIC: Group linear shows into "Box Sets" (Solo vs Festival Streaks)
   const clusters = useMemo(() => {
     const results = [];
     let currentFestKey = null;
     let currentGroup = [];
 
     dayGroups.forEach((event) => {
-      // Create a unique key for the fest + year (e.g., "ACL-2022")
       const festKey = event.is_festival 
         ? `${event.festival_name}-${new Date(event.date).getFullYear()}` 
         : null;
@@ -2318,7 +2319,6 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
       if (festKey && festKey === currentFestKey) {
         currentGroup.push(event);
       } else {
-        // Push the previous group if it existed
         if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
         
         if (festKey) {
@@ -2331,7 +2331,6 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
         }
       }
     });
-    // Don't forget the last group
     if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
     return results;
   }, [dayGroups]);
@@ -2341,7 +2340,6 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '60px' }}>
         {clusters.map((cluster, ci) => {
           
-          // ─── A: SOLO SHOW ───
           if (cluster.type === 'solo') {
             return (
               <ScrapbookRow 
@@ -2355,7 +2353,6 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
             );
           }
 
-          // ─── B: FESTIVAL CLUSTER (The Box Set) ───
           const firstEvent = cluster.events[0];
           const festColor = GENRE_COLORS[genreMap[firstEvent.bands?.[0]]] || C.teal;
 
@@ -2378,7 +2375,6 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
                 </div>
               </div>
 
-              {/* STACKED DAYS WITHIN THE FESTIVAL */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {cluster.events.map((event, ei) => (
                   <ScrapbookRow 
@@ -2401,12 +2397,11 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
   );
 }
 
-// ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (Refactored for maintainability) ────────
+// ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With Multi-Artist Setlinks) ─────────────
 
 function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
   const venueLabel = event.is_festival ? event.festival_name : event.venue;
   
-  // 🟢 Data Prep (De-duplication logic preserved)
   const rawSetlists = (event.image_url || "").split(',').map(u => u.trim()).filter(Boolean);
   const rawPhotos = (event.personal_photo_url || "").split(',').map(u => u.trim()).filter(Boolean);
   const finalPhotos = rawPhotos.filter(url => !rawSetlists.includes(url));
@@ -2439,15 +2434,14 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
           color: C.white, 
           lineHeight: 1.1,
           letterSpacing: '1px',
-          marginBottom: '12px'
+          marginBottom: '15px'
         }}>
-          {/* 🟢 FULL LINEUP (No slice!) */}
           {event.bands?.join(' · ').toUpperCase()}
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        {/* Info Bar with Multi-Setlink Mapping */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', rowGap: '10px' }}>
           <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: clusterColor || C.teal, fontWeight: 900 }}>
-            {/* Adaptive: Show "Friday/Saturday" if in cluster, else Date */}
             {(isClustered && event.festival_day) ? event.festival_day.toUpperCase() : fmtDateShort(event.date)}
           </div>
           <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
@@ -2455,19 +2449,30 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
             {event.venue?.toUpperCase()}
           </div>
           
-          <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
-          
-          <a 
-            href={getSetlistFmUrl(event.bands?.[0], event.date)} 
-            target="_blank" rel="noreferrer"
-            style={{ 
-              fontFamily: "'Space Mono'", fontSize: '10px', color: C.gold, 
-              textDecoration: 'none', borderBottom: `1px solid ${C.gold}44`,
-              paddingBottom: 1, fontWeight: 700
-            }}
-          >
-            VERIFY SETLIST ↗
-          </a>
+          {/* 🟢 GENERATE INDIVIDUAL LINKS FOR EACH BAND */}
+          {event.bands?.map((band, bIdx) => (
+            <React.Fragment key={`${event.id}-link-${bIdx}`}>
+              <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
+              <a 
+                href={getSetlistFmUrl(band, event.date)} 
+                target="_blank" rel="noreferrer"
+                style={{ 
+                  fontFamily: "'Space Mono'", 
+                  fontSize: '10px', 
+                  color: C.gold, 
+                  textDecoration: 'none', 
+                  borderBottom: `1px solid ${C.gold}44`,
+                  paddingBottom: 1, 
+                  fontWeight: 700,
+                  whiteSpace: 'nowrap' // Keeps "ARTIST SET" on one line
+                }}
+                onMouseEnter={e => e.target.style.color = C.white}
+                onMouseLeave={e => e.target.style.color = C.gold}
+              >
+                {band.toUpperCase()} SET ↗
+              </a>
+            </React.Fragment>
+          ))}
         </div>
       </div>
 
@@ -2482,12 +2487,7 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
         {rawSetlists.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center' }}>
             {rawSetlists.map((url, sIdx) => (
-              <SetlistPaper 
-                key={`${event.id}-s-${sIdx}`} 
-                src={url} 
-                index={sIdx} 
-                total={rawSetlists.length}
-              />
+              <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={rawSetlists.length} />
             ))}
           </div>
         )}
@@ -2495,13 +2495,7 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
         {finalPhotos.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center' }}>
             {finalPhotos.map((url, pIdx) => (
-              <PersonalPolaroid 
-                key={`${event.id}-p-${pIdx}`}
-                src={url} 
-                index={pIdx}
-                total={finalPhotos.length}
-                caption={venueLabel?.split(',')[0].toUpperCase()}
-              />
+              <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
             ))}
           </div>
         )}
