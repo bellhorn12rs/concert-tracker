@@ -239,17 +239,15 @@ const daysSince = d => { if (!d) return 0; return Math.floor((Date.now() - new D
 // Helper to generate the exact setlist.fm search link
 // Optimized helper for setlist.fm search precision
 // 🎯 The "Bullseye" Search Helper (Band + MM/DD/YYYY)
-const getSetlistFmUrl = (artist, date) => {
-  if (!artist || !date) return "#";
-  
-  // date comes in as "2025-11-14"
-  const [year, month, day] = date.split('-');
-  
-  // Result: "Sigur Rós 11/14/2025"
-  const searchString = `${artist} ${month}/${day}/${year}`;
-  
-  return `https://www.setlist.fm/search?query=${encodeURIComponent(searchString)}`;
-};
+// 🎯 The "Bullseye" Search Helper (Band + MM/DD/YYYY)
+  const getSetlistFmUrl = (artist, date) => {
+    if (!artist || !date) return "#";
+    // Convert "2025-10-17" -> ["2025", "10", "17"]
+    const [year, month, day] = date.split('-');
+    // Create string: "Lord Huron 10/17/2025"
+    const searchString = `${artist} ${month}/${day}/${year}`;
+    return `https://www.setlist.fm/search?query=${encodeURIComponent(searchString)}`;
+  };
 
 // ─── MASTER LANYARD ───────────────────────────────────────────────────────────
 // ─── MASTER LANYARD ───────────────────────────────────────────────────────────
@@ -2053,15 +2051,7 @@ function WristbandCard({ event, genreMap, compact, onEdit }) {
 // ─── 2. SETLIST VAULT (FULL-IMAGE & BULLSEYE SEARCH) ────────────────────────
 function SetlistVaultTab({ concerts, genreMap }) {
   
-  // 🎯 The "Bullseye" Search Helper (Band + MM/DD/YYYY)
-  const getSetlistFmUrl = (artist, date) => {
-    if (!artist || !date) return "#";
-    // Convert "2025-10-17" -> ["2025", "10", "17"]
-    const [year, month, day] = date.split('-');
-    // Create string: "Lord Huron 10/17/2025"
-    const searchString = `${artist} ${month}/${day}/${year}`;
-    return `https://www.setlist.fm/search?query=${encodeURIComponent(searchString)}`;
-  };
+
 
   const setlists = useMemo(() => {
     const results = [];
@@ -2479,7 +2469,7 @@ function Lightbox({ src, caption, onClose, type }) {
       }}
     >
       <div 
-        onClick={(e) => e.stopPropagation()} // Prevents closing when clicking the image
+        onClick={(e) => { e.stopPropagation(); setIsFull(true); }} // Prevents closing when clicking the image
         style={{ 
           display: 'flex', 
           flexDirection: 'column', 
