@@ -1638,7 +1638,7 @@ function DecadeBlocks({ sets }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '320px', gap: 12, overflow: 'hidden' }}>
       
-      {/* 🟢 DATA ROWS (Top remains sleek) */}
+      {/* 🟢 DATA ROWS */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {Object.entries(counts).map(([decade, count]) => {
           const m = media[decade];
@@ -1663,12 +1663,11 @@ function DecadeBlocks({ sets }) {
       {/* 🔵 THE CONCERT GROUNDS */}
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 2.2fr', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 15 }}>
         
-        {/* FERRIS WHEEL (Festival Icon) */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px dashed rgba(255,255,255,0.1)' }}>
            <FerrisWheel size={85} />
         </div>
 
-        {/* 🎭 THE MAIN STAGE (Detailed Render) */}
+        {/* 🎭 THE MAIN STAGE */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 10px' }}>
           <div style={{ 
             width: '100%', height: '140px', background: '#020202', borderRadius: 6, 
@@ -1676,55 +1675,53 @@ function DecadeBlocks({ sets }) {
             boxShadow: 'inset 0 0 50px #000, 0 15px 35px rgba(0,0,0,0.7)'
           }}>
             
-            {/* 1. INDUSTRIAL TRUSS (Top & Sides) */}
-            <div style={{ 
-              position: 'absolute', inset: 0, 
-              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.02) 5px, rgba(255,255,255,0.02) 6px)',
-              pointerEvents: 'none', zIndex: 1 
-            }} />
+            {/* TRUSS RIGGING */}
             <div style={{ position: 'absolute', top: 0, width: '100%', height: '18px', background: 'linear-gradient(to bottom, #1a1a1a, #0a0a0a)', borderBottom: '1px solid #444', zIndex: 10, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
                {[1,2,3,4,5,6,7,8].map(i => <div key={i} style={{ width: 3, height: 3, borderRadius: '50%', background: '#ffdd88', boxShadow: '0 0 8px #ffaa00', animation: `chasing-bulb 1s infinite ${i*0.1}s` }} />)}
             </div>
 
-            {/* 2. PRO SPEAKER STACKS (With Drivers) */}
-            {[ {side: 'left'}, {side: 'right'} ].map(s => (
-              <div key={s.side} style={{ position: 'absolute', [s.side]: 6, bottom: 12, width: 22, height: 90, background: '#111', border: '1px solid #222', display: 'flex', flexDirection: 'column', gap: 4, padding: 3, zIndex: 12, boxShadow: '0 5px 15px rgba(0,0,0,0.5)' }}>
-                {[1,2,3].map(i => (
-                  <div key={i} style={{ flex: 1, background: '#050505', borderRadius: 2, border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ width: 12, height: 12, borderRadius: '50%', border: '1px solid #222', background: 'radial-gradient(circle, #111, #000)' }}>
-                       <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#1a1a1a', margin: '3px auto' }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
+            {/* LIGHT SHOW */}
+            <div className="stage-light" style={{ position: 'absolute', left: '15%', top: 0, width: 80, height: 180, background: 'linear-gradient(to bottom, rgba(0, 242, 255, 0.2), transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', filter: 'blur(20px)', mixBlendMode: 'screen' }} />
+            <div className="stage-light" style={{ position: 'absolute', right: '15%', top: 0, width: 80, height: 180, background: 'linear-gradient(to bottom, rgba(157, 0, 255, 0.2), transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', filter: 'blur(20px)', mixBlendMode: 'screen', animationDelay: '1s' }} />
 
-            {/* 3. MULTI-COLOR LIGHT SHOW */}
-            <div className="stage-light" style={{ position: 'absolute', left: '20%', top: 0, width: 60, height: 160, background: 'linear-gradient(to bottom, rgba(0, 242, 255, 0.3), transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', filter: 'blur(15px)', mixBlendMode: 'screen' }} />
-            <div className="stage-light" style={{ position: 'absolute', left: '40%', top: 0, width: 60, height: 160, background: 'linear-gradient(to bottom, rgba(157, 0, 255, 0.3), transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', filter: 'blur(15px)', mixBlendMode: 'screen', animationDelay: '0.5s' }} />
-            <div className="stage-light" style={{ position: 'absolute', right: '20%', top: 0, width: 60, height: 160, background: 'linear-gradient(to bottom, rgba(255, 204, 0, 0.3), transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', filter: 'blur(15px)', mixBlendMode: 'screen', animationDelay: '1s' }} />
+            {/* 🥁 THE NEON BAND KIT (NO PEOPLE) */}
+            <div style={{ position: 'absolute', bottom: 45, left: '50%', transform: 'translateX(-50%)', width: '120px', height: '60px', zIndex: 15 }}>
+               
+               {/* 1. Drum Set (Neon Magenta) */}
+               <div style={{ position: 'absolute', bottom: 5, left: '40%', width: 28, height: 28, borderRadius: '50%', border: '2px solid #ff00ff', boxShadow: '0 0 10px #ff00ff', background: '#000' }} /> {/* Kick */}
+               <div style={{ position: 'absolute', bottom: 18, left: '32%', width: 14, height: 10, borderRadius: '2px', border: '1.5px solid #ff00ff', boxShadow: '0 0 8px #ff00ff', background: '#000', transform: 'rotate(-5deg)' }} /> {/* Snare */}
+               <div style={{ position: 'absolute', bottom: 22, left: '55%', width: 16, height: 10, borderRadius: '2px', border: '1.5px solid #ff00ff', boxShadow: '0 0 8px #ff00ff', background: '#000' }} /> {/* Tom */}
+               <div style={{ position: 'absolute', bottom: 35, left: '25%', width: 20, height: 2, background: '#ffcc00', boxShadow: '0 0 5px #ffcc00' }} /> {/* Hi-hat */}
 
-            {/* 4. THE CENTER STAGE & LED STAR */}
-            <div style={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)', zIndex: 5 }}>
-               <div style={{ fontSize: '2.5rem', filter: 'drop-shadow(0 0 15px #00f2ff)', color: '#00f2ff', opacity: 0.8, animation: 'float 4s ease-in-out infinite' }}>★</div>
+               {/* 🎸 2. Guitar on Stand (Neon Lime) */}
+               <div style={{ position: 'absolute', bottom: 5, left: '10%', width: 12, height: 20, borderRadius: '40% 40% 30% 30%', border: '2px solid #a2ff00', boxShadow: '0 0 10px #a2ff00', background: '#000', transform: 'rotate(-15deg)' }}>
+                  <div style={{ position: 'absolute', top: -15, left: 4, width: 2, height: 20, background: '#a2ff00' }} /> {/* Neck */}
+               </div>
+
+               {/* 🎙️ 3. Mic Stand (Neon Cyan) */}
+               <div style={{ position: 'absolute', bottom: 5, right: '15%', width: 2, height: 45, background: '#00f2ff', boxShadow: '0 0 8px #00f2ff' }}>
+                  <div style={{ position: 'absolute', top: 5, left: -10, width: 20, height: 2, background: '#00f2ff', transform: 'rotate(-30deg)' }} /> {/* Boom arm */}
+                  <div style={{ position: 'absolute', top: -2, left: -12, width: 5, height: 5, borderRadius: '50%', background: '#fff', boxShadow: '0 0 5px #fff' }} /> {/* Mic head */}
+               </div>
             </div>
 
-            {/* 5. STAGE FLOOR & MONITORS */}
-            <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '45px', background: 'linear-gradient(to bottom, #0a0a0a, #000)', borderTop: '2px solid #222', zIndex: 8 }}>
-               {/* Perspective Floor */}
-               <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.01) 0px, rgba(255,255,255,0.01) 1px, transparent 1px, transparent 40px)' }} />
+            {/* STAGE FLOOR */}
+            <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '50px', background: 'linear-gradient(to bottom, #0a0a0a, #000)', borderTop: '2px solid #333', zIndex: 8 }}>
+               <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 39px, #fff 40px)' }} />
                
-               {/* Monitor Wedges */}
-               <div style={{ position: 'absolute', top: -8, left: '30%', width: 14, height: 10, background: '#111', border: '1px solid #333', transform: 'skewX(-20deg)' }} />
-               <div style={{ position: 'absolute', top: -8, right: '30%', width: 14, height: 10, background: '#111', border: '1px solid #333', transform: 'skewX(20deg)' }} />
+               {/* Reflection of Kit */}
+               <div style={{ position: 'absolute', top: 5, left: '50%', transform: 'translateX(-50%)', width: '100px', height: '20px', background: 'linear-gradient(to bottom, rgba(255,0,255,0.1), transparent)', filter: 'blur(8px)' }} />
+               
+               {/* Monitors */}
+               <div style={{ position: 'absolute', top: -6, left: '20%', width: 16, height: 8, background: '#111', border: '1px solid #444', transform: 'perspective(10px) rotateX(20deg)' }} />
+               <div style={{ position: 'absolute', top: -6, right: '20%', width: 16, height: 8, background: '#111', border: '1px solid #444', transform: 'perspective(10px) rotateX(20deg)' }} />
             </div>
             
-            {/* FOH TECH TEXT */}
             <div style={{ 
               position: 'absolute', bottom: 4, width: '100%', textAlign: 'center', 
-              fontFamily: "'Space Mono'", fontSize: 5, color: '#333', letterSpacing: 4, zIndex: 20 
+              fontFamily: "'Space Mono'", fontSize: 5, color: '#444', letterSpacing: 4, zIndex: 20 
             }}>
-              FULL_PRODUCTION_MODE // 48K_AUDIO // STAGE_01_ACTIVE
+              BACKLINE_LOADED // SYSTEM_READY // LIVE_ARCHIVE
             </div>
           </div>
         </div>
