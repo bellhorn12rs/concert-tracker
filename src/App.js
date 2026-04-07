@@ -1636,86 +1636,95 @@ function DecadeBlocks({ sets }) {
   const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '260px', gap: 10, overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '320px', gap: 12, overflow: 'hidden' }}>
       
-      {/* 🟢 DATA ROWS */}
+      {/* 🟢 DATA ROWS (Top remains sleek) */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {Object.entries(counts).map(([decade, count]) => {
           const m = media[decade];
           return (
-            <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.02)', padding: '5px 12px', borderRadius: 4, border: `1px solid ${m.color}22` }}>
-              <span style={{ fontSize: '0.8rem', filter: `drop-shadow(0 0 5px ${m.color})` }}>{m.icon}</span>
+            <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.02)', padding: '6px 12px', borderRadius: 4, border: `1px solid ${m.color}22` }}>
+              <span style={{ fontSize: '0.9rem', filter: `drop-shadow(0 0 5px ${m.color})` }}>{m.icon}</span>
               <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: m.color, fontWeight: 900 }}>{m.label}</span>
-                  <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.75rem', color: '#fff' }}>{decade}</span>
+                  <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: '#fff' }}>{decade}</span>
                 </div>
                 <div style={{ height: 2, background: '#000', borderRadius: 1, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.color, boxShadow: `0 0 10px ${m.color}` }} />
                 </div>
               </div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', width: 30, textAlign: 'right' }}>{count}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff', width: 30, textAlign: 'right' }}>{count}</div>
             </div>
           );
         })}
       </div>
 
-      {/* 🔵 THE VENUE RENDER */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 2fr', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 12 }}>
+      {/* 🔵 THE CONCERT GROUNDS */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 2.2fr', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 15 }}>
         
-        {/* FERRIS WHEEL (Festival Grounds) */}
+        {/* FERRIS WHEEL (Festival Icon) */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px dashed rgba(255,255,255,0.1)' }}>
-           <FerrisWheel size={65} />
+           <FerrisWheel size={85} />
         </div>
 
-        {/* 🎭 THE MAIN STAGE (Structural Build) */}
+        {/* 🎭 THE MAIN STAGE (Detailed Render) */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 10px' }}>
           <div style={{ 
-            width: '100%', height: '100px', background: '#050505', borderRadius: 4, 
-            border: '1px solid #222', position: 'relative', overflow: 'hidden',
-            boxShadow: 'inset 0 0 30px #000, 0 10px 30px rgba(0,0,0,0.5)'
+            width: '100%', height: '140px', background: '#020202', borderRadius: 6, 
+            border: '1px solid #333', position: 'relative', overflow: 'hidden',
+            boxShadow: 'inset 0 0 50px #000, 0 15px 35px rgba(0,0,0,0.7)'
           }}>
             
-            {/* 1. THE RIGGING (Top Truss) */}
-            <div style={{ position: 'absolute', top: 0, width: '100%', height: '14px', background: '#111', borderBottom: '2px solid #333', zIndex: 10, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-               {[1,2,3,4,5,6].map(i => <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: '#ffdd88', boxShadow: '0 0 5px #ffaa00' }} />)}
-            </div>
-
-            {/* 2. SPEAKER STACKS (Depth on sides) */}
-            <div style={{ position: 'absolute', left: 4, bottom: 10, width: 14, height: 60, display: 'flex', flexDirection: 'column', gap: 2 }}>
-               {[1,2,3].map(i => <div key={i} style={{ flex: 1, background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 1 }} />)}
-            </div>
-            <div style={{ position: 'absolute', right: 4, bottom: 10, width: 14, height: 60, display: 'flex', flexDirection: 'column', gap: 2 }}>
-               {[1,2,3].map(i => <div key={i} style={{ flex: 1, background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 1 }} />)}
-            </div>
-
-            {/* 3. THE BACKDROP (LED Wall Effect) */}
+            {/* 1. INDUSTRIAL TRUSS (Top & Sides) */}
             <div style={{ 
-              position: 'absolute', inset: '15px 25px 35px 25px', 
-              background: 'radial-gradient(circle at center, #111 0%, #000 100%)',
-              border: '1px solid #111'
-            }}>
-               <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translateX(-50%)', fontSize: '1.8rem', filter: 'drop-shadow(0 0 15px #00f2ff)', color: '#00f2ff', opacity: 0.6 }}>★</div>
-            </div>
-
-            {/* 4. VOLUMETRIC BEAMS (Sweeping from top) */}
-            <div className="stage-light" style={{ position: 'absolute', left: '25%', top: 0, width: 40, height: 120, background: 'linear-gradient(to bottom, rgba(157, 0, 255, 0.4), transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', filter: 'blur(12px)', mixBlendMode: 'screen' }} />
-            <div className="stage-light" style={{ position: 'absolute', right: '25%', top: 0, width: 40, height: 120, background: 'linear-gradient(to bottom, rgba(0, 242, 255, 0.4), transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', filter: 'blur(12px)', mixBlendMode: 'screen', animationDelay: '1.5s' }} />
-
-            {/* 5. THE FLOOR (Perspective Platform) */}
-            <div style={{ 
-              position: 'absolute', bottom: 0, left: '15%', right: '15%', height: '35px', 
-              background: '#0a0a0a', border: '1px solid #333', borderBottom: 'none',
-              transform: 'perspective(40px) rotateX(10deg)', zIndex: 5,
-              boxShadow: '0 -10px 20px rgba(0,255,200,0.05)'
+              position: 'absolute', inset: 0, 
+              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.02) 5px, rgba(255,255,255,0.02) 6px)',
+              pointerEvents: 'none', zIndex: 1 
             }} />
+            <div style={{ position: 'absolute', top: 0, width: '100%', height: '18px', background: 'linear-gradient(to bottom, #1a1a1a, #0a0a0a)', borderBottom: '1px solid #444', zIndex: 10, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+               {[1,2,3,4,5,6,7,8].map(i => <div key={i} style={{ width: 3, height: 3, borderRadius: '50%', background: '#ffdd88', boxShadow: '0 0 8px #ffaa00', animation: `chasing-bulb 1s infinite ${i*0.1}s` }} />)}
+            </div>
 
-            {/* FOH Text Overlay */}
+            {/* 2. PRO SPEAKER STACKS (With Drivers) */}
+            {[ {side: 'left'}, {side: 'right'} ].map(s => (
+              <div key={s.side} style={{ position: 'absolute', [s.side]: 6, bottom: 12, width: 22, height: 90, background: '#111', border: '1px solid #222', display: 'flex', flexDirection: 'column', gap: 4, padding: 3, zIndex: 12, boxShadow: '0 5px 15px rgba(0,0,0,0.5)' }}>
+                {[1,2,3].map(i => (
+                  <div key={i} style={{ flex: 1, background: '#050505', borderRadius: 2, border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 12, height: 12, borderRadius: '50%', border: '1px solid #222', background: 'radial-gradient(circle, #111, #000)' }}>
+                       <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#1a1a1a', margin: '3px auto' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+
+            {/* 3. MULTI-COLOR LIGHT SHOW */}
+            <div className="stage-light" style={{ position: 'absolute', left: '20%', top: 0, width: 60, height: 160, background: 'linear-gradient(to bottom, rgba(0, 242, 255, 0.3), transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', filter: 'blur(15px)', mixBlendMode: 'screen' }} />
+            <div className="stage-light" style={{ position: 'absolute', left: '40%', top: 0, width: 60, height: 160, background: 'linear-gradient(to bottom, rgba(157, 0, 255, 0.3), transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', filter: 'blur(15px)', mixBlendMode: 'screen', animationDelay: '0.5s' }} />
+            <div className="stage-light" style={{ position: 'absolute', right: '20%', top: 0, width: 60, height: 160, background: 'linear-gradient(to bottom, rgba(255, 204, 0, 0.3), transparent)', clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', filter: 'blur(15px)', mixBlendMode: 'screen', animationDelay: '1s' }} />
+
+            {/* 4. THE CENTER STAGE & LED STAR */}
+            <div style={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)', zIndex: 5 }}>
+               <div style={{ fontSize: '2.5rem', filter: 'drop-shadow(0 0 15px #00f2ff)', color: '#00f2ff', opacity: 0.8, animation: 'float 4s ease-in-out infinite' }}>★</div>
+            </div>
+
+            {/* 5. STAGE FLOOR & MONITORS */}
+            <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '45px', background: 'linear-gradient(to bottom, #0a0a0a, #000)', borderTop: '2px solid #222', zIndex: 8 }}>
+               {/* Perspective Floor */}
+               <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.01) 0px, rgba(255,255,255,0.01) 1px, transparent 1px, transparent 40px)' }} />
+               
+               {/* Monitor Wedges */}
+               <div style={{ position: 'absolute', top: -8, left: '30%', width: 14, height: 10, background: '#111', border: '1px solid #333', transform: 'skewX(-20deg)' }} />
+               <div style={{ position: 'absolute', top: -8, right: '30%', width: 14, height: 10, background: '#111', border: '1px solid #333', transform: 'skewX(20deg)' }} />
+            </div>
+            
+            {/* FOH TECH TEXT */}
             <div style={{ 
-              position: 'absolute', bottom: 2, width: '100%', textAlign: 'center', 
-              fontFamily: "'Space Mono'", fontSize: 5, color: '#444', letterSpacing: 3, zIndex: 20 
+              position: 'absolute', bottom: 4, width: '100%', textAlign: 'center', 
+              fontFamily: "'Space Mono'", fontSize: 5, color: '#333', letterSpacing: 4, zIndex: 20 
             }}>
-              SYSTEM_READY // ARCHIVE_RIGGING // LIVE_FEED
+              FULL_PRODUCTION_MODE // 48K_AUDIO // STAGE_01_ACTIVE
             </div>
           </div>
         </div>
