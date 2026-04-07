@@ -1473,7 +1473,7 @@ function DonutChart({ fest, solo, concerts }) {
   }, [mode, fest, solo, concerts]);
 
   const total = stats.val1 + stats.val2 || 1;
-  const pct = stats.val1 / total;
+  const pct = Math.round((stats.val1 / total) * 100);
   const r = 48, cx = 70, cy = 70, circ = 2 * Math.PI * r;
 
   return (
@@ -1490,28 +1490,45 @@ function DonutChart({ fest, solo, concerts }) {
         </div>
       </div>
 
-      <div style={{ position: 'relative', width: 160, height: 160, background: '#111', borderRadius: 8, border: '1px solid #222', padding: 5, alignSelf: 'center', boxShadow: 'inset 0 0 30px #000, 0 10px 30px rgba(0,0,0,0.5)' }}>
-        <svg className="record-vinyl-spinning" width="150" height="150" viewBox="0 0 140 140" style={{ transform: 'translateX(-5px)' }}>
-          <circle cx={cx} cy={cy} r={66} fill="#020202" stroke="#111" strokeWidth={1} />
-          {[60, 54, 48, 42, 36].map(rad => <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#080808" strokeWidth={1} />)}
+      {/* NEON GREEN TURNTABLE BASE */}
+      <div style={{ 
+        position: 'relative', width: 160, height: 160, 
+        background: '#39ff14', // Neon Green Hardware
+        borderRadius: 12, padding: 5, alignSelf: 'center', 
+        boxShadow: 'inset 0 0 20px rgba(0,0,0,0.4), 0 10px 30px rgba(57,255,20,0.2)',
+        border: '2px solid #2dbd11'
+      }}>
+        {/* Platter Recess */}
+        <div style={{ position:'absolute', inset: 10, borderRadius: '50%', background: '#000', border: '1px solid rgba(0,0,0,0.5)' }} />
+
+        <svg className="record-vinyl-spinning" width="140" height="140" viewBox="0 0 140 140" style={{ position: 'relative', zIndex: 2 }}>
+          {/* Deep Black Vinyl Disc */}
+          <circle cx={cx} cy={cy} r={66} fill="#080808" stroke="#111" strokeWidth={1} />
+          {[60, 54, 48, 42].map(rad => <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#151515" strokeWidth={1} />)}
+          
+          {/* The Data Ring */}
           <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth={10} />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={10} strokeDasharray={`${pct * circ} ${circ}`} strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 5px ${stats.color})` }} />
-          <circle cx={cx} cy={cy} r={14} fill={stats.color} stroke="#000" strokeWidth={2} />
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={10} 
+            strokeDasharray={`${(pct/100) * circ} ${circ}`} strokeLinecap="round" 
+            transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 5px ${stats.color})`, transition: 'all 0.5s' }} 
+          />
+          
+          {/* Center Label with Percentage */}
+          <circle cx={cx} cy={cy} r={16} fill="#111" stroke={stats.color} strokeWidth={1} />
+          <text x={cx} y={cy+4} textAnchor="middle" style={{ fontFamily: "'Bebas Neue'", fontSize: 10, fill: stats.color, fontWeight: 'bold' }}>{pct}%</text>
         </svg>
 
-        {/* 🔊 THE CHROME TONE ARM */}
+        {/* Chrome Tone Arm */}
         <div style={{ 
-          position: 'absolute', top: 10, right: 10, width: 8, height: 80, 
-          background: 'linear-gradient(to right, #666, #fff, #444)', 
-          transform: 'rotate(25deg)', transformOrigin: 'top center', 
-          borderRadius: 10, zIndex: 10, border: '1px solid #111',
-          boxShadow: '4px 4px 10px rgba(0,0,0,0.8)'
+          position: 'absolute', top: 12, right: 12, width: 6, height: 75, 
+          background: 'linear-gradient(to right, #999, #fff, #777)', 
+          transform: 'rotate(28deg)', transformOrigin: 'top center', 
+          borderRadius: 10, zIndex: 10, border: '1px solid #666',
+          boxShadow: '3px 3px 8px rgba(0,0,0,0.6)'
         }}>
-          {/* Needle Head */}
-          <div style={{ position: 'absolute', bottom: -5, left: -2, width: 12, height: 18, background: '#222', borderRadius: 2, border: '1px solid #444' }} />
+           <div style={{ position: 'absolute', bottom: -4, left: -3, width: 12, height: 16, background: '#222', borderRadius: 2, border: '1px solid #444' }} />
         </div>
-        {/* Arm Pivot Base */}
-        <div style={{ position: 'absolute', top: 5, right: 5, width: 24, height: 24, borderRadius: '50%', background: 'radial-gradient(circle, #444, #111)', border: '2px solid #222' }} />
+        <div style={{ position: 'absolute', top: 8, right: 8, width: 22, height: 22, borderRadius: '50%', background: '#222', border: '2px solid #444', zIndex: 9 }} />
       </div>
 
       <div style={{ display: 'flex', gap: 4, height: 35, marginTop: 15 }}>
@@ -1578,9 +1595,9 @@ function DecadeBlocks({ sets }) {
   const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '240px', gap: 8, overflow: 'hidden' }}>
-      {/* 🟢 DATA ROWS */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '250px', gap: 8, overflow: 'hidden' }}>
+      {/* DATA ROWS */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {Object.entries(counts).map(([decade, count]) => {
           const m = media[decade];
           return (
@@ -1601,35 +1618,39 @@ function DecadeBlocks({ sets }) {
         })}
       </div>
 
-      {/* 🔵 VISUAL SECTION */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1.5fr', borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: 4, paddingTop: 8 }}>
+      {/* THE RIGGED STAGE SECTION */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1.8fr', borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: 5, paddingTop: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px dashed rgba(255,255,255,0.1)' }}>
-           <FerrisWheel size={60} />
+           <FerrisWheel size={55} />
         </div>
 
-        {/* 🎭 THE NEON STAGE ARCHIVE */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>
-          <div style={{ width: '100%', height: '75px', background: '#000', borderRadius: 4, border: '1px solid #333', position: 'relative', overflow: 'hidden', boxShadow: '0 0 20px #000' }}>
-            {/* Structural Truss */}
-            <div style={{ position: 'absolute', top: 0, left: 10, width: 2, height: '100%', background: '#222', borderLeft: '1px solid #444' }} />
-            <div style={{ position: 'absolute', top: 0, right: 10, width: 2, height: '100%', background: '#222', borderRight: '1px solid #444' }} />
-            <div style={{ position: 'absolute', top: 5, left: 0, width: '100%', height: 2, background: '#222' }} />
+          <div style={{ width: '100%', height: '80px', background: '#000', borderRadius: 4, border: '1px solid #222', position: 'relative', overflow: 'hidden' }}>
             
-            {/* Neon Star Centerpiece */}
-            <div style={{ position: 'absolute', left: '50%', top: '40%', transform: 'translate(-50%, -50%)', fontSize: '1.2rem', filter: 'drop-shadow(0 0 8px #00f2ff)', color: '#00f2ff', opacity: 0.8 }}>⭐</div>
+            {/* Structural Truss Roof & Sides */}
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '12px', background: '#111', borderBottom: '1px solid #333', zIndex: 5, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+               {[1,2,3,4,5].map(i => <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: '#333' }} />)}
+            </div>
             
-            {/* Beams */}
-            <div className="stage-light" style={{ position: 'absolute', left: '15%', top: -10, width: 20, height: 60, background: 'radial-gradient(circle at top, #9d00ff, transparent 80%)', filter: 'blur(10px)', mixBlendMode: 'screen' }} />
-            <div className="stage-light" style={{ position: 'absolute', right: '15%', top: -10, width: 20, height: 60, background: 'radial-gradient(circle at top, #ffcc00, transparent 80%)', filter: 'blur(10px)', mixBlendMode: 'screen' }} />
+            {/* Side Speaker Stacks */}
+            <div style={{ position: 'absolute', left: 2, bottom: 10, width: 12, height: 40, background: '#111', border: '1px solid #222', display: 'flex', flexDirection: 'column', gap: 2, padding: 2 }}>
+               {[1,2,3].map(i => <div key={i} style={{ flex: 1, background: '#050505', borderRadius: 1, border: '1px solid #1a1a1a' }} />)}
+            </div>
+            <div style={{ position: 'absolute', right: 2, bottom: 10, width: 12, height: 40, background: '#111', border: '1px solid #222', display: 'flex', flexDirection: 'column', gap: 2, padding: 2 }}>
+               {[1,2,3].map(i => <div key={i} style={{ flex: 1, background: '#050505', borderRadius: 1, border: '1px solid #1a1a1a' }} />)}
+            </div>
+
+            {/* Neon Star + Lights */}
+            <div style={{ position: 'absolute', left: '50%', top: '45%', transform: 'translate(-50%, -50%)', fontSize: '1.4rem', filter: 'drop-shadow(0 0 10px #00f2ff)', color: '#00f2ff', zIndex: 2 }}>⭐</div>
+            
+            <div className="stage-light" style={{ position: 'absolute', left: '20%', top: 5, width: 30, height: 70, background: 'radial-gradient(circle at top, #9d00ff66, transparent 80%)', filter: 'blur(8px)', mixBlendMode: 'screen' }} />
+            <div className="stage-light" style={{ position: 'absolute', right: '20%', top: 5, width: 30, height: 70, background: 'radial-gradient(circle at top, #ffcc0066, transparent 80%)', filter: 'blur(8px)', mixBlendMode: 'screen' }} />
             
             {/* Stage Steps */}
-            <div style={{ position: 'absolute', bottom: 0, width: '40%', left: '30%', height: '15px', background: '#111', border: '1px solid #333', borderBottom: 'none', zIndex: 5 }} />
-            <div style={{ position: 'absolute', bottom: 0, width: '50%', left: '25%', height: '8px', background: '#080808', border: '1px solid #222', zIndex: 4 }} />
+            <div style={{ position: 'absolute', bottom: 0, width: '40%', left: '30%', height: '18px', background: '#151515', border: '1px solid #333', borderBottom: 'none', zIndex: 4 }} />
+            <div style={{ position: 'absolute', bottom: 0, width: '60%', left: '20%', height: '8px', background: '#0a0a0a', border: '1px solid #222', zIndex: 3 }} />
             
-            {/* Reflection on floor */}
-            <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '10px', background: 'rgba(255,255,255,0.05)', filter: 'blur(5px)', zIndex: 1 }} />
-            
-            <div style={{ position: 'absolute', bottom: 1, width: '100%', textAlign: 'center', fontFamily: "'Space Mono'", fontSize: 4, color: '#444', letterSpacing: 2, zIndex: 10 }}>FESTIVAL_MODE // SYSTEM_ACTIVE</div>
+            <div style={{ position: 'absolute', bottom: 1, width: '100%', textAlign: 'center', fontFamily: "'Space Mono'", fontSize: 4, color: '#444', letterSpacing: 1, zIndex: 10 }}>ARCHIVE_RIGGING // LIVE_FEED</div>
           </div>
         </div>
       </div>
