@@ -548,44 +548,57 @@ const MarqueeStyles = () => (
       letter-spacing: -0.05em;
     }
 
-    /* 📀 TURNTABLE & RECORD PLAYER */
+    /* ─── ANIMATION KEYFRAMES ─── */
+
+    /* 1. Scrolling Motion */
+    @keyframes ticker-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    @keyframes marquee {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* 2. Theater Lighting */
+    @keyframes chasing-bulb {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); filter: brightness(0.7); }
+      50% { opacity: 1; transform: scale(1.1); filter: brightness(1.3); }
+    }
+
+    @keyframes flicker {
+      0%, 98%, 100% { opacity: 1; }
+      99% { opacity: 0.9; }
+    }
+
+    /* 3. Record Player */
     @keyframes spin-record {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
-    .record-vinyl-spinning { 
-      animation: spin-record 4s linear infinite; 
-      transform-origin: center center;
-    }
 
-    /* 🔘 INTERACTIVE STAT CRATE */
-    .crate-sleeve { 
-      cursor: pointer; 
-      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, filter 0.2s; 
-      will-change: transform;
-    }
-    .crate-sleeve:hover { transform: translateY(-5px) !important; filter: brightness(1.2); }
-
+    /* 4. Stage & Atmosphere */
     @keyframes beam-sweep {
-  0%, 100% { transform: rotate(-10deg); opacity: 0.3; }
-  50% { transform: rotate(10deg); opacity: 0.7; }
-}
-.stage-light {
-  animation: beam-sweep 3s ease-in-out infinite;
-  transform-origin: top center;
-}
+      0%, 100% { transform: rotate(-10deg); opacity: 0.3; }
+      50% { transform: rotate(10deg); opacity: 0.7; }
+    }
 
-    /* 🎫 WRISTBAND BIN */
-    .wristband-bin::-webkit-scrollbar { width: 4px; }
-    .wristband-bin::-webkit-scrollbar-track { background: transparent; }
-    .wristband-bin::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-
-    /* ⏳ ANIMATIONS & TRANSITIONS */
     @keyframes float {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-6px); }
     }
-    .pass-float { animation: float 3s ease-in-out infinite; }
+
+    @keyframes ferris-rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* 5. Transitions */
+    @keyframes fade-in-kf {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
     @keyframes peel-and-stick {
       0% { transform: translateY(20px) scale(1.1) rotate(-5deg); opacity: 0; filter: blur(4px); }
@@ -593,14 +606,42 @@ const MarqueeStyles = () => (
       100% { transform: translateY(0) scale(1) rotate(var(--r, 0deg)); opacity: 1; }
     }
 
-    .fade-in { animation: fade-in-kf 0.4s ease both; }
-    @keyframes fade-in-kf { from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
+    /* ─── CSS CLASSES ─── */
 
-    /* 🎢 FERRIS WHEEL */
-    @keyframes ferris-rotate { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    .marquee-text {
+      display: inline-block;
+      animation: marquee 60s linear infinite;
+    }
+
+    .marquee-flicker {
+      animation: flicker 6s infinite;
+    }
+
+    .record-vinyl-spinning { 
+      animation: spin-record 4s linear infinite; 
+      transform-origin: center center;
+    }
+
+    .crate-sleeve { 
+      cursor: pointer; 
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, filter 0.2s; 
+      will-change: transform;
+    }
+    .crate-sleeve:hover { transform: translateY(-5px) !important; filter: brightness(1.2); }
+
+    .stage-light {
+      animation: beam-sweep 3s ease-in-out infinite;
+      transform-origin: top center;
+    }
+
+    .wristband-bin::-webkit-scrollbar { width: 4px; }
+    .wristband-bin::-webkit-scrollbar-track { background: transparent; }
+    .wristband-bin::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+
+    .pass-float { animation: float 3s ease-in-out infinite; }
+    .fade-in { animation: fade-in-kf 0.4s ease both; }
     .ferris-wheel-ring { animation: ferris-rotate 20s linear infinite; transform-origin: center center; }
 
-    /* 🏛️ ARCHIVE UI ELEMENTS */
     .scrap-paper {
       background-image: 
         repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(0,0,0,0.01) 20px, rgba(0,0,0,0.01) 21px),
