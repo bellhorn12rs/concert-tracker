@@ -555,6 +555,21 @@ const MarqueeStyles = () => (
       letter-spacing: -0.05em;
     }
 
+@keyframes record-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.record-container:hover svg {
+  animation: record-spin 5s linear infinite;
+}
+.pass-float {
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
     /* ── PHYSICAL ARCHIVE ANIMATIONS ── */
     @keyframes peel-and-stick {
       0% { transform: translateY(20px) scale(1.1) rotate(-5deg); opacity: 0; filter: blur(4px); }
@@ -1479,40 +1494,38 @@ function SonicDNA({ stats, onGenreClick }) {
   );
 }
 
-// ─── IMPROVED DONUT (THE VINYL RECORD) ──────────────────────────────────────
+// ─── STABILIZED DONUT ──────────────────────────────────────
 function DonutChart({ fest, solo }) {
-  const total=fest+solo||1, festPct=fest/total, r=52,cx=70,cy=70,circ=2*Math.PI*r;
-  const festDash=festPct*circ;
+  const total = (fest + solo) || 1;
+  const festPct = fest / total;
+  const r = 52; const cx = 70; const cy = 70;
+  const circ = 2 * Math.PI * r;
+  const festDash = festPct * circ;
   
   return (
     <div style={{ display:'flex', alignItems:'center', gap:20 }}>
-      <div className="record-container" style={{ position: 'relative', cursor: 'pointer' }}>
-        <svg width={140} height={140} viewBox="0 0 140 140" style={{ filter: `drop-shadow(0 0 12px ${hexToRgba(C.teal, 0.2)})` }}>
-          {/* Outer Grooves */}
+      <div className="record-container" style={{ position: 'relative' }}>
+        <svg width={140} height={140} viewBox="0 0 140 140">
           <circle cx={cx} cy={cy} r={r+4} fill="none" stroke="#111" strokeWidth={1} />
           <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.border} strokeWidth={14} />
-          {/* Standalone Segment */}
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.grayDim} strokeWidth={14} opacity={0.3} />
-          {/* Festival Segment (Glowing) */}
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.grayDim} strokeWidth={14} opacity={0.2} />
           <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.teal} strokeWidth={14} 
             strokeDasharray={`${festDash} ${circ}`} strokeLinecap="round" 
-            transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 8px ${C.teal})` }} 
+            transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 5px ${C.teal})` }} 
           />
-          {/* Center Label */}
           <circle cx={cx} cy={cy} r={18} fill="#050508" stroke={C.border} strokeWidth={1} />
           <text x={cx} y={cy+5} textAnchor="middle" style={{ fontFamily:"'Bebas Neue'", fontSize:18, fill:C.teal }}>{Math.round(festPct*100)}%</text>
         </svg>
       </div>
-      
       <div style={{ flex:1 }}>
         {[[C.teal,'FESTIVAL',fest],[C.grayDim,'STANDALONE',solo]].map(([color,label,val]) => (
           <div key={label} style={{ marginBottom:12 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-               <span style={{ fontFamily:"'Space Mono'", fontSize:8, color:C.gray, letterSpacing: 1 }}>{label}</span>
+               <span style={{ fontFamily:"'Space Mono'", fontSize:8, color:C.gray }}>{label}</span>
                <span style={{ fontFamily:"'Bebas Neue'", fontSize:'1.2rem', color }}>{val}</span>
             </div>
             <div style={{ height:4, background:C.border, borderRadius:2, overflow:'hidden' }}>
-              <div style={{ height:'100%', width:`${(val/total)*100}%`, background:color, boxShadow: color === C.teal ? `0 0 10px ${C.teal}` : 'none' }} />
+              <div style={{ height:'100%', width:`${(val/total)*100}%`, background:color }} />
             </div>
           </div>
         ))}
@@ -1521,26 +1534,26 @@ function DonutChart({ fest, solo }) {
   );
 }
 
-// ─── IMPROVED FEST BLOCKS (THE VIP HANGTAGS) ────────────────────────────────
+// ─── STABILIZED FEST BLOCKS ────────────────────────────────
 function TopFestBlocks({ festBreakdown }) {
-  const top3=festBreakdown.slice(0,3), colors=[C.teal,C.cyan,C.purple];
+  const top3 = festBreakdown.slice(0,3);
+  const colors = [C.teal, C.cyan, C.purple];
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-      {top3.map(([name,count],i) => (
+      {top3.map(([name,count], i) => (
         <div key={name} className="pass-float" style={{ 
           display:'flex', alignItems:'center', gap:15, 
-          background:`linear-gradient(90deg, ${colors[i]}22, transparent)`, 
+          background:`linear-gradient(90deg, ${colors[i]}15, transparent)`, 
           border:`1px solid ${colors[i]}33`, borderLeft:`4px solid ${colors[i]}`, 
-          borderRadius:'4px 12px 12px 4px', padding:'12px 16px',
-          animation: `peel-and-stick 0.5s ease ${i * 0.1}s both`
+          borderRadius:'4px 12px 12px 4px', padding:'12px 16px'
         }}>
-          <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#000', border: `2px solid ${colors[i]}`, boxShadow: `inset 0 0 5px ${colors[i]}` }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#000', border: `2px solid ${colors[i]}` }} />
           <div style={{ flex:1 }}>
-            <div style={{ fontFamily:"'Space Mono'", fontSize:7, color:colors[i], letterSpacing: 2 }}>VIP ACCESS</div>
-            <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.2rem', color:C.white, letterSpacing: 1 }}>{name.toUpperCase()}</div>
+            <div style={{ fontFamily:"'Space Mono'", fontSize:7, color:colors[i] }}>VIP ACCESS</div>
+            <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.1rem', color:C.white }}>{name.toUpperCase()}</div>
           </div>
           <div style={{ textAlign:'right' }}>
-            <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.8rem', color:colors[i], lineHeight:1 }}>{count}</div>
+            <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.6rem', color:colors[i], lineHeight:1 }}>{count}</div>
             <div style={{ fontFamily:"'Space Mono'", fontSize:7, color:C.gray }}>DAYS</div>
           </div>
         </div>
@@ -1549,45 +1562,35 @@ function TopFestBlocks({ festBreakdown }) {
   );
 }
 
-// ─── IMPROVED DECADES (THE CASSETTE STACK) ──────────────────────────────────
+// ─── STABILIZED DECADES ──────────────────────────────────
 function DecadeBlocks({ sets }) {
-  const dec={'90s':0,'00s':dec00 || 0,'10s':dec10 || 0,'20s':dec20 || 0}; 
-  // (Note: ensure your logic for counting decades is passed in or calculated here)
-  const decadeCounts = {'90s':0,'00s':0,'10s':0,'20s':0};
+  const counts = {'90s':0,'00s':0,'10s':0,'20s':0};
   sets.forEach(s => { 
-    const y=getYear(s.date); 
-    if(!y)return; 
-    if(y<2000) decadeCounts['90s']++; 
-    else if(y<2010) decadeCounts['00s']++; 
-    else if(y<2020) decadeCounts['10s']++; 
-    else decadeCounts['20s']++; 
+    const y = getYear(s.date); 
+    if(!y) return; 
+    if(y < 2000) counts['90s']++; 
+    else if(y < 2010) counts['00s']++; 
+    else if(y < 2020) counts['10s']++; 
+    else counts['20s']++; 
   });
 
-  const colors=[C.purple, C.cyan, C.teal, C.gold];
-  const styles = [
-    { label: 'GRUNGE', pattern: 'stripe' },
-    { label: 'INDIE', pattern: 'dot' },
-    { label: 'MODERN', pattern: 'solid' },
-    { label: 'FUTURE', pattern: 'glow' }
-  ];
+  const colors = [C.purple, C.cyan, C.teal, C.gold];
+  const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
     <div style={{ display:'flex', flexDirection: 'column', gap:8 }}>
-      {Object.entries(decadeCounts).map(([decade,count],i) => (
+      {Object.entries(counts).map(([decade, count], i) => (
         <div key={decade} style={{ 
-          height: 38, background: '#111', border: `1px solid ${colors[i]}44`,
-          borderRadius: 4, display: 'flex', alignItems: 'center', overflow: 'hidden',
-          position: 'relative', boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+          height: 38, background: '#0a0a0a', border: `1px solid ${colors[i]}44`,
+          borderRadius: 4, display: 'flex', alignItems: 'center', overflow: 'hidden'
         }}>
-          {/* Cassette "Spine" Label */}
           <div style={{ width: 45, height: '100%', background: colors[i], color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Bebas Neue'", fontSize: '1.2rem' }}>
             {decade}
           </div>
-          {/* Tape Progress Meter */}
-          <div style={{ flex: 1, height: '100%', position: 'relative', background: 'rgba(255,255,255,0.02)' }}>
-             <div style={{ position:'absolute', left:0, top:0, bottom:0, width:`${(count/Math.max(...Object.values(decadeCounts)))*100}%`, background: `${colors[i]}22`, borderRight: `2px solid ${colors[i]}`, boxShadow: `0 0 15px ${colors[i]}33` }} />
-             <div style={{ position: 'relative', zIndex: 2, paddingLeft: 12, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 12 }}>
-                <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray, letterSpacing: 1 }}>{styles[i].label} ARCHIVE</span>
+          <div style={{ flex: 1, height: '100%', position: 'relative' }}>
+             <div style={{ position:'absolute', left:0, top:0, bottom:0, width:`${(count/maxVal)*100}%`, background: `${colors[i]}15`, borderRight: `2px solid ${colors[i]}` }} />
+             <div style={{ position: 'relative', zIndex: 2, padding: '0 12px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray }}>ARCHIVE</span>
                 <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff' }}>{count} SETS</span>
              </div>
           </div>
