@@ -1429,6 +1429,7 @@ function DecadeBlocks({ sets }) {
 }
 
 // ─── HALL OF FAME (TRIPLE-THREAT MEDIA EDITION) ──────────────────────────────
+// ─── HALL OF FAME (TRIPLE-THREAT MEDIA EDITION) ──────────────────────────────
 function HallOfFame({ sets, genreMap, onShare }) {
   const [selected, setSelected] = useState(null);
   const topRef = useRef(null);
