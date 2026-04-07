@@ -1297,7 +1297,7 @@ function ArtistInsights({ concerts }) {
   );
 }
 
-// ─── RANDOM SHOW (VISUAL TIME MACHINE EDITION) ────────────────────────────────
+// ─── RANDOM SHOW (STABILIZED VISUAL EDITION) ────────────────────────────────
 function RandomShow({ concerts }) {
   const [show, setShow] = useState(null);
   const [spinning, setSpinning] = useState(false);
@@ -1331,67 +1331,89 @@ function RandomShow({ concerts }) {
       minHeight: 220, 
       position: 'relative', 
       overflow: 'hidden',
-      padding: 0 // Remove default padding to let image fill edge-to-edge
+      display: 'flex',
+      flexDirection: 'column'
     }}>
-      {/* 📸 BACKGROUND IMAGE LAYER */}
-      {displayImg && (
+      {/* 🗓 THE BIG FAINT YEAR WATERMARK (Idea #1 Restored) */}
+      <div className="big-watermark" style={{ 
+        position: 'absolute', 
+        right: -10, 
+        bottom: -15, 
+        fontSize: '10rem',
+        zIndex: 0,
+        opacity: 0.15 // Classic faint look
+      }}>
+        {getYear(show.date)}
+      </div>
+
+      {/* 📸 THE IMAGE (Placed in the "Black Space" on the right) */}
+      {displayImg && !spinning && (
         <div style={{
           position: 'absolute',
-          inset: 0,
+          right: 15,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          width: '120px',
+          height: '140px',
           background: `url(${displayImg}) center/cover no-repeat`,
-          opacity: 0.4,
-          filter: 'grayscale(20%) contrast(1.1)',
-          zIndex: 0
+          borderRadius: '4px',
+          border: `1px solid ${C.purple}44`,
+          boxShadow: `0 0 20px rgba(0,0,0,0.5), 0 0 10px ${hexToRgba(C.purple, 0.2)}`,
+          zIndex: 1,
+          animation: 'fade-in 0.5s ease'
         }} />
       )}
 
-      {/* 🌑 GRADIENT OVERLAY (Ensures text readability) */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'linear-gradient(to top, rgba(0,0,0,0.9) 20%, rgba(0,0,0,0.4) 100%)',
-        zIndex: 1
-      }} />
-
-      <div style={{ position: 'relative', zIndex: 2, height: '100%', display: 'flex', flexDirection: 'column', padding: 20 }}>
+      <div style={{ position: 'relative', zIndex: 2, height: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
+        {/* Header Row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.purple, letterSpacing: 2, fontWeight: 700, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.purple, letterSpacing: 2, fontWeight: 700 }}>
             {spinning ? "🧠 RECALLING..." : "🎲 RANDOM RECALL"}
           </div>
-          <button onClick={spin} disabled={spinning} style={{ background: spinning ? C.white : `linear-gradient(45deg, ${C.purple}, #ff00ff)`, border: 'none', color: '#fff', fontSize: 8, padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontWeight: 900, boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+          <button onClick={spin} disabled={spinning} style={{ background: spinning ? C.white : `linear-gradient(45deg, ${C.purple}, #ff00ff)`, border: 'none', color: '#fff', fontSize: 8, padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontWeight: 900 }}>
             {spinning ? "•••" : "SPIN"}
           </button>
         </div>
 
         <div className={spinning ? "spinning-text" : "fade-in"} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {/* YEAR & DATE ROW */}
+          {/* DATE BOX */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <span style={{ background: C.white, color: C.bg, fontFamily: "'Bebas Neue'", fontSize: '1.4rem', padding: '0 8px' }}>{getYear(show.date)}</span>
-            <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: '#fff', fontWeight: 900 }}>{fmtDateShort(show.date).toUpperCase()}</span>
+            <span style={{ background: C.white, color: C.bg, fontFamily: "'Bebas Neue'", fontSize: '1.4rem', padding: '0 8px' }}>
+              {getYear(show.date)}
+            </span>
+            <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.white, opacity: 0.8, letterSpacing: 1 }}>
+              {fmtDateShort(show.date).toUpperCase()}
+            </span>
           </div>
 
-          {/* ARTISTS */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 15 }}>
+          {/* ARTISTS (Kept on the left half to avoid overlapping image) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 15, maxWidth: displayImg ? '60%' : '100%' }}>
             {bands.slice(0, 2).map((b, i) => (
-              <div key={i} style={{ fontFamily: "'Bebas Neue'", fontSize: bands.length > 1 ? '1.8rem' : '2.4rem', color: C.white, lineHeight: 1, letterSpacing: '0.05em', textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>
+              <div key={i} style={{ 
+                fontFamily: "'Bebas Neue'", 
+                fontSize: bands.length > 1 ? '1.8rem' : '2.4rem', 
+                color: C.white, 
+                lineHeight: 1, 
+                letterSpacing: '0.05em',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
+              }}>
                 {b.toUpperCase()}
               </div>
             ))}
           </div>
 
-          {/* VENUE (Bigger & Bolder) */}
+          {/* VENUE PIN (Bottom Left) */}
           <div style={{ marginTop: 'auto' }}>
             <div style={{ 
               fontFamily: "'Bebas Neue'", 
-              fontSize: '1.5rem', 
+              fontSize: '1.6rem', 
               color: C.purple, 
               letterSpacing: '1px',
-              lineHeight: 1.1,
-              textShadow: '0 0 10px rgba(0,0,0,1)'
+              lineHeight: 1.1 
             }}>
               📍 {show.venue?.toUpperCase() || 'UNKNOWN VENUE'}
             </div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, textTransform: 'uppercase', marginTop: 4, opacity: 0.8 }}>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, textTransform: 'uppercase', marginTop: 2 }}>
               {show.city}, {show.state}
             </div>
           </div>
