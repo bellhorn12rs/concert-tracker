@@ -2766,7 +2766,7 @@ function BrowseTab({ browseView, setBrowseView, search, setSearch, yearFilter, s
   );
 }
 
-// ─── VENUE DONUT CARD ─────────────────────────────────────────────────────────
+// ─── VENUE DONUT CARD (MATCHED TOP 15 EDITION) ────────────────────────────────
 function VenueDonutCard({ concerts, onNavigateToVenues }) {
   const venueData = useMemo(() => {
     const m = {};
@@ -2776,14 +2776,23 @@ function VenueDonutCard({ concerts, onNavigateToVenues }) {
       m[key] = (m[key] || 0) + 1;
     });
     const sorted = Object.entries(m).sort((a, b) => b[1] - a[1]);
-    const top5 = sorted.slice(0, 5);
-    const otherCount = sorted.slice(5).reduce((acc, [, n]) => acc + n, 0);
-    if (otherCount > 0) top5.push(['Other Venues', otherCount]);
-    return top5;
+    
+    // Sync with Bar Chart: Expanded to Top 15
+    const top15 = sorted.slice(0, 15);
+    const otherCount = sorted.slice(15).reduce((acc, [, n]) => acc + n, 0);
+    if (otherCount > 0) top15.push(['Other Venues', otherCount]);
+    return top15;
   }, [concerts]);
 
   const total = venueData.reduce((acc, [, n]) => acc + n, 0) || 1;
-  const COLORS = ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88', '#445566'];
+  
+  // The Exact Same Palette as your Stacked Bar Chart
+  const COLORS = [
+    '#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88', 
+    '#4488ff', '#ff7733', '#9966ff', '#00e5cc', '#ffcc44',
+    '#ff6699', '#a2ff00', '#00cfff', '#888888', '#cc8800',
+    '#334455' // color for 'Other'
+  ];
 
   const cx = 70, cy = 70, r = 52;
   const circ = 2 * Math.PI * r;
@@ -2794,7 +2803,10 @@ function VenueDonutCard({ concerts, onNavigateToVenues }) {
     const dash = pct * circ;
     const offset = -cumulative * circ;
     cumulative += pct;
-    return { name, count, pct, dash, offset, color: COLORS[i % COLORS.length] };
+    // Map the color: if it's the last item and named "Other...", use the last color
+    const isOther = name.includes('Other');
+    const color = isOther ? COLORS[15] : COLORS[i % 15];
+    return { name, count, pct, dash, offset, color };
   });
 
   return (
@@ -2823,14 +2835,32 @@ function VenueDonutCard({ concerts, onNavigateToVenues }) {
             VENUES
           </text>
         </svg>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        
+        {/* Scrollable list if the Top 15 gets too tall for the card */}
+        <div style={{ 
+          flex: 1, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: 4, 
+          maxHeight: '220px', 
+          overflowY: 'auto',
+          paddingRight: '5px' 
+        }}>
           {slices.map((s, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: s.color, flexShrink: 0, boxShadow: `0 0 4px ${s.color}` }} />
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {s.name.length > 18 ? s.name.slice(0, 18) + '…' : s.name}
+              <div style={{ 
+                fontFamily: "'Space Mono'", 
+                fontSize: '7px', 
+                color: C.gray, 
+                flex: 1, 
+                overflow: 'hidden', 
+                textOverflow: 'ellipsis', 
+                whiteSpace: 'nowrap' 
+              }}>
+                {s.name.toUpperCase()}
               </div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: s.color, flexShrink: 0 }}>{s.count}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.85rem', color: s.color, flexShrink: 0 }}>{s.count}</div>
             </div>
           ))}
         </div>
