@@ -3645,10 +3645,9 @@ export default function App() {
       .sort((a, b) => b.count - a.count);
   }, [allSetsList, artistGenres]);
 
-  // Grouping logic for the Stacked Bar Chart
+  // Grouping logic for the Stacked Bar Chart (TOP 15)
 const stackedTimelineData = useMemo(() => {
   const yearsMap = {};
-  const allVenues = new Set();
   
   // 1. Organize data by year and venue
   allSetsList.forEach(s => {
@@ -3658,21 +3657,21 @@ const stackedTimelineData = useMemo(() => {
     
     const v = s.venue || 'Unknown Venue';
     yearsMap[y][v] = (yearsMap[y][v] || 0) + 1;
-    allVenues.add(v);
   });
 
-  // 2. Identify Top 5 venues globally to keep the legend readable
+  // 2. Identify Top 15 venues globally
   const venueTotals = {};
   allSetsList.forEach(s => {
     const v = s.venue || 'Unknown Venue';
     venueTotals[v] = (venueTotals[v] || 0) + 1;
   });
+  
   const topVenues = Object.entries(venueTotals)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
+    .slice(0, 15) // <── Expanded to 15
     .map(v => v[0]);
 
-  // 3. Final formatting for Recharts
+  // 3. Final formatting
   return Object.values(yearsMap).sort((a, b) => a.fullYear - b.fullYear).map(yearData => {
     const formatted = { ...yearData, other: 0 };
     Object.keys(yearData).forEach(key => {
@@ -4046,16 +4045,24 @@ async function handleUpcomingDelete(id) {
                         contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10, fontFamily: "'Space Mono'" }} 
                         cursor={{ fill: 'rgba(255,255,255,0.05)' }} 
                       />
-                      {/* Dynamic Venue Stacks */}
-                      {venueKeys.map((venue, index) => (
-                        <Bar 
-                          key={venue} 
-                          dataKey={venue} 
-                          stackId="a" 
-                          fill={venue === 'other' ? '#445566' : ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88'][index % 5]} 
-                          style={{ cursor: 'pointer' }}
-                        />
-                      ))}
+                      {/* Dynamic Venue Stacks - Top 15 Palette */}
+{venueKeys.map((venue, index) => {
+  const palette = [
+    '#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88', 
+    '#4488ff', '#ff7733', '#9966ff', '#00e5cc', '#ffcc44',
+    '#ff6699', '#a2ff00', '#00cfff', '#888888', '#cc8800'
+  ];
+  
+  return (
+    <Bar 
+      key={venue} 
+      dataKey={venue} 
+      stackId="a" 
+      fill={venue === 'other' ? '#334455' : palette[index % palette.length]} 
+      style={{ cursor: 'pointer' }}
+    />
+  );
+})}
                     </BarChart>
                   </ResponsiveContainer>
                 </Card>
