@@ -4353,128 +4353,177 @@ async function handleUpcomingDelete(id) {
         </aside>
 
         {/* ── THE MAIN STAGE (Content Window) ── */}
-        <div style={{ flex: 1, height: '100vh', overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-          
-          {/* MINIMAL CONTENT HEADER */}
-          <header style={{ 
-            padding: '25px 40px', 
-            background: `linear-gradient(to bottom, ${C.bg} 60%, transparent)`, 
-            position: 'sticky', 
-            top: 0, 
-            zIndex: 100,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-             <div style={{ display: 'flex', gap: 50 }}>
-               <div style={{ textAlign: 'center' }}>
-                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.teal, lineHeight: 1 }}>{headerStats.totalSets}</div>
-                 <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 2, marginTop: 4 }}>TOTAL SETS</div>
-               </div>
-               <div style={{ textAlign: 'center' }}>
-                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.cyan, lineHeight: 1 }}>{headerStats.uniqueArtists}</div>
-                 <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 2, marginTop: 4 }}>UNIQUE ACTS</div>
-               </div>
-               <div style={{ textAlign: 'center' }}>
-                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.purple, lineHeight: 1 }}>{headerStats.totalShows}</div>
-                 <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 2, marginTop: 4 }}>SHOW DAYS</div>
-               </div>
-             </div>
-             
-             <div style={{ marginRight: '80px' }}>
-                <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
-             </div>
-          </header>
+      <div style={{ flex: 1, height: '100vh', overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+        
+        {/* ── HIGH-FIDELITY STAT CONSOLE ── */}
+        <header style={{ 
+          padding: '20px 40px', 
+          background: `linear-gradient(to bottom, ${C.bg} 90%, transparent)`, 
+          position: 'sticky', 
+          top: 0, 
+          zIndex: 100,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: `1px solid ${C.border}`
+        }}>
+           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 0, flex: 1, maxWidth: '1000px' }}>
+              {[
+                { 
+                  value: headerStats.totalSets, 
+                  label: 'TOTAL SETS', 
+                  sub: 'PERFORMANCES', 
+                  color: C.teal, 
+                  icon: '🎵', 
+                  onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } 
+                },
+                { 
+                  value: headerStats.uniqueArtists, 
+                  label: 'UNIQUE ACTS', 
+                  sub: 'BANDS SEEN', 
+                  color: C.cyan, 
+                  icon: '🎤', 
+                  onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } 
+                },
+                { 
+                  value: headerStats.totalShows, 
+                  label: 'SHOW DAYS', 
+                  sub: `${headerStats.festDays}F · ${headerStats.totalShows - headerStats.festDays}S`, 
+                  color: C.purple, 
+                  icon: '📅', 
+                  onClick: () => setActiveTab('timeline') 
+                },
+                { 
+                  value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, 
+                  label: 'VENUES', 
+                  sub: 'STAGES', 
+                  color: C.red, 
+                  icon: '📍', 
+                  onClick: () => setActiveTab('venues') 
+                },
+                { 
+                  value: headerStats.setlistCount, 
+                  label: 'SETLISTS', 
+                  sub: 'ARCHIVED', 
+                  color: C.gold, 
+                  icon: '📋', 
+                  onClick: () => setActiveTab('vault') 
+                }
+              ].map((s, i) => (
+                <div key={s.label} onClick={s.onClick}
+                  style={{ 
+                    padding: '10px 15px', 
+                    borderRight: i < 4 ? `1px solid ${C.border}` : 'none', 
+                    textAlign: 'center', 
+                    cursor: 'pointer', 
+                    position: 'relative', 
+                    overflow: 'hidden', 
+                    transition: 'all 0.2s' 
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = hexToRgba(s.color, 0.08); }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <div style={{ position: 'absolute', bottom: 0, left: '15%', right: '15%', height: 2, background: s.color, boxShadow: `0 0 10px ${s.color}`, borderRadius: 2 }} />
+                  <div style={{ fontSize: '1rem', marginBottom: 2, opacity: 0.8 }}>{s.icon}</div>
+                  <CountUpStat value={s.value} label={s.label} sub={s.sub} color={s.color} />
+                </div>
+              ))}
+           </div>
+           
+           {/* Master Lanyard Pinned to the Right */}
+           <div style={{ marginLeft: '40px', flexShrink: 0 }}>
+              <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
+           </div>
+        </header>
 
-          <main style={{ padding: '0 40px 100px' }}>
-            {activeTab === 'dashboard' && (
-              <div className="fade-in">
-                <OnThisDay concerts={concerts} />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 16, marginBottom: 16, marginTop: 8 }}>
-                  <ArtistInsights concerts={concerts} />
-                  <TheaterMarquee upcoming={upcoming} onAdd={() => setUpcomingModal('new')} onEdit={setUpcomingModal} />
-                  <RandomShow concerts={concerts} />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: 16, marginBottom: 16 }}>
-                  <VenueDonutCard concerts={concerts} onNavigateToVenues={() => setActiveTab('venues')} />
-                  <Card neon>
-                    <CardTitle>Sets Per Year by Venue 📍</CardTitle>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <BarChart data={stackedTimelineData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }} onClick={data => { if (data?.activePayload?.[0]?.payload?.fullYear) { setActiveTab('timeline'); } }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                        <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
-                        <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
-                        <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10, fontFamily: "'Space Mono'" }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                        {venueKeys.map((venue, index) => (
-                          <Bar key={venue} dataKey={venue} stackId="a" fill={venue === 'other' ? '#334455' : ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88', '#4488ff', '#ff7733', '#9966ff', '#00e5cc', '#ffcc44', '#ff6699', '#a2ff00', '#00cfff', '#888888', '#cc8800'][index % 15]} style={{ cursor: 'pointer' }} />
-                        ))}
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </Card>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
-                  <Card neon><CardTitle>Fest vs Standalone</CardTitle><DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} concerts={concerts} /></Card>
-                  <Card neon><CardTitle>Festival Passports</CardTitle><TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} /></Card>
-                  <Card neon><CardTitle>By Decade</CardTitle><DecadeBlocks sets={allSetsList} /></Card>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-                  <Card neon>
-                    <CardTitle>Most Seen Artists</CardTitle>
-                    <div style={{ display: 'grid', gap: 10 }}>
-                      {artistCounts.slice(0, 6).map((a, i) => (
-                        <div key={a.name} style={{ padding: '10px 12px', background: hexToRgba(C.teal, 0.06), borderRadius: 6, border: `1px solid ${C.border}`, position: 'relative', overflow: 'hidden' }}>
-                          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{ fontSize: '1.1rem' }}>{['🥇','🥈','🥉','🏅','🏅','🏅'][i]}</span>
-                            <div style={{ flex: 1 }}><div style={{ fontSize: '0.9rem', fontWeight: 700, color: C.white }}>{a.name}</div></div>
-                            <div style={{ textAlign: 'right' }}><span style={{ color: C.gold, fontFamily: "'Bebas Neue'", fontSize: '1.6rem' }}>{a.count}</span></div>
-                          </div>
-                        </div>
+        <main style={{ padding: '0 40px 100px' }}>
+          {activeTab === 'dashboard' && (
+            <div className="fade-in">
+              <OnThisDay concerts={concerts} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 16, marginBottom: 16, marginTop: 8 }}>
+                <ArtistInsights concerts={concerts} />
+                <TheaterMarquee upcoming={upcoming} onAdd={() => setUpcomingModal('new')} onEdit={setUpcomingModal} />
+                <RandomShow concerts={concerts} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: 16, marginBottom: 16 }}>
+                <VenueDonutCard concerts={concerts} onNavigateToVenues={() => setActiveTab('venues')} />
+                <Card neon>
+                  <CardTitle>Sets Per Year by Venue 📍</CardTitle>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={stackedTimelineData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }} onClick={data => { if (data?.activePayload?.[0]?.payload?.fullYear) { setActiveTab('timeline'); } }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+                      <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                      <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                      <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10, fontFamily: "'Space Mono'" }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                      {venueKeys.map((venue, index) => (
+                        <Bar key={venue} dataKey={venue} stackId="a" fill={venue === 'other' ? '#334455' : ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88', '#4488ff', '#ff7733', '#9966ff', '#00e5cc', '#ffcc44', '#ff6699', '#a2ff00', '#00cfff', '#888888', '#cc8800'][index % 15]} style={{ cursor: 'pointer' }} />
                       ))}
-                    </div>
-                  </Card>
-                  <Card neon style={{ display: 'flex', flexDirection: 'column', minHeight: 420 }}>
-                    <CardTitle>Setlist Spotlight 📋</CardTitle>
-                    <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
-                  </Card>
-                </div>
-                <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Card>
               </div>
-            )}
-
-            {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
-
-            {activeTab === 'byDay' && (
-              <div className="fade-in">
-                <div style={{ display: 'flex', gap: 10, marginTop: 10, marginBottom: 16 }}>
-                  <select value={yearFilter} onChange={e => setYearFilter(e.target.value)} style={inputSt}><option value="all">All Years</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
-                  <select value={festFilter} onChange={e => setFestFilter(e.target.value)} style={inputSt}><option value="all">All Types</option><option value="fest">Festival</option><option value="solo">Standalone</option></select>
-                </div>
-                <ByDayTab dayGroups={dayGroups} onEdit={setEditTarget} genreMap={artistGenres} isAdmin={true} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+                <Card neon><CardTitle>Fest vs Standalone</CardTitle><DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} concerts={concerts} /></Card>
+                <Card neon><CardTitle>Festival Passports</CardTitle><TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} /></Card>
+                <Card neon><CardTitle>By Decade</CardTitle><DecadeBlocks sets={allSetsList} /></Card>
               </div>
-            )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                <Card neon>
+                  <CardTitle>Most Seen Artists</CardTitle>
+                  <div style={{ display: 'grid', gap: 10 }}>
+                    {artistCounts.slice(0, 6).map((a, i) => (
+                      <div key={a.name} style={{ padding: '10px 12px', background: hexToRgba(C.teal, 0.06), borderRadius: 6, border: `1px solid ${C.border}`, position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ fontSize: '1.1rem' }}>{['🥇','🥈','🥉','🏅','🏅','🏅'][i]}</span>
+                          <div style={{ flex: 1 }}><div style={{ fontSize: '0.9rem', fontWeight: 700, color: C.white }}>{a.name}</div></div>
+                          <div style={{ textAlign: 'right' }}><span style={{ color: C.gold, fontFamily: "'Bebas Neue'", fontSize: '1.6rem' }}>{a.count}</span></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+                <Card neon style={{ display: 'flex', flexDirection: 'column', minHeight: 420 }}>
+                  <CardTitle>Setlist Spotlight 📋</CardTitle>
+                  <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
+                </Card>
+              </div>
+              <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
+            </div>
+          )}
 
-            {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={true} onEdit={setEditTarget} />}
-            {activeTab === 'passport' && (
-              <PassportTab passport={passport} genreStats={genreStats} onNavigateToFest={name => { setActiveTab('byFest'); setTimeout(() => { const festId = `fest-${name.toLowerCase().replace(/\s+/g, '-')}`; const el = document.getElementById(festId); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); }} />
-            )}
+          {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
 
-            {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
-            {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
-            {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
-            {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
-            
-            {activeTab === 'browse' && (
-              <BrowseTab browseView={browseView} setBrowseView={setBrowseView} search={search} setSearch={setSearch} yearFilter={yearFilter} setYearFilter={setYearFilter} festFilter={festFilter} setFestFilter={setFestFilter} genreFilter={genreFilter} setGenreFilter={setGenreFilter} sortCol={sortCol} setSortCol={setSortCol} sortDir={sortDir} setSortDir={setSortDir} paged={paged} page={page} setPage={setPage} totalPages={totalPages} artistRows={artistRows} years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} onEdit={setEditTarget} onSetGenre={handleSetGenre} genreMap={artistGenres} />
-            )}
-            
-            {activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} onDuplicate={handleDuplicate} />}
-          </main>
+          {activeTab === 'byDay' && (
+            <div className="fade-in">
+              <div style={{ display: 'flex', gap: 10, marginTop: 10, marginBottom: 16 }}>
+                <select value={yearFilter} onChange={e => setYearFilter(e.target.value)} style={inputSt}><option value="all">All Years</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                <select value={festFilter} onChange={e => setFestFilter(e.target.value)} style={inputSt}><option value="all">All Types</option><option value="fest">Festival</option><option value="solo">Standalone</option></select>
+              </div>
+              <ByDayTab dayGroups={dayGroups} onEdit={setEditTarget} genreMap={artistGenres} isAdmin={true} />
+            </div>
+          )}
 
-          {/* MODALS RENDER HERE (Hidden until triggered) */}
-          {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
-          {editTarget && <EditModal concert={editTarget === 'new' ? null : editTarget} onClose={() => setEditTarget(null)} onSave={handleSave} onDelete={handleDelete} />}
-          {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
-        </div>
+          {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={true} onEdit={setEditTarget} />}
+          {activeTab === 'passport' && (
+            <PassportTab passport={passport} genreStats={genreStats} onNavigateToFest={name => { setActiveTab('byFest'); setTimeout(() => { const festId = `fest-${name.toLowerCase().replace(/\s+/g, '-')}`; const el = document.getElementById(festId); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); }} />
+          )}
+
+          {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
+          {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
+          {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
+          {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
+          
+          {activeTab === 'browse' && (
+            <BrowseTab browseView={browseView} setBrowseView={setBrowseView} search={search} setSearch={setSearch} yearFilter={yearFilter} setYearFilter={setYearFilter} festFilter={festFilter} setFestFilter={setFestFilter} genreFilter={genreFilter} setGenreFilter={setGenreFilter} sortCol={sortCol} setSortCol={setSortCol} sortDir={sortDir} setSortDir={setSortDir} paged={paged} page={page} setPage={setPage} totalPages={totalPages} artistRows={artistRows} years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} onEdit={setEditTarget} onSetGenre={handleSetGenre} genreMap={artistGenres} />
+          )}
+          
+          {activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} onDuplicate={handleDuplicate} />}
+        </main>
+
+        {/* MODALS RENDER HERE */}
+        {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
+        {editTarget && <EditModal concert={editTarget === 'new' ? null : editTarget} onClose={() => setEditTarget(null)} onSave={handleSave} onDelete={handleDelete} />}
+        {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
       </div>
     </ThemeContext.Provider>
   );
