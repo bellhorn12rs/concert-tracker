@@ -566,15 +566,14 @@ const MarqueeStyles = () => (
     }
     .crate-sleeve:hover { transform: translateY(-5px) !important; filter: brightness(1.2); }
 
-    /* 🎭 STAGE LIGHTS */
     @keyframes beam-sweep {
-      0%, 100% { transform: rotate(-15deg); opacity: 0.2; }
-      50% { transform: rotate(15deg); opacity: 0.5; }
-    }
-    .stage-light {
-      animation: beam-sweep 4s ease-in-out infinite;
-      transform-origin: top center;
-    }
+  0%, 100% { transform: rotate(-10deg); opacity: 0.3; }
+  50% { transform: rotate(10deg); opacity: 0.7; }
+}
+.stage-light {
+  animation: beam-sweep 3s ease-in-out infinite;
+  transform-origin: top center;
+}
 
     /* 🎫 WRISTBAND BIN */
     .wristband-bin::-webkit-scrollbar { width: 4px; }
@@ -1550,62 +1549,81 @@ function TopFestBlocks({ festBreakdown, concerts }) {
 
 // ─── 3. THE DECADE STAGE (RIGHT) ────────────────────────────────
 function DecadeBlocks({ sets }) {
+  if (!sets) return null;
+
   const counts = useMemo(() => {
-    const c = {'90s':0,'00s':0,'10s':0,'20s':0};
-    if (!sets) return c;
-    sets.forEach(s => { 
-      const y = getYear(s.date); if(!y) return; 
-      if(y < 2000) c['90s']++; else if(y < 2010) c['00s']++; 
-      else if(y < 2020) c['10s']++; else c['20s']++; 
+    const c = {'90s': 0, '00s': 0, '10s': 0, '20s': 0};
+    sets.forEach(s => {
+      const y = getYear(s.date); if (!y) return;
+      if (y < 2000) c['90s']++; 
+      else if (y < 2010) c['00s']++; 
+      else if (y < 2020) c['10s']++; 
+      else c['20s']++;
     });
     return c;
   }, [sets]);
 
   const media = {
-    '90s': { label: 'TAPE', icon: '📼', color: '#9966ff' },
-    '00s': { label: 'DISC', icon: '💿', color: '#00cfff' },
+    '90s': { label: 'ANALOG', icon: '📼', color: '#9966ff' },
+    '00s': { label: 'DIGITAL', icon: '💿', color: '#00cfff' },
     '10s': { label: 'STREAM', icon: '📱', color: '#00e5cc' },
     '20s': { label: 'HYPER', icon: '🧬', color: '#ffcc00' }
   };
   const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
-    <div style={{ display:'flex', flexDirection: 'column', height: '100%', gap: 12 }}>
-      {/* 🎭 MINI STAGE */}
-      <div style={{ height: 50, background: '#050505', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', position: 'relative', overflow: 'hidden' }}>
-        {[ '#00e5cc', '#9966ff', '#ffcc00', '#00cfff' ].map((col, i) => (
-          <div key={i} className="stage-light" style={{ 
-            position: 'absolute', left: `${20 + i * 20}%`, top: -5, width: 25, height: 60, 
-            background: `radial-gradient(circle at top, ${col}44, transparent 70%)`, filter: 'blur(6px)' 
-          }} />
-        ))}
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Space Mono'", fontSize: '7px', color: '#fff', opacity: 0.3, letterSpacing: 2 }}>STAGE_01 // ACTIVE</div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 20 }}>
+      
+      {/* 🟢 TOP SECTION: NEON HIGHLIGHT ROWS */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {Object.entries(counts).map(([decade, count]) => {
+          const m = media[decade];
+          return (
+            <div key={decade} style={{ 
+              display: 'flex', alignItems: 'center', gap: 12, 
+              background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: 4, 
+              border: `1px solid ${m.color}33`,
+              boxShadow: `inset 0 0 10px ${m.color}11`
+            }}>
+              <span style={{ fontSize: '1.2rem', filter: `drop-shadow(0 0 5px ${m.color})` }}>{m.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: m.color, fontWeight: 900, letterSpacing: 1 }}>{m.label}</span>
+                  <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#fff' }}>{decade}</span>
+                </div>
+                <div style={{ height: 4, background: '#000', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.color, boxShadow: `0 0 10px ${m.color}` }} />
+                </div>
+              </div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', width: 30, textAlign: 'right' }}>{count}</div>
+            </div>
+          );
+        })}
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns: '1fr 50px', flex: 1, gap: 10 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {Object.entries(counts).map(([decade, count]) => {
-            const m = media[decade];
-            return (
-              <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.02)', padding: '6px 10px', borderRadius: 4, borderLeft: `2px solid ${m.color}` }}>
-                <span style={{ fontSize: '1rem' }}>{m.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                    <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: m.color }}>{m.label}</span>
-                    <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: '#fff' }}>{decade}</span>
-                  </div>
-                  <div style={{ height: 2, background: '#000', borderRadius: 1 }}>
-                    <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.color }} />
-                  </div>
-                </div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff', width: 15, textAlign: 'right' }}>{count}</div>
-              </div>
-            );
-          })}
+      {/* 🔵 BOTTOM SECTION: 50/50 SPLIT */}
+      <div style={{ 
+        flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', 
+        borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 20, minHeight: 120 
+      }}>
+        
+        {/* LEFT SIDE: FERRIS WHEEL */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px dashed rgba(255,255,255,0.1)' }}>
+           <FerrisWheel size={80} />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderLeft: '1px dashed rgba(255,255,255,0.1)' }}>
-           <FerrisWheel size={40} />
+
+        {/* RIGHT SIDE: RENDERED STAGE */}
+        <div style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '80%', height: '60px', background: '#050505', borderRadius: 4, border: '1px solid #333', position: 'relative' }}>
+             {/* Stage Floor */}
+             <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '8px', background: '#111' }} />
+             {/* Stage Lights (Static for now, using your existing beam logic) */}
+             <div className="stage-light" style={{ position: 'absolute', left: '20%', top: -5, width: 20, height: 40, background: 'radial-gradient(circle at top, #00e5cc44, transparent 70%)', filter: 'blur(5px)' }} />
+             <div className="stage-light" style={{ position: 'absolute', right: '20%', top: -5, width: 20, height: 40, background: 'radial-gradient(circle at top, #9966ff44, transparent 70%)', filter: 'blur(5px)' }} />
+             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Space Mono'", fontSize: 6, color: '#444' }}>LIVE_FEED</div>
+          </div>
         </div>
+
       </div>
     </div>
   );
