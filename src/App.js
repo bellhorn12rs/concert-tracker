@@ -2460,46 +2460,72 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
 // ─── 1. MEDIA COMPONENTS (TRIPLE-THREAT ARCHIVE) ─────────────────────────────
 
 // 💡 SHARED LIGHTBOX (The High-Fidelity Viewer)
+// ─── 💡 THE HIGH-FIDELITY LIGHTBOX ──────────────────────────────────────────
 function Lightbox({ src, caption, onClose, type }) {
   return (
-    <div onClick={onClose} style={{ 
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.98)', 
-      zIndex: 99999, display: 'flex', alignItems: 'center', 
-      justifyContent: 'center', cursor: 'zoom-out', padding: '40px' 
-    }}>
-      <div style={{ 
-        background: type === 'POLAROID' ? '#fff' : '#fdfdfd', 
-        padding: type === 'POLAROID' ? '20px 20px 80px 20px' : '10px',
-        boxShadow: '0 0 100px rgba(0,0,0,0.8)', maxWidth: '90%', 
-        maxHeight: '90%', position: 'relative', border: '1px solid #333'
-      }}>
-        <img src={src} style={{ maxWidth: '100%', maxHeight: '75vh', objectFit: 'contain' }} />
+    <div 
+      onClick={onClose} 
+      style={{ 
+        position: 'fixed', 
+        inset: 0, 
+        background: 'rgba(0,0,0,0.98)', 
+        zIndex: 10000, // Ensure it's above everything
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        cursor: 'zoom-out', 
+        padding: '40px',
+        animation: 'fade-in 0.2s ease-out'
+      }}
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()} // Prevents closing when clicking the image
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          maxWidth: '95vw', 
+          maxHeight: '95vh' 
+        }}
+      >
+        <img 
+          src={src} 
+          alt="Enlarged Artifact"
+          style={{ 
+            maxWidth: '100%', 
+            maxHeight: '80vh', 
+            objectFit: 'contain', 
+            boxShadow: '0 20px 80px rgba(0,0,0,1)',
+            border: type === 'POLAROID' ? '15px solid #fff' : '2px solid #333',
+            borderRadius: type === 'POLAROID' ? '2px' : '4px'
+          }} 
+        />
         {caption && (
           <div style={{ 
-            fontFamily: "'Bebas Neue'", fontSize: '2.5rem', 
-            color: '#1a1a1a', marginTop: '20px', textAlign: 'center' 
+            fontFamily: "'Bebas Neue'", 
+            fontSize: '2.5rem', 
+            color: '#fff', 
+            marginTop: '20px', 
+            textAlign: 'center',
+            textShadow: '0 4px 15px rgba(0,0,0,0.5)'
           }}>
             {caption}
           </div>
         )}
-        <div style={{ 
-          position: 'absolute', bottom: 15, right: 20, 
-          fontFamily: "'Space Mono'", fontSize: 10, color: '#999' 
-        }}>
-          CLICK TO CLOSE
+        <div style={{ marginTop: 15, fontFamily: "'Space Mono'", fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 2 }}>
+          CLICK ANYWHERE TO DISMISS
         </div>
       </div>
     </div>
   );
 }
 
-// 📄 STACKED SETLISTS (Taped Paper Look)
+// ─── 📄 STACKED SETLISTS ────────────────────────────────────────────────────
 function SetlistPaper({ src, index = 0, total = 1 }) {
-  const [isFull, setIsFull] = useState(false);
+  const [isFull, setIsFull] = React.useState(false);
   if (!src) return null;
 
   const rotation = (index % 2 === 0 ? -1.5 : 1.5) + (index * 0.5);
-  // Negative margin allows them to overlap, "total" check fixes the end of the line
   const xOffset = index * -20;
 
   return (
@@ -2540,9 +2566,9 @@ function SetlistPaper({ src, index = 0, total = 1 }) {
   );
 }
 
-// 📸 STACKED POLAROIDS (Personal Photo Look)
+// ─── 📸 STACKED POLAROIDS ────────────────────────────────────────────────────
 function PersonalPolaroid({ src, index = 0, total = 1, caption }) {
-  const [isFull, setIsFull] = useState(false);
+  const [isFull, setIsFull] = React.useState(false);
   if (!src) return null;
 
   const rotation = (index % 2 === 0 ? -3 : 3) + (index * 1.5);
