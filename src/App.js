@@ -3608,6 +3608,138 @@ export default function App() {
     };
     init();
   }, []);
+
+  // ─── DASHBOARD STATS (INTERACTIVE COMMAND CENTER) ──────────────────────────
+
+function DashboardStats({ concerts, sets, setActiveTab }) {
+  
+  // Calculate the 5th Stat: Unique Venues
+  const venueCount = useMemo(() => {
+    return new Set(concerts.map(c => c.venue?.trim()).filter(Boolean)).size;
+  }, [concerts]);
+
+  // Stat definitions for easy mapping
+  const statCards = [
+    { 
+      label: 'TOTAL SETS', 
+      sub: 'individual performances', 
+      val: sets.length, 
+      icon: '🎵', 
+      tab: 'Timeline', 
+      color: C.teal 
+    },
+    { 
+      label: 'UNIQUE ARTISTS', 
+      sub: 'bands & performers', 
+      val: new Set(sets.map(s => s.artist)).size, 
+      icon: '🎤', 
+      tab: 'Hall of Fame', 
+      color: '#4db5ff' 
+    },
+    { 
+      label: 'SHOW DAYS', 
+      sub: `${concerts.filter(c => c.is_festival).length} fest · ${concerts.filter(c => !c.is_festival).length} solo`, 
+      val: concerts.length, 
+      icon: '📅', 
+      tab: 'By Day', 
+      color: '#9d00ff' 
+    },
+    { 
+      label: 'VENUES', 
+      sub: 'unique locations', 
+      val: venueCount, 
+      icon: '📍', 
+      tab: 'Venues', 
+      color: '#ff4bab' 
+    },
+    { 
+      label: 'SETLISTS', 
+      sub: 'click to view vault', 
+      val: concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()).length, 
+      icon: '📋', 
+      tab: 'Setlist Vault', 
+      color: C.gold 
+    }
+  ];
+
+  return (
+    <div style={{ marginBottom: 40 }}>
+      {/* Top Metadata HUD */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 40, fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginBottom: 25, letterSpacing: '2px', opacity: 0.8 }}>
+        <span>// {new Date().getFullYear() - 1999} YEARS OF LIVE MUSIC //</span>
+        <span>{new Set(concerts.map(c => c.state)).size} STATES</span>
+      </div>
+
+      {/* The 5-Card Grid */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(5, 1fr)', 
+        gap: '1px', 
+        background: 'rgba(255,255,255,0.1)', // Creates the divider line effect
+        borderTop: '1px solid rgba(255,255,255,0.1)',
+        borderBottom: '1px solid rgba(255,255,255,0.1)'
+      }}>
+        {statCards.map((stat) => (
+          <div 
+            key={stat.label}
+            onClick={() => setActiveTab(stat.tab)}
+            style={{ 
+              padding: '40px 20px', 
+              textAlign: 'center', 
+              background: C.bg, 
+              cursor: 'pointer',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+              e.currentTarget.querySelector('.glow').style.opacity = '1';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = C.bg;
+              e.currentTarget.querySelector('.glow').style.opacity = '0';
+            }}
+          >
+            {/* The Interactive Glow Layer */}
+            <div className="glow" style={{ 
+              position: 'absolute', inset: 0, 
+              background: `radial-gradient(circle at center, ${hexToRgba(stat.color, 0.08)} 0%, transparent 70%)`,
+              opacity: 0, transition: 'opacity 0.3s ease', pointerEvents: 'none'
+            }} />
+
+            <div style={{ fontSize: '1.2rem', marginBottom: 15, opacity: 0.7 }}>{stat.icon}</div>
+            
+            <div style={{ 
+              fontFamily: "'Bebas Neue'", 
+              fontSize: '4.5rem', 
+              color: stat.color, 
+              lineHeight: 1,
+              marginBottom: 8,
+              textShadow: `0 0 20px ${hexToRgba(stat.color, 0.2)}`
+            }}>
+              {stat.val.toLocaleString()}
+            </div>
+
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.white, letterSpacing: '2px', fontWeight: 700, marginBottom: 4 }}>
+              {stat.label}
+            </div>
+            
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, fontStyle: 'italic', textTransform: 'lowercase' }}>
+              {stat.sub}
+            </div>
+
+            {/* Bottom Accent Bar */}
+            <div style={{ 
+              position: 'absolute', bottom: 0, left: '20%', right: '20%', height: 2, 
+              background: stat.color, opacity: 0.4, borderRadius: '2px 2px 0 0' 
+            }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
   // ── DERIVED DATA ────────────────────────────────────────────────────────────
   // ── DERIVED DATA ────────────────────────────────────────────────────────────
   // This now pulls from the dedicated artist_genres table instead of concert rows
