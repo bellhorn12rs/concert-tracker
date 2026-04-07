@@ -237,13 +237,20 @@ const fmtDateShort = d => { if (!d) return '—'; const dt = new Date(d + 'T12:0
 const getYear = d => d ? new Date(d + 'T12:00:00').getFullYear() : null;
 const daysSince = d => { if (!d) return 0; return Math.floor((Date.now() - new Date(d + 'T12:00:00')) / 86400000); };
 // Helper to generate the exact setlist.fm search link
+// Optimized helper for setlist.fm search precision
 const getSetlistFmUrl = (artist, date) => {
   if (!artist || !date) return "#";
-  // Convert YYYY-MM-DD to DD-MM-YYYY for setlist.fm search precision
-  const [y, m, d] = date.split('-');
-  const formattedDate = `${d}-${m}-${y}`;
-  const query = encodeURIComponent(`artist:("${artist}") date:(${formattedDate})`);
-  return `https://www.setlist.fm/search?query=${query}`;
+  
+  // Create date object (adding T00:00:00 to avoid timezone shifts)
+  const d = new Date(date + 'T00:00:00');
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  
+  // Format: "Artist Name Month Day Year"
+  const searchString = `${artist} ${months[d.getMonth()]} ${d.getDate()} ${d.getFullYear()}`;
+  return `https://www.setlist.fm/search?query=${encodeURIComponent(searchString)}`;
 };
 
 // ─── MASTER LANYARD ───────────────────────────────────────────────────────────
@@ -2366,13 +2373,12 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
       
 
 {/* 2. MIDDLE: THE INFO */}
+// Inside the ByDayTab loop, update the Info section (Middle):
+
 <div style={{ flex: 1, paddingLeft: '40px' }}>
   <div style={{ 
-    fontFamily: "'Bebas Neue'", 
-    fontSize: '2.5rem', 
-    color: C.white, 
-    lineHeight: 1,
-    letterSpacing: '1px'
+    fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.white, 
+    lineHeight: 1, letterSpacing: '1px'
   }}>
     {event.bands?.slice(0, 3).join(' · ').toUpperCase()}
   </div>
@@ -2385,25 +2391,22 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
     <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>
       {event.venue?.toUpperCase()}
     </div>
+    
     <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
     
-    {/* 🔗 THE NEW LINK */}
+    {/* 🔗 THE REFORMATTED LINK */}
     <a 
       href={getSetlistFmUrl(event.bands?.[0], event.date)} 
-      target="_blank" 
-      rel="noreferrer"
+      target="_blank" rel="noreferrer"
       style={{ 
-        fontFamily: "'Space Mono'", 
-        fontSize: '10px', 
-        color: C.gold, 
-        textDecoration: 'none',
-        borderBottom: `1px solid ${C.gold}44`,
-        paddingBottom: 1
+        fontFamily: "'Space Mono'", fontSize: '10px', color: C.gold, 
+        textDecoration: 'none', borderBottom: `1px solid ${C.gold}44`,
+        paddingBottom: 1, fontWeight: 700
       }}
       onMouseEnter={e => e.target.style.color = C.white}
       onMouseLeave={e => e.target.style.color = C.gold}
     >
-      SETLIST.FM ↗
+      VERIFY SETLIST ↗
     </a>
   </div>
 </div>
