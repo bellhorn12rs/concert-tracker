@@ -4412,13 +4412,12 @@ async function handleUpcomingDelete(id) {
 
       <Card neon>
         <CardTitle>By Decade</CardTitle>
-        {/* All Ferris Wheels and Stages are now handled internally by DecadeBlocks */}
         <DecadeBlocks sets={allSetsList} />
       </Card>
     </div>
 
     {/* ROW 4: ARTISTS & SPOTLIGHT */}
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
       <Card neon>
         <CardTitle>Most Seen Artists</CardTitle>
         <div style={{ display: 'grid', gap: 10 }}>
@@ -4427,7 +4426,7 @@ async function handleUpcomingDelete(id) {
             const MEDALS = ['🥇', '🥈', '🥉', '🏅', '🏅', '🏅'];
             const pct = Math.round((a.count / (artistCounts[0]?.count || 1)) * 100);
             return (
-              <div key={a.name} style={{ marginBottom: 2, padding: '10px 12px', background: gc ? hexToRgba(gc, 0.06) : C.bgCardAlt, borderRadius: 6, border: `1px solid ${gc ? hexToRgba(gc, 0.25) : C.border}`, position: 'relative', overflow: 'hidden' }}>
+              <div key={a.name} style={{ padding: '10px 12px', background: gc ? hexToRgba(gc, 0.06) : C.bgCardAlt, borderRadius: 6, border: `1px solid ${gc ? hexToRgba(gc, 0.25) : C.border}`, position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: gc ? hexToRgba(gc, 0.1) : 'rgba(255,255,255,0.03)', borderRadius: 6, transition: 'width 1s ease' }} />
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>{MEDALS[i]}</span>
@@ -4461,7 +4460,7 @@ async function handleUpcomingDelete(id) {
 
     {/* ROW 5: DNA & FINGERPRINT */}
     {genreStats.length >= 3 && (
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, marginTop: 16, marginBottom: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, marginTop: 16, marginBottom: 16 }}>
         <Card neon style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <CardTitle style={{ textAlign: 'center' }}>Genre DNA 🧬</CardTitle>
           <SetlistDNA genreScores={Object.fromEntries(genreStats.slice(0,6).map(g => [g.name, Math.round((g.count / (genreStats[0]?.count||1)) * 100)]))} />
@@ -4469,7 +4468,7 @@ async function handleUpcomingDelete(id) {
         <Card neon style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 24 }}>
           <CardTitle>Your Sonic Fingerprint</CardTitle>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {genreStats.slice(0,6).map((g, i) => (
+            {genreStats.slice(0,6).map((g) => (
               <div key={g.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: g.color, boxShadow: `0 0 6px ${g.color}`, flexShrink: 0 }} />
                 <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, width: 100, flexShrink: 0 }}>{g.name}</div>
