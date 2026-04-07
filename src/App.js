@@ -1297,7 +1297,7 @@ function ArtistInsights({ concerts }) {
   );
 }
 
-// ─── RANDOM SHOW (WHEEL OF MEMORIES) ──────────────────────────────────────────
+// ─── RANDOM SHOW (VISUAL TIME MACHINE EDITION) ────────────────────────────────
 function RandomShow({ concerts }) {
   const [show, setShow] = useState(null);
   const [spinning, setSpinning] = useState(false);
@@ -1322,36 +1322,76 @@ function RandomShow({ concerts }) {
   if (!show) return null;
 
   const bands = show.bands || [show.artist];
+  
+  // Logic to find ANY available image (Personal first, then Setlist)
+  const displayImg = (show.personal_photo_url?.split(',')[0]) || (show.image_url?.split(',')[0]);
 
   return (
-    <Card neon className="card-texture" style={{ minHeight: 220, position: 'relative', overflow: 'hidden' }}>
-      <div className="big-watermark">{getYear(show.date)}</div>
-      <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Card neon className="card-texture" style={{ 
+      minHeight: 220, 
+      position: 'relative', 
+      overflow: 'hidden',
+      padding: 0 // Remove default padding to let image fill edge-to-edge
+    }}>
+      {/* 📸 BACKGROUND IMAGE LAYER */}
+      {displayImg && (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: `url(${displayImg}) center/cover no-repeat`,
+          opacity: 0.4,
+          filter: 'grayscale(20%) contrast(1.1)',
+          zIndex: 0
+        }} />
+      )}
+
+      {/* 🌑 GRADIENT OVERLAY (Ensures text readability) */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'linear-gradient(to top, rgba(0,0,0,0.9) 20%, rgba(0,0,0,0.4) 100%)',
+        zIndex: 1
+      }} />
+
+      <div style={{ position: 'relative', zIndex: 2, height: '100%', display: 'flex', flexDirection: 'column', padding: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.purple, letterSpacing: 2, fontWeight: 700 }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.purple, letterSpacing: 2, fontWeight: 700, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
             {spinning ? "🧠 RECALLING..." : "🎲 RANDOM RECALL"}
           </div>
-          <button onClick={spin} disabled={spinning} style={{ background: spinning ? C.white : `linear-gradient(45deg, ${C.purple}, #ff00ff)`, border: 'none', color: '#fff', fontSize: 8, padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontWeight: 900 }}>
+          <button onClick={spin} disabled={spinning} style={{ background: spinning ? C.white : `linear-gradient(45deg, ${C.purple}, #ff00ff)`, border: 'none', color: '#fff', fontSize: 8, padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontWeight: 900, boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
             {spinning ? "•••" : "SPIN"}
           </button>
         </div>
-        <div className={spinning ? "spinning-text" : "fade-in"} style={{ flex: 1 }}>
+
+        <div className={spinning ? "spinning-text" : "fade-in"} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          {/* YEAR & DATE ROW */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
             <span style={{ background: C.white, color: C.bg, fontFamily: "'Bebas Neue'", fontSize: '1.4rem', padding: '0 8px' }}>{getYear(show.date)}</span>
-            {show.is_festival && <Badge color={C.gold}>FESTIVAL</Badge>}
+            <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: '#fff', fontWeight: 900 }}>{fmtDateShort(show.date).toUpperCase()}</span>
           </div>
+
+          {/* ARTISTS */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 15 }}>
-            {bands.slice(0, 3).map((b, i) => (
-              <div key={i} style={{ fontFamily: "'Bebas Neue'", fontSize: bands.length > 2 ? '1.5rem' : '2.2rem', color: C.white, lineHeight: 1, letterSpacing: '0.05em', background: 'rgba(255,255,255,0.03)', padding: '4px 8px', borderLeft: `3px solid ${C.purple}` }}>
+            {bands.slice(0, 2).map((b, i) => (
+              <div key={i} style={{ fontFamily: "'Bebas Neue'", fontSize: bands.length > 1 ? '1.8rem' : '2.4rem', color: C.white, lineHeight: 1, letterSpacing: '0.05em', textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>
                 {b.toUpperCase()}
               </div>
             ))}
           </div>
+
+          {/* VENUE (Bigger & Bolder) */}
           <div style={{ marginTop: 'auto' }}>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.purple, fontWeight: 700 }}>
+            <div style={{ 
+              fontFamily: "'Bebas Neue'", 
+              fontSize: '1.5rem', 
+              color: C.purple, 
+              letterSpacing: '1px',
+              lineHeight: 1.1,
+              textShadow: '0 0 10px rgba(0,0,0,1)'
+            }}>
               📍 {show.venue?.toUpperCase() || 'UNKNOWN VENUE'}
             </div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, textTransform: 'uppercase' }}>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, textTransform: 'uppercase', marginTop: 4, opacity: 0.8 }}>
               {show.city}, {show.state}
             </div>
           </div>
@@ -1360,7 +1400,6 @@ function RandomShow({ concerts }) {
     </Card>
   );
 }
-
 // ─── SONIC DNA ────────────────────────────────────────────────────────────────
 function SonicDNA({ stats, onGenreClick }) {
   return (
