@@ -1297,7 +1297,7 @@ function ArtistInsights({ concerts }) {
   );
 }
 
-// ─── RANDOM SHOW (STABILIZED VISUAL EDITION) ────────────────────────────────
+// ─── RANDOM SHOW (FULL FESTIVAL & SCROLLABLE EDITION) ────────────────────────
 function RandomShow({ concerts }) {
   const [show, setShow] = useState(null);
   const [spinning, setSpinning] = useState(false);
@@ -1334,31 +1334,32 @@ function RandomShow({ concerts }) {
       display: 'flex',
       flexDirection: 'column'
     }}>
-      {/* 🗓 THE BIG FAINT YEAR WATERMARK (Idea #1 Restored) */}
+      {/* 🗓 THE BIG FAINT YEAR WATERMARK (Restored) */}
       <div className="big-watermark" style={{ 
         position: 'absolute', 
         right: -10, 
         bottom: -15, 
         fontSize: '10rem',
         zIndex: 0,
-        opacity: 0.15 // Classic faint look
+        opacity: 0.12,
+        pointerEvents: 'none'
       }}>
         {getYear(show.date)}
       </div>
 
-      {/* 📸 THE IMAGE (Placed in the "Black Space" on the right) */}
+      {/* 📸 THE IMAGE (Right-aligned artifact) */}
       {displayImg && !spinning && (
         <div style={{
           position: 'absolute',
           right: 15,
           top: '50%',
           transform: 'translateY(-50%)',
-          width: '120px',
-          height: '140px',
+          width: '130px',
+          height: '150px',
           background: `url(${displayImg}) center/cover no-repeat`,
           borderRadius: '4px',
-          border: `1px solid ${C.purple}44`,
-          boxShadow: `0 0 20px rgba(0,0,0,0.5), 0 0 10px ${hexToRgba(C.purple, 0.2)}`,
+          border: `1px solid ${show.is_festival ? C.gold : C.purple}44`,
+          boxShadow: `0 0 20px rgba(0,0,0,0.6)`,
           zIndex: 1,
           animation: 'fade-in 0.5s ease'
         }} />
@@ -1366,36 +1367,63 @@ function RandomShow({ concerts }) {
 
       <div style={{ position: 'relative', zIndex: 2, height: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
         {/* Header Row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.purple, letterSpacing: 2, fontWeight: 700 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: show.is_festival ? C.gold : C.purple, letterSpacing: 2, fontWeight: 700 }}>
             {spinning ? "🧠 RECALLING..." : "🎲 RANDOM RECALL"}
           </div>
-          <button onClick={spin} disabled={spinning} style={{ background: spinning ? C.white : `linear-gradient(45deg, ${C.purple}, #ff00ff)`, border: 'none', color: '#fff', fontSize: 8, padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontWeight: 900 }}>
+          <button onClick={spin} disabled={spinning} style={{ background: spinning ? C.white : (show.is_festival ? C.gold : C.purple), border: 'none', color: '#000', fontSize: 8, padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontWeight: 900 }}>
             {spinning ? "•••" : "SPIN"}
           </button>
         </div>
 
         <div className={spinning ? "spinning-text" : "fade-in"} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {/* DATE BOX */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          {/* DATE & FESTIVAL BADGE */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <span style={{ background: C.white, color: C.bg, fontFamily: "'Bebas Neue'", fontSize: '1.4rem', padding: '0 8px' }}>
               {getYear(show.date)}
             </span>
-            <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.white, opacity: 0.8, letterSpacing: 1 }}>
+            <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.white, opacity: 0.8 }}>
               {fmtDateShort(show.date).toUpperCase()}
             </span>
+            {show.is_festival && (
+              <span style={{ 
+                background: `${C.gold}22`, 
+                color: C.gold, 
+                border: `1px solid ${C.gold}`, 
+                fontFamily: "'Space Mono'", 
+                fontSize: '7px', 
+                padding: '2px 6px', 
+                borderRadius: '4px',
+                fontWeight: 900,
+                letterSpacing: '1px',
+                boxShadow: `0 0 10px ${hexToRgba(C.gold, 0.3)}`
+              }}>
+                FESTIVAL
+              </span>
+            )}
           </div>
 
-          {/* ARTISTS (Kept on the left half to avoid overlapping image) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 15, maxWidth: displayImg ? '60%' : '100%' }}>
-            {bands.slice(0, 2).map((b, i) => (
+          {/* ARTISTS (Scrollable list for long festival lineups) */}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: 4, 
+            marginBottom: 10, 
+            maxWidth: displayImg ? '55%' : '100%',
+            maxHeight: '100px',
+            overflowY: 'auto',
+            paddingRight: '5px'
+          }}>
+            {bands.map((b, i) => (
               <div key={i} style={{ 
                 fontFamily: "'Bebas Neue'", 
-                fontSize: bands.length > 1 ? '1.8rem' : '2.4rem', 
+                fontSize: bands.length > 3 ? '1.2rem' : '1.8rem', 
                 color: C.white, 
                 lineHeight: 1, 
                 letterSpacing: '0.05em',
-                textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
+                textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                borderLeft: `2px solid ${show.is_festival ? C.gold : C.purple}`,
+                paddingLeft: '8px'
               }}>
                 {b.toUpperCase()}
               </div>
@@ -1406,8 +1434,8 @@ function RandomShow({ concerts }) {
           <div style={{ marginTop: 'auto' }}>
             <div style={{ 
               fontFamily: "'Bebas Neue'", 
-              fontSize: '1.6rem', 
-              color: C.purple, 
+              fontSize: '1.4rem', 
+              color: show.is_festival ? C.gold : C.purple, 
               letterSpacing: '1px',
               lineHeight: 1.1 
             }}>
