@@ -4234,277 +4234,247 @@ async function handleUpcomingDelete(id) {
   );
 
   return (
-  <ThemeContext.Provider value={themeCtx}>
-    {/* Main App Wrapper - Flex layout for Sidebar + Stage */}
-    <div key={themeId} style={{ 
-      background: C.bg, 
-      minHeight: '100vh', 
-      display: 'flex', // This puts Sidebar and Main side-by-side
-      color: C.white 
-    }}>
-      <MarqueeStyles />
-
-      {/* ── VERTICAL SIDEBAR CONSOLE ── */}
-      <aside style={{
-        width: '280px',
-        height: '100vh',
-        position: 'sticky',
-        top: 0,
-        background: `linear-gradient(to right, ${C.bgCard} 0%, #050508 100%)`,
-        borderRight: `1px solid ${C.border}`,
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '30px 0',
-        zIndex: 1000,
-        boxShadow: '10px 0 30px rgba(0,0,0,0.5)'
+    <ThemeContext.Provider value={themeCtx}>
+      <div key={themeId} style={{ 
+        background: C.bg, 
+        minHeight: '100vh', 
+        display: 'flex', 
+        color: C.white,
+        overflow: 'hidden' // Keeps the sidebar and main area independent
       }}>
-        {/* LOGO AREA */}
-        <div style={{ padding: '0 24px 40px', borderBottom: `1px solid ${C.border}`, marginBottom: 20 }}>
-           <h1 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', margin: 0, lineHeight: 1, letterSpacing: '1px' }}>
-             🎸 LIVE <span style={{ color: C.teal }}>// ARCHIVE</span>
-           </h1>
-           <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, letterSpacing: 2, marginTop: 8 }}>
-             V.2026.04.PRODUCTION
-           </div>
-        </div>
+        <MarqueeStyles />
 
-        {/* NAVIGATION SCROLL AREA */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px' }} className="wristband-bin">
-          {TAB_GROUPS.map((group) => (
-            <div key={group.header} style={{ marginBottom: 32 }}>
-              {/* Category Header - Now Large and Bold */}
-              <div style={{ 
-                fontFamily: "'Bebas Neue'", 
-                fontSize: '1rem', 
-                color: C.teal, 
-                letterSpacing: '3px', 
-                padding: '0 12px 12px',
-                opacity: 0.9,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10
-              }}>
-                <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.teal }} />
-                {group.header}
+        {/* ── VERTICAL CONTROL CONSOLE ── */}
+        <aside style={{
+          width: '280px',
+          height: '100vh',
+          position: 'sticky',
+          top: 0,
+          background: `linear-gradient(to right, ${C.bgCard} 0%, #050508 100%)`,
+          borderRight: `1px solid ${C.border}`,
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '30px 0',
+          zIndex: 1000,
+          boxShadow: '10px 0 30px rgba(0,0,0,0.5)',
+          flexShrink: 0
+        }}>
+          {/* LOGO AREA */}
+          <div style={{ padding: '0 24px 40px', borderBottom: `1px solid ${C.border}`, marginBottom: 20 }}>
+             <h1 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', margin: 0, lineHeight: 1, letterSpacing: '1px' }}>
+               🎸 LIVE <span style={{ color: C.teal }}>// ARCHIVE</span>
+             </h1>
+             <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, letterSpacing: 2, marginTop: 8 }}>
+               V.2026.04.PRODUCTION
+             </div>
+          </div>
+
+          {/* NAVIGATION AREA */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px' }} className="wristband-bin">
+            {TAB_GROUPS.map((group) => (
+              <div key={group.header} style={{ marginBottom: 35 }}>
+                {/* LARGE CATEGORY HEADER */}
+                <div style={{ 
+                  fontFamily: "'Bebas Neue'", 
+                  fontSize: '1.2rem', 
+                  color: C.teal, 
+                  letterSpacing: '4px', 
+                  padding: '0 12px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10
+                }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.teal, boxShadow: `0 0 10px ${C.teal}` }} />
+                  {group.header}
+                </div>
+
+                {/* TABS */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {group.tabs.map(([id, label, color]) => {
+                    const isActive = activeTab === id;
+                    return (
+                      <button key={id} onClick={() => setActiveTab(id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 14,
+                          fontFamily: "'Space Mono'", 
+                          fontSize: '12px',
+                          color: isActive ? '#fff' : C.gray,
+                          background: isActive ? hexToRgba(color, 0.15) : 'transparent', 
+                          border: 'none',
+                          borderLeft: `4px solid ${isActive ? color : 'transparent'}`,
+                          padding: '14px 18px', 
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.2s',
+                          borderRadius: '0 6px 6px 0',
+                          fontWeight: isActive ? 800 : 500,
+                          letterSpacing: '0.5px'
+                        }}
+                      >
+                        <span style={{ fontSize: '1.3rem', filter: isActive ? 'none' : 'grayscale(100%) opacity(0.4)' }}>{label.split(' ')[0]}</span>
+                        <span style={{ textTransform: 'uppercase' }}>{label.split(' ').slice(1).join(' ')}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+            ))}
+          </div>
 
-              {/* Individual Tabs */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {group.tabs.map(([id, label, color]) => {
-                  const isActive = activeTab === id;
-                  return (
-                    <button key={id} onClick={() => setActiveTab(id)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 12,
-                        fontFamily: "'Space Mono'", 
-                        fontSize: '11px',
-                        color: isActive ? '#fff' : C.gray,
-                        background: isActive ? hexToRgba(color, 0.15) : 'transparent', 
-                        border: 'none',
-                        borderLeft: `3px solid ${isActive ? color : 'transparent'}`,
-                        padding: '12px 16px', 
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.2s',
-                        borderRadius: '0 4px 4px 0',
-                        fontWeight: isActive ? 700 : 400,
-                        boxShadow: isActive ? `inset 10px 0 20px ${hexToRgba(color, 0.05)}` : 'none'
-                      }}
-                      onMouseEnter={e => !isActive && (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
-                      onMouseLeave={e => !isActive && (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <span style={{ fontSize: '1.1rem', filter: isActive ? 'none' : 'grayscale(100%) opacity(0.5)' }}>{label.split(' ')[0]}</span>
-                      <span>{label.split(' ').slice(1).join(' ')}</span>
-                    </button>
-                  );
-                })}
+          {/* BOTTOM SYSTEM LINKS */}
+          <div style={{ padding: '20px 12px', borderTop: `1px solid ${C.border}`, background: 'rgba(0,0,0,0.2)' }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: C.grayDim, letterSpacing: 2, padding: '0 12px 12px' }}>SYSTEM BOOTH</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {RIGHT_TABS.map(([id, label, color]) => {
+                const isActive = activeTab === id;
+                return (
+                  <button key={id} onClick={() => setActiveTab(id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 14,
+                      fontFamily: "'Space Mono'", fontSize: '11px',
+                      color: isActive ? '#fff' : C.grayDim,
+                      background: isActive ? hexToRgba(color, 0.1) : 'transparent',
+                      border: 'none', borderLeft: `4px solid ${isActive ? color : 'transparent'}`,
+                      padding: '12px 18px', cursor: 'pointer', borderRadius: '0 6px 6px 0', textAlign: 'left',
+                      textTransform: 'uppercase'
+                    }}>
+                    <span style={{ fontSize: '1.2rem' }}>{label.split(' ')[0]}</span>
+                    <span>{label.split(' ').slice(1).join(' ')}</span>
+                  </button>
+                );
+              })}
+              <div style={{ padding: '10px 16px' }}>
+                 <ThemeSwitcher />
               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* BOTTOM UTILITY / SYSTEM */}
-        <div style={{ padding: '20px 12px', borderTop: `1px solid ${C.border}`, background: 'rgba(0,0,0,0.2)' }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: C.grayDim, letterSpacing: 2, padding: '0 12px 10px' }}>SYSTEM</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {RIGHT_TABS.map(([id, label, color]) => {
-              const isActive = activeTab === id;
-              return (
-                <button key={id} onClick={() => setActiveTab(id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    fontFamily: "'Space Mono'", fontSize: '10px',
-                    color: isActive ? '#fff' : C.grayDim,
-                    background: isActive ? hexToRgba(color, 0.1) : 'transparent',
-                    border: 'none', borderLeft: `3px solid ${isActive ? color : 'transparent'}`,
-                    padding: '10px 16px', cursor: 'pointer', borderRadius: '0 4px 4px 0', textAlign: 'left'
-                  }}>
-                  <span>{label}</span>
-                </button>
-              );
-            })}
-            <div style={{ padding: '10px 16px' }}>
-               <ThemeSwitcher />
             </div>
           </div>
-        </div>
-      </aside>
+        </aside>
 
-      {/* ── THE MAIN STAGE (Right Side Content) ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto', position: 'relative' }}>
-        
-        {/* TOP STAT BAR (Floating over the content) */}
-        <header style={{ 
-          background: `linear-gradient(to bottom, ${C.bg} 80%, transparent)`, 
-          padding: '20px 40px', 
-          position: 'sticky', 
-          top: 0, 
-          zIndex: 100,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-           <div style={{ display: 'flex', gap: 40 }}>
-             <div style={{ textAlign: 'center' }}>
-               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.teal }}>{headerStats.totalSets}</div>
-               <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, letterSpacing: 1 }}>TOTAL SETS</div>
-             </div>
-             <div style={{ textAlign: 'center' }}>
-               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.cyan }}>{headerStats.uniqueArtists}</div>
-               <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, letterSpacing: 1 }}>ARTISTS</div>
-             </div>
-             <div style={{ textAlign: 'center' }}>
-               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.purple }}>{headerStats.totalShows}</div>
-               <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, letterSpacing: 1 }}>DAYS</div>
-             </div>
-           </div>
-           
-           <div style={{ marginRight: '60px' }}>
-              <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
-           </div>
-        </header>
-
-        <main style={{ padding: '0 40px 100px' }}>
-           {/* All your activeTab === '...' logic goes here as usual */}
-        </main>
-      </div>
-    </div>
-  </ThemeContext.Provider>
-);
-  {/* ── RIGHT SIDE: THE BOOTH ── */}
-  <div style={{ display: 'flex', borderLeft: `1px solid ${C.border}` }}>
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-       <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, letterSpacing: '2px', textAlign: 'center', paddingTop: 6, opacity: 0.6 }}>SYSTEM</div>
-       <div style={{ display: 'flex', flex: 1 }}>
-          {RIGHT_TABS.map(([id, label, color]) => {
-            const isActive = activeTab === id;
-            return (
-              <button key={id} onClick={() => setActiveTab(id)}
-                style={{
-                  fontFamily: "'Space Mono'", fontSize: 9, color: isActive ? color : C.grayDim,
-                  background: isActive ? hexToRgba(color, 0.05) : 'none', border: 'none',
-                  borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
-                  padding: '0 15px', cursor: 'pointer'
-                }}>
-                {label}
-              </button>
-            );
-          })}
-          <ThemeSwitcher />
-       </div>
-    </div>
-  </div>
-</nav>
-
-        {/* ── THE MAIN STAGE ── */}
-        <main style={{ maxWidth: 1300, margin: '20px auto', padding: '24px', background: `linear-gradient(180deg, ${hexToRgba(C.bgCard, 0.7)} 0%, ${hexToRgba(C.bg, 0.9)} 100%)`, border: `1px solid ${C.border}`, borderRadius: '16px', boxShadow: '0 30px 100px rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', position: 'relative', zIndex: 1, minHeight: '80vh' }}>
+        {/* ── THE MAIN STAGE (Content Window) ── */}
+        <div style={{ flex: 1, height: '100vh', overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column' }}>
           
-          {activeTab === 'dashboard' && (
-            <div className="fade-in">
-              <OnThisDay concerts={concerts} />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 16, marginBottom: 16, marginTop: 8 }}>
-                <ArtistInsights concerts={concerts} />
-                <TheaterMarquee upcoming={upcoming} onAdd={() => setUpcomingModal('new')} onEdit={setUpcomingModal} />
-                <RandomShow concerts={concerts} />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: 16, marginBottom: 16 }}>
-                <VenueDonutCard concerts={concerts} onNavigateToVenues={() => setActiveTab('venues')} />
-                <Card neon>
-                  <CardTitle>Sets Per Year by Venue 📍</CardTitle>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={stackedTimelineData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }} onClick={data => { if (data?.activePayload?.[0]?.payload?.fullYear) { setActiveTab('timeline'); } }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                      <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
-                      <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
-                      <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10, fontFamily: "'Space Mono'" }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                      {venueKeys.map((venue, index) => (
-                        <Bar key={venue} dataKey={venue} stackId="a" fill={venue === 'other' ? '#334455' : ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88', '#4488ff', '#ff7733', '#9966ff', '#00e5cc', '#ffcc44', '#ff6699', '#a2ff00', '#00cfff', '#888888', '#cc8800'][index % 15]} style={{ cursor: 'pointer' }} />
-                      ))}
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Card>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
-                <Card neon><CardTitle>Fest vs Standalone</CardTitle><DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} concerts={concerts} /></Card>
-                <Card neon><CardTitle>Festival Passports</CardTitle><TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} /></Card>
-                <Card neon><CardTitle>By Decade</CardTitle><DecadeBlocks sets={allSetsList} /></Card>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-                <Card neon>
-                  <CardTitle>Most Seen Artists</CardTitle>
-                  <div style={{ display: 'grid', gap: 10 }}>
-                    {artistCounts.slice(0, 6).map((a, i) => (
-                      <div key={a.name} style={{ padding: '10px 12px', background: hexToRgba(C.teal, 0.06), borderRadius: 6, border: `1px solid ${C.border}`, position: 'relative', overflow: 'hidden' }}>
-                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ fontSize: '1.1rem' }}>{['🥇','🥈','🥉','🏅','🏅','🏅'][i]}</span>
-                          <div style={{ flex: 1 }}><div style={{ fontSize: '0.9rem', fontWeight: 700, color: C.white }}>{a.name}</div></div>
-                          <div style={{ textAlign: 'right' }}><span style={{ color: C.gold, fontFamily: "'Bebas Neue'", fontSize: '1.6rem' }}>{a.count}</span></div>
+          {/* MINIMAL CONTENT HEADER */}
+          <header style={{ 
+            padding: '25px 40px', 
+            background: `linear-gradient(to bottom, ${C.bg} 60%, transparent)`, 
+            position: 'sticky', 
+            top: 0, 
+            zIndex: 100,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+             <div style={{ display: 'flex', gap: 50 }}>
+               <div style={{ textAlign: 'center' }}>
+                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.teal, lineHeight: 1 }}>{headerStats.totalSets}</div>
+                 <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 2, marginTop: 4 }}>TOTAL SETS</div>
+               </div>
+               <div style={{ textAlign: 'center' }}>
+                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.cyan, lineHeight: 1 }}>{headerStats.uniqueArtists}</div>
+                 <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 2, marginTop: 4 }}>UNIQUE ACTS</div>
+               </div>
+               <div style={{ textAlign: 'center' }}>
+                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.purple, lineHeight: 1 }}>{headerStats.totalShows}</div>
+                 <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 2, marginTop: 4 }}>SHOW DAYS</div>
+               </div>
+             </div>
+             
+             <div style={{ marginRight: '80px' }}>
+                <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
+             </div>
+          </header>
+
+          <main style={{ padding: '0 40px 100px' }}>
+            {activeTab === 'dashboard' && (
+              <div className="fade-in">
+                <OnThisDay concerts={concerts} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 16, marginBottom: 16, marginTop: 8 }}>
+                  <ArtistInsights concerts={concerts} />
+                  <TheaterMarquee upcoming={upcoming} onAdd={() => setUpcomingModal('new')} onEdit={setUpcomingModal} />
+                  <RandomShow concerts={concerts} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: 16, marginBottom: 16 }}>
+                  <VenueDonutCard concerts={concerts} onNavigateToVenues={() => setActiveTab('venues')} />
+                  <Card neon>
+                    <CardTitle>Sets Per Year by Venue 📍</CardTitle>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={stackedTimelineData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }} onClick={data => { if (data?.activePayload?.[0]?.payload?.fullYear) { setActiveTab('timeline'); } }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+                        <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                        <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                        <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10, fontFamily: "'Space Mono'" }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                        {venueKeys.map((venue, index) => (
+                          <Bar key={venue} dataKey={venue} stackId="a" fill={venue === 'other' ? '#334455' : ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88', '#4488ff', '#ff7733', '#9966ff', '#00e5cc', '#ffcc44', '#ff6699', '#a2ff00', '#00cfff', '#888888', '#cc8800'][index % 15]} style={{ cursor: 'pointer' }} />
+                        ))}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </Card>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+                  <Card neon><CardTitle>Fest vs Standalone</CardTitle><DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} concerts={concerts} /></Card>
+                  <Card neon><CardTitle>Festival Passports</CardTitle><TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} /></Card>
+                  <Card neon><CardTitle>By Decade</CardTitle><DecadeBlocks sets={allSetsList} /></Card>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                  <Card neon>
+                    <CardTitle>Most Seen Artists</CardTitle>
+                    <div style={{ display: 'grid', gap: 10 }}>
+                      {artistCounts.slice(0, 6).map((a, i) => (
+                        <div key={a.name} style={{ padding: '10px 12px', background: hexToRgba(C.teal, 0.06), borderRadius: 6, border: `1px solid ${C.border}`, position: 'relative', overflow: 'hidden' }}>
+                          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ fontSize: '1.1rem' }}>{['🥇','🥈','🥉','🏅','🏅','🏅'][i]}</span>
+                            <div style={{ flex: 1 }}><div style={{ fontSize: '0.9rem', fontWeight: 700, color: C.white }}>{a.name}</div></div>
+                            <div style={{ textAlign: 'right' }}><span style={{ color: C.gold, fontFamily: "'Bebas Neue'", fontSize: '1.6rem' }}>{a.count}</span></div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-                <Card neon style={{ display: 'flex', flexDirection: 'column', minHeight: 420 }}>
-                  <CardTitle>Setlist Spotlight 📋</CardTitle>
-                  <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
-                </Card>
+                      ))}
+                    </div>
+                  </Card>
+                  <Card neon style={{ display: 'flex', flexDirection: 'column', minHeight: 420 }}>
+                    <CardTitle>Setlist Spotlight 📋</CardTitle>
+                    <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
+                  </Card>
+                </div>
+                <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
               </div>
-              <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
-            </div>
-          )}
+            )}
 
-          {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
+            {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
 
-          {activeTab === 'byDay' && (
-            <div className="fade-in">
-              <div style={{ display: 'flex', gap: 10, marginTop: 10, marginBottom: 16 }}>
-                <select value={yearFilter} onChange={e => setYearFilter(e.target.value)} style={inputSt}><option value="all">All Years</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
-                <select value={festFilter} onChange={e => setFestFilter(e.target.value)} style={inputSt}><option value="all">All Types</option><option value="fest">Festival</option><option value="solo">Standalone</option></select>
+            {activeTab === 'byDay' && (
+              <div className="fade-in">
+                <div style={{ display: 'flex', gap: 10, marginTop: 10, marginBottom: 16 }}>
+                  <select value={yearFilter} onChange={e => setYearFilter(e.target.value)} style={inputSt}><option value="all">All Years</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                  <select value={festFilter} onChange={e => setFestFilter(e.target.value)} style={inputSt}><option value="all">All Types</option><option value="fest">Festival</option><option value="solo">Standalone</option></select>
+                </div>
+                <ByDayTab dayGroups={dayGroups} onEdit={setEditTarget} genreMap={artistGenres} isAdmin={true} />
               </div>
-              <ByDayTab dayGroups={dayGroups} onEdit={setEditTarget} genreMap={artistGenres} isAdmin={true} />
-            </div>
-          )}
+            )}
 
-          {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={true} onEdit={setEditTarget} />}
-          
-          {activeTab === 'passport' && (
-            <PassportTab passport={passport} genreStats={genreStats} onNavigateToFest={name => { setActiveTab('byFest'); setTimeout(() => { const festId = `fest-${name.toLowerCase().replace(/\s+/g, '-')}`; const el = document.getElementById(festId); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); }} />
-          )}
+            {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={true} onEdit={setEditTarget} />}
+            {activeTab === 'passport' && (
+              <PassportTab passport={passport} genreStats={genreStats} onNavigateToFest={name => { setActiveTab('byFest'); setTimeout(() => { const festId = `fest-${name.toLowerCase().replace(/\s+/g, '-')}`; const el = document.getElementById(festId); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); }} />
+            )}
 
-          {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
-          {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
-          {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
-          {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
-          
-          {activeTab === 'browse' && (
-            <BrowseTab browseView={browseView} setBrowseView={setBrowseView} search={search} setSearch={setSearch} yearFilter={yearFilter} setYearFilter={setYearFilter} festFilter={festFilter} setFestFilter={setFestFilter} genreFilter={genreFilter} setGenreFilter={setGenreFilter} sortCol={sortCol} setSortCol={setSortCol} sortDir={sortDir} setSortDir={setSortDir} paged={paged} page={page} setPage={setPage} totalPages={totalPages} artistRows={artistRows} years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} onEdit={setEditTarget} onSetGenre={handleSetGenre} genreMap={artistGenres} />
-          )}
-          
-          {activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} onDuplicate={handleDuplicate} />}
+            {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
+            {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
+            {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
+            {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
+            
+            {activeTab === 'browse' && (
+              <BrowseTab browseView={browseView} setBrowseView={setBrowseView} search={search} setSearch={setSearch} yearFilter={yearFilter} setYearFilter={setYearFilter} festFilter={festFilter} setFestFilter={setFestFilter} genreFilter={genreFilter} setGenreFilter={setGenreFilter} sortCol={sortCol} setSortCol={setSortCol} sortDir={sortDir} setSortDir={setSortDir} paged={paged} page={page} setPage={setPage} totalPages={totalPages} artistRows={artistRows} years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} onEdit={setEditTarget} onSetGenre={handleSetGenre} genreMap={artistGenres} />
+            )}
+            
+            {activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} onDuplicate={handleDuplicate} />}
+          </main>
 
-        </main>
+          {/* MODALS RENDER HERE (Hidden until triggered) */}
+          {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
+          {editTarget && <EditModal concert={editTarget === 'new' ? null : editTarget} onClose={() => setEditTarget(null)} onSave={handleSave} onDelete={handleDelete} />}
+          {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
+        </div>
       </div>
     </ThemeContext.Provider>
   );
