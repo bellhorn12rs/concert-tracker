@@ -1762,12 +1762,15 @@ function WristbandCard({ event, genreMap, compact, onEdit }) {
   );
 }
 // ─── 2. SETLIST VAULT (BULLSEYE SEARCH & CLEAN LOGIC) ────────────────────────
+// ─── 2. SETLIST VAULT (FULL-IMAGE & BULLSEYE SEARCH) ────────────────────────
 function SetlistVaultTab({ concerts, genreMap }) {
   
   // 🎯 The "Bullseye" Search Helper (Band + MM/DD/YYYY)
   const getSetlistFmUrl = (artist, date) => {
     if (!artist || !date) return "#";
+    // Convert "2025-10-17" -> ["2025", "10", "17"]
     const [year, month, day] = date.split('-');
+    // Create string: "Lord Huron 10/17/2025"
     const searchString = `${artist} ${month}/${day}/${year}`;
     return `https://www.setlist.fm/search?query=${encodeURIComponent(searchString)}`;
   };
@@ -1775,19 +1778,14 @@ function SetlistVaultTab({ concerts, genreMap }) {
   const setlists = useMemo(() => {
     const results = [];
     concerts.forEach(c => {
-      // Only include shows where you've explicitly named the bands seen
       if (!c.has_setlist_names?.trim()) return;
       
       const bands = c.has_setlist_names.split(',').map(b => b.trim()).filter(Boolean);
-      
-      // 🟢 Try new setlist bucket first, fallback to old image_url bucket
       const rawImages = c.setlist_image_url || c.image_url || '';
       const images = rawImages.split(',').map(img => img.trim()).filter(Boolean);
       
       bands.forEach((band, idx) => {
-        // Map image to band by index, or use first image if it's a solo shot
         const img = images[idx] || (images.length === 1 ? images[0] : null);
-        
         results.push({ 
           id: `${c.id}-${band}`, 
           band, 
@@ -1804,67 +1802,74 @@ function SetlistVaultTab({ concerts, genreMap }) {
     return results.sort((a, b) => b.date.localeCompare(a.date));
   }, [concerts]);
 
-  if (!setlists.length) {
-    return (
-      <div style={{ padding: '80px 0', textAlign: 'center' }}>
-        <div style={{ fontSize: '4rem', marginBottom: 20 }}>📁</div>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white }}>
-          THE VAULT IS CURRENTLY <span style={{ color: C.teal }}>EMPTY</span>
-        </div>
-      </div>
-    );
-  }
+  if (!setlists.length) return <div style={{ padding: '80px 0', textAlign: 'center' }}><div style={{ fontSize: '4rem' }}>📁</div><div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white }}>VAULT EMPTY</div></div>;
 
   return (
     <div style={{ padding: '40px 0' }} className="fade-in">
       <div style={{ textAlign: 'center', marginBottom: 60 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: C.white, letterSpacing: '2px' }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: C.white }}>
           SETLIST <span style={{ color: C.gold }}>VAULT</span>
         </div>
         <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: 10, letterSpacing: '4px' }}>
-          {setlists.length} STAGE ARTIFACTS ARCHIVED
+          {setlists.length} ARTIFACTS ARCHIVED
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '50px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '60px', alignItems: 'start' }}>
         {setlists.map((s, i) => (
           <div key={s.id} style={{ 
             position: 'relative', 
-            transform: `rotate(${(i % 2 === 0 ? 1.5 : -1.5) * (i % 3 + 1)}deg)`,
+            transform: `rotate(${(i % 2 === 0 ? 1 : -1) * (i % 3 + 1)}deg)`,
             transition: 'all 0.3s ease'
           }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05) rotate(0deg)'}
-          onMouseLeave={e => e.currentTarget.style.transform = `rotate(${(i % 2 === 0 ? 1.5 : -1.5) * (i % 3 + 1)}deg)`}
+          onMouseLeave={e => e.currentTarget.style.transform = `rotate(${(i % 2 === 0 ? 1 : -1) * (i % 3 + 1)}deg)`}
           >
-            <div style={{ background: '#fdfdfd', padding: '10px', boxShadow: '0 15px 35px rgba(0,0,0,0.6)', borderRadius: 2 }}>
-              {/* Tape on top */}
-              <div style={{ position: 'absolute', top: -8, left: '35%', width: '30%', height: '16px', background: 'rgba(0, 110, 255, 0.3)', backdropFilter: 'blur(1px)', transform: 'rotate(-1deg)', zIndex: 10 }} />
+            {/* 📄 THE PAPER CONTAINER */}
+            <div style={{ background: '#fdfdfd', padding: '10px', boxShadow: '0 20px 40px rgba(0,0,0,0.7)', borderRadius: 2 }}>
               
-              <div style={{ padding: '12px 6px', textAlign: 'center', background: '#111', color: '#fff', fontFamily: "'Bebas Neue'", fontSize: '1.5rem', marginBottom: 10 }}>
+              {/* Blue Tape */}
+              <div style={{ position: 'absolute', top: -10, left: '35%', width: '30%', height: '18px', background: 'rgba(0, 110, 255, 0.35)', backdropFilter: 'blur(1px)', transform: 'rotate(-1deg)', zIndex: 10, border: '1px solid rgba(255,255,255,0.1)' }} />
+              
+              {/* Artist Header */}
+              <div style={{ padding: '12px 6px', textAlign: 'center', background: '#111', color: '#fff', fontFamily: "'Bebas Neue'", fontSize: '1.6rem', marginBottom: 10 }}>
                 {s.band.toUpperCase()}
               </div>
 
+              {/* 📸 FULL IMAGE (No Cropping) */}
               {s.image_url ? (
-                <div style={{ width: '100%', height: '350px', background: `url(${s.image_url}) center/cover no-repeat`, filter: 'sepia(0.1) contrast(1.1)', border: '1px solid #eee' }} />
+                <div style={{ width: '100%', overflow: 'hidden', border: '1px solid #eee' }}>
+                  <img 
+                    src={s.image_url} 
+                    alt={s.band} 
+                    style={{ 
+                      width: '100%', 
+                      height: 'auto', // Allows paper to grow to fit the whole setlist
+                      display: 'block',
+                      filter: 'sepia(0.05) contrast(1.05)'
+                    }} 
+                  />
+                </div>
               ) : (
                 <div style={{ height: '200px', background: '#f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: '9px', fontFamily: "'Space Mono'", textAlign: 'center', padding: 20 }}>
-                  NO STAGE PHOTO FOUND
+                  NO IMAGE ARCHIVED
                 </div>
               )}
 
+              {/* Footer Info */}
               <div style={{ padding: '15px 10px 5px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 <div style={{ color: '#000', fontSize: '10px', fontFamily: "'Space Mono'", fontWeight: 'bold', lineHeight: 1.4 }}>
                   {fmtDateShort(s.date)}<br/>
                   <span style={{ opacity: 0.6 }}>{s.venue?.toUpperCase()}</span>
                 </div>
                 
-                {/* 🔗 THE MM/DD/YYYY LINK */}
+                {/* 🔗 THE FIXED SEARCH LINK */}
                 <a 
                   href={getSetlistFmUrl(s.band, s.date)} 
                   target="_blank" rel="noreferrer"
                   style={{ 
                     fontFamily: "'Space Mono'", fontSize: '9px', color: '#006eff', 
-                    textDecoration: 'none', borderBottom: '1px solid rgba(0,110,255,0.3)',
+                    textDecoration: 'none', borderBottom: '2px solid rgba(0,110,255,0.2)',
                     paddingBottom: 2, fontWeight: 900
                   }}
                 >
