@@ -2450,35 +2450,46 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
 }
 
 // ─── 2. THE OVERVIEW (PASSPORTTAB - THE GRID) ───────────────────────────────
+// ─── PASSPORT TAB (REPAIRED STATS EDITION) ──────────────────────────────────
 function PassportTab({ passport, onNavigateToFest }) {  
   return (
     <div style={{ padding:'40px 0' }} className="fade-in">
-      <div style={{ fontFamily:"'Space Mono'", fontSize:11, color:C.teal, marginBottom:30, letterSpacing:'0.2em', textAlign: 'center' }}>
+      <div style={{ fontFamily:"'Space Mono'", fontSize:11, color:C.teal, marginBottom:40, letterSpacing:'0.2em', textAlign: 'center', opacity: 0.8 }}>
         // SELECT A STAMP TO VIEW COLLECTION //
       </div>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))', gap:25 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))', gap:30 }}>
         {passport.map((f, i) => {
-          const color = [C.teal, C.purple, C.gold, C.cyan, C.green, C.pink][i % 6];
+          
+          // 🟢 THE FIX: Robust stats calculation so "DAYS" never stays blank
+          const yearCount = f.years?.length || 0;
+          const dayCount = f.days || (f.years ? f.years.length : 0);
+          
+          const color = [C.teal, C.purple, C.gold, C.cyan, C.green, '#ff6699'][i % 6];
+          
           return (
             <div key={f.name} onClick={()=>onNavigateToFest(f.name)}
               style={{ 
-                background: `linear-gradient(135deg, ${C.bgCard}, #000)`, 
-                border:`2px solid ${hexToRgba(color, 0.3)}`, borderRadius:20, padding:30, cursor:'pointer', transition:'all 0.3s ease',
-                position: 'relative', overflow: 'hidden', boxShadow: `0 10px 30px rgba(0,0,0,0.3)`
+                background: `linear-gradient(135deg, ${C.bgCard}, #0b0b0b)`, 
+                border:`2px solid ${hexToRgba(color, 0.25)}`, borderRadius:20, padding:30, cursor:'pointer', transition:'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative', overflow: 'hidden', boxShadow: `0 10px 30px rgba(0,0,0,0.4)`
               }}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor=color; e.currentTarget.style.transform='translateY(-8px)'; e.currentTarget.style.boxShadow=`0 15px 50px ${hexToRgba(color, 0.25)}`;}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor=hexToRgba(color, 0.3); e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow=`0 10px 30px rgba(0,0,0,0.3)`;}}>
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=color; e.currentTarget.style.transform='translateY(-10px)'; e.currentTarget.style.boxShadow=`0 20px 60px ${hexToRgba(color, 0.2)}`;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=hexToRgba(color, 0.25); e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow=`0 10px 30px rgba(0,0,0,0.4)`;}}>
               
-              <div style={{ fontFamily:"'Bebas Neue'", fontSize:'2.5rem', color: C.white, lineHeight:1, marginBottom: 5 }}>{f.name}</div>
-              <div style={{ fontFamily:"'Space Mono'", fontSize:9, color: color, letterSpacing: '2px', marginBottom: 20, fontWeight: 900 }}>{f.years.length} YEARS RECORDED</div>
-              
-              <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:25 }}>
-                {f.years.map(y=><span key={y} style={{ fontFamily:"'Space Mono'", fontSize:9, background:`${color}15`, color: color, border:`1px solid ${color}44`, padding:'4px 10px', borderRadius:5 }}>{y}</span>)}
+              <div style={{ fontFamily:"'Bebas Neue'", fontSize:'2.4rem', color: C.white, lineHeight:1.1, marginBottom: 5, letterSpacing: '1px' }}>{f.name}</div>
+              <div style={{ fontFamily:"'Space Mono'", fontSize:9, color: color, letterSpacing: '2.5px', marginBottom: 20, fontWeight: 900, opacity: 0.9 }}>
+                {yearCount} {yearCount === 1 ? 'YEAR' : 'YEARS'} RECORDED
               </div>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${hexToRgba(color, 0.15)}`, paddingTop: 20 }}>
-                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: color }}>{f.days} <span style={{ fontSize: '0.9rem', color: C.gray }}>DAYS</span></div>
-                 <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, letterSpacing: '1px' }}>EXPLORE BOX SET ↗</div>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:25 }}>
+                {(f.years || []).map(y=><span key={y} style={{ fontFamily:"'Space Mono'", fontSize:9, background:`${color}15`, color: color, border:`1px solid ${color}33`, padding:'4px 10px', borderRadius:5 }}>{y}</span>)}
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid rgba(255,255,255,0.1)`, paddingTop: 20 }}>
+                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: color, lineHeight: 1 }}>
+                   {dayCount} <span style={{ fontSize: '0.9rem', color: '#666', marginLeft: 4 }}>DAYS</span>
+                 </div>
+                 <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#666', letterSpacing: '1px' }}>EXPLORE BOX SET ↗</div>
               </div>
             </div>
           );
@@ -3164,7 +3175,7 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
   );
 }
 
-// ─── 5. EDIT MODAL (SCRAPBOOK EXPANSION VERSION) ──────────────────────────────
+// ─── 5. EDIT MODAL (FINAL RESTORED VERSION) ──────────────────────────────────
 function EditModal({ concert, onClose, onSave, onDelete }) {
   const [form, setForm] = useState({ 
     date: concert?.date || '', 
@@ -3177,15 +3188,13 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
     festival_day: concert?.festival_day || '', 
     has_setlist_names: concert?.has_setlist_names || '', 
     genre: concert?.genre || '', 
-    image_url: concert?.image_url || '', // Poster
-    setlist_image_url: concert?.setlist_image_url || '', // 🟢 The Taped Setlist
-    personal_photo_url: concert?.personal_photo_url || '' // 🟢 Multiple Polaroids
+    image_url: concert?.image_url || '', 
+    setlist_image_url: concert?.setlist_image_url || '', 
+    personal_photo_url: concert?.personal_photo_url || '' 
   });
 
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const safeC = typeof C !== 'undefined' ? C : { teal: '#00d2ff', bgCard: '#1a1a1a', gray: '#888' };
-  
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSave = async () => { 
@@ -3202,59 +3211,68 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
     setSaving(false); 
   };
 
-  const lbl = { display: 'block', fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: safeC.teal, marginBottom: 4, opacity: 0.8 };
-  const inpSt = { width: '100%', background: 'rgba(0,0,0,0.3)', border: `1px solid ${safeC.teal}44`, color: '#fff', padding: '10px', fontFamily: "'Space Mono'", borderRadius: '4px', outline: 'none' };
+  const lbl = { display: 'block', fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.teal, marginBottom: 4, opacity: 0.8 };
+  const inpSt = { width: '100%', background: 'rgba(0,0,0,0.3)', border: `1px solid ${C.teal}44`, color: '#fff', padding: '10px', fontFamily: "'Space Mono'", borderRadius: '4px', outline: 'none' };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(4px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="fade-in" style={{ background: safeC.bgCard, border: `1px solid ${safeC.teal}`, borderRadius: 10, padding: 24, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: `0 0 40px rgba(0,210,255,0.2)` }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(10px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.teal}`, borderRadius: 12, padding: 30, width: '100%', maxWidth: 550, maxHeight: '90vh', overflowY: 'auto', boxShadow: `0 0 60px rgba(0,210,255,0.3)` }}>
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: safeC.teal }}>{concert?.id ? 'Edit Show' : 'Add Show'}</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: safeC.gray, fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '1px' }}>{concert?.id ? 'EDIT SHOW' : 'ADD NEW SHOW'}</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer', opacity: 0.5 }}>✕</button>
         </div>
         
-        {/* BASIC INFO */}
-        <div style={{ marginBottom: 14 }}><label style={lbl}>Date</label><input style={inpSt} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
-        <div style={{ marginBottom: 14 }}><label style={lbl}>Artists (comma separated)</label><input style={inpSt} value={form.bands} onChange={e => set('bands', e.target.value)} /></div>
+        {/* TOP ROW: DATE & FESTIVAL TOGGLE */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: 20, marginBottom: 15 }}>
+          <div><label style={lbl}>Date</label><input style={inpSt} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <label style={lbl}>Festival?</label>
+            <input type="checkbox" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} style={{ width: 20, height: 20, cursor: 'pointer' }} />
+          </div>
+        </div>
+
+        {/* 🎪 FESTIVAL FIELDS (Brought Back!) */}
+        {form.is_festival && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 15, padding: '15px', background: 'rgba(0,210,255,0.05)', borderRadius: 8, border: `1px solid ${C.teal}22` }}>
+            <div><label style={lbl}>Festival Name</label><input style={inpSt} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} placeholder="Bonnaroo" /></div>
+            <div><label style={lbl}>Day Label</label><input style={inpSt} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} placeholder="Sunday" /></div>
+          </div>
+        )}
+
+        <div style={{ marginBottom: 15 }}><label style={lbl}>Artists (comma separated)</label><input style={inpSt} value={form.bands} onChange={e => set('bands', e.target.value)} /></div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 15 }}>
           <div><label style={lbl}>Venue</label><input style={inpSt} value={form.venue} onChange={e => set('venue', e.target.value)} /></div>
           <div><label style={lbl}>City</label><input style={inpSt} value={form.city} onChange={e => set('city', e.target.value)} /></div>
         </div>
 
-        {/* 📸 THE MEMORY ARCHIVE (PURPLE ZONE) */}
-        <div style={{ marginBottom: 24, padding: '15px', background: 'rgba(157, 0, 255, 0.05)', borderRadius: '8px', border: '1px dashed rgba(157, 0, 255, 0.3)' }}>
+        {/* 📸 PURPLE MEMORY ZONE (Stackable Support) */}
+        <div style={{ marginBottom: 30, padding: '20px', background: 'rgba(157, 0, 255, 0.05)', borderRadius: '12px', border: '1px dashed rgba(157, 0, 255, 0.3)' }}>
           <div style={{ marginBottom: 15 }}>
-            <label style={{ ...lbl, color: '#9d00ff' }}>Personal Polaroids (Comma separated Imgur links)</label>
+            <label style={{ ...lbl, color: '#9d00ff' }}>Personal Polaroids (Imgur Direct Links)</label>
             <textarea 
-              style={{ ...inpSt, borderColor: '#9d00ff44', height: '60px', fontSize: '10px', resize: 'none', lineHeight: '1.4' }} 
+              style={{ ...inpSt, borderColor: '#9d00ff44', height: '80px', fontSize: '11px', resize: 'none', lineHeight: '1.5' }} 
               value={form.personal_photo_url} 
               onChange={e => set('personal_photo_url', e.target.value)} 
               placeholder="link1.jpg, link2.jpg..." 
             />
           </div>
-          
           <div>
             <label style={{ ...lbl, color: '#9d00ff' }}>Stage Setlist / Poster (Taped Paper)</label>
-            <input 
-              style={{ ...inpSt, borderColor: '#9d00ff44' }} 
-              value={form.setlist_image_url} 
-              onChange={e => set('setlist_image_url', e.target.value)} 
-              placeholder="Direct Imgur link to setlist photo" 
-            />
+            <input style={{ ...inpSt, borderColor: '#9d00ff44' }} value={form.setlist_image_url} onChange={e => set('setlist_image_url', e.target.value)} placeholder="Direct link(s) to setlists" />
           </div>
         </div>
 
-        {/* ACTIONS */}
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+        {/* 💾 ACTION BUTTONS (The Fixed/Visible Footer) */}
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           {concert?.id && (
-            <button onClick={() => confirming ? onDelete(concert.id) : setConfirming(true)} type="button" style={{ background: confirming ? '#ff4444' : 'transparent', border: '1px solid #ff4444', color: confirming ? '#fff' : '#ff4444', padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1rem' }}>
-              {confirming ? 'CONFIRM?' : 'DELETE'}
+            <button onClick={() => confirming ? onDelete(concert.id) : setConfirming(true)} type="button" style={{ background: confirming ? '#ff4444' : 'transparent', border: '1px solid #ff4444', color: confirming ? '#fff' : '#ff4444', padding: '10px 20px', borderRadius: 6, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.1rem' }}>
+              {confirming ? 'CONFIRM DELETE?' : 'DELETE'}
             </button>
           )}
-          <button onClick={onClose} type="button" style={{ background: 'transparent', border: `1px solid ${safeC.gray}`, color: safeC.gray, padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1rem' }}>CANCEL</button>
-          <button onClick={handleSave} disabled={saving} type="button" style={{ background: safeC.teal, border: 'none', color: '#000', padding: '8px 24px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', opacity: saving ? 0.5 : 1 }}>
+          <button onClick={onClose} type="button" style={{ background: 'transparent', border: '1px solid #444', color: '#888', padding: '10px 20px', borderRadius: 6, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.1rem' }}>CANCEL</button>
+          <button onClick={handleSave} disabled={saving} type="button" style={{ background: C.teal, border: 'none', color: '#000', padding: '10px 30px', borderRadius: 6, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', boxShadow: `0 0 20px ${C.teal}44` }}>
             {saving ? 'SAVING...' : 'SAVE'}
           </button>
         </div>
