@@ -3645,6 +3645,59 @@ export default function App() {
       .sort((a, b) => b.count - a.count);
   }, [allSetsList, artistGenres]);
 
+  // Grouping logic for the Stacked Bar Chart
+const stackedTimelineData = useMemo(() => {
+  const yearsMap = {};
+  const allVenues = new Set();
+  
+  // 1. Organize data by year and venue
+  allSetsList.forEach(s => {
+    const y = getYear(s.date);
+    if (!y) return;
+    if (!yearsMap[y]) yearsMap[y] = { year: String(y).slice(2), fullYear: y };
+    
+    const v = s.venue || 'Unknown Venue';
+    yearsMap[y][v] = (yearsMap[y][v] || 0) + 1;
+    allVenues.add(v);
+  });
+
+  // 2. Identify Top 5 venues globally to keep the legend readable
+  const venueTotals = {};
+  allSetsList.forEach(s => {
+    const v = s.venue || 'Unknown Venue';
+    venueTotals[v] = (venueTotals[v] || 0) + 1;
+  });
+  const topVenues = Object.entries(venueTotals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(v => v[0]);
+
+  // 3. Final formatting for Recharts
+  return Object.values(yearsMap).sort((a, b) => a.fullYear - b.fullYear).map(yearData => {
+    const formatted = { ...yearData, other: 0 };
+    Object.keys(yearData).forEach(key => {
+      if (key !== 'year' && key !== 'fullYear') {
+        if (!topVenues.includes(key)) {
+          formatted.other += yearData[key];
+          delete formatted[key];
+        }
+      }
+    });
+    return formatted;
+  });
+}, [allSetsList]);
+
+// Get the list of venue keys for the <Bar /> components
+const venueKeys = useMemo(() => {
+  const keys = new Set();
+  stackedTimelineData.forEach(d => {
+    Object.keys(d).forEach(k => {
+      if (k !== 'year' && k !== 'fullYear' && k !== 'other') keys.add(k);
+    });
+  });
+  return [...keys, 'other'];
+}, [stackedTimelineData]);
+
   const timelineData = useMemo(() => {
     const m = {};
     allSetsList.forEach(s => { const y = getYear(s.date); if (y) m[y] = (m[y] || 0) + 1; });
@@ -3983,16 +4036,26 @@ async function handleUpcomingDelete(id) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: 16, marginBottom: 16 }}>
                 <VenueDonutCard concerts={concerts} onNavigateToVenues={() => setActiveTab('venues')} />
                 <Card neon>
-                  <CardTitle>Sets Per Year — click a bar to jump to that year</CardTitle>
+                  <CardTitle>Sets Per Year by Venue 📍</CardTitle>
                   <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={timelineData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }} onClick={data => { if (data?.activePayload?.[0]?.payload?.fullYear) { setActiveTab('timeline'); } }}>
+                    <BarChart data={stackedTimelineData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }} onClick={data => { if (data?.activePayload?.[0]?.payload?.fullYear) { setActiveTab('timeline'); } }}>
                       <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
                       <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
                       <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
-                      <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10 }} cursor={{ fill: 'rgba(0,229,204,0.08)' }} />
-                      <Bar dataKey="count" radius={[4, 4, 0, 0]} style={{ cursor: 'pointer' }}>
-                        {timelineData.map((entry, index) => <Cell key={`cell-${index}`} fill={C.teal} />)}
-                      </Bar>
+                      <Tooltip 
+                        contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10, fontFamily: "'Space Mono'" }} 
+                        cursor={{ fill: 'rgba(255,255,255,0.05)' }} 
+                      />
+                      {/* Dynamic Venue Stacks */}
+                      {venueKeys.map((venue, index) => (
+                        <Bar 
+                          key={venue} 
+                          dataKey={venue} 
+                          stackId="a" 
+                          fill={venue === 'other' ? '#445566' : ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88'][index % 5]} 
+                          style={{ cursor: 'pointer' }}
+                        />
+                      ))}
                     </BarChart>
                   </ResponsiveContainer>
                 </Card>
