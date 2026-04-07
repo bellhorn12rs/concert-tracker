@@ -507,7 +507,7 @@ function MasterLanyard({ concerts, artistGenres, genreStats }) {
     </div>
   );
 }
-// ─── STYLES (POSTER & TEXTURE EDITION) ─────────────────────────────────────────
+// ─── STYLES (PHYSICAL ARCHIVE & STABILIZED EDITION) ───────────────────────────
 const MarqueeStyles = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Monoton&family=Bebas+Neue&family=Space+Mono&family=Caveat:wght@600;700&family=UnifrakturMaguntia&display=swap');
@@ -529,13 +529,6 @@ const MarqueeStyles = () => (
       background: radial-gradient(circle, rgba(0, 229, 204, 0.07) 0%, transparent 70%);
       pointer-events: none; z-index: -1;
     }
-    body::after {
-      content: "";
-      position: fixed;
-      bottom: -10%; right: -10%; width: 50%; height: 50%;
-      background: radial-gradient(circle, rgba(153, 102, 255, 0.07) 0%, transparent 70%);
-      pointer-events: none; z-index: -1;
-    }
 
     .card-texture {
       background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.03) 1px, transparent 0);
@@ -555,70 +548,51 @@ const MarqueeStyles = () => (
       letter-spacing: -0.05em;
     }
 
-/* Replaces/Adds to MarqueeStyles */
+    /* 📀 TURNTABLE & RECORD PLAYER */
+    @keyframes spin-record {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .record-vinyl { 
+      animation: spin-record 4s linear infinite; 
+      transform-origin: center;
+    }
 
-/* Fixed interactive states */
-.crate-sleeve { 
-  cursor: pointer; 
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s; 
-}
-.crate-sleeve:hover { transform: translateY(-8px); filter: brightness(1.2); }
-.crate-sleeve.active { filter: brightness(1.3); border-width: 2px; }
+    /* 🔘 INTERACTIVE STAT CRATE */
+    .crate-sleeve { 
+      cursor: pointer; 
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, filter 0.2s; 
+      will-change: transform;
+    }
+    .crate-sleeve:hover { transform: translateY(-5px); filter: brightness(1.2); }
+    .crate-sleeve:active { transform: translateY(-2px); }
 
-/* Stage Lights Animation */
-@keyframes beam-sweep {
-  0%, 100% { transform: rotate(-20deg); opacity: 0.3; }
-  50% { transform: rotate(20deg); opacity: 0.8; }
-}
-.stage-light {
-  animation: beam-sweep 3s ease-in-out infinite;
-  transform-origin: top;
-}
+    /* 🎭 STAGE LIGHTS */
+    @keyframes beam-sweep {
+      0%, 100% { transform: rotate(-15deg) scaleY(1); opacity: 0.2; }
+      50% { transform: rotate(15deg) scaleY(1.1); opacity: 0.5; }
+    }
+    .stage-light {
+      animation: beam-sweep 4s ease-in-out infinite;
+      transform-origin: top;
+    }
 
-/* Fix for the Wristband Bin display */
-.wristband-bin {
-  scrollbar-width: thin;
-  scrollbar-color: ${C.teal}44 transparent;
-}
+    /* 🎫 WRISTBAND BIN */
+    .wristband-bin::-webkit-scrollbar { width: 4px; }
+    .wristband-bin::-webkit-scrollbar-track { background: transparent; }
+    .wristband-bin::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
 
-@keyframes spin-record {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-.record-vinyl { 
-  animation: spin-record 4s linear infinite; 
-  transform-origin: center;
-}
-/* Stops the buttons from jumping layout when hovered */
-.crate-sleeve {
-  cursor: pointer;
-  transition: transform 0.2s ease, filter 0.2s ease;
-  will-change: transform;
-}
-.crate-sleeve:hover {
-  transform: translateY(-15px) rotate(-2deg);
-  z-index: 10;
-}
-.wristband-bin::-webkit-scrollbar { width: 4px; }
-.wristband-bin::-webkit-scrollbar-thumb { background: ${C.teal}44; border-radius: 10px; }
+    /* ⏳ ANIMATIONS */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .pass-float { animation: float 3s ease-in-out infinite; }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-}
-.pass-float {
-  animation: float 3s ease-in-out infinite;
-}
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-}
-
-    /* ── PHYSICAL ARCHIVE ANIMATIONS ── */
     @keyframes peel-and-stick {
       0% { transform: translateY(20px) scale(1.1) rotate(-5deg); opacity: 0; filter: blur(4px); }
       60% { transform: translateY(-2px) scale(1) rotate(2deg); opacity: 1; filter: blur(0); }
-      100% { transform: translateY(0) scale(1) rotate(var(--r)); opacity: 1; }
+      100% { transform: translateY(0) scale(1) rotate(var(--r, 0deg)); opacity: 1; }
     }
 
     @keyframes tape-slam {
@@ -626,18 +600,10 @@ const MarqueeStyles = () => (
       100% { transform: scale(1) translateY(0) translateX(-50%); opacity: 0.8; }
     }
 
-    @keyframes scrap-fall {
-      0% { transform: translateY(-40px) rotate(var(--r, 0deg)); opacity: 0; }
-      65% { transform: translateY(5px) rotate(var(--r, 0deg)); opacity: 1; }
-      100% { transform: translateY(0) rotate(var(--r, 0deg)); opacity: 1; }
-    }
+    .fade-in { animation: fade-in-kf 0.4s ease both; }
+    @keyframes fade-in-kf { from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
 
-    @keyframes tape-drop {
-      0% { transform: translateX(-50%) translateY(-10px) scaleX(0.5); opacity: 0; }
-      70% { transform: translateX(-50%) translateY(2px) scaleX(1.06); opacity: 0.9; }
-      100% { transform: translateX(-50%) translateY(0) scaleX(1); opacity: 0.75; }
-    }
-
+    /* 🏛️ ARCHIVE UI ELEMENTS */
     .scrap-paper {
       background-image: 
         repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(0,0,0,0.01) 20px, rgba(0,0,0,0.01) 21px),
@@ -647,62 +613,18 @@ const MarqueeStyles = () => (
       position: relative;
     }
 
-    .scrap-paper::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      opacity: 0.04;
-      pointer-events: none;
-      background: url("https://www.transparenttextures.com/patterns/stardust.png");
-    }
-
-    @keyframes slot-machine {
-      0% { transform: translateY(0); opacity: 1; }
-      20% { transform: translateY(-10px); opacity: 0.5; }
-      21% { transform: translateY(10px); opacity: 0; }
-      100% { transform: translateY(0); opacity: 1; }
-    }
-    .spinning-text { animation: slot-machine 0.1s infinite; }
-
-    @keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+    .marquee-text { display: inline-block; padding-left: 100%; animation: marquee 75s linear infinite; }
     @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
     @keyframes chasing-bulb { 0%,100%{opacity:0.3; transform:scale(0.8)} 50%{opacity:1; transform:scale(1.1)} }
     @keyframes ferris-rotate { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-    @keyframes flicker { 0%,98%,100%{opacity:1} 99%{opacity:0.8} }
-
-    .fade-in { animation: fade-in-kf 0.4s ease both; }
-    @keyframes fade-in-kf { from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
-
-    .ticket-hover:hover { transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) scale(1.02); }
-    .ticket-hover { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-
-    .marquee-text { display: inline-block; padding-left: 100%; animation: marquee 75s linear infinite; }
-    .marquee-flicker { animation: flicker 6s infinite; }
     .ferris-wheel-ring { animation: ferris-rotate 20s linear infinite; transform-origin: center; }
 
-    .tab-active { position: relative; }
     .tab-active::after { 
       content: ''; position: absolute; bottom: 0; left: 15%; right: 15%; height: 2px; 
       background: var(--tab-color, #00e5cc); 
-      box-shadow: 0 0 10px var(--tab-color, #00e5cc), 0 0 20px var(--tab-color, #00e5cc);
+      box-shadow: 0 0 10px var(--tab-color, #00e5cc);
     }
 
-    .sticky-year {
-      position: sticky;
-      top: 120px;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 6rem;
-      line-height: 1;
-      writing-mode: vertical-rl;
-      transform: rotate(180deg);
-      white-space: nowrap;
-      user-select: none;
-      pointer-events: none;
-    }
-
-    .perf-edge { background-image: radial-gradient(circle at 0 50%, transparent 8px, #111118 8px); background-size: 1px 20px; }
-    .wristband { background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px); }
-    
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
@@ -1538,26 +1460,25 @@ function SonicDNA({ stats, onGenreClick }) {
   );
 }
 
-// ─── 1. THE HIGH-DEF TURNTABLE (LEFT) ─────────────────────────
+// ─── 1. THE TURNTABLE (LEFT) ───────────────────────────────────────────
 function DonutChart({ fest, solo, concerts }) {
   const [mode, setMode] = useState('fest');
-  // Safety guard to prevent white screen crash
   if (!concerts || concerts.length === 0) return null;
 
   const stats = useMemo(() => {
     if (mode === 'legacy') {
       const legacy = concerts.filter(c => getYear(c.date) <= 2014).length;
-      return { val1: legacy, val2: concerts.length - legacy, label: 'LEGACY', sub: 'CLASSICS', color: C.gold };
+      return { val1: legacy, val2: concerts.length - legacy, label: 'LEGACY', sub: 'CLASSICS', color: '#ffcc00' };
     }
     if (mode === 'city') {
       const home = concerts.filter(c => c.city === "Austin").length;
-      return { val1: home, val2: concerts.length - home, label: 'HOME', sub: 'TURF', color: C.cyan };
+      return { val1: home, val2: concerts.length - home, label: 'HOME', sub: 'TURF', color: '#00cfff' };
     }
     if (mode === 'weekend') {
       const wknd = concerts.filter(c => [0,5,6].includes(new Date(c.date+'T12:00:00').getDay())).length;
-      return { val1: wknd, val2: concerts.length - wknd, label: 'WEEKEND', sub: 'WARRIOR', color: C.purple };
+      return { val1: wknd, val2: concerts.length - wknd, label: 'WEEKEND', sub: 'WARRIOR', color: '#9966ff' };
     }
-    return { val1: fest, val2: solo, label: 'FEST', sub: 'RATIO', color: C.teal };
+    return { val1: fest, val2: solo, label: 'FEST', sub: 'RATIO', color: '#00e5cc' };
   }, [mode, fest, solo, concerts]);
 
   const total = stats.val1 + stats.val2 || 1;
@@ -1565,63 +1486,53 @@ function DonutChart({ fest, solo, concerts }) {
   const r = 48, cx = 70, cy = 70, circ = 2 * Math.PI * r;
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', height: '100%', userSelect: 'none' }}>
-      {/* HEADER LEGEND */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 15, marginBottom: 15, paddingBottom: 10, borderBottom: `1px solid ${C.border}` }}>
+    <div style={{ display:'flex', flexDirection:'column', height: '100%' }}>
+      {/* 🏷️ HEADER LEGEND */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 15, marginBottom: 15, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: stats.color, letterSpacing: 1 }}>{stats.label}</div>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{stats.val1}</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 1 }}>OTHER</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.grayDim }}>{stats.val2}</div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#444', letterSpacing: 1 }}>OTHER</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#444' }}>{stats.val2}</div>
         </div>
       </div>
 
-      {/* THE PLAYER */}
-      <div style={{ 
-        position: 'relative', width: 150, height: 150, background: '#111', 
-        borderRadius: 4, border: '1px solid #222', padding: 5, alignSelf: 'center',
-        boxShadow: 'inset 0 0 20px #000, 0 10px 20px rgba(0,0,0,0.5)'
-      }}>
+      {/* 📀 THE PLAYER */}
+      <div style={{ position: 'relative', width: 150, height: 150, background: '#111', borderRadius: 4, border: '1px solid #222', padding: 5, alignSelf: 'center', boxShadow: 'inset 0 0 20px #000, 0 10px 20px rgba(0,0,0,0.5)' }}>
         <svg className="record-vinyl" width="140" height="140" viewBox="0 0 140 140">
-          {/* Deep Black Vinyl Disc */}
           <circle cx={cx} cy={cy} r={66} fill="#050505" stroke="#181818" strokeWidth={1} />
-          {/* Subtle Grooves */}
-          {[60, 54, 48, 42].map(rad => (
-            <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#111" strokeWidth={0.5} />
-          ))}
-          {/* The Progress Lightring */}
+          {[60, 54, 48, 42].map(rad => <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#111" strokeWidth={0.5} />)}
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={8} />
           <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={8} 
             strokeDasharray={`${pct * circ} ${circ}`} strokeLinecap="round" 
             transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 6px ${stats.color})`, transition: 'all 0.5s' }} 
           />
-          {/* Center Label */}
           <circle cx={cx} cy={cy} r={15} fill={stats.color} stroke="#000" strokeWidth={2} />
           <circle cx={cx} cy={cy} r={2} fill="#000" />
         </svg>
-        {/* Tone Arm */}
-        <div style={{ position:'absolute', top:10, right:10, width:4, height:65, background:'#333', transform:'rotate(20deg)', transformOrigin:'top', borderRadius:2, zIndex: 5 }} />
+        <div style={{ position:'absolute', top:10, right:10, width:4, height:65, background:'#333', transform:'rotate(20deg)', transformOrigin:'top', borderRadius:2 }} />
       </div>
 
-      {/* STAT SWITCHER CRATE */}
+      {/* 🔘 SWITCHER BUTTONS */}
       <div style={{ display: 'flex', gap: 5, height: 40, marginTop: 20 }}>
         {[
-          { id: 'fest', col: C.teal, icon: '🎪' },
-          { id: 'legacy', col: C.gold, icon: '📜' },
-          { id: 'city', col: C.cyan, icon: '📍' },
-          { id: 'weekend', col: C.purple, icon: '🍺' }
+          { id: 'fest', col: '#00e5cc', icon: '🎪' },
+          { id: 'legacy', col: '#ffcc00', icon: '📜' },
+          { id: 'city', col: '#00cfff', icon: '📍' },
+          { id: 'weekend', col: '#9966ff', icon: '🍺' }
         ].map((item) => (
           <div key={item.id} 
             onMouseDown={() => setMode(item.id)}
             className="crate-sleeve" 
             style={{ 
               flex: 1, height: mode === item.id ? '100%' : '80%', 
-              background: mode === item.id ? item.col : `${item.col}15`, 
-              border: `1px solid ${item.col}${mode === item.id ? '' : '44'}`, 
-              borderRadius: '2px 2px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14
+              background: mode === item.id ? item.col : 'rgba(255,255,255,0.05)', 
+              border: `1px solid ${mode === item.id ? item.col : 'rgba(255,255,255,0.1)'}`, 
+              borderRadius: '2px 2px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-            {item.icon}
+            <span style={{ filter: mode === item.id ? 'none' : 'grayscale(100%) opacity(0.5)' }}>{item.icon}</span>
           </div>
         ))}
       </div>
@@ -1629,10 +1540,10 @@ function DonutChart({ fest, solo, concerts }) {
   );
 }
 
-// ─── 2. THE WRISTBAND BIN (MIDDLE) ──────────────────────────
+// ─── 2. THE PHYSICAL WRISTBANDS (MIDDLE) ──────────────────────────
 function TopFestBlocks({ festBreakdown, concerts }) {
   if (!concerts || !festBreakdown || festBreakdown.length === 0) return null;
-  const colors = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699'];
+  const colors = ['#00e5cc', '#00cfff', '#9966ff', '#ffcc00', '#00cc88', '#ff6699'];
 
   return (
     <div className="wristband-bin" style={{ display:'flex', flexDirection:'column', gap:10, height: 310, overflowY: 'auto', paddingRight: 5 }}>
@@ -1642,11 +1553,14 @@ function TopFestBlocks({ festBreakdown, concerts }) {
         const uniqueActs = new Set(festShows.flatMap(s => s.bands || [])).size;
         return (
           <div key={name} style={{ display:'flex', alignItems:'center', position: 'relative' }}>
+            {/* Clasp */}
             <div style={{ position:'absolute', left: 38, width: 14, height: 20, background: '#111', border: `1px solid ${color}`, borderRadius: 2, zIndex: 10 }} />
+            {/* RFID Chip */}
             <div style={{ width: 45, height: 42, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', borderRadius: 4, zIndex: 5 }}>
                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#000', lineHeight: 0.8 }}>{days}</div>
                <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: '#000', fontWeight: 900 }}>DAYS</div>
             </div>
+            {/* Fabric Band */}
             <div style={{ flex: 1, height: 30, marginLeft: -10, padding: '0 20px 0 35px', background: color, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '0 4px 4px 0', boxShadow: 'inset 0 0 15px rgba(0,0,0,0.2)' }}>
                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#000', letterSpacing: 0.5 }}>{name.toUpperCase()}</div>
                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: 'rgba(0,0,0,0.4)', fontWeight: 900 }}>{uniqueActs} ACTS</div>
@@ -1658,7 +1572,7 @@ function TopFestBlocks({ festBreakdown, concerts }) {
   );
 }
 
-// ─── 3. THE DECADE STACK (RIGHT) ────────────────────────────────
+// ─── 3. THE DECADE STAGE (RIGHT) ────────────────────────────────
 function DecadeBlocks({ sets }) {
   if (!sets) return null;
   const counts = {'90s':0,'00s':0,'10s':0,'20s':0};
@@ -1668,37 +1582,52 @@ function DecadeBlocks({ sets }) {
   });
 
   const media = {
-    '90s': { label: 'TAPE', icon: '📼', color: C.purple },
-    '00s': { label: 'DISC', icon: '💿', color: C.cyan },
-    '10s': { label: 'STREAM', icon: '📱', color: C.teal },
-    '20s': { label: 'HYPER', icon: '🧬', color: C.gold }
+    '90s': { label: 'TAPE', icon: '📼', color: '#9966ff' },
+    '00s': { label: 'DISC', icon: '💿', color: '#00cfff' },
+    '10s': { label: 'STREAM', icon: '📱', color: '#00e5cc' },
+    '20s': { label: 'HYPER', icon: '🧬', color: '#ffcc00' }
   };
   const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
-    <div style={{ display:'grid', gridTemplateColumns: '1fr 60px', height: '100%', gap: 15 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {Object.entries(counts).map(([decade, count]) => {
-          const m = media[decade];
-          return (
-            <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.02)', padding: '8px 10px', borderRadius: 4, borderLeft: `3px solid ${m.color}` }}>
-              <div style={{ fontSize: '1.2rem' }}>{m.icon}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                  <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: m.color }}>{m.label}</span>
-                  <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff' }}>{decade}</span>
-                </div>
-                <div style={{ height: 3, background: '#000', borderRadius: 2 }}>
-                  <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.color }} />
-                </div>
-              </div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', width: 25, textAlign: 'right' }}>{count}</div>
-            </div>
-          );
-        })}
+    <div style={{ display:'flex', flexDirection: 'column', height: '100%', gap: 15 }}>
+      {/* 🎭 MINI STAGE WITH LIGHTS */}
+      <div style={{ height: 60, background: '#050505', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', position: 'relative', overflow: 'hidden' }}>
+        {[ '#00e5cc', '#9966ff', '#ffcc00', '#00cfff' ].map((col, i) => (
+          <div key={i} className="stage-light" style={{ 
+            position: 'absolute', left: `${20 + i * 20}%`, top: -10, width: 30, height: 80, 
+            background: `radial-gradient(circle at top, ${col}44, transparent 70%)`, filter: 'blur(8px)' 
+          }} />
+        ))}
+        <div style={{ position: 'absolute', bottom: 0, width: '100%', height: 4, background: '#111' }} />
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff', opacity: 0.4 }}>ARCHIVE_STAGE_01</div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderLeft: `1px dashed ${C.border}` }}>
-         <FerrisWheel size={50} />
+
+      <div style={{ display:'grid', gridTemplateColumns: '1fr 60px', flex: 1, gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {Object.entries(counts).map(([decade, count]) => {
+            const m = media[decade];
+            return (
+              <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.02)', padding: '6px 10px', borderRadius: 4, borderLeft: `3px solid ${m.color}` }}>
+                <div style={{ fontSize: '1.1rem' }}>{m.icon}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                    <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: m.color }}>{m.label}</span>
+                    <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: '#fff' }}>{decade}</span>
+                  </div>
+                  <div style={{ height: 2, background: '#000', borderRadius: 1 }}>
+                    <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.color }} />
+                  </div>
+                </div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#fff', width: 20, textAlign: 'right' }}>{count}</div>
+              </div>
+            );
+          })}
+        </div>
+        {/* Balanced Ferris Wheel */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderLeft: '1px dashed rgba(255,255,255,0.1)' }}>
+           <FerrisWheel size={45} />
+        </div>
       </div>
     </div>
   );
