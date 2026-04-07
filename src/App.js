@@ -556,6 +556,17 @@ const MarqueeStyles = () => (
     }
 
 /* Replaces/Adds to MarqueeStyles */
+
+.crate-sleeve { cursor: pointer; transition: all 0.2s; }
+.crate-sleeve:hover { transform: translateY(-12px); filter: brightness(1.2); }
+.crate-sleeve.active { height: 55px !important; filter: brightness(1.3); border-width: 2px; }
+
+/* Fix for the Wristband Bin display */
+.wristband-bin {
+  scrollbar-width: thin;
+  scrollbar-color: ${C.teal}44 transparent;
+}
+
 @keyframes spin-record {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -1510,87 +1521,118 @@ function SonicDNA({ stats, onGenreClick }) {
   );
 }
 
-// ─── 1. THE TURNTABLE (INFINITE SPIN + CRATE) ─────────────────────────
-function DonutChart({ fest, solo }) {
-  const total = (fest + solo) || 1;
-  const festPct = fest / total;
-  const r = 50; const cx = 70; const cy = 70;
-  const circ = 2 * Math.PI * r;
-  const festDash = festPct * circ;
-  
+// ─── 1. THE INTERACTIVE TURNTABLE (LEFT) ─────────────────────────
+function DonutChart({ fest, solo, concerts, allSetsList }) {
+  const [mode, setMode] = useState('fest'); // modes: fest, setlist, city, weekend
+
+  // Data Calculations based on mode
+  const stats = useMemo(() => {
+    if (mode === 'setlist') {
+      const has = concerts.filter(c => c.has_setlist || c.has_setlist_names).length;
+      return { val1: has, val2: concerts.length - has, label: 'ARCHIVED', sub: 'SETLISTS', color: C.gold };
+    }
+    if (mode === 'city') {
+      const topCity = "Austin"; // You can make this dynamic
+      const home = concerts.filter(c => c.city === topCity).length;
+      return { val1: home, val2: concerts.length - home, label: 'HOME', sub: 'AUSTIN', color: C.cyan };
+    }
+    if (mode === 'weekend') {
+      const wknd = concerts.filter(c => [0,5,6].includes(new Date(c.date+'T12:00:00').getDay())).length;
+      return { val1: wknd, val2: concerts.length - wknd, label: 'WEEKEND', sub: 'WARRIOR', color: C.purple };
+    }
+    return { val1: fest, val2: solo, label: 'FEST', sub: 'RATIO', color: C.teal };
+  }, [mode, fest, solo, concerts]);
+
+  const total = stats.val1 + stats.val2 || 1;
+  const pct = stats.val1 / total;
+  const r = 50, cx = 70, cy = 70, circ = 2 * Math.PI * r;
+
   return (
-    <div style={{ display:'flex', flexDirection:'column', height: '100%', gap: 20 }}>
+    <div style={{ display:'flex', flexDirection:'column', height: '100%', gap: 15 }}>
       <div className="turntable" style={{ 
-        position: 'relative', width: 160, height: 160, background: '#181818', 
+        position: 'relative', width: 160, height: 160, background: '#121212', 
         borderRadius: 4, border: '1px solid #222', padding: 10, alignSelf: 'center',
         boxShadow: 'inset 0 0 30px #000, 0 10px 30px rgba(0,0,0,0.5)'
       }}>
-        <div style={{ position:'absolute', inset: 8, borderRadius: '50%', background: '#111', border: '2px solid #222' }} />
         <svg className="record-platter-continuous" width="140" height="140" viewBox="0 0 140 140">
           <circle cx={cx} cy={cy} r={68} fill="#050505" />
-          {[60, 55, 50, 45, 40].map(rad => (
-            <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#111" strokeWidth={0.5} />
-          ))}
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.border} strokeWidth={10} opacity={0.2} />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.teal} strokeWidth={10} 
-            strokeDasharray={`${festDash} ${circ}`} strokeLinecap="round" 
-            transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 8px ${C.teal})` }} 
+          {[60, 50, 40].map(rad => <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#111" strokeWidth={0.5} />)}
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.border} strokeWidth={10} opacity={0.1} />
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={10} 
+            strokeDasharray={`${pct * circ} ${circ}`} strokeLinecap="round" 
+            transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 8px ${stats.color})`, transition: 'all 0.5s ease' }} 
           />
-          <circle cx={cx} cy={cy} r={18} fill={C.teal} stroke="#000" strokeWidth={1} />
-          <circle cx={cx} cy={cy} r={3} fill="#000" />
-          <text x={cx} y={cy+25} textAnchor="middle" style={{ fontFamily:"'Space Mono'", fontSize:5, fill:C.white, fontWeight: 900 }}>{Math.round(festPct*100)}% FEST</text>
+          <circle cx={cx} cy={cy} r={ mode === 'fest' ? 18 : 14} fill={stats.color} stroke="#000" strokeWidth={1} style={{ transition: 'all 0.3s' }} />
+          <text x={cx} y={cy+4} textAnchor="middle" style={{ fontFamily:"'Bebas Neue'", fontSize: 10, fill:'#000', fontWeight: 900 }}>{Math.round(pct*100)}%</text>
         </svg>
-        <div style={{ position:'absolute', top:15, right:15, width:6, height:70, background:'linear-gradient(to bottom, #555, #222)', transform:'rotate(25deg)', transformOrigin:'top', borderRadius:4, border:'1px solid #111', zIndex: 5 }} />
+        <div style={{ position:'absolute', top:15, right:15, width:6, height:70, background:'linear-gradient(to bottom, #555, #222)', transform:'rotate(25deg)', transformOrigin:'top', borderRadius:4, zIndex: 5 }} />
       </div>
 
-      <div style={{ marginTop: 'auto', padding: '0 10px' }}>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, marginBottom: 8, letterSpacing: 2 }}>COLLECTION_LOG.BIN</div>
-        <div style={{ display: 'flex', gap: 4, height: 60, alignItems: 'flex-end', paddingBottom: 5, borderBottom: `2px solid ${C.border}` }}>
-          {[C.teal, C.purple, C.gold, C.cyan, C.green, C.teal].map((col, i) => (
-            <div key={i} className="crate-sleeve" style={{ 
-              flex: 1, height: `${40 + (i % 3) * 10}px`, 
-              background: `linear-gradient(to bottom, ${col}44, ${col}11)`, 
-              border: `1px solid ${col}66`, borderRadius: '2px 2px 0 0',
-              position: 'relative'
-            }}>
-              <div style={{ position:'absolute', top:4, left:'50%', transform:'translateX(-50%)', width: '60%', height: 2, background: col, opacity: 0.5 }} />
+      <div style={{ marginTop: 'auto' }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: stats.color, marginBottom: 8, letterSpacing: 2, textAlign: 'center' }}>
+           SELECT_STATS_CRATE.EXE
+        </div>
+        <div style={{ display: 'flex', gap: 6, height: 50, alignItems: 'flex-end', padding: '0 5px' }}>
+          {[
+            { id: 'fest', col: C.teal, icon: '🎪' },
+            { id: 'setlist', col: C.gold, icon: '📋' },
+            { id: 'city', col: C.cyan, icon: '📍' },
+            { id: 'weekend', col: C.purple, icon: '🍺' }
+          ].map((item) => (
+            <div key={item.id} 
+              onClick={() => setMode(item.id)}
+              className={`crate-sleeve ${mode === item.id ? 'active' : ''}`} 
+              style={{ 
+                flex: 1, height: mode === item.id ? 45 : 35, 
+                background: mode === item.id ? item.col : `${item.col}22`, 
+                border: `1px solid ${item.col}`, borderRadius: '2px 2px 0 0',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12
+              }}>
+              {item.icon}
             </div>
           ))}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-           <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.teal }}>{fest + solo} <span style={{ fontSize: 8, color: C.gray, fontFamily: "'Space Mono'" }}>LTD SHOWS</span></span>
+        <div style={{ textAlign: 'center', marginTop: 10 }}>
+           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: stats.color, lineHeight: 1 }}>{stats.label} {stats.sub}</div>
+           <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>CLICK SLEEVES TO SWITCH MODE</div>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── 2. THE WRISTBAND BIN (SCROLLABLE LOG) ──────────────────────────
+// ─── 2. THE WRISTBAND BIN (FIXED MIDDLE) ──────────────────────────
 function TopFestBlocks({ festBreakdown, concerts }) {
-  const colors = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699'];
-  const getFestStats = (name) => {
-    const festShows = concerts.filter(c => c.festival_name === name);
-    const artists = new Set(festShows.flatMap(s => s.bands || []));
-    return { sets: festShows.length, acts: artists.size };
-  };
+  if (!festBreakdown || festBreakdown.length === 0) return <div style={{ color: C.gray, textAlign: 'center', padding: 20, fontFamily: "'Space Mono'", fontSize: 10 }}>INITIALIZING FESTIVAL DATA...</div>;
 
+  const colors = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699'];
+  
   return (
-    <div className="wristband-bin" style={{ display:'flex', flexDirection:'column', gap:10, maxHeight: 290, overflowY: 'auto', paddingRight: 8, scrollbarWidth: 'none' }}>
+    <div className="wristband-bin" style={{ 
+      display:'flex', flexDirection:'column', gap:10, 
+      height: 300, overflowY: 'auto', paddingRight: 8
+    }}>
       {festBreakdown.map(([name, days], i) => {
         const color = colors[i % colors.length];
-        const stats = getFestStats(name);
+        // Calculate stats inside the map
+        const festShows = concerts.filter(c => c.festival_name === name);
+        const uniqueActs = new Set(festShows.flatMap(s => s.bands || [])).size;
+
         return (
-          <div key={name} style={{ display:'flex', alignItems:'center', background: '#080808', border: `1px solid ${color}22`, borderRadius: 6, height: 50, overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
+          <div key={name} style={{ 
+            display:'flex', alignItems:'center', background: '#0a0a0a',
+            border: `1px solid ${color}33`, borderRadius: 6, height: 50, flexShrink: 0, overflow: 'hidden'
+          }}>
             <div style={{ width: 45, height: '100%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#000', lineHeight: 0.8 }}>{days}</div>
-               <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#000', fontWeight: 900 }}>LOGS</div>
+               <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#000', fontWeight: 900 }}>DAYS</div>
             </div>
-            <div style={{ flex: 1, padding: '0 15px', background: `repeating-linear-gradient(45deg, transparent, transparent 5px, ${color}03 5px, ${color}03 10px)` }}>
-               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', letterSpacing: 1 }}>{name.toUpperCase()}</div>
-               <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: color, opacity: 0.7 }}>{stats.acts} UNIQUE ACTS ARCHIVED</div>
+            <div style={{ flex: 1, padding: '0 15px' }}>
+               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', letterSpacing: 0.5 }}>{name.toUpperCase()}</div>
+               <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: color, opacity: 0.8 }}>{uniqueActs} UNIQUE ACTS LOGGED</div>
             </div>
             <div style={{ padding: '0 12px', textAlign: 'right', borderLeft: '1px dashed #222' }}>
-               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.white }}>{stats.sets}</div>
+               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.white }}>{festShows.length}</div>
                <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.gray }}>SETS</div>
             </div>
           </div>
@@ -1600,19 +1642,41 @@ function TopFestBlocks({ festBreakdown, concerts }) {
   );
 }
 
-// ─── 3. THE DECADE MEDIA STACK ──────────────────────────────────────
+// ─── 3. THE DECADE MEDIA STACK (RIGHT) ────────────────────────────────
 function DecadeBlocks({ sets }) {
-  const counts = {'90s':0,'00s':0,'10s':0,'20s':0};
-  sets.forEach(s => { 
-    const y = getYear(s.date); if(!y) return; 
-    if(y < 2000) counts['90s']++; else if(y < 2010) counts['00s']++; else if(y < 2020) counts['10s']++; else counts['20s']++; 
-  });
+  const counts = useMemo(() => {
+    const c = {'90s':0,'00s':0,'10s':0,'20s':0};
+    sets.forEach(s => { 
+      const y = getYear(s.date); if(!y) return; 
+      if(y < 2000) c['90s']++; else if(y < 2010) c['00s']++; 
+      else if(y < 2020) c['10s']++; else c['20s']++; 
+    });
+    return c;
+  }, [sets]);
+
   const media = {
-    '90s': { label: 'ANALOG', icon: '📼', color: C.purple, bg: '#1a0a1a' },
-    '00s': { label: 'DIGITAL', icon: '💿', color: C.cyan, bg: '#0a1a1a' },
-    '10s': { label: 'STREAM', icon: '📱', color: C.teal, bg: '#0a1a0a' },
-    '20s': { label: 'HYPER', icon: '🧬', color: C.gold, bg: '#1a1a0a' }
+    '90s': { label: 'TAPE', color: C.purple, bg: '#1a0a1a', graphic: (col) => (
+      <div style={{ width: 30, height: 18, border: `2px solid ${col}`, borderRadius: 2, position: 'relative', display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+        <div style={{ width: 6, height: 6, borderRadius: '50%', border: `1px solid ${col}` }} /><div style={{ width: 6, height: 6, borderRadius: '50%', border: `1px solid ${col}` }} />
+      </div>
+    )},
+    '00s': { label: 'DISC', color: C.cyan, bg: '#0a1a1a', graphic: (col) => (
+      <div style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${col}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: col }} />
+      </div>
+    )},
+    '10s': { label: 'WAVE', color: C.teal, bg: '#0a1a0a', graphic: (col) => (
+      <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+        {[8, 14, 10, 18, 6].map((h, i) => <div key={i} style={{ width: 2, height: h, background: col, borderRadius: 1 }} />)}
+      </div>
+    )},
+    '20s': { label: 'DATA', color: C.gold, bg: '#1a1a0a', graphic: (col) => (
+      <div style={{ width: 20, height: 20, border: `1px solid ${col}`, position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, padding: 2 }}>
+        {[1, 2, 3, 4].map(i => <div key={i} style={{ background: col, opacity: 0.6 }} />)}
+      </div>
+    )}
   };
+
   const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
@@ -1620,23 +1684,26 @@ function DecadeBlocks({ sets }) {
       {Object.entries(counts).map(([decade, count]) => {
         const m = media[decade];
         return (
-          <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: 10, background: m.bg, border: `1px solid ${m.color}33`, borderRadius: 6, padding: '8px 12px' }}>
-            <div style={{ fontSize: '1.5rem', filter: `drop-shadow(0 0 5px ${m.color}66)` }}>{m.icon}</div>
+          <div key={decade} style={{ 
+            display: 'flex', alignItems: 'center', gap: 12,
+            background: m.bg, border: `1px solid ${m.color}33`, borderRadius: 6, padding: '10px 12px'
+          }}>
+            <div style={{ width: 40, display: 'flex', justifyContent: 'center' }}>{m.graphic(m.color)}</div>
             <div style={{ flex: 1 }}>
                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: m.color, letterSpacing: 1 }}>{m.label} ERA</span>
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: m.color, letterSpacing: 1 }}>{m.label}</span>
                   <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#fff' }}>{decade}</span>
                </div>
                <div style={{ height: 3, background: '#000', borderRadius: 2 }}>
                   <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.color, boxShadow: `0 0 8px ${m.color}` }} />
                </div>
             </div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.white, width: 40, textAlign: 'right' }}>{count}</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: C.white, width: 45, textAlign: 'right' }}>{count}</div>
           </div>
         );
       })}
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
-         <FerrisWheel size={80} />
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 5 }}>
+         <FerrisWheel size={70} />
       </div>
     </div>
   );
