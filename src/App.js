@@ -4178,24 +4178,71 @@ async function handleUpcomingDelete(id) {
               <span style={{ color: C.white, fontWeight: 700 }}>{headerStats.totalSets.toLocaleString()} SETS 🤘</span>
             </div>
 
-           {/* Neon stat tiles */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 0, borderTop: `1px solid ${C.border}`, marginTop: 0 }}>
-              {[
-                { value: headerStats.totalSets, label: 'TOTAL SETS', sub: 'individual performances', color: C.teal, icon: '🎵' },
-                { value: headerStats.uniqueArtists, label: 'UNIQUE ARTISTS', sub: 'bands & performers', color: C.cyan, icon: '🎤' },
-                { value: headerStats.totalShows, label: 'SHOW DAYS', sub: `${headerStats.festDays} fest · ${headerStats.totalShows - headerStats.festDays} solo`, color: C.purple, icon: '📅' },
-                { value: headerStats.setlistCount, label: 'SETLISTS', sub: 'click to view vault', color: C.gold, icon: '📋', onClick: () => setActiveTab('vault') },
-              ].map((s, i) => (
-                <div key={s.label} onClick={s.onClick}
-                  style={{ padding: '20px 16px', borderRight: i < 3 ? `1px solid ${C.border}` : 'none', textAlign: 'center', cursor: s.onClick ? 'pointer' : 'default', position: 'relative', overflow: 'hidden', transition: 'background 0.2s' }}
-                  onMouseEnter={e => { if (s.onClick) e.currentTarget.style.background = hexToRgba(s.color, 0.06); }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
-                  <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2, background: s.color, boxShadow: `0 0 8px ${s.color}, 0 0 16px ${s.color}`, borderRadius: 2 }} />
-                  <div style={{ fontSize: '1.2rem', marginBottom: 4 }}>{s.icon}</div>
-                  <CountUpStat value={s.value} label={s.label} sub={s.sub} color={s.color} />
-                  {s.onClick && <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 7, color: s.color, letterSpacing: '0.15em', marginTop: 4, opacity: 0.7 }}>↗ VIEW VAULT</div>}
-                </div>
-              ))}
+           {/* Neon stat tiles — Now with 5 boxes and deep links */}
+<div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 0, borderTop: `1px solid ${C.border}`, marginTop: 0 }}>
+  {[
+    { 
+      value: headerStats.totalSets, 
+      label: 'TOTAL SETS', 
+      sub: 'individual performances', 
+      color: C.teal, 
+      icon: '🎵',
+      onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } 
+    },
+    { 
+      value: headerStats.uniqueArtists, 
+      label: 'UNIQUE ARTISTS', 
+      sub: 'bands & performers', 
+      color: C.cyan, 
+      icon: '🎤',
+      onClick: () => { setBrowseView('artists'); setActiveTab('browse'); }
+    },
+    { 
+      value: headerStats.totalShows, 
+      label: 'SHOW DAYS', 
+      sub: `${headerStats.festDays} fest · ${headerStats.totalShows - headerStats.festDays} solo`, 
+      color: C.purple, 
+      icon: '📅',
+      onClick: () => setActiveTab('timeline')
+    },
+    { 
+      value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, 
+      label: 'TOTAL VENUES', 
+      sub: 'stages conquered', 
+      color: C.red, 
+      icon: '📍',
+      onClick: () => setActiveTab('venues')
+    },
+    { 
+      value: headerStats.setlistCount, 
+      label: 'SETLISTS', 
+      sub: 'archived artifacts', 
+      color: C.gold, 
+      icon: '📋', 
+      onClick: () => setActiveTab('vault') 
+    },
+  ].map((s, i) => (
+    <div key={s.label} onClick={s.onClick}
+      style={{ 
+        padding: '20px 16px', 
+        borderRight: i < 4 ? `1px solid ${C.border}` : 'none', 
+        textAlign: 'center', 
+        cursor: 'pointer', 
+        position: 'relative', 
+        overflow: 'hidden', 
+        transition: 'background 0.2s' 
+      }}
+      onMouseEnter={e => { e.currentTarget.style.background = hexToRgba(s.color, 0.06); }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+      <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2, background: s.color, boxShadow: `0 0 8px ${s.color}, 0 0 16px ${s.color}`, borderRadius: 2 }} />
+      <div style={{ fontSize: '1.2rem', marginBottom: 4 }}>{s.icon}</div>
+      <CountUpStat value={s.value} label={s.label} sub={s.sub} color={s.color} />
+      <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 6, color: s.color, letterSpacing: '0.15em', marginTop: 4, opacity: 0.5 }}>
+        ↗ VIEW SECTION
+      </div>
+    </div>
+  ))}
+</div>
             </div>
             <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
           </div>
@@ -4468,15 +4515,49 @@ async function handleUpcomingDelete(id) {
           )}
 
           {/* ════ OTHER TABS ════ */}
-          {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} />}
-{activeTab === 'passport' && <PassportTab passport={passport} genreStats={genreStats} onNavigateToFest={name => { setActiveTab('byFest'); setTimeout(() => { const el = document.getElementById(`fest-${name.replace(/\s+/g, '-')}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); }} />}          {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
+          {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={true} onEdit={setEditTarget} />}
+          
+          {activeTab === 'passport' && (
+            <PassportTab 
+              passport={passport} 
+              genreStats={genreStats} 
+              onNavigateToFest={name => { 
+                setActiveTab('byFest'); 
+                // Increased timeout to ensure ByFestTab renders before scrolling
+                setTimeout(() => { 
+                  const festId = `fest-${name.toLowerCase().replace(/\s+/g, '-')}`;
+                  const el = document.getElementById(festId); 
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+                  }
+                }, 300); 
+              }} 
+            />
+          )}
+
+          {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
           {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
-                    {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
+          {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
 
           {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
+          
           {activeTab === 'browse' && (
-            <BrowseTab browseView={browseView} setBrowseView={setBrowseView} search={search} setSearch={setSearch} yearFilter={yearFilter} setYearFilter={setYearFilter} festFilter={festFilter} setFestFilter={setFestFilter} genreFilter={genreFilter} setGenreFilter={setGenreFilter} sortCol={sortCol} setSortCol={setSortCol} sortDir={sortDir} setSortDir={setSortDir} paged={paged} page={page} setPage={setPage} totalPages={totalPages} artistRows={artistRows} years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} onEdit={setEditTarget} onSetGenre={handleSetGenre} genreMap={artistGenres} />
+            <BrowseTab 
+              browseView={browseView} setBrowseView={setBrowseView} 
+              search={search} setSearch={setSearch} 
+              yearFilter={yearFilter} setYearFilter={setYearFilter} 
+              festFilter={festFilter} setFestFilter={setFestFilter} 
+              genreFilter={genreFilter} setGenreFilter={setGenreFilter} 
+              sortCol={sortCol} setSortCol={setSortCol} 
+              sortDir={sortDir} setSortDir={setSortDir} 
+              paged={paged} page={page} setPage={setPage} 
+              totalPages={totalPages} artistRows={artistRows} 
+              years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} 
+              onEdit={setEditTarget} onSetGenre={handleSetGenre} 
+              genreMap={artistGenres} 
+            />
           )}
+          
           {activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} onDuplicate={handleDuplicate} />}
 
         </main>
