@@ -4529,4 +4529,44 @@ async function handleUpcomingDelete(id) {
                   if (el) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
                   }
-                },
+                },}, 300); 
+              }} 
+            />
+          )}
+
+          {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
+          {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
+          {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
+          {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
+          
+          {activeTab === 'browse' && (
+            <BrowseTab 
+              browseView={browseView} setBrowseView={setBrowseView} 
+              search={search} setSearch={setSearch} 
+              yearFilter={yearFilter} setYearFilter={setYearFilter} 
+              festFilter={festFilter} setFestFilter={setFestFilter} 
+              genreFilter={genreFilter} setGenreFilter={setGenreFilter} 
+              sortCol={sortCol} setSortCol={setSortCol} 
+              sortDir={sortDir} setSortDir={setSortDir} 
+              paged={paged} page={page} setPage={setPage} 
+              totalPages={totalPages} artistRows={artistRows} 
+              years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} 
+              onEdit={setEditTarget} onSetGenre={handleSetGenre} 
+              genreMap={artistGenres} 
+            />
+          )}
+          
+          {activeTab === 'manage' && (
+            <ManageTab 
+              concerts={concerts} 
+              onEdit={setEditTarget} 
+              onAdd={() => setEditTarget('new')} 
+              onDuplicate={handleDuplicate} 
+            />
+          )}
+
+        </main>
+      </div>
+    </ThemeContext.Provider>
+  );
+}
