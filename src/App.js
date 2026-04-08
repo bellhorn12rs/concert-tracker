@@ -4166,66 +4166,71 @@ export default function App() {
   // This now pulls from the dedicated artist_genres table instead of concert rows
   const genreMap = useMemo(() => artistGenres, [artistGenres]);
 
-  // ── SAFE DATA DERIVATION ──
+  // ── 1. ALL SETS LIST (Flat Data) ──
   const allSetsList = useMemo(() => {
     const r = [];
     if (!concerts || !Array.isArray(concerts)) return r;
-    
     concerts.forEach(c => { 
-      if (!c) return; // Skip null rows
+      if (!c) return; 
       const bands = Array.isArray(c.bands) ? c.bands : [c.artist].filter(Boolean); 
       bands.forEach(band => { 
-        if (band && typeof band === 'string') {
-          r.push({ ...c, artist: band }); 
-        }
+        if (band && typeof band === 'string') r.push({ ...c, artist: band }); 
       }); 
     });
     return r;
   }, [concerts]);
 
+  // ── 2. APPLY FILTERS (Universal Logic) ──
   const applyFilters = useCallback((list, isSet = false) => {
     if (!list || !Array.isArray(list)) return [];
-    
     let d = list;
     if (yearFilter !== 'all') d = d.filter(r => getYear(r.date) === +yearFilter);
     if (festFilter === 'fest') d = d.filter(r => r.is_festival);
     if (festFilter === 'solo') d = d.filter(r => !r.is_festival);
-    
     if (genreFilter !== 'all') {
       d = d.filter(r => { 
         const g = isSet ? (artistGenres[r.artist || '']) : (r.genre); 
         return g === genreFilter; 
       });
     }
-
     if (search) {
       const q = search.toLowerCase();
       d = d.filter(r => {
         const bands = isSet ? [r.artist] : (r.bands || []);
-        const venue = r.venue || '';
-        const city = r.city || '';
-        const fest = r.festival_name || '';
-        
+        const v = r.venue || '';
+        const c = r.city || '';
+        const f = r.festival_name || '';
         return bands.some(b => b && String(b).toLowerCase().includes(q)) || 
-               venue.toLowerCase().includes(q) || 
-               city.toLowerCase().includes(q) || 
-               fest.toLowerCase().includes(q);
+               v.toLowerCase().includes(q) || c.toLowerCase().includes(q) || f.toLowerCase().includes(q);
       });
     }
     return d;
   }, [yearFilter, festFilter, genreFilter, search, artistGenres]);
 
+  // ── 3. FILTERED SETS (The Final Result) ──
   const filteredSets = useMemo(() => {
     const d = applyFilters(allSetsList, true);
     return [...d].sort((a, b) => { 
       const col = sortCol || 'date';
       const av = col === 'artist' ? (a.artist || '').toLowerCase() : (String(a[col] || '')).toLowerCase();
       const bv = col === 'artist' ? (b.artist || '').toLowerCase() : (String(b[col] || '')).toLowerCase();
-      
       if (col === 'date') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
       return sortDir === 'asc' ? (av < bv ? -1 : 1) : (av > bv ? -1 : 1);
     });
   }, [allSetsList, applyFilters, sortCol, sortDir]);
+
+  // ── 4. ARTIST ROWS (For Acts Deep Dive) ──
+  const artistRows = useMemo(() => {
+    if (browseView !== 'artists') return [];
+    const m = {};
+    const filtered = applyFilters(allSetsList, true);
+    filtered.forEach(s => { 
+      if (!s.artist) return;
+      if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; 
+      m[s.artist].shows.push(s); 
+    });
+    return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
+  }, [allSetsList, applyFilters, browseView]);
 
 // Get the list of venue keys for the <Bar /> components
 const venueKeys = useMemo(() => {
