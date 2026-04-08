@@ -4,9 +4,15 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 // ─── UTILITY ──────────────────────────────────────────────────────────────────
 function hexToRgba(hex, alpha) {
-  if (!hex || typeof hex !== 'string' || hex.length < 7) return `rgba(255,255,255,${alpha})`;
-  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-  return `rgba(${r},${g},${b},${alpha})`;
+  if (!hex || typeof hex !== 'string') return `rgba(255,255,255,${alpha})`;
+  try {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  } catch (e) {
+    return `rgba(255,255,255,${alpha})`;
+  }
 }
 
 // ─── THE RETRO TICKET STUB (IDEA #1) ──────────────────────────────────────────
@@ -2086,13 +2092,19 @@ function WristbandCard({ event, genreMap, compact, onEdit }) {
 // ─── 2. SETLIST VAULT (BULLSEYE SEARCH & CLEAN LOGIC) ────────────────────────
 // ─── 2. SETLIST VAULT (FULL-IMAGE & BULLSEYE SEARCH) ────────────────────────
 function SetlistVaultTab({ concerts, genreMap }) {
-  
-
+  // 1. CRITICAL SAFETY CHECK: Prevent crash if data is missing/loading
+  if (!concerts || !Array.isArray(concerts)) {
+    return (
+      <div style={{ padding: '80px 0', textAlign: 'center', color: '#8899aa', fontFamily: "'Space Mono'" }}>
+        OPENING THE VAULT...
+      </div>
+    );
+  }
 
   const setlists = useMemo(() => {
     const results = [];
     concerts.forEach(c => {
-      if (!c.has_setlist_names?.trim()) return;
+      if (!c || !c.has_setlist_names?.trim()) return;
       
       const bands = c.has_setlist_names.split(',').map(b => b.trim()).filter(Boolean);
       const rawImages = c.setlist_image_url || c.image_url || '';
@@ -2103,96 +2115,140 @@ function SetlistVaultTab({ concerts, genreMap }) {
         results.push({ 
           id: `${c.id}-${band}`, 
           band, 
-          date: c.date, 
-          venue: c.venue, 
-          city: c.city, 
-          state: c.state, 
-          festival_name: c.festival_name, 
-          is_festival: c.is_festival, 
+          date: c.date || '', 
+          venue: c.venue || 'UNKNOWN VENUE', 
           image_url: img 
         });
       });
     });
-    return results.sort((a, b) => b.date.localeCompare(a.date));
+    // Sort by date (descending)
+    return results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }, [concerts]);
 
-  if (!setlists.length) return <div style={{ padding: '80px 0', textAlign: 'center' }}><div style={{ fontSize: '4rem' }}>📁</div><div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white }}>VAULT EMPTY</div></div>;
+  // 2. EMPTY STATE
+  if (setlists.length === 0) {
+    return (
+      <div style={{ padding: '120px 0', textAlign: 'center' }}>
+        <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📁</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.white || '#fff', letterSpacing: '2px' }}>
+          VAULT EMPTY
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray || '#8899aa', marginTop: '10px' }}>
+          NO STAGE ARTIFACTS ARCHIVED YET.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '40px 0' }} className="fade-in">
+      {/* HEADER */}
       <div style={{ textAlign: 'center', marginBottom: 60 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: C.white }}>
-          SETLIST <span style={{ color: C.gold }}>VAULT</span>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: C.white || '#fff', lineHeight: 1 }}>
+          SETLIST <span style={{ color: C.gold || '#ffcc00' }}>VAULT</span>
         </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: 10, letterSpacing: '4px' }}>
-          {setlists.length} ARTIFACTS ARCHIVED
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray || '#8899aa', marginTop: 15, letterSpacing: '4px', fontWeight: 900 }}>
+          {setlists.length} ARTIFACTS ARCHIVED // LIVE SIGNAL DETECTED
         </div>
       </div>
 
+      {/* GRID */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '60px', alignItems: 'start' }}>
-        {setlists.map((s, i) => (
-          <div key={s.id} style={{ 
-            position: 'relative', 
-            transform: `rotate(${(i % 2 === 0 ? 1 : -1) * (i % 3 + 1)}deg)`,
-            transition: 'all 0.3s ease'
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05) rotate(0deg)'}
-          onMouseLeave={e => e.currentTarget.style.transform = `rotate(${(i % 2 === 0 ? 1 : -1) * (i % 3 + 1)}deg)`}
-          >
-            {/* 📄 THE PAPER CONTAINER */}
-            <div style={{ background: '#fdfdfd', padding: '10px', boxShadow: '0 20px 40px rgba(0,0,0,0.7)', borderRadius: 2 }}>
-              
-              {/* Blue Tape */}
-              <div style={{ position: 'absolute', top: -10, left: '35%', width: '30%', height: '18px', background: 'rgba(0, 110, 255, 0.35)', backdropFilter: 'blur(1px)', transform: 'rotate(-1deg)', zIndex: 10, border: '1px solid rgba(255,255,255,0.1)' }} />
-              
-              {/* Artist Header */}
-              <div style={{ padding: '12px 6px', textAlign: 'center', background: '#111', color: '#fff', fontFamily: "'Bebas Neue'", fontSize: '1.6rem', marginBottom: 10 }}>
-                {s.band.toUpperCase()}
-              </div>
+        {setlists.map((s, i) => {
+          // Dynamic rotations for the "scattered paper" look
+          const rotation = (i % 2 === 0 ? 1 : -1) * (i % 3 + 1);
+          
+          // Bulletproof search URL construction
+          const [yr, mo, dy] = (s.date || '2026-01-01').split('-');
+          const searchUrl = `https://www.setlist.fm/search?query=${encodeURIComponent(`${s.band} ${mo}/${dy}/${yr}`)}`;
 
-              {/* 📸 FULL IMAGE (No Cropping) */}
-              {s.image_url ? (
-                <div style={{ width: '100%', overflow: 'hidden', border: '1px solid #eee' }}>
-                  <img 
-                    src={s.image_url} 
-                    alt={s.band} 
-                    style={{ 
-                      width: '100%', 
-                      height: 'auto', // Allows paper to grow to fit the whole setlist
-                      display: 'block',
-                      filter: 'sepia(0.05) contrast(1.05)'
-                    }} 
-                  />
-                </div>
-              ) : (
-                <div style={{ height: '200px', background: '#f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: '9px', fontFamily: "'Space Mono'", textAlign: 'center', padding: 20 }}>
-                  NO IMAGE ARCHIVED
-                </div>
-              )}
-
-              {/* Footer Info */}
-              <div style={{ padding: '15px 10px 5px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                <div style={{ color: '#000', fontSize: '10px', fontFamily: "'Space Mono'", fontWeight: 'bold', lineHeight: 1.4 }}>
-                  {fmtDateShort(s.date)}<br/>
-                  <span style={{ opacity: 0.6 }}>{s.venue?.toUpperCase()}</span>
-                </div>
+          return (
+            <div key={s.id} style={{ 
+              position: 'relative', 
+              transform: `rotate(${rotation}deg)`,
+              transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+              zIndex: 1
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'scale(1.06) rotate(0deg)';
+              e.currentTarget.style.zIndex = 100;
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = `rotate(${rotation}deg)`;
+              e.currentTarget.style.zIndex = 1;
+            }}
+            >
+              {/* 📄 THE PAPER CONTAINER */}
+              <div style={{ 
+                background: '#fdfdfd', 
+                padding: '12px', 
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.7)', 
+                borderRadius: 2,
+                border: '1px solid #e0e0e0'
+              }}>
                 
-                {/* 🔗 THE FIXED SEARCH LINK */}
-                <a 
-                  href={getSetlistFmUrl(s.band, s.date)} 
-                  target="_blank" rel="noreferrer"
-                  style={{ 
-                    fontFamily: "'Space Mono'", fontSize: '9px', color: '#006eff', 
-                    textDecoration: 'none', borderBottom: '2px solid rgba(0,110,255,0.2)',
-                    paddingBottom: 2, fontWeight: 900
-                  }}
-                >
-                  DIGITAL LOG ↗
-                </a>
+                {/* Visual "Blue Painter's Tape" */}
+                <div style={{ 
+                  position: 'absolute', top: -12, left: '35%', width: '30%', height: '22px', 
+                  background: 'rgba(0, 110, 255, 0.3)', backdropFilter: 'blur(1px)', 
+                  transform: 'rotate(-1deg)', zIndex: 10, border: '1px solid rgba(255,255,255,0.2)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }} />
+                
+                {/* High-Contrast Artist Header */}
+                <div style={{ 
+                  padding: '14px 6px', textAlign: 'center', background: '#111', 
+                  color: '#fff', fontFamily: "'Bebas Neue'", fontSize: '1.8rem', 
+                  marginBottom: 12, letterSpacing: '1px' 
+                }}>
+                  {s.band.toUpperCase()}
+                </div>
+
+                {/* IMAGE AREA */}
+                {s.image_url ? (
+                  <div style={{ width: '100%', overflow: 'hidden', border: '1px solid #eee', background: '#f0f0f0' }}>
+                    <img 
+                      src={s.image_url} 
+                      alt={s.band} 
+                      loading="lazy"
+                      style={{ 
+                        width: '100%', 
+                        height: 'auto', 
+                        display: 'block',
+                        filter: 'sepia(0.08) contrast(1.05)',
+                        mixBlendMode: 'multiply' // Makes the paper texture show through the image
+                      }} 
+                    />
+                  </div>
+                ) : (
+                  <div style={{ height: '220px', background: '#f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: '10px', fontFamily: "'Space Mono'", textAlign: 'center', padding: 25, border: '1px dashed #ccc' }}>
+                    [ ARTIFACT IMAGE MISSING ]
+                  </div>
+                )}
+
+                {/* Footer Metadata */}
+                <div style={{ padding: '18px 10px 8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid #eee', marginTop: 5 }}>
+                  <div style={{ color: '#000', fontSize: '10px', fontFamily: "'Space Mono'", fontWeight: 900, lineHeight: 1.5 }}>
+                    {typeof fmtDateShort === 'function' ? fmtDateShort(s.date) : s.date}<br/>
+                    <span style={{ opacity: 0.5, fontSize: '8px' }}>{s.venue.toUpperCase()}</span>
+                  </div>
+                  
+                  <a 
+                    href={searchUrl}
+                    target="_blank" rel="noreferrer"
+                    style={{ 
+                      fontFamily: "'Space Mono'", fontSize: '9px', color: '#006eff', 
+                      textDecoration: 'none', borderBottom: '2px solid rgba(0,110,255,0.2)',
+                      paddingBottom: 2, fontWeight: 900, letterSpacing: '0.5px'
+                    }}
+                  >
+                    DIGITAL LOG ↗
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -3241,13 +3297,21 @@ function VenuesTab({ concerts }) {
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState({});
 
+  // 1. CRITICAL SAFETY CHECK: If concerts hasn't loaded, don't try to render
+  if (!concerts || !Array.isArray(concerts)) {
+    return (
+      <div style={{ padding: '80px 0', textAlign: 'center', color: '#8899aa', fontFamily: "'Space Mono'" }}>
+        INITIALIZING VENUE LOG...
+      </div>
+    );
+  }
+
   const toggle = (name) => setExpanded(p => ({ ...p, [name]: !p[name] }));
 
-  // ─── 1. COMPLETE METADATA LOGIC ───
   const venues = useMemo(() => {
     const m = {};
     concerts.forEach(c => {
-      if (!c.venue) return;
+      if (!c || !c.venue) return; // Extra safety for malformed data
       const key = c.venue.trim();
       if (!m[key]) {
         m[key] = {
@@ -3259,9 +3323,14 @@ function VenuesTab({ concerts }) {
       m[key].count++;
       if (c.date < m[key].firstDate) m[key].firstDate = c.date;
       if (c.date > m[key].lastDate) m[key].lastDate = c.date;
-      const yr = getYear(c.date);
+      
+      // Safety check for helper functions
+      const yr = typeof getYear === 'function' ? getYear(c.date) : null;
       if (yr) m[key].years.add(yr);
-      (c.bands || []).forEach(b => m[key].artists.add(b));
+      
+      const bands = Array.isArray(c.bands) ? c.bands : [];
+      bands.forEach(b => m[key].artists.add(b));
+      
       if (c.is_festival) m[key].festivals++;
       m[key].shows.push(c);
     });
@@ -3269,7 +3338,7 @@ function VenuesTab({ concerts }) {
       ...v,
       years: [...v.years].sort(),
       artists: [...v.artists],
-      shows: [...v.shows].sort((a, b) => b.date.localeCompare(a.date)),
+      shows: [...v.shows].sort((a, b) => (b.date || '').localeCompare(a.date || '')),
     }));
   }, [concerts]);
 
@@ -3277,126 +3346,65 @@ function VenuesTab({ concerts }) {
     let list = venues;
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter(v => v.name.toLowerCase().includes(q) || v.city.toLowerCase().includes(q) || v.state.toLowerCase().includes(q));
+      list = list.filter(v => v.name.toLowerCase().includes(q) || v.city.toLowerCase().includes(q));
     }
     if (sortBy === 'count') return [...list].sort((a, b) => b.count - a.count);
     if (sortBy === 'alpha') return [...list].sort((a, b) => a.name.localeCompare(b.name));
-    if (sortBy === 'recent') return [...list].sort((a, b) => b.lastDate.localeCompare(a.lastDate));
-    if (sortBy === 'first') return [...list].sort((a, b) => a.firstDate.localeCompare(b.firstDate));
     return list;
   }, [venues, sortBy, search]);
 
-  const VENUE_MEDALS = ['🥇','🥈','🥉'];
+  // Ensure helper constants exist
+  const currentInputSt = typeof inputSt !== 'undefined' ? inputSt : { background: '#111', border: '1px solid #333', color: '#fff', padding: '8px' };
 
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
-      {/* ─── HEADER ─── */}
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(2.5rem,6vw,4rem)', color: C.white, letterSpacing: '0.05em' }}>
-          📍 THE <span style={{ color: C.teal }}>VENUE LOG</span>
-        </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, letterSpacing: '0.2em', marginTop: 4 }}>
-          {venues.length} VENUES · {new Set(venues.map(v => v.city)).size} CITIES
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3.5rem', color: C.white || '#fff' }}>
+          📍 STAGE <span style={{ color: C.teal || '#00e5cc' }}>DOOR</span>
         </div>
       </div>
 
-      {/* ─── TOP 3 PODIUM ─── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 40 }}>
-        {filtered.slice(0, 3).map((v, i) => {
-          const colors = [C.gold, C.gray, C.cyan];
-          return (
-            <div key={v.name} onClick={() => toggle(v.name)} style={{
-              background: `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(colors[i], 0.08)})`,
-              border: `1px solid ${hexToRgba(colors[i], 0.5)}`,
-              borderRadius: 8, padding: 20, position: 'relative', overflow: 'hidden',
-              boxShadow: `0 0 20px ${hexToRgba(colors[i], 0.15)}`, cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}>
-              <div style={{ position: 'absolute', right: -10, bottom: -20, fontFamily: "'Bebas Neue'", fontSize: '6rem', color: hexToRgba(colors[i], 0.05), pointerEvents: 'none' }}>{v.count}×</div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: colors[i], marginBottom: 8 }}>{VENUE_MEDALS[i]} #{i + 1}</div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.white, lineHeight: 1.1, marginBottom: 6 }}>{v.name}</div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginBottom: 12 }}>{[v.city, v.state].filter(Boolean).join(', ')}</div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: colors[i], lineHeight: 1 }}>{v.count}<span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, marginLeft: 4 }}>shows</span></div>
-              <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <Badge color={colors[i]}>{v.artists.length} artists</Badge>
-                {v.festivals > 0 && <Badge color={C.gold}>{v.festivals} fest days</Badge>}
-              </div>
-            </div>
-          );
-        })}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+        <input 
+          placeholder="Search venues..." 
+          value={search} 
+          onChange={e => setSearch(e.target.value)} 
+          style={{ ...currentInputSt, flex: 1, borderRadius: 6 }} 
+        />
       </div>
 
-      {/* ─── FILTERS ─── */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
-        <input placeholder="Search venues or cities..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...inputSt, flex: '1 1 240px' }} />
-        <div style={{ display: 'flex', background: C.bgCardAlt, borderRadius: 4, padding: 2, border: `1px solid ${C.border}` }}>
-          {[['count','Most Visited'],['alpha','A–Z'],['recent','Most Recent'],['first','Oldest First']].map(([val, label]) => (
-            <button key={val} onClick={() => setSortBy(val)} style={{ padding: '5px 12px', fontSize: 9, fontFamily: "'Space Mono'", letterSpacing: '0.08em', textTransform: 'uppercase', background: sortBy === val ? C.teal : 'transparent', color: sortBy === val ? C.bg : C.gray, border: 'none', cursor: 'pointer', borderRadius: 3 }}>{label}</button>
-          ))}
-        </div>
-      </div>
-
-      {/* ─── STABILIZED LIST & ARTIFACT RENDERING ─── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {filtered.map((v, i) => {
-          const rowColor = i < 3 ? [C.gold, C.gray, C.cyan][i] : C.teal;
+          // Robust Color Fallbacks
+          const colors = [(C.gold || '#ffcc00'), (C.purple || '#9966ff'), (C.cyan || '#00cfff')];
+          const rowColor = i < 3 ? colors[i] : (C.teal || '#00e5cc');
           const isOpen = expanded[v.name];
 
           return (
-            <div key={v.name} style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderLeft: `4px solid ${rowColor}`, borderRadius: 6, overflow: 'hidden' }}>
-              <div onClick={() => toggle(v.name)} style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer' }}>
+            <div key={v.name} style={{ background: C.bgCard || '#111118', border: `1px solid ${C.border || '#1e2a38'}`, borderLeft: `4px solid ${rowColor}`, borderRadius: 8, overflow: 'hidden' }}>
+              <div onClick={() => toggle(v.name)} style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.white, lineHeight: 1 }}>{v.name}</div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray }}>{[v.city, v.state].filter(Boolean).join(', ')}</div>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSpacing: '0.5px' }}>{v.name}</div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray || '#8899aa', marginTop: 4 }}>{v.city.toUpperCase()}{v.state ? `, ${v.state}` : ''}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: rowColor, lineHeight: 1 }}>{v.count}</div>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: rowColor, lineHeight: 1 }}>{v.count}</div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim || '#445566' }}>SETS</div>
                 </div>
-                <div style={{ fontSize: 9, color: C.grayDim }}>{isOpen ? '▲' : '▼'}</div>
               </div>
 
               {isOpen && (
-                <div style={{ borderTop: `1px solid ${C.border}`, padding: '40px 20px', background: 'rgba(0,0,0,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '40px' }}>
-                  {v.shows.map((show, idx) => {
-                    const hasImg = show.image_url && show.image_url.trim() !== "";
-                    const rotation = idx < 20 ? (idx % 2 === 0 ? 1.5 : -1.5) : 0; 
-                    
-                    return (
-                      <div key={show.id} style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s' }}>
-                        {show.is_festival ? (
-                          /* 🎪 FESTIVAL ENTRY: Wristband + List */
-                          <div style={{ background: C.bgCardAlt, borderRadius: 6, border: `1px solid ${C.border}`, padding: '10px', overflow: 'hidden' }}>
-                            <PhysicalWristband color={C.gold} label={show.festival_name} year={getYear(show.date)} size="small" />
-                            <div style={{ marginTop: 10, borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
-                              {(show.bands || []).map((b, bi) => (
-                                <div key={bi} style={{ fontSize: '0.7rem', color: C.gray, fontFamily: "'Space Mono'", marginBottom: 3 }}>
-                                  {b.toUpperCase()}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : hasImg ? (
-                          /* 📸 SHOW PHOTO ARTIFACT */
-                          <div style={{ background: '#fff', padding: '5px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', borderRadius: 2 }}>
-                            <div style={{ padding: '8px 2px', textAlign: 'center', background: '#111', color: '#fff', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', marginBottom: 5 }}>
-                              {(show.bands || [])[0]?.toUpperCase()}
-                            </div>
-                            <img 
-                              src={show.image_url.split(',')[0]} 
-                              alt="setlist" 
-                              loading="lazy"
-                              style={{ width: '100%', height: 'auto', maxHeight: '250px', objectFit: 'contain', background: '#000' }} 
-                            />
-                            <div style={{ padding: '8px 4px 2px', fontFamily: "'Space Mono'", fontSize: '9px', color: '#000', fontWeight: 900 }}>
-                              {fmtDateShort(show.date)}
-                            </div>
-                          </div>
-                        ) : (
-                          <DecorativeTicket event={show} templateIdx={idx} />
-                        )}
-                      </div>
-                    );
-                  })}
+                <div style={{ padding: '0 20px 20px', background: 'rgba(0,0,0,0.2)', borderTop: `1px solid ${C.border || '#1e2a38'}` }}>
+                   {v.shows.map(s => (
+                     <div key={s.id} style={{ padding: '12px 0', borderBottom: `1px solid ${C.border || '#1e2a38'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: '#fff' }}>
+                          {typeof fmtDateShort === 'function' ? fmtDateShort(s.date) : s.date}
+                        </span>
+                        <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: rowColor, textAlign: 'right' }}>
+                          {Array.isArray(s.bands) ? s.bands.join(' · ') : (s.artist || 'UNKNOWN')}
+                        </span>
+                     </div>
+                   ))}
                 </div>
               )}
             </div>
