@@ -4735,19 +4735,41 @@ export default function App() {
   overflow: 'visible'
 }}>
   
-  {/* ── LEFT: IDENTITY (Slimmed for Mobile) ── */}
-  <div style={{ 
-    width: isMobile ? '60px' : '280px', // Dropped from 100px to 60px
-    borderRight: `1px solid ${C.border}`, 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center',
-    background: `linear-gradient(135deg, ${C.bgCard} 0%, #08080c 100%)`,
-    flexShrink: 0
-  }}>
-    <div style={{ transform: isMobile ? 'scale(0.7)' : 'none' }}>
+  {/* ── LEFT: IDENTITY (Now acts as Menu Trigger on Mobile) ── */}
+  <div 
+    onClick={() => isMobile && setNavCollapsed(false)} // Opens the sidebar
+    style={{ 
+      width: isMobile ? '75px' : '280px', 
+      borderRight: `1px solid ${C.border}`, 
+      display: 'flex', 
+      flexDirection: 'column',
+      alignItems: 'center', 
+      justifyContent: 'center',
+      background: isMobile 
+        ? `linear-gradient(135deg, ${hexToRgba(C.teal, 0.2)} 0%, #08080c 100%)` // Glow hint on mobile
+        : `linear-gradient(135deg, ${C.bgCard} 0%, #08080c 100%)`,
+      flexShrink: 0,
+      cursor: isMobile ? 'pointer' : 'default',
+      gap: 2
+    }}
+  >
+    <div style={{ transform: isMobile ? 'scale(0.7)' : 'none', lineHeight: 0 }}>
       <TrackRecordLogo size={40} />
     </div>
+    
+    {/* Subtle "MENU" label for mobile users */}
+    {isMobile && (
+      <div style={{ 
+        fontFamily: "'Space Mono'", 
+        fontSize: '7px', 
+        color: C.teal, 
+        letterSpacing: '1px', 
+        fontWeight: 900,
+        opacity: 0.8 
+      }}>
+        MENU
+      </div>
+    )}
   </div>
 
   {/* ── CENTER: STAT PANELS (High Density) ── */}
