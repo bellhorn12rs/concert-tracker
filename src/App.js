@@ -4057,8 +4057,8 @@ export default function App() {
 
   // ── STEP 3: THE COLOR SHORTCUT (C) ──
   // We initialize C with the current theme data so the whole app can use C.teal, etc.
-  const theme = THEMES[themeId];
-  const C = theme.colors;
+  cconst theme = THEMES[themeId] || THEMES['neon-noir'];
+const C = theme;
 
   // ── EFFECTS & HANDLERS ──
   useEffect(() => {
@@ -4072,11 +4072,12 @@ export default function App() {
   }, []);
 
   const setThemeId = (id) => {
-    // This updates the global color object and the state
-    Object.assign(C, THEMES[id].colors);
+  if (THEMES[id]) {
+    Object.assign(C, THEMES[id]); 
     setThemeIdRaw(id);
     localStorage.setItem('concert-theme', id);
-  };
+  }
+};
 
   // Sync colors on initial mount
   useEffect(() => { 
