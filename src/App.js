@@ -3249,22 +3249,23 @@ function PassportTab({ passport, onNavigateToFest }) {
   );
 }
 // ─── BROWSE TAB ───────────────────────────────────────────────────────────────
-// ─── BROWSE TAB (Fixed & Armor-Plated) ─────────────────────────────────────
+// ─── BROWSE TAB (Public View + Admin Lockdown) ──────────────────────────────
 function BrowseTab({ 
   browseView, setBrowseView, search, setSearch, 
   yearFilter, setYearFilter, festFilter, setFestFilter, 
   genreFilter, setGenreFilter, sortCol, setSortCol, sortDir, setSortDir, 
   paged, page, setPage, totalPages, artistRows, years, 
-  onShare, onEdit, onSetGenre, genreMap 
+  onShare, onEdit, onSetGenre, genreMap,
+  isAdmin // 🟢 Added Admin Prop
 }) {
   
-  // ── 1. SAFETY GATES (Prevents crashes on null data) ──
+  // ── 1. SAFETY GATES ──
   const safePaged = Array.isArray(paged) ? paged : [];
   const safeArtistRows = Array.isArray(artistRows) ? artistRows : [];
   const safeYears = Array.isArray(years) ? years : [];
   const safeGenreMap = genreMap || {};
 
-  // ── 2. INTERNAL STYLING (Prevents Reference Errors) ──
+  // ── 2. INTERNAL STYLING ──
   const internalInputSt = { 
     background: 'rgba(0,0,0,0.3)', 
     border: `1px solid ${C.border || '#333'}`, 
@@ -3352,7 +3353,16 @@ function BrowseTab({
                 {safePaged.map((s, i) => {
                   const artistGenre = safeGenreMap[s.artist] || null;
                   return (
-                    <tr key={`${s.id}-${s.artist}-${i}`} className="row-hover" onClick={() => onEdit(s)} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 1 ? C.bgCardAlt : 'transparent', cursor: 'pointer' }}>
+                    <tr 
+                      key={`${s.id}-${s.artist}-${i}`} 
+                      className={isAdmin ? "row-hover" : ""} 
+                      onClick={() => isAdmin && onEdit(s)} // 🟢 Admin only trigger
+                      style={{ 
+                        borderBottom: `1px solid ${C.border}`, 
+                        background: i % 2 === 1 ? C.bgCardAlt : 'transparent', 
+                        cursor: isAdmin ? 'pointer' : 'default' // 🟢 Change cursor for public
+                      }}
+                    >
                       <td style={{ padding: '9px 12px', fontFamily: "'Space Mono',monospace", fontSize: '0.7rem', color: C.gray, whiteSpace: 'nowrap' }}>{fmtDate(s.date)}</td>
                       <td style={{ padding: '9px 12px', color: C.teal, fontWeight: 600 }}>{s.artist}</td>
                       <td style={{ padding: '9px 12px', color: C.gray }}>{s.venue || '—'}</td>
@@ -3416,15 +3426,17 @@ function BrowseTab({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
                   <select 
                     value={genre || ''} 
+                    disabled={!isAdmin} // 🟢 Public cannot edit genres
                     onChange={e => onSetGenre(row.artist, e.target.value || null)} 
                     style={{ 
                       flex: 1, background: gc ? hexToRgba(gc, 0.15) : C.bgCardAlt, 
                       border: `1px solid ${gc ? hexToRgba(gc, 0.4) : C.border}`, 
                       borderRadius: 4, color: gc || C.gray, fontSize: 9, padding: '3px 6px', 
-                      fontFamily: "'Space Mono'", cursor: 'pointer' 
+                      fontFamily: "'Space Mono'", cursor: isAdmin ? 'pointer' : 'default',
+                      opacity: isAdmin ? 1 : 0.7 
                     }}
                   >
-                    <option value="">— unset —</option>
+                    <option value="">{isAdmin ? '— unset —' : 'No Genre'}</option>
                     {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
                 </div>
@@ -4899,36 +4911,45 @@ export default function App() {
      )}
   </div>
 
-  {/* MAIN NAV AREA */}
-  <div style={{ flex: 1, overflowY: 'auto', padding: '20px 0' }} className="wristband-bin">
-    {TAB_GROUPS.map((group) => {
-      // 🟢 STEP 2: HIDE "OFFICE" FROM PUBLIC
-      if (group.header === "OFFICE" && !isAdmin) return null;
+  {/* ── MAIN NAV AREA ── */}
+<div style={{ flex: 1, overflowY: 'auto', padding: '20px 0' }} className="wristband-bin">
+  {TAB_GROUPS.map((group) => {
+    // We no longer return null for the whole group. 
+    // Instead, we filter the tabs INSIDE the group.
+    const visibleTabs = group.tabs.filter(([id]) => {
+      if (id === 'manage' && !isAdmin) return false; // Lock the Office
+      return true; // Everything else (Browse, HOF, etc.) is public
+    });
 
-      return (
-        <div key={group.header} style={{ marginBottom: 35 }}>
-          {(!navCollapsed || isMobile) && (
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.teal, letterSpacing: '3px', padding: '0 20px 14px' }}>{group.header}</div>
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {group.tabs.map(([id, label, color]) => (
-              <button key={id} onClick={() => { setActiveTab(id); if(isMobile) setNavCollapsed(true); }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 14, fontFamily: "'Space Mono'", fontSize: '11px',
-                  color: activeTab === id ? '#fff' : C.gray, background: activeTab === id ? hexToRgba(color, 0.15) : 'transparent', 
-                  border: 'none', borderLeft: `3px solid ${activeTab === id ? color : 'transparent'}`,
-                  padding: '12px 20px', cursor: 'pointer', textAlign: 'left', borderRadius: '0 4px 4px 0'
-                }}
-              >
-                <span style={{ fontSize: '1.2rem' }}>{label.split(' ')[0]}</span>
-                {(!navCollapsed || isMobile) && <span style={{ textTransform: 'uppercase' }}>{label.split(' ').slice(1).join(' ')}</span>}
-              </button>
-            ))}
+    if (visibleTabs.length === 0) return null;
+
+    return (
+      <div key={group.header} style={{ marginBottom: 35 }}>
+        {(!navCollapsed || isMobile) && (
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.teal, letterSpacing: '3px', padding: '0 20px 14px' }}>
+            {group.header}
           </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {visibleTabs.map(([id, label, color]) => (
+            <button key={id} onClick={() => { setActiveTab(id); if(isMobile) setNavCollapsed(true); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 14, fontFamily: "'Space Mono'", fontSize: '11px',
+                color: activeTab === id ? '#fff' : C.gray, 
+                background: activeTab === id ? hexToRgba(color, 0.15) : 'transparent', 
+                border: 'none', borderLeft: `3px solid ${activeTab === id ? color : 'transparent'}`,
+                padding: '12px 20px', cursor: 'pointer', textAlign: 'left', borderRadius: '0 4px 4px 0'
+              }}
+            >
+              <span style={{ fontSize: '1.2rem' }}>{label.split(' ')[0]}</span>
+              {(!navCollapsed || isMobile) && <span style={{ textTransform: 'uppercase' }}>{label.split(' ').slice(1).join(' ')}</span>}
+            </button>
+          ))}
         </div>
-      );
-    })}
-  </div>
+      </div>
+    );
+  })}
+</div>
 
   {/* 🟢 STEP 3: SYSTEM BOOTH (ADMIN ONLY) */}
 {isAdmin && (
@@ -5175,7 +5196,18 @@ export default function App() {
               {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
               {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
               {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
-              {activeTab === 'browse' && <BrowseTab browseView={browseView} setBrowseView={setBrowseView} search={search} setSearch={setSearch} yearFilter={yearFilter} setYearFilter={setYearFilter} festFilter={festFilter} setFestFilter={setFestFilter} genreFilter={genreFilter} setGenreFilter={setGenreFilter} sortCol={sortCol} setSortCol={setSortCol} sortDir={sortDir} setSortDir={setSortDir} paged={paged} page={page} setPage={setPage} totalPages={totalPages} artistRows={artistRows} years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} onEdit={setEditTarget} onSetGenre={handleSetGenre} genreMap={artistGenres} />}
+              {activeTab === 'browse' && (
+  <BrowseTab 
+    browseView={browseView} 
+    setBrowseView={setBrowseView} 
+    search={search} 
+    setSearch={setSearch} 
+    // ... rest of your props ...
+    onEdit={isAdmin ? setEditTarget : null} // 🟢 Only allow editing if Admin
+    isAdmin={isAdmin} // 🟢 Pass the flag so the component hides the UI
+    genreMap={artistGenres} 
+  />
+)}
               {activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} onDuplicate={handleDuplicate} />}
             </main>
           </div>
