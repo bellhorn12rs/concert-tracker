@@ -4509,7 +4509,7 @@ export default function App() {
           borderRight: `1px solid ${C.border}`,
           display: 'flex',
           flexDirection: 'column',
-          padding: '30px 0',
+          padding: '0',
           zIndex: 5000, 
           transition: 'all 0.3s ease-in-out',
           overflow: 'hidden',
@@ -4521,33 +4521,32 @@ export default function App() {
           </button>
 
           {/* LOGO AREA - PRECISION ALIGNMENT */}
+          {/* LOGO AREA - PRECISION CORNER ALIGNMENT */}
           <div style={{ 
-            padding: '0 20px', 
-            borderBottom: `1px solid ${C.border}`, 
-            height: isMobile ? '70px' : '80px', // Matches Main Header height exactly
+            height: isMobile ? '70px' : '80px', // Exact match to Header
+            borderBottom: `1px solid ${C.border}`,
             display: 'flex', 
             flexDirection: 'column', 
             alignItems: 'center', 
             justifyContent: 'center',
-            gap: '2px', // Tighter integration between logo and text
+            gap: '2px',
             flexShrink: 0,
-            overflow: 'hidden'
+            boxSizing: 'border-box',
+            background: 'transparent' // Let the aside gradient show through
           }}>
              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '24px' }}>
                 <TrackRecordLogo size={34} />
              </div>
              
              {(!navCollapsed || isMobile) && (
-               <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+               <div className="fade-in">
                  <h1 style={{ 
                    fontFamily: "'Bebas Neue', sans-serif", 
                    fontSize: '1.5rem', 
                    margin: 0, 
-                   lineHeight: 0.8, // Pulls the baseline up for a tighter look
+                   lineHeight: 0.8, 
                    letterSpacing: '4px', 
-                   fontWeight: 400,
                    color: C.white,
-                   textAlign: 'center',
                    textTransform: 'uppercase'
                  }}>
                    TRACK<span style={{ color: C.teal }}>RECORD</span>
@@ -4556,7 +4555,7 @@ export default function App() {
              )}
           </div>
           {/* MAIN NAV AREA */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px' }} className="wristband-bin">
+          <div style={{ flex: 1, overflowY: 'auto', padding: '30 12px' }} className="wristband-bin">
             {TAB_GROUPS.map((group) => (
               <div key={group.header} style={{ marginBottom: 35 }}>
                 {(!navCollapsed || isMobile) && (
@@ -4609,14 +4608,15 @@ export default function App() {
         <div style={{ flex: 1, height: '100vh', overflowY: 'auto', overflowX: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', background: C.bg }}>
           
           <header style={{ 
-            padding: isMobile ? '8px 12px' : '10px 30px', 
-            background: `linear-gradient(to bottom, ${C.bg} 95%, transparent)`, 
-            position: 'sticky', top: 0, zIndex: 100,
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            borderBottom: `1px solid ${C.border}`,
-            height: isMobile ? '70px' : '80px', 
-            flexShrink: 0
-          }}>
+  padding: isMobile ? '8px 12px' : '10px 30px', 
+  background: `linear-gradient(to bottom, ${C.bg} 95%, transparent)`, 
+  position: 'sticky', top: 0, zIndex: 100,
+  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+  borderBottom: `1px solid ${C.border}`,
+  height: isMobile ? '70px' : '80px', // Exact match to Logo Area
+  flexShrink: 0,
+  boxSizing: 'border-box' // CRITICAL for alignment
+}}>
              <div style={{ 
                display: 'flex', 
                flex: 1, 
