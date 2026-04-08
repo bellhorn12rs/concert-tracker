@@ -1725,14 +1725,11 @@ function TopFestBlocks({ festBreakdown, concerts }) {
 }
 
 // ─── 3. THE DECADE STAGE (RIGHT) ────────────────────────────────
-// ─── 3. THE DECADE STAGE (STADIUM PRODUCTION - FIXED) ───────────────
 function DecadeBlocks({ sets, headerStats, concerts }) {
   const [statIdx, setStatIdx] = useState(0);
 
-  // 1. DATA SAFETY CHECK (Prevents the White Screen)
   if (!sets || !headerStats || !concerts) return null;
 
-  // 2. RESTORED COUNTS LOGIC
   const counts = useMemo(() => {
     const c = {'90s': 0, '00s': 0, '10s': 0, '20s': 0};
     sets.forEach(s => {
@@ -1772,11 +1769,13 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
           50% { transform: scale(1.08); filter: brightness(1.6) drop-shadow(0 0 10px ${C.teal}); }
         }
         .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
+        
         @keyframes beam-swing {
-          0%, 100% { transform: rotate(-8deg); opacity: 0.3; }
-          50% { transform: rotate(8deg); opacity: 0.6; }
+          0%, 100% { transform: rotate(-5deg); opacity: 0.3; }
+          50% { transform: rotate(5deg); opacity: 0.7; }
         }
-        .moving-light { animation: beam-swing 4s ease-in-out infinite; transform-origin: top center; }
+        .moving-light { animation: beam-swing 3s ease-in-out infinite; transform-origin: top center; }
+        
         @keyframes screen-glitch {
           0%, 100% { opacity: 0.9; }
           95% { opacity: 0.9; }
@@ -1785,6 +1784,7 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
           99% { opacity: 1; }
         }
         .side-screen { animation: screen-glitch 5s infinite; }
+        
         @keyframes chasing-bulb {
           0%, 100% { background: #fff; box-shadow: 0 0 10px #fff; }
           50% { background: #222; box-shadow: none; }
@@ -1822,45 +1822,73 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
              {[...Array(12)].map((_, i) => <div key={i} className="truss-bulb" style={{ width: 3, height: 3, borderRadius: '50%', animationDelay: `${i*0.1}s` }} />)}
           </div>
 
-          {/* 7-BEAM RIG */}
+          {/* 🏟️ FIXED SVG LIGHTING RIG */}
           <div style={{ position: 'absolute', inset: 0, zIndex: 10 }}>
-             <svg width="100%" height="100%">
-                <polygon points="50% 0, 30% 100%, 70% 100%" fill="rgba(255,255,255,0.15)" />
-                {[...Array(6)].map((_, i) => (
-                  <polygon key={i} points={`${i<3?10+i*10:60+(i-3)*10}% 0, ${i<3?i*5:75+(i-3)*5}% 100%, ${i<3?20+i*5:95+(i-3)*5}% 100%`} 
-                  fill={i < 3 ? C.purple : C.cyan} opacity="0.1" className="moving-light" style={{ animationDelay: `${i*0.5}s` }} />
-                ))}
+             <svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+                {/* 1. Center White Spotlight (Static) */}
+                <polygon points="500,0 350,1000 650,1000" fill="rgba(255,255,255,0.15)" />
+
+                {/* 2. Left Side Beams (Purple) */}
+                <g className="moving-light" style={{ animationDelay: '0s' }}>
+                  <polygon points="150,0 0,1000 300,1000" fill={hexToRgba(C.purple, 0.2)} />
+                </g>
+                <g className="moving-light" style={{ animationDelay: '0.5s' }}>
+                  <polygon points="250,0 100,1000 400,1000" fill={hexToRgba(C.purple, 0.15)} />
+                </g>
+                <g className="moving-light" style={{ animationDelay: '1s' }}>
+                  <polygon points="350,0 200,1000 500,1000" fill={hexToRgba(C.purple, 0.1)} />
+                </g>
+
+                {/* 3. Right Side Beams (Cyan) */}
+                <g className="moving-light" style={{ animationDelay: '0.2s' }}>
+                  <polygon points="850,0 700,1000 1000,1000" fill={hexToRgba(C.cyan, 0.2)} />
+                </g>
+                <g className="moving-light" style={{ animationDelay: '0.7s' }}>
+                  <polygon points="750,0 600,1000 900,1000" fill={hexToRgba(C.cyan, 0.15)} />
+                </g>
+                <g className="moving-light" style={{ animationDelay: '1.2s' }}>
+                  <polygon points="650,0 500,1000 800,1000" fill={hexToRgba(C.cyan, 0.1)} />
+                </g>
              </svg>
           </div>
 
-          {/* IMAG SCREENS */}
-          <div style={{ position: 'absolute', top: 45, left: '8%', width: '22%', height: '55px', zIndex: 20 }} className="side-screen">
-            <div style={{ width: '100%', height: '100%', background: '#08080c', border: `1px solid ${currentStat.color}`, borderRadius: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-               <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: currentStat.color }}>{currentStat.label}</div>
+          {/* IMAG SCREENS (STAT DISPLAYS) */}
+          <div style={{ position: 'absolute', top: 50, left: '8%', width: '22%', height: '55px', zIndex: 20 }} className="side-screen">
+            <div style={{ width: '100%', height: '100%', background: '#08080c', border: `1px solid ${currentStat.color}`, borderRadius: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 15px ${hexToRgba(currentStat.color, 0.1)}` }}>
+               <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: currentStat.color, letterSpacing: 1 }}>{currentStat.label}</div>
             </div>
           </div>
-          <div style={{ position: 'absolute', top: 45, right: '8%', width: '22%', height: '55px', zIndex: 20 }} className="side-screen">
-            <div style={{ width: '100%', height: '100%', background: '#08080c', border: `1px solid ${currentStat.color}`, borderRadius: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{currentStat.val}</div>
+          <div style={{ position: 'absolute', top: 50, right: '8%', width: '22%', height: '55px', zIndex: 20 }} className="side-screen">
+            <div style={{ width: '100%', height: '100%', background: '#08080c', border: `1px solid ${currentStat.color}`, borderRadius: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 15px ${hexToRgba(currentStat.color, 0.1)}` }}>
+               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff' }}>{currentStat.val}</div>
             </div>
           </div>
 
-          {/* SPEAKERS */}
+          {/* CENTER DISPLAY */}
+          <div style={{ position: 'absolute', top: '45px', left: '32%', right: '32%', bottom: '65px', background: 'rgba(0,0,0,0.85)', border: '1px solid #111', zIndex: 5, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+             <div style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.teal, letterSpacing: 2 }}>STADIUM RIG</div>
+                <div style={{ width: 30, height: 1, background: C.teal, margin: '6px auto', opacity: 0.3 }} />
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: C.grayDim }}>V.2026.LIVE</div>
+             </div>
+          </div>
+
+          {/* SPEAKER STACKS */}
           {[ {side: 'left'}, {side: 'right'} ].map(s => (
-            <div key={s.side} style={{ position: 'absolute', [s.side]: 10, bottom: 45, width: 32, height: 110, background: '#0a0a0c', border: `1px solid #222`, borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 5, padding: 4, zIndex: 30 }}>
-              {[1,2,3,4].map(i => <div key={i} style={{ flex: 1, background: '#000', borderRadius: '50%', border: '1px solid #1a1a1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="speaker-cone" style={{ width: 15, height: 15, borderRadius: '50%', border: `1px solid ${C.teal}` }} /></div>)}
+            <div key={s.side} style={{ position: 'absolute', [s.side]: 10, bottom: 45, width: 32, height: 115, background: '#0a0a0c', border: `1.5px solid #222`, borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 5, padding: 4, zIndex: 30, boxShadow: '0 5px 15px rgba(0,0,0,0.5)' }}>
+              {[1,2,3,4].map(i => <div key={i} style={{ flex: 1, background: '#000', borderRadius: '50%', border: '1px solid #1a1a1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="speaker-cone" style={{ width: 14, height: 14, borderRadius: '50%', border: `1px solid ${C.teal}`, opacity: 0.6 }} /></div>)}
             </div>
           ))}
 
-          {/* FLOOR */}
+          {/* STAGE FLOOR */}
           <div style={{ position: 'absolute', bottom: 35, width: '100%', height: '55px', background: '#121216', borderTop: '2px solid #333', zIndex: 20, clipPath: 'polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%)' }}>
              <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 25px)' }} />
           </div>
 
-          {/* FOH BAR */}
+          {/* FRONT OF HOUSE TERMINAL */}
           <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '32px', background: '#030305', zIndex: 60, borderTop: '2px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-             <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: currentStat.color, letterSpacing: '4px', fontWeight: 900 }}>
-                FRONT OF HOUSE // TERMINAL ONLINE
+             <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: currentStat.color, letterSpacing: '4px', fontWeight: 900, transition: 'color 0.5s ease' }}>
+                {currentStat.label} // ARCHIVE STATUS: ONLINE
              </div>
           </div>
         </div>
