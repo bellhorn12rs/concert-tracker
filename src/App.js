@@ -4083,24 +4083,39 @@ function TrackRecordLogo({ size = 50 }) {
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
-  // ── THEME STATE ──
+  // ── 1. THEME & SYSTEM STATE ──
   const [themeId, setThemeIdRaw] = useState(() => localStorage.getItem('concert-theme') || 'neon-noir');
-  
-  // ── MOBILE & COLLAPSE LOGIC ──
   const [navCollapsed, setNavCollapsed] = useState(window.innerWidth < 768); 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  // ── STEP 2: ADMIN STATUS ──
-  // Controls if you can see "Manage" and "Edit" buttons
   const isAdmin = true; 
 
-  // ── STEP 3: THE COLOR SHORTCUT (C) ──
-  // We initialize C with the current theme data so the whole app can use C.teal, etc.
-  // Fix the pathing: THEMES is a flat object, it doesn't have a .colors sub-object
+  // Initialize C with current theme data immediately
   const theme = THEMES[themeId] || THEMES['neon-noir'];
-  const C = theme; // Use the theme object directly as C
+  const C = theme; 
 
-  // ── EFFECTS & HANDLERS ──
+  // ── 2. DATA STATE ──
+  const [concerts, setConcerts] = useState([]);
+  const [artistGenres, setArtistGenres] = useState({});
+  const [upcoming, setUpcoming] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // ── 3. UI & NAVIGATION STATE ──
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [editTarget, setEditTarget] = useState(null);
+  const [shareCard, setShareCard] = useState(null);
+  const [upcomingModal, setUpcomingModal] = useState(null);
+
+  // ── 4. BROWSER & FILTER STATE ──
+  const [search, setSearch] = useState('');
+  const [yearFilter, setYearFilter] = useState('all');
+  const [festFilter, setFestFilter] = useState('all');
+  const [genreFilter, setGenreFilter] = useState('all');
+  const [browseView, setBrowseView] = useState('shows');
+  const [sortCol, setSortCol] = useState('date');
+  const [sortDir, setSortDir] = useState('desc');
+  const [page, setPage] = useState(1);
+
+  // ── 5. SYSTEM HANDLERS & EFFECTS ──
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
@@ -4113,56 +4128,28 @@ export default function App() {
 
   const setThemeId = (id) => {
     if (THEMES[id]) {
-      Object.assign(C, THEMES[id]); // Remove .colors from here too
+      Object.assign(C, THEMES[id]);
       setThemeIdRaw(id);
       localStorage.setItem('concert-theme', id);
     }
   };
 
-  // Sync colors on initial mount
+  // Sync colors and fetch data on mount
   useEffect(() => { 
-  if (THEMES[themeId]) {
-    Object.assign(C, THEMES[themeId]); 
-  }
-}, [themeId]);
-
-  const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
-
-  // --- REST OF YOUR USESTATES (activeTab, concerts, etc.) GO HERE ---
-  // ── DATA STATE ───────────────────────────────────────────────────────────────
-  // ── 1. DATA STATE ──
-  const [concerts, setConcerts] = useState([]);
-  const [artistGenres, setArtistGenres] = useState({});
-  const [upcoming, setUpcoming] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // ── 2. UI & NAVIGATION STATE ──
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [editTarget, setEditTarget] = useState(null);
-  const [shareCard, setShareCard] = useState(null);
-  const [upcomingModal, setUpcomingModal] = useState(null);
-
-  // ── 3. FILTER & BROWSER STATE ──
-  const [search, setSearch] = useState('');
-  const [yearFilter, setYearFilter] = useState('all');
-  const [festFilter, setFestFilter] = useState('all');
-  const [genreFilter, setGenreFilter] = useState('all');
-  const [browseView, setBrowseView] = useState('shows');
-  const [sortCol, setSortCol] = useState('date');
-  const [sortDir, setSortDir] = useState('desc');
-  const [page, setPage] = useState(1);
-
-  // ── 4. INITIAL FETCH ──
-  useEffect(() => { 
+    if (THEMES[themeId]) {
+      Object.assign(C, THEMES[themeId]); 
+    }
     const init = async () => {
       setLoading(true);
       await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]);
       setLoading(false);
     };
     init();
-  }, []);
+  }, [themeId]);
 
-  // ── 5. CORE DERIVED DATA ──
+  const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
+
+  // ── 6. DATA DERIVATION ENGINE ──
   const genreMap = useMemo(() => artistGenres || {}, [artistGenres]);
 
   const allSetsList = useMemo(() => {
@@ -4184,7 +4171,6 @@ export default function App() {
     return [...ySet].sort((a, b) => b - a);
   }, [concerts]);
 
-  // ── 6. THE FILTER ENGINE (CRITICAL FOR SETS/ACTS) ──
   const applyFilters = useCallback((list, isSet = false) => {
     if (!list || !Array.isArray(list)) return [];
     let d = list;
@@ -4204,10 +4190,10 @@ export default function App() {
       d = d.filter(r => {
         const bands = isSet ? [r.artist] : (r.bands || []);
         const v = r.venue || '';
-        const c = r.city || '';
+        const ci = r.city || '';
         const f = r.festival_name || '';
         return bands.some(b => b && String(b).toLowerCase().includes(q)) || 
-               v.toLowerCase().includes(q) || c.toLowerCase().includes(q) || f.toLowerCase().includes(q);
+               v.toLowerCase().includes(q) || ci.toLowerCase().includes(q) || f.toLowerCase().includes(q);
       });
     }
     return d;
@@ -4236,12 +4222,11 @@ export default function App() {
     return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
   }, [allSetsList, applyFilters, browseView]);
 
-  // ── 7. DASHBOARD DATA ──
   const dayGroups = useMemo(() => applyFilters(concerts).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [concerts, applyFilters]);
-  
   const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const totalPages = Math.ceil(filteredSets.length / PER_PAGE);
 
+  // ── 7. DASHBOARD STATS ──
   const headerStats = useMemo(() => ({
     totalShows: concerts.length,
     totalSets: allSetsList.length,
@@ -4267,8 +4252,7 @@ export default function App() {
     concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { 
       if (!m[c.festival_name]) m[c.festival_name] = { name: c.festival_name, days: 0, years: new Set() }; 
       m[c.festival_name].days++; 
-      const y = getYear(c.date); 
-      if (y) m[c.festival_name].years.add(y); 
+      const y = getYear(c.date); if (y) m[c.festival_name].years.add(y); 
     });
     return Object.values(m).map(f => ({ ...f, years: [...f.years].sort() })).sort((a, b) => b.days - a.days);
   }, [concerts]);
@@ -4284,12 +4268,11 @@ export default function App() {
     return Object.values(m).sort((a, b) => Object.values(b.years).flat().length - Object.values(a.years).flat().length);
   }, [concerts]);
 
-  // ── 8. BAR CHART LOGIC ──
+  // ── 8. VISUALIZATION LOGIC ──
   const stackedTimelineData = useMemo(() => {
     const yearsMap = {};
     allSetsList.forEach(s => {
-      const y = getYear(s.date);
-      if (!y) return;
+      const y = getYear(s.date); if (!y) return;
       if (!yearsMap[y]) yearsMap[y] = { year: String(y).slice(2), fullYear: y };
       const v = s.venue || 'Unknown Venue';
       yearsMap[y][v] = (yearsMap[y][v] || 0) + 1;
@@ -4300,9 +4283,7 @@ export default function App() {
     return Object.values(yearsMap).sort((a, b) => a.fullYear - b.fullYear).map(yearData => {
       const formatted = { ...yearData, other: 0 };
       Object.keys(yearData).forEach(key => {
-        if (key !== 'year' && key !== 'fullYear') {
-          if (!topVenues.includes(key)) { formatted.other += yearData[key]; delete formatted[key]; }
-        }
+        if (key !== 'year' && key !== 'fullYear' && !topVenues.includes(key)) { formatted.other += yearData[key]; delete formatted[key]; }
       });
       return formatted;
     });
@@ -4328,14 +4309,7 @@ export default function App() {
     return Object.entries(counts).map(([name, count]) => ({ name, count, color: GENRE_COLORS[name] || GENRE_COLORS['Other'] })).sort((a, b) => b.count - a.count);
   }, [allSetsList, artistGenres]);
 
-  //  ── DB ACTIONS ──────────────────────────────────────────────────────────────
-
-  async function fetchInitialData() {
-    setLoading(true);
-    await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]);
-    setLoading(false);
-  }
-
+  // ── 9. DB ACTIONS ──
   async function fetchConcerts() {
     const { data } = await supabase.from('concerts').select('*').order('date', { ascending: false });
     if (data) setConcerts(data);
@@ -4372,61 +4346,30 @@ export default function App() {
 
   async function handleSetGenre(artist, genre) {
     if (!artist) return;
-    const { error } = await supabase
-      .from('artist_genres')
-      .upsert({ artist_name: artist, genre: genre }, { onConflict: 'artist_name' });
-    if (error) {
-      console.error('Genre error:', error);
-    } else {
-      setArtistGenres(prev => ({ ...prev, [artist]: genre }));
-    }
+    const { error } = await supabase.from('artist_genres').upsert({ artist_name: artist, genre: genre }, { onConflict: 'artist_name' });
+    if (!error) setArtistGenres(prev => ({ ...prev, [artist]: genre }));
   }
 
   async function handleUpcomingSave(id, payload) {
-  const cleanPayload = {
-    artist: payload.artist,
-    venue: payload.venue,
-    date: payload.date,
-    status: payload.status,
-  };
-  if (id) {
-    const { data, error } = await supabase
-      .from('upcoming_concerts')
-      .update(cleanPayload)
-      .eq('id', id)
-      .select();
-    if (error) alert('Save failed: ' + error.message);
-    console.log('update result:', data, error);
-  } else {
-    const { data, error } = await supabase
-      .from('upcoming_concerts')
-      .insert([cleanPayload])
-      .select();
-    if (error) alert('Insert failed: ' + error.message);
-    console.log('insert result:', data, error);
-  }
-  await fetchUpcoming();
-  setUpcomingModal(null);
-}
-
-async function handleUpcomingDelete(id) {
-  if (window.confirm('Remove this show?')) {
-    const { error } = await supabase
-      .from('upcoming_concerts')
-      .delete()
-      .eq('id', id);
-    if (error) alert('Delete failed: ' + error.message);
-    console.log('delete id:', id, 'error:', error);
-    await fetchUpcoming();
+    const cleanPayload = { artist: payload.artist, venue: payload.venue, date: payload.date, status: payload.status };
+    if (id) await supabase.from('upcoming_concerts').update(cleanPayload).eq('id', id);
+    else await supabase.from('upcoming_concerts').insert([cleanPayload]);
+    fetchUpcoming();
     setUpcomingModal(null);
   }
-}
+
+  async function handleUpcomingDelete(id) {
+    if (window.confirm('Remove show?')) {
+      await supabase.from('upcoming_concerts').delete().eq('id', id);
+      fetchUpcoming();
+      setUpcomingModal(null);
+    }
+  }
 
   async function handleDuplicate(concert) {
     const { id, created_at, ...rest } = concert;
     await supabase.from('concerts').insert([{ ...rest, date: '', festival_day: '' }]);
     fetchConcerts();
-    alert('Duplicated! Find it in Manage and update the date.');
   }
 
   const handleGenreClick = (genre) => {
@@ -4437,7 +4380,7 @@ async function handleUpcomingDelete(id) {
 
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING</div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
     </div>
   );
 
