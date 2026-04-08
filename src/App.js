@@ -4723,13 +4723,13 @@ export default function App() {
         {/* ── 2. THE MAIN STAGE ── */}
         <div style={{ flex: 1, height: '100vh', overflowY: 'auto', overflowX: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', background: C.bg }}>
           
-          <header style={{ 
+         <header style={{ 
   padding: '0', 
   background: '#050508', 
   position: 'sticky', top: 0, zIndex: 100,
-  display: 'flex', alignItems: 'stretch', // Stretch ensures buttons fill the height
+  display: 'flex', alignItems: 'stretch',
   borderBottom: `2px solid ${C.border}`,
-  height: isMobile ? '70px' : '90px', // Slightly taller for bigger impact
+  height: isMobile ? '70px' : '90px', 
   flexShrink: 0,
   boxSizing: 'border-box',
   overflow: 'visible'
@@ -4746,7 +4746,6 @@ export default function App() {
   }}>
     <div style={{ transform: isMobile ? 'scale(0.8)' : 'none' }}>
       <TrackRecordLogo size={40} />
-      {/* Brand name moved inside Logo Component or removed here to maximize space */}
     </div>
   </div>
 
@@ -4766,7 +4765,7 @@ export default function App() {
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer',
           position: 'relative',
-          background: `linear-gradient(180deg, ${hexToRgba(s.color, 0.08)} 0%, #050508 100%)`, // Top-down color bleed
+          background: `linear-gradient(180deg, ${hexToRgba(s.color, 0.08)} 0%, #050508 100%)`,
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           overflow: 'hidden'
         }}
@@ -4785,7 +4784,7 @@ export default function App() {
         {/* LARGE NUMBER */}
         <div style={{ 
           fontFamily: "'Bebas Neue'", 
-          fontSize: isMobile ? '1.5rem' : '3rem', // MUCH LARGER
+          fontSize: isMobile ? '1.5rem' : '3rem', 
           color: s.color, 
           lineHeight: 1,
           transition: 'transform 0.3s ease',
@@ -4810,21 +4809,13 @@ export default function App() {
     ))}
   </div>
 
-  {/* ── RIGHT: SYSTEM STATUS & IDENTITY ── */}
+  {/* ── RIGHT: SYSTEM CONTROLS ── */}
   <div style={{ 
-    display: 'flex', alignItems: 'center', gap: 20, padding: '0 25px', 
+    display: 'flex', alignItems: 'center', padding: '0 30px', 
     background: `linear-gradient(225deg, ${hexToRgba(C.teal, 0.05)} 0%, #050508 100%)`,
     borderLeft: `1px solid ${C.border}`
   }}>
-    
-    {!isMobile && (
-      <div style={{ position: 'relative', width: '80px' }}>
-        <div style={{ position: 'absolute', top: '-105px', left: 0 }}>
-           <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
-        </div>
-      </div>
-    )}
-    
+    {/* ID Card / Lanyard Container completely removed */}
     <ThemeSwitcher isMobile={isMobile} />
   </div>
 </header>
