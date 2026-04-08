@@ -4520,52 +4520,38 @@ export default function App() {
             {isMobile ? '✕' : (navCollapsed ? '→' : '←')}
           </button>
 
-          {/* LOGO AREA */}
-          {/* LOGO AREA - CENTERED IDENTITY */}
+          {/* LOGO AREA - MATCHED TO HEADER HEIGHT */}
           <div style={{ 
-            padding: '40px 24px 30px', 
+            padding: '0 20px', 
             borderBottom: `1px solid ${C.border}`, 
-            marginBottom: 20, 
-            minHeight: '160px', 
+            height: isMobile ? '70px' : '80px', // Matches exactly with the main header
             display: 'flex', 
             flexDirection: 'column', 
-            alignItems: 'center', // Always centered
-            textAlign: 'center'    // Always centered
+            alignItems: 'center', 
+            justifyContent: 'center',
+            flexShrink: 0
           }}>
-             <div style={{ marginBottom: 20, position: 'relative' }}>
-                {/* Sized down to 45 for a cleaner fit */}
-                <TrackRecordLogo size={45} />
+             <div style={{ marginBottom: 4 }}>
+                <TrackRecordLogo size={32} />
              </div>
              
              {(!navCollapsed || isMobile) && (
                <div className="fade-in">
                  <h1 style={{ 
                    fontFamily: "'Bebas Neue', sans-serif", 
-                   fontSize: '2.2rem', 
+                   fontSize: '1.4rem', // Reduced size to sit elegantly in the 80px bar
                    margin: 0, 
-                   lineHeight: 0.9, 
-                   letterSpacing: '3px', // Increased tracking for a more "Architectural" feel
+                   lineHeight: 1, 
+                   letterSpacing: '4px', // Architectural high-tracking
                    fontWeight: 400,
-                   color: C.white 
+                   color: C.white,
+                   textAlign: 'center'
                  }}>
                    TRACK<span style={{ color: C.teal }}>RECORD</span>
                  </h1>
-                 
-                 <div style={{ 
-                   fontFamily: "'Space Mono', monospace", 
-                   fontSize: '7px', 
-                   color: C.grayDim, 
-                   letterSpacing: '3px', 
-                   marginTop: 10,
-                   textTransform: 'uppercase',
-                   opacity: 0.8
-                 }}>
-                   {isAdmin ? 'ADMIN CONSOLE V.2026.04' : 'LIVE // ARCHIVE SYSTEM'}
-                 </div>
                </div>
              )}
           </div>
-
           {/* MAIN NAV AREA */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px' }} className="wristband-bin">
             {TAB_GROUPS.map((group) => (
