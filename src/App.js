@@ -1753,7 +1753,7 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
   useEffect(() => {
     const timer = setInterval(() => {
       setStatIdx((prev) => (prev + 1) % rotatingStats.length);
-    }, 3500);
+    }, 3000); // Slightly faster rotation
     return () => clearInterval(timer);
   }, [rotatingStats.length]);
 
@@ -1765,130 +1765,119 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
       
       <style>{`
         @keyframes woofer-pulse {
-          0%, 100% { transform: scale(1); filter: brightness(1); }
-          50% { transform: scale(1.08); filter: brightness(1.6) drop-shadow(0 0 10px ${C.teal}); }
+          0%, 100% { transform: scale(1); filter: brightness(1.2); }
+          50% { transform: scale(1.1); filter: brightness(2) drop-shadow(0 0 12px ${C.teal}); }
         }
         .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
         
         @keyframes beam-swing {
-          0%, 100% { transform: rotate(-5deg); opacity: 0.3; }
-          50% { transform: rotate(5deg); opacity: 0.7; }
+          0%, 100% { transform: rotate(-10deg); }
+          50% { transform: rotate(10deg); }
         }
         .moving-light { animation: beam-swing 3s ease-in-out infinite; transform-origin: top center; }
         
-        @keyframes screen-glitch {
-          0%, 100% { opacity: 0.9; }
-          95% { opacity: 0.9; }
-          96% { opacity: 1; transform: translateX(1px); }
-          97% { opacity: 0.8; transform: translateX(-1px); }
-          99% { opacity: 1; }
+        @keyframes truss-flash {
+          0%, 100% { background: #fff; box-shadow: 0 0 15px #fff; }
+          50% { background: #444; box-shadow: none; }
         }
-        .side-screen { animation: screen-glitch 5s infinite; }
-        
-        @keyframes chasing-bulb {
-          0%, 100% { background: #fff; box-shadow: 0 0 10px #fff; }
-          50% { background: #222; box-shadow: none; }
+        .truss-bulb { animation: truss-flash 1.5s infinite; }
+
+        @keyframes floor-glow {
+           0%, 100% { opacity: 0.3; }
+           50% { opacity: 0.6; }
         }
-        .truss-bulb { animation: chasing-bulb 1s infinite; }
+        .stage-wash { animation: floor-glow 3s infinite; }
       `}</style>
 
-      {/* 🟢 DATA ROWS */}
+      {/* 🟢 TOP DECADE BARS */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         {Object.entries(counts).map(([decade, count]) => {
           const m = { '90s': {label:'ANALOG', col:C.purple}, '00s': {label:'DIGITAL', col:C.cyan}, '10s': {label:'STREAM', col:C.teal}, '20s': {label:'HYPER', col:C.gold} }[decade];
           return (
-            <div key={decade} style={{ background: 'rgba(255,255,255,0.02)', padding: '6px 12px', borderRadius: 6, border: `1px solid ${hexToRgba(m.col, 0.2)}` }}>
+            <div key={decade} style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: 6, border: `1px solid ${hexToRgba(m.col, 0.3)}` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: m.col, fontWeight: 900 }}>{m.label}</span>
-                <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.85rem', color: '#fff' }}>{decade}</span>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: m.col, fontWeight: 900 }}>{m.label}</span>
+                <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff' }}>{decade}</span>
               </div>
               <div style={{ height: 2, background: '#000', borderRadius: 1, overflow: 'hidden', marginTop: 4 }}>
-                <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.col, boxShadow: `0 0 10px ${m.col}` }} />
+                <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.col, boxShadow: `0 0 12px ${m.col}` }} />
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* 🎭 THE MAIN STAGE */}
+      {/* 🎭 THE MAIN STAGE (Vivid Edition) */}
       <div style={{ flex: 1, borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
         <div style={{ 
-          width: '100%', height: '100%', background: '#020204', borderRadius: 8, 
-          border: `1px solid ${C.border}`, position: 'relative', overflow: 'hidden'
+          width: '100%', height: '100%', background: '#010102', borderRadius: 8, 
+          border: `1px solid ${C.border}`, position: 'relative', overflow: 'hidden',
+          boxShadow: 'inset 0 0 80px rgba(0,0,0,1)'
         }}>
           
-          {/* TRUSS LIGHTS */}
-          <div style={{ position: 'absolute', top: 0, width: '100%', height: '20px', background: '#111', borderBottom: '1px solid #333', zIndex: 100, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-             {[...Array(12)].map((_, i) => <div key={i} className="truss-bulb" style={{ width: 3, height: 3, borderRadius: '50%', animationDelay: `${i*0.1}s` }} />)}
+          {/* 1. BRIGHT OVERHEAD TRUSS */}
+          <div style={{ position: 'absolute', top: 0, width: '100%', height: '22px', background: '#111', borderBottom: '2px solid #555', zIndex: 100, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+             {[...Array(12)].map((_, i) => <div key={i} className="truss-bulb" style={{ width: 4, height: 4, borderRadius: '50%', animationDelay: `${i*0.15}s` }} />)}
           </div>
 
-          {/* 🏟️ FIXED SVG LIGHTING RIG */}
+          {/* 2. HIGH-INTENSITY SVG LIGHTING RIG */}
           <div style={{ position: 'absolute', inset: 0, zIndex: 10 }}>
              <svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-                {/* 1. Center White Spotlight (Static) */}
-                <polygon points="500,0 350,1000 650,1000" fill="rgba(255,255,255,0.15)" />
+                {/* Massive White Center Spot */}
+                <polygon points="500,0 200,1000 800,1000" fill="rgba(255,255,255,0.25)" style={{ filter: 'blur(20px)' }} />
 
-                {/* 2. Left Side Beams (Purple) */}
-                <g className="moving-light" style={{ animationDelay: '0s' }}>
-                  <polygon points="150,0 0,1000 300,1000" fill={hexToRgba(C.purple, 0.2)} />
-                </g>
-                <g className="moving-light" style={{ animationDelay: '0.5s' }}>
-                  <polygon points="250,0 100,1000 400,1000" fill={hexToRgba(C.purple, 0.15)} />
-                </g>
-                <g className="moving-light" style={{ animationDelay: '1s' }}>
-                  <polygon points="350,0 200,1000 500,1000" fill={hexToRgba(C.purple, 0.1)} />
-                </g>
-
-                {/* 3. Right Side Beams (Cyan) */}
-                <g className="moving-light" style={{ animationDelay: '0.2s' }}>
-                  <polygon points="850,0 700,1000 1000,1000" fill={hexToRgba(C.cyan, 0.2)} />
-                </g>
-                <g className="moving-light" style={{ animationDelay: '0.7s' }}>
-                  <polygon points="750,0 600,1000 900,1000" fill={hexToRgba(C.cyan, 0.15)} />
-                </g>
-                <g className="moving-light" style={{ animationDelay: '1.2s' }}>
-                  <polygon points="650,0 500,1000 800,1000" fill={hexToRgba(C.cyan, 0.1)} />
-                </g>
+                {/* 6 High-Opacity Color Beams */}
+                {[...Array(6)].map((_, i) => {
+                  const isLeft = i < 3;
+                  const color = isLeft ? C.purple : C.cyan;
+                  const xBase = isLeft ? (150 + i * 100) : (550 + (i-3) * 100);
+                  return (
+                    <g key={i} className="moving-light" style={{ animationDelay: `${i*0.4}s` }}>
+                      <polygon points={`${xBase},0 ${xBase-200},1000 ${xBase+200},1000`} fill={hexToRgba(color, 0.45)} style={{ mixBlendMode: 'screen', filter: 'blur(15px)' }} />
+                    </g>
+                  );
+                })}
              </svg>
           </div>
 
-          {/* IMAG SCREENS (STAT DISPLAYS) */}
-          <div style={{ position: 'absolute', top: 50, left: '8%', width: '22%', height: '55px', zIndex: 20 }} className="side-screen">
-            <div style={{ width: '100%', height: '100%', background: '#08080c', border: `1px solid ${currentStat.color}`, borderRadius: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 15px ${hexToRgba(currentStat.color, 0.1)}` }}>
-               <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: currentStat.color, letterSpacing: 1 }}>{currentStat.label}</div>
+          {/* 3. CENTER BACK-WALL (Kills the empty black) */}
+          <div style={{ 
+            position: 'absolute', top: 40, left: '25%', right: '25%', bottom: 60,
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`,
+            backgroundSize: '15px 15px', zIndex: 5, opacity: 0.5, border: '1px solid rgba(255,255,255,0.03)'
+          }} />
+
+          {/* 4. LARGE IMAG SCREENS */}
+          <div style={{ position: 'absolute', top: 55, left: '6%', width: '25%', height: '70px', zIndex: 20 }} className="side-screen">
+            <div style={{ width: '100%', height: '100%', background: '#000', border: `2px solid ${currentStat.color}`, borderRadius: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 30px ${hexToRgba(currentStat.color, 0.3)}` }}>
+               <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: currentStat.color, letterSpacing: 2, fontWeight: 900 }}>{currentStat.label}</div>
             </div>
           </div>
-          <div style={{ position: 'absolute', top: 50, right: '8%', width: '22%', height: '55px', zIndex: 20 }} className="side-screen">
-            <div style={{ width: '100%', height: '100%', background: '#08080c', border: `1px solid ${currentStat.color}`, borderRadius: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 15px ${hexToRgba(currentStat.color, 0.1)}` }}>
-               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff' }}>{currentStat.val}</div>
+          
+          <div style={{ position: 'absolute', top: 55, right: '6%', width: '25%', height: '70px', zIndex: 20 }} className="side-screen">
+            <div style={{ width: '100%', height: '100%', background: '#000', border: `2px solid ${currentStat.color}`, borderRadius: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 30px ${hexToRgba(currentStat.color, 0.3)}` }}>
+               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', textShadow: `0 0 10px ${currentStat.color}` }}>{currentStat.val}</div>
             </div>
           </div>
 
-          {/* CENTER DISPLAY */}
-          <div style={{ position: 'absolute', top: '45px', left: '32%', right: '32%', bottom: '65px', background: 'rgba(0,0,0,0.85)', border: '1px solid #111', zIndex: 5, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-             <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.teal, letterSpacing: 2 }}>STADIUM RIG</div>
-                <div style={{ width: 30, height: 1, background: C.teal, margin: '6px auto', opacity: 0.3 }} />
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: C.grayDim }}>V.2026.LIVE</div>
-             </div>
-          </div>
-
-          {/* SPEAKER STACKS */}
+          {/* 5. SPEAKER STACKS */}
           {[ {side: 'left'}, {side: 'right'} ].map(s => (
-            <div key={s.side} style={{ position: 'absolute', [s.side]: 10, bottom: 45, width: 32, height: 115, background: '#0a0a0c', border: `1.5px solid #222`, borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 5, padding: 4, zIndex: 30, boxShadow: '0 5px 15px rgba(0,0,0,0.5)' }}>
-              {[1,2,3,4].map(i => <div key={i} style={{ flex: 1, background: '#000', borderRadius: '50%', border: '1px solid #1a1a1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="speaker-cone" style={{ width: 14, height: 14, borderRadius: '50%', border: `1px solid ${C.teal}`, opacity: 0.6 }} /></div>)}
+            <div key={s.side} style={{ position: 'absolute', [s.side]: 12, bottom: 45, width: 38, height: 130, background: '#0a0a0c', border: `2px solid #222`, borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 6, padding: 5, zIndex: 30, boxShadow: '0 10px 40px #000' }}>
+              {[1,2,3,4].map(i => <div key={i} style={{ flex: 1, background: '#000', borderRadius: '50%', border: '1px solid #1a1a1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="speaker-cone" style={{ width: 18, height: 18, borderRadius: '50%', border: `2.2px solid ${C.teal}`, background: 'radial-gradient(circle, #000, #111)' }} /></div>)}
             </div>
           ))}
 
-          {/* STAGE FLOOR */}
-          <div style={{ position: 'absolute', bottom: 35, width: '100%', height: '55px', background: '#121216', borderTop: '2px solid #333', zIndex: 20, clipPath: 'polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%)' }}>
-             <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 25px)' }} />
+          {/* 6. ILLUMINATED STAGE FLOOR */}
+          <div style={{ position: 'absolute', bottom: 35, width: '100%', height: '70px', background: '#1a1a1e', borderTop: '3px solid #444', zIndex: 20, clipPath: 'polygon(5% 0%, 95% 0%, 100% 100%, 0% 100%)' }}>
+             {/* Dynamic Floor Wash */}
+             <div className="stage-wash" style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at center top, ${hexToRgba(currentStat.color, 0.4)}, transparent 70%)`, transition: 'background 0.5s ease' }} />
+             <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.1) 0px, rgba(255,255,255,0.1) 1px, transparent 1px, transparent 20px)' }} />
           </div>
 
-          {/* FRONT OF HOUSE TERMINAL */}
-          <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '32px', background: '#030305', zIndex: 60, borderTop: '2px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-             <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: currentStat.color, letterSpacing: '4px', fontWeight: 900, transition: 'color 0.5s ease' }}>
-                {currentStat.label} // ARCHIVE STATUS: ONLINE
+          {/* 7. FRONT OF HOUSE BAR */}
+          <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '32px', background: '#000', zIndex: 60, borderTop: '2px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+             <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: currentStat.color, letterSpacing: '5px', fontWeight: 900, textShadow: `0 0 8px ${currentStat.color}`, transition: 'color 0.5s ease' }}>
+                {currentStat.label} // RIG STATUS: ACTIVE
              </div>
           </div>
         </div>
