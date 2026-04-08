@@ -3707,210 +3707,334 @@ function generateFestName(dominantGenre) {
 }
 
 function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
-  const [genreMix, setGenreMix] = useState({ 'Indie Rock':30,'Electronic':20,'Folk':20,'Jam':15,'Alternative':15 });
+  const [genreMix, setGenreMix] = useState({ 'Indie Rock': 30, 'Electronic': 20, 'Folk': 20, 'Jam': 15, 'Alternative': 15 });
   const [templateIdx, setTemplateIdx] = useState(0);
   const [festName, setFestName] = useState('');
   const [generated, setGenerated] = useState(null);
   const [headlinerCount, setHeadlinerCount] = useState(2);
-  const [totalActs, setTotalActs] = useState(20);
+  const [totalActs, setTotalActs] = useState(24);
 
-  const totalPct = Object.values(genreMix).reduce((a,b)=>a+b,0);
+  // Local style to prevent Reference Errors
+  const localInputStyle = { 
+    background: 'rgba(0,0,0,0.4)', 
+    border: `1px solid ${C.border || '#333'}`, 
+    color: '#fff', 
+    padding: '12px', 
+    borderRadius: '6px', 
+    fontFamily: "'Space Mono'", 
+    fontSize: '13px',
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box'
+  };
+
+  const totalPct = Object.values(genreMix).reduce((a, b) => a + b, 0);
 
   const artistPool = useMemo(() => {
     const m = {};
+    if (!allSetsList) return [];
     allSetsList.forEach(s => {
-      const g=genreMap[s.artist]||s.genre||null;
-      if(!g||g==='Other') return;
-      if(!m[s.artist])m[s.artist]={artist:s.artist,genre:g,count:0};
+      const g = genreMap[s.artist] || s.genre || 'Other';
+      if (g === 'Other') return;
+      if (!m[s.artist]) m[s.artist] = { artist: s.artist, genre: g, count: 0 };
       m[s.artist].count++;
     });
-    return Object.values(m).sort((a,b)=>b.count-a.count);
+    return Object.values(m).sort((a, b) => b.count - a.count);
   }, [allSetsList, genreMap]);
 
   const generate = () => {
-    const tpl=POSTER_TEMPLATES[templateIdx];
-    const total=Object.values(genreMix).reduce((a,b)=>a+b,0)||100;
-    const normalized={};
-    Object.entries(genreMix).forEach(([g,v])=>{normalized[g]=Math.max(0,Math.round((v/total)*totalActs));});
-    const picked=[], used=new Set();
-    Object.entries(normalized).forEach(([genre,count])=>{
-      if(count<=0) return;
-      artistPool.filter(a=>a.genre===genre&&!used.has(a.artist)).slice(0,count).forEach(a=>{picked.push({...a});used.add(a.artist);});
+    const tpl = POSTER_TEMPLATES[templateIdx];
+    const total = Object.values(genreMix).reduce((a, b) => a + b, 0) || 100;
+    
+    const picked = [];
+    const used = new Set();
+
+    // Pick artists based on weighted genre mix
+    Object.entries(genreMix).forEach(([genre, weight]) => {
+      if (weight <= 0) return;
+      const targetCount = Math.round((weight / total) * totalActs);
+      const candidates = artistPool.filter(a => a.genre === genre && !used.has(a.artist));
+      
+      candidates.slice(0, targetCount).forEach(a => {
+        picked.push({ ...a });
+        used.add(a.artist);
+      });
     });
-    picked.sort((a,b)=>b.count-a.count);
-    const dominantGenre=Object.entries(genreMix).sort((a,b)=>b[1]-a[1])[0]?.[0]||'default';
-    setGenerated({ tpl, artists:picked, name:festName.trim()||generateFestName(dominantGenre), headlinerCount });
+
+    // Final sorting: Most seen artists at the top (Headliners)
+    picked.sort((a, b) => b.count - a.count);
+    
+    const dominantGenre = Object.entries(genreMix).sort((a, b) => b[1] - a[1])[0]?.[0] || 'default';
+    
+    setGenerated({ 
+      tpl, 
+      artists: picked.slice(0, totalActs), 
+      name: festName.trim() || generateFestName(dominantGenre), 
+      headlinerCount 
+    });
   };
 
-  const tpl=POSTER_TEMPLATES[templateIdx];
+  const PosterPreview = ({ tpl: t, artists, name, headlinerCount: hc }) => {
+    const headliners = artists.slice(0, hc);
+    const midTier = artists.slice(hc, hc + Math.ceil(artists.length * 0.4));
+    const undercard = artists.slice(hc + Math.ceil(artists.length * 0.4));
 
-  const PosterPreview = ({ tpl:t, artists, name, headlinerCount:hc }) => {
-    const headliners=artists.slice(0,hc);
-    const midTier=artists.slice(hc,hc+Math.ceil((artists.length-hc)/2));
-    const undercard=artists.slice(hc+Math.ceil((artists.length-hc)/2));
+    const containerStyle = {
+      background: t.bg,
+      borderRadius: 12,
+      overflow: 'hidden',
+      border: t.dark ? `1px solid ${t.accent}44` : `2px solid ${t.accent}`,
+      padding: '40px 30px',
+      fontFamily: t.font === 'Bebas Neue' ? "'Bebas Neue', sans-serif" : t.font,
+      textAlign: 'center',
+      minHeight: 650,
+      position: 'relative',
+      display: 'flex',
+      flexDirection: 'column',
+      boxShadow: '0 30px 60px rgba(0,0,0,0.5)',
+      color: t.accent
+    };
 
-    if (t.style==='grid') {
-      // Coachella grid: light background, black typography, tight grid
+    if (t.style === 'grid') {
       return (
-        <div style={{ background:t.bg, borderRadius:12, overflow:'hidden', border:'2px solid #1a1a2e', padding:'32px 28px', fontFamily:"'Bebas Neue'", textAlign:'center', minHeight:600 }}>
-          <div style={{ borderBottom:'3px solid #1a1a2e', paddingBottom:12, marginBottom:16 }}>
-            <div style={{ fontSize:'clamp(2rem,5vw,3.2rem)', letterSpacing:'0.12em', color:t.accent, lineHeight:1 }}>{name.toUpperCase()}</div>
-            <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:'#666', letterSpacing:'0.3em', marginTop:4 }}>JUNE 2026 · FROM YOUR 27-YEAR CONCERT HISTORY</div>
+        <div style={containerStyle}>
+          <div style={{ borderBottom: `3px solid ${t.accent}`, paddingBottom: 15, marginBottom: 25 }}>
+            <div style={{ fontSize: '4.5rem', letterSpacing: '4px', lineHeight: 0.9 }}>{name.toUpperCase()}</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#666', letterSpacing: '3px', marginTop: 10 }}>
+              EST. {new Date().getFullYear()} // {allSetsList.length} SHOW HISTORY SOURCE
+            </div>
           </div>
-          {headliners.map((a,i) => <div key={a.artist} style={{ fontSize:i===0?'clamp(2rem,6vw,4rem)':'clamp(1.5rem,4vw,2.5rem)', letterSpacing:'0.06em', color:t.accent, lineHeight:1.1, marginBottom:6 }}>{a.artist.toUpperCase()}</div>)}
-          <div style={{ height:2, background:'#1a1a2e', margin:'12px 0' }} />
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px 12px', marginBottom:12 }}>
-            {midTier.map(a => <div key={a.artist} style={{ fontSize:'clamp(0.8rem,2vw,1.1rem)', letterSpacing:'0.06em', color:t.accent2, lineHeight:1.2, borderBottom:'1px solid #ddd', paddingBottom:4 }}>{a.artist.toUpperCase()}</div>)}
+          <div style={{ marginBottom: 30 }}>
+            {headliners.map(a => <div key={a.artist} style={{ fontSize: '3.5rem', lineHeight: 1.1, letterSpacing: '1px' }}>{a.artist.toUpperCase()}</div>)}
           </div>
-          <div style={{ display:'flex', flexWrap:'wrap', justifyContent:'center', gap:'4px 12px' }}>
-            {undercard.map(a => <span key={a.artist} style={{ fontFamily:"'Space Mono',monospace", fontSize:'clamp(6px,1.2vw,9px)', color:'#555', letterSpacing:'0.12em' }}>{a.artist.toUpperCase()}</span>)}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px 20px', borderTop: `1px solid ${t.accent}22`, paddingTop: 20, marginBottom: 20 }}>
+            {midTier.map(a => <div key={a.artist} style={{ fontSize: '1.2rem', color: t.accent2 }}>{a.artist.toUpperCase()}</div>)}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px 12px', opacity: 0.7 }}>
+            {undercard.map(a => <span key={a.artist} style={{ fontFamily: "'Space Mono'", fontSize: 9 }}>{a.artist.toUpperCase()}</span>)}
           </div>
         </div>
       );
     }
 
-    if (t.style==='forest') {
-      // Bonnaroo forest: rough, handwritten feel, earthy
+    if (t.style === 'forest') {
       return (
-        <div style={{ background:t.bg, borderRadius:12, overflow:'hidden', border:`3px solid ${t.accent}`, padding:'32px 28px', textAlign:'center', minHeight:600, position:'relative' }}>
-          <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 0%,rgba(136,204,68,0.1),transparent 60%)', pointerEvents:'none' }} />
-          <div style={{ fontFamily:"'Caveat',cursive", fontSize:'clamp(2.5rem,7vw,4.5rem)', fontWeight:700, color:t.accent, lineHeight:1, marginBottom:8, textShadow:`0 0 20px ${hexToRgba(t.accent,0.4)}` }}>{name}</div>
-          <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:hexToRgba(t.accent2,0.7), letterSpacing:'0.2em', marginBottom:24 }}>JUNE 2026</div>
-          {headliners.map((a,i) => <div key={a.artist} style={{ fontFamily:"'Caveat',cursive", fontSize:i===0?'clamp(2rem,5vw,3.5rem)':'clamp(1.5rem,3.5vw,2.5rem)', fontWeight:700, color:i===0?t.accent2:t.accent, lineHeight:1.1, marginBottom:6 }}>{a.artist}</div>)}
-          <div style={{ height:2, background:`${t.accent}55`, margin:'16px 0', borderRadius:1 }} />
-          <div style={{ fontFamily:"'Caveat',cursive", fontSize:'clamp(1rem,2.5vw,1.5rem)', color:hexToRgba(t.accent,0.8), lineHeight:1.8, marginBottom:12 }}>
-            {midTier.map(a=>a.artist).join(' · ')}
+        <div style={containerStyle}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 0%, rgba(255,255,255,0.05), transparent)', pointerEvents: 'none' }} />
+          <div style={{ fontFamily: "'Caveat'", fontSize: '5rem', marginBottom: 10, textShadow: '2px 2px 0px rgba(0,0,0,0.1)' }}>{name}</div>
+          <div style={{ height: 2, background: t.accent2, width: '40%', margin: '0 auto 30px auto' }} />
+          <div style={{ marginBottom: 40 }}>
+            {headliners.map(a => <div key={a.artist} style={{ fontSize: '3rem', lineHeight: 1.2 }}>{a.artist}</div>)}
           </div>
-          <div style={{ fontFamily:"'Space Mono',monospace", fontSize:'clamp(6px,1.2vw,8px)', color:hexToRgba(t.accent,0.5), letterSpacing:'0.1em', lineHeight:2 }}>
-            {undercard.map(a=>a.artist).join('  ·  ')}
+          <div style={{ fontSize: '1.5rem', lineHeight: 1.6, marginBottom: 25, color: t.accent2 }}>
+            {midTier.map(a => a.artist).join('  ·  ')}
+          </div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 10, opacity: 0.6, lineHeight: 2 }}>
+            {undercard.map(a => a.artist).join(' / ')}
           </div>
         </div>
       );
     }
 
-    // Lolla Bold: dark, massive type, high impact
+    // Default: Lolla Bold
     return (
-      <div style={{ background:t.bg, borderRadius:12, overflow:'hidden', border:`2px solid ${t.accent}`, padding:'32px 28px', textAlign:'center', minHeight:600, position:'relative' }}>
-        <div style={{ position:'absolute', inset:0, background:`radial-gradient(ellipse at 50% 0%,${hexToRgba(t.accent,0.2)},transparent 60%)`, pointerEvents:'none' }} />
-        <div style={{ position:'absolute', inset:0, background:`radial-gradient(ellipse at 50% 100%,${hexToRgba(t.accent2,0.05)},transparent 60%)`, pointerEvents:'none' }} />
-        <div style={{ position:'relative', zIndex:1 }}>
-          <div style={{ height:2, background:`linear-gradient(90deg,transparent,${t.accent},transparent)`, marginBottom:20 }} />
-          <div style={{ fontFamily:"'Monoton',cursive", fontSize:'clamp(1.5rem,4vw,2.5rem)', letterSpacing:'0.1em', color:t.accent, lineHeight:1.2, marginBottom:6, textShadow:`0 0 20px ${hexToRgba(t.accent,0.5)}` }}>{name.toUpperCase()}</div>
-          <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:hexToRgba(t.accent2,0.5), letterSpacing:'0.3em', marginBottom:28 }}>JUNE 2026</div>
-          {headliners.map((a,i) => <div key={a.artist} style={{ fontFamily:"'Bebas Neue'", fontSize:i===0?'clamp(3rem,8vw,6rem)':'clamp(2rem,5vw,3.5rem)', letterSpacing:'0.04em', color:i===0?t.accent2:t.accent, lineHeight:1, marginBottom:4, textShadow:i===0?`0 0 30px ${hexToRgba(t.accent,0.3)}`:'none' }}>{a.artist.toUpperCase()}</div>)}
-          <div style={{ height:1, background:`${t.accent}66`, margin:'20px 0' }} />
-          <div style={{ fontFamily:"'Bebas Neue'", fontSize:'clamp(1rem,2.5vw,1.6rem)', color:hexToRgba(t.accent2,0.7), letterSpacing:'0.06em', lineHeight:1.8, marginBottom:16 }}>{midTier.map(a=>a.artist.toUpperCase()).join(' · ')}</div>
-          <div style={{ fontFamily:"'Space Mono',monospace", fontSize:'clamp(6px,1.2vw,8px)', color:hexToRgba(t.accent2,0.35), letterSpacing:'0.15em', lineHeight:2 }}>{undercard.map(a=>a.artist.toUpperCase()).join('  ·  ')}</div>
-          <div style={{ height:2, background:`linear-gradient(90deg,transparent,${t.accent},transparent)`, marginTop:20 }} />
+      <div style={containerStyle}>
+        <div style={{ height: 4, background: t.accent, marginBottom: 20 }} />
+        <div style={{ fontFamily: "'Monoton'", fontSize: '2.5rem', marginBottom: 10 }}>{name.toUpperCase()}</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, letterSpacing: 5, marginBottom: 40 }}>{new Date().getFullYear()} CIRCUIT</div>
+        <div style={{ marginBottom: 40 }}>
+          {headliners.map(a => <div key={a.artist} style={{ fontSize: '4.5rem', lineHeight: 0.9, color: t.accent2 }}>{a.artist.toUpperCase()}</div>)}
         </div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', letterSpacing: 2, lineHeight: 1.4, marginBottom: 20 }}>
+          {midTier.map(a => a.artist.toUpperCase()).join('  •  ')}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '5px 15px', fontFamily: "'Space Mono'", fontSize: 9, opacity: 0.5 }}>
+          {undercard.map(a => a.artist.toUpperCase()).join('  ')}
+        </div>
+        <div style={{ height: 4, background: t.accent, marginTop: 'auto' }} />
       </div>
     );
   };
 
   return (
-    <div style={{ padding:'24px 0' }} className="fade-in">
-      <div style={{ textAlign:'center', marginBottom:32 }}>
-        <div style={{ fontFamily:"'Bebas Neue'", fontSize:'clamp(2rem,5vw,3.5rem)', color:C.white, letterSpacing:'0.06em', marginBottom:8 }}>🎨 POSTER <span style={{ color:C.teal }}>GENERATOR</span></div>
-        <div style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:C.gray }}>Build your dream festival from your concert history</div>
+    <div style={{ padding: '24px 0' }} className="fade-in">
+      <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3.5rem', color: C.white, letterSpacing: '2px' }}>
+          ARTIST <span style={{ color: C.teal }}>POSTER GEN</span>
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, textTransform: 'uppercase', letterSpacing: 3 }}>
+          Turn your history into a headliner event
+        </div>
       </div>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24, marginBottom:32 }}>
-        <div>
-          <Card neon style={{ marginBottom:16 }}>
-            <CardTitle>Genre Mix</CardTitle>
-            <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:totalPct===100?C.green:totalPct>100?C.red:C.gold, marginBottom:12 }}>Total: {totalPct}% {totalPct!==100&&'(should equal 100)'}</div>
-            {GENRES.filter(g=>g!=='Other').map(g => (
-              <div key={g} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
-                <div style={{ width:10, height:10, borderRadius:'50%', background:GENRE_COLORS[g], flexShrink:0 }} />
-                <span style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, width:90, flexShrink:0 }}>{g}</span>
-                <input type="range" min={0} max={100} value={genreMix[g]||0} onChange={e=>setGenreMix(p=>({...p,[g]:+e.target.value}))} style={{ flex:1, accentColor:GENRE_COLORS[g] }} />
-                <span style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:GENRE_COLORS[g], width:32, textAlign:'right', flexShrink:0 }}>{genreMix[g]||0}%</span>
-              </div>
-            ))}
-          </Card>
-          <Card neon style={{ marginBottom:16 }}>
-            <CardTitle>Options</CardTitle>
-            <div style={{ marginBottom:12 }}>
-              <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, marginBottom:6 }}>TOTAL ACTS: {totalActs}</div>
-              <input type="range" min={5} max={40} value={totalActs} onChange={e=>setTotalActs(+e.target.value)} style={{ width:'100%', accentColor:C.teal }} />
-            </div>
-            <div style={{ marginBottom:12 }}>
-              <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, marginBottom:6 }}>HEADLINERS: {headlinerCount}</div>
-              <input type="range" min={1} max={4} value={headlinerCount} onChange={e=>setHeadlinerCount(+e.target.value)} style={{ width:'100%', accentColor:C.gold }} />
-            </div>
-            <div style={{ marginBottom:12 }}>
-              <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, marginBottom:6 }}>FESTIVAL NAME (leave blank to auto-generate)</div>
-              <input value={festName} onChange={e=>setFestName(e.target.value)} placeholder="e.g. Neon Pines Festival" style={{ ...inputSt, width:'100%' }} />
-            </div>
-          </Card>
+
+      <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 1000 ? '1fr' : '400px 1fr', gap: 30 }}>
+        
+        {/* LEFT COLUMN: CONTROLS */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <Card neon>
-            <CardTitle>Template</CardTitle>
-            <div style={{ display:'flex', gap:8 }}>
-              {POSTER_TEMPLATES.map((t,i) => (
-                <div key={t.id} onClick={()=>setTemplateIdx(i)} style={{ flex:1, background:t.bg, border:`2px solid ${i===templateIdx?t.accent:C.border}`, borderRadius:6, padding:'10px 6px', cursor:'pointer', textAlign:'center', boxShadow:i===templateIdx?`0 0 12px rgba(0,0,0,0.5)`:'none', transition:'all 0.2s' }}>
-                  <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:t.dark?t.accent:'#1a1a2e', textTransform:'uppercase', letterSpacing:1, lineHeight:1.4 }}>{t.name}</div>
+            <CardTitle>1. GENRE MIX ({totalPct}%)</CardTitle>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {GENRES.filter(g => g !== 'Other').map(g => (
+                <div key={g} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: GENRE_COLORS[g] }} />
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, width: 100 }}>{g.toUpperCase()}</span>
+                  <input 
+                    type="range" min={0} max={100} 
+                    value={genreMix[g] || 0} 
+                    onChange={e => setGenreMix(p => ({ ...p, [g]: +e.target.value }))} 
+                    style={{ flex: 1, accentColor: GENRE_COLORS[g] }} 
+                  />
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: GENRE_COLORS[g], width: 35, textAlign: 'right' }}>{genreMix[g] || 0}%</span>
                 </div>
               ))}
             </div>
           </Card>
-          <div style={{ marginTop:20 }}>
-            <Btn onClick={generate} style={{ width:'100%', padding:'14px', fontSize:13, letterSpacing:'0.2em' }}>⚡ GENERATE POSTER</Btn>
-          </div>
-        </div>
-        <div>
-          {generated
-            ? <PosterPreview {...generated} />
-            : <div style={{ background:C.bgCard, border:`2px dashed ${C.border}`, borderRadius:12, minHeight:600, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16 }}>
-                <div style={{ fontSize:'4rem' }}>🎨</div>
-                <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.5rem', color:C.grayDim }}>YOUR POSTER APPEARS HERE</div>
-                <div style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:C.grayDim }}>Configure your mix and hit Generate</div>
+
+          <Card neon>
+            <CardTitle>2. STAGE OPTIONS</CardTitle>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div>
+                <label style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, display: 'block', marginBottom: 8 }}>FESTIVAL NAME (AUTOGEN IF BLANK)</label>
+                <input value={festName} onChange={e => setFestName(e.target.value)} placeholder="e.g. Desert Trip 2026" style={localInputStyle} />
               </div>
-          }
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
+                <div>
+                  <label style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, display: 'block', marginBottom: 8 }}>ACTS: {totalActs}</label>
+                  <input type="range" min={10} max={50} value={totalActs} onChange={e => setTotalActs(+e.target.value)} style={{ width: '100%', accentColor: C.teal }} />
+                </div>
+                <div>
+                  <label style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, display: 'block', marginBottom: 8 }}>HEADLINERS: {headlinerCount}</label>
+                  <input type="range" min={1} max={4} value={headlinerCount} onChange={e => setHeadlinerCount(+e.target.value)} style={{ width: '100%', accentColor: C.gold }} />
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card neon>
+            <CardTitle>3. ART DIRECTION</CardTitle>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {POSTER_TEMPLATES.map((t, i) => (
+                <div 
+                  key={t.id} 
+                  onClick={() => setTemplateIdx(i)} 
+                  style={{ 
+                    flex: 1, padding: '12px 8px', borderRadius: 6, cursor: 'pointer', textAlign: 'center',
+                    background: i === templateIdx ? t.bg : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${i === templateIdx ? t.accent : C.border}`,
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: i === templateIdx ? t.accent : '#fff' }}>{t.name}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Btn onClick={generate} style={{ padding: '20px', fontSize: '1.2rem', letterSpacing: 4 }}>⚡ STAGE LINEUP</Btn>
+        </div>
+
+        {/* RIGHT COLUMN: PREVIEW */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+          {generated ? (
+            <div className="fade-in" style={{ width: '100%', maxWidth: 500 }}>
+              <PosterPreview {...generated} />
+              <div style={{ marginTop: 20, textAlign: 'center', fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim }}>
+                📸 SCREENSHOT TO SHARE YOUR LEGACY
+              </div>
+            </div>
+          ) : (
+            <div style={{ 
+              width: '100%', height: 650, border: `2px dashed ${C.border}`, borderRadius: 12,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              color: C.grayDim, gap: 20
+            }}>
+              <div style={{ fontSize: '4rem', opacity: 0.2 }}>🎨</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', letterSpacing: 2 }}>PREVIEW PENDING</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9 }}>SET YOUR MIX AND GENERATE</div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
-
 // ─── MANAGE TAB ───────────────────────────────────────────────────────────────
 function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
-  const [search, setSearch] = useState(''), [page, setPage] = useState(1); const PER=30;
-  const filtered = useMemo(() => { if(!search)return concerts; const q=search.toLowerCase(); return concerts.filter(c=>(c.bands||[]).some(b=>b.toLowerCase().includes(q))||(c.venue||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q)||(c.festival_name||'').toLowerCase().includes(q)); }, [concerts,search]);
-  const paged=filtered.slice((page-1)*PER,page*PER), totalPages=Math.ceil(filtered.length/PER);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const PER = 30;
+
+  const filtered = useMemo(() => {
+    if (!search) return concerts;
+    const q = search.toLowerCase();
+    return concerts.filter(c => 
+      (c.bands || []).some(b => b.toLowerCase().includes(q)) ||
+      (c.venue || '').toLowerCase().includes(q) ||
+      (c.city || '').toLowerCase().includes(q) ||
+      (c.festival_name || '').toLowerCase().includes(q)
+    );
+  }, [concerts, search]);
+
+  const paged = filtered.slice((page - 1) * PER, page * PER);
+  const totalPages = Math.ceil(filtered.length / PER);
+
+  // Self-contained style to prevent Reference Errors
+  const localInputStyle = { 
+    background: 'rgba(0,0,0,0.4)', 
+    border: `1px solid ${C.border}`, 
+    color: '#fff', 
+    padding: '12px', 
+    borderRadius: '6px', 
+    fontFamily: "'Space Mono'",
+    outline: 'none'
+  };
+
   return (
-    <div style={{ padding:'24px 0' }} className="fade-in">
-      <div style={{ display:'flex', gap:10, marginBottom:16 }}>
-        <input style={{ ...inputSt, flex:1 }} placeholder="Search shows to edit..." value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }} />
+    <div style={{ padding: '24px 0' }} className="fade-in">
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+        <input 
+          style={{ ...localInputStyle, flex: 1 }} 
+          placeholder="Search shows to edit..." 
+          value={search} 
+          onChange={e => { setSearch(e.target.value); setPage(1); }} 
+        />
         <Btn onClick={onAdd}>+ Add Show</Btn>
       </div>
-      <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:8, overflow:'hidden' }}>
-        <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'0.78rem' }}>
+      <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
           <thead>
-            <tr style={{ background:C.bgCardAlt }}>
-              {['Date','Artists','Venue','City','Genre','Type','📋','Dup','Edit'].map(h => <th key={h} style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', padding:'10px 12px', textAlign:'left', color:C.tealDim, borderBottom:`1px solid ${C.border}` }}>{h}</th>)}
+            <tr style={{ background: C.bgCardAlt }}>
+              {['Date','Artists','Venue','City','Genre','Type','📋','Dup','Edit'].map(h => (
+                <th key={h} style={{ fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', padding: '10px 12px', textAlign: 'left', color: C.tealDim, borderBottom: `1px solid ${C.border}` }}>{h}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {paged.map((c,i) => (
-              <tr key={c.id} style={{ borderBottom:`1px solid ${C.border}`, background:i%2===1?C.bgCardAlt:'transparent' }}>
-                <td style={{ padding:'9px 12px', fontFamily:"'Space Mono',monospace", fontSize:'0.7rem', color:C.gray, whiteSpace:'nowrap' }}>{fmtDate(c.date)}</td>
-                <td className="row-hover" onClick={()=>onEdit(c)} style={{ padding:'9px 12px', color:C.white, fontWeight:500, cursor:'pointer' }}>{(c.bands||[]).slice(0,3).join(', ')}{c.bands?.length>3?` +${c.bands.length-3}`:''}</td>
-                <td style={{ padding:'9px 12px', color:C.gray }}>{c.venue||'—'}</td>
-                <td style={{ padding:'9px 12px', color:C.gray }}>{c.city||'—'}</td>
-                <td style={{ padding:'9px 12px' }}>{c.genre?<GenreBadge genre={c.genre} color={GENRE_COLORS[c.genre]} small />:<span style={{ color:C.grayDim }}>—</span>}</td>
-                <td style={{ padding:'9px 12px' }}>{c.is_festival?<Badge color={C.teal}>Fest</Badge>:<Badge color={C.grayDim} bg="transparent">Solo</Badge>}</td>
-                <td style={{ padding:'9px 12px' }}>{c.has_setlist?<span style={{ color:C.gold }}>📋</span>:<span style={{ color:C.grayDim }}>—</span>}</td>
-                <td style={{ padding:'9px 12px' }}><button onClick={()=>onDuplicate(c)} style={{ background:'none', border:`1px solid ${C.border}`, color:C.gray, cursor:'pointer', fontSize:9, borderRadius:3, padding:'2px 6px', fontFamily:"'Space Mono'" }} title="Duplicate">⧉</button></td>
-                <td style={{ padding:'9px 12px' }}><button onClick={()=>onEdit(c)} style={{ background:'none', border:`1px solid ${C.border}`, color:C.tealDim, cursor:'pointer', fontSize:9, borderRadius:3, padding:'2px 6px', fontFamily:"'Space Mono'" }}>✎</button></td>
+            {paged.map((c, i) => (
+              <tr key={c.id} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 1 ? C.bgCardAlt : 'transparent' }}>
+                <td style={{ padding: '9px 12px', fontFamily: "'Space Mono',monospace", fontSize: '0.7rem', color: C.gray, whiteSpace: 'nowrap' }}>{fmtDate(c.date)}</td>
+                <td className="row-hover" onClick={() => onEdit(c)} style={{ padding: '9px 12px', color: C.white, fontWeight: 500, cursor: 'pointer' }}>
+                  {(c.bands || []).slice(0, 3).join(', ')}{c.bands?.length > 3 ? ` +${c.bands.length - 3}` : ''}
+                </td>
+                <td style={{ padding: '9px 12px', color: C.gray }}>{c.venue || '—'}</td>
+                <td style={{ padding: '9px 12px', color: C.gray }}>{c.city || '—'}</td>
+                <td style={{ padding: '9px 12px' }}>{c.genre ? <GenreBadge genre={c.genre} color={GENRE_COLORS[c.genre]} small /> : <span style={{ color: C.grayDim }}>—</span>}</td>
+                <td style={{ padding: '9px 12px' }}>{c.is_festival ? <Badge color={C.teal}>Fest</Badge> : <Badge color={C.grayDim} bg="transparent">Solo</Badge>}</td>
+                <td style={{ padding: '9px 12px' }}>{c.has_setlist ? <span style={{ color: C.gold }}>📋</span> : <span style={{ color: C.grayDim }}>—</span>}</td>
+                <td style={{ padding: '9px 12px' }}>
+                  <button onClick={() => onDuplicate(c)} style={{ background: 'none', border: `1px solid ${C.border}`, color: C.gray, cursor: 'pointer', fontSize: 14, borderRadius: 3, padding: '2px 6px' }} title="Duplicate">⧉</button>
+                </td>
+                <td style={{ padding: '9px 12px' }}>
+                  <button onClick={() => onEdit(c)} style={{ background: 'none', border: `1px solid ${C.border}`, color: C.tealDim, cursor: 'pointer', fontSize: 14, borderRadius: 3, padding: '2px 6px' }}>✎</button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      {totalPages>1 && <div style={{ display:'flex', justifyContent:'center', gap:5, marginTop:14 }}><Btn variant="secondary" onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} style={{ padding:'5px 10px' }}>←</Btn>{Array.from({length:Math.min(7,totalPages)},(_,i)=>{ const p=page<=4?i+1:page+i-3; if(p<1||p>totalPages)return null; return <Btn key={p} variant={p===page?'primary':'secondary'} onClick={()=>setPage(p)} style={{ padding:'5px 10px' }}>{p}</Btn>; })}<Btn variant="secondary" onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} style={{ padding:'5px 10px' }}>→</Btn></div>}
     </div>
   );
 }
-
 // ─── MODALS ───────────────────────────────────────────────────────────────────
 function UpcomingModal({ show, onClose, onSave, onDelete }) {
   const isNew = !show?.id;
