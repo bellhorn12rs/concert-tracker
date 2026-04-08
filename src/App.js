@@ -4577,96 +4577,97 @@ export default function App() {
 
   const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
 // ── 6. DATA DERIVATION ENGINE ──
-const PER_PAGE = 50; 
+  const PER_PAGE = 50; 
 
-const genreMap = useMemo(() => artistGenres || {}, [artistGenres]);
+  const genreMap = useMemo(() => artistGenres || {}, [artistGenres]);
 
-const allSetsList = useMemo(() => {
-  const r = [];
-  if (!concerts || !Array.isArray(concerts)) return r;
-  concerts.forEach(c => { 
-    if (!c) return; 
-    const bands = Array.isArray(c.bands) ? c.bands : [c.artist].filter(Boolean); 
-    bands.forEach(band => { 
-      if (band) r.push({ ...c, artist: String(band) }); 
-    }); 
-  });
-  return r;
-}, [concerts]);
-
-const years = useMemo(() => {
-  const ySet = new Set();
-  concerts.forEach(c => { 
-    const y = getYear(c.date); 
-    if (y) ySet.add(String(y)); 
-  });
-  return [...ySet].sort((a, b) => b - a);
-}, [concerts]);
-
-const applyFilters = useCallback((list, isSet = false) => {
-  if (!list || !Array.isArray(list)) return [];
-  let d = list;
-  
-  // 1. Year Filter (Ensuring String vs Number match)
-  if (yearFilter !== 'all') {
-    d = d.filter(r => String(getYear(r.date)) === String(yearFilter));
-  }
-  
-  // 2. Fest Filter
-  if (festFilter === 'fest') d = d.filter(r => r.is_festival);
-  if (festFilter === 'solo') d = d.filter(r => !r.is_festival);
-  
-  // 3. Genre Filter
-  if (genreFilter !== 'all') {
-    d = d.filter(r => { 
-      const g = isSet ? (artistGenres[r.artist] || 'Other') : (r.genre || 'Other'); 
-      return g === genreFilter; 
+  const allSetsList = useMemo(() => {
+    const r = [];
+    if (!concerts || !Array.isArray(concerts)) return [];
+    concerts.forEach(c => { 
+      if (!c) return; 
+      const bands = Array.isArray(c.bands) ? c.bands : [c.artist].filter(Boolean); 
+      bands.forEach(band => { 
+        if (band) r.push({ ...c, artist: String(band) }); 
+      }); 
     });
-  }
-  
-  // 4. Search Filter (Resilient to nulls)
-  if (search && search.trim() !== '') {
-    const q = search.toLowerCase().trim();
-    d = d.filter(r => {
-      const a = String(r.artist || '').toLowerCase();
-      const v = String(r.venue || '').toLowerCase();
-      const ci = String(r.city || '').toLowerCase();
-      const f = String(r.festival_name || '').toLowerCase();
-      return a.includes(q) || v.includes(q) || ci.includes(q) || f.includes(q);
+    return r;
+  }, [concerts]);
+
+  const years = useMemo(() => {
+    const ySet = new Set();
+    if (Array.isArray(concerts)) {
+      concerts.forEach(c => { const y = getYear(c.date); if (y) ySet.add(String(y)); });
+    }
+    return [...ySet].sort((a, b) => b - a);
+  }, [concerts]);
+
+  const applyFilters = useCallback((list, isSet = false) => {
+    if (!list || !Array.isArray(list)) return [];
+    let d = [...list];
+    
+    if (yearFilter !== 'all') d = d.filter(r => String(getYear(r.date)) === String(yearFilter));
+    if (festFilter === 'fest') d = d.filter(r => r.is_festival);
+    if (festFilter === 'solo') d = d.filter(r => !r.is_festival);
+    
+    if (genreFilter !== 'all') {
+      d = d.filter(r => { 
+        const g = isSet ? (artistGenres[r.artist] || 'Other') : (r.genre || 'Other'); 
+        return g === genreFilter; 
+      });
+    }
+    
+    if (search) {
+      const q = search.toLowerCase();
+      d = d.filter(r => {
+        const bandsMatch = isSet ? String(r.artist || '').toLowerCase().includes(q) : (r.bands || []).some(b => String(b).toLowerCase().includes(q));
+        const v = String(r.venue || '').toLowerCase().includes(q);
+        const ci = String(r.city || '').toLowerCase().includes(q);
+        return bandsMatch || v || ci;
+      });
+    }
+    return d;
+  }, [yearFilter, festFilter, genreFilter, search, artistGenres]);
+
+  const filteredSets = useMemo(() => {
+    const d = applyFilters(allSetsList, true) || [];
+    return [...d].sort((a, b) => { 
+      const col = sortCol || 'date';
+      const av = String(a[col] || '').toLowerCase();
+      const bv = String(b[col] || '').toLowerCase();
+      if (col === 'date') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      return sortDir === 'asc' ? (av < bv ? -1 : 1) : (av > bv ? -1 : 1);
     });
-  }
-  return d;
-}, [yearFilter, festFilter, genreFilter, search, artistGenres]);
+  }, [allSetsList, applyFilters, sortCol, sortDir]);
 
-const filteredSets = useMemo(() => {
-  const d = applyFilters(allSetsList, true) || [];
-  const col = sortCol || 'date';
-  
-  return [...d].sort((a, b) => { 
-    const av = String(a[col] || '').toLowerCase();
-    const bv = String(b[col] || '').toLowerCase();
-    if (col === 'date') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
-    return sortDir === 'asc' ? (av < bv ? -1 : 1) : (av > bv ? -1 : 1);
-  });
-}, [allSetsList, applyFilters, sortCol, sortDir]);
+  const paged = useMemo(() => {
+    if (!filteredSets) return [];
+    const start = (page - 1) * PER_PAGE;
+    return filteredSets.slice(start, start + PER_PAGE);
+  }, [filteredSets, page]);
 
-// 🟢 CRITICAL: This powers the Browse table
-const paged = useMemo(() => {
-  const start = (page - 1) * PER_PAGE;
-  const end = start + PER_PAGE;
-  return filteredSets.slice(start, end);
-}, [filteredSets, page]);
+  const totalPages = Math.max(1, Math.ceil((filteredSets?.length || 0) / PER_PAGE));
 
-const totalPages = Math.max(1, Math.ceil(filteredSets.length / PER_PAGE));
+  const artistRows = useMemo(() => {
+    const m = {};
+    const filtered = applyFilters(allSetsList, true) || [];
+    filtered.forEach(s => { 
+      if (!s.artist) return;
+      if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; 
+      m[s.artist].shows.push(s); 
+    });
+    return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
+  }, [allSetsList, applyFilters]);
 
-// Remaining stats logic...
-const headerStats = useMemo(() => ({
-  totalShows: concerts.length,
-  totalSets: allSetsList.length,
-  uniqueArtists: new Set(allSetsList.map(s => s.artist)).size,
-  festDays: concerts.filter(c => c.is_festival).length,
-  setlistCount: concerts.filter(c => c.has_setlist || c.has_setlist_names).length,
-}), [concerts, allSetsList]);
+  const dayGroups = useMemo(() => applyFilters(concerts) || [], [concerts, applyFilters]);
+
+  const headerStats = useMemo(() => ({
+    totalShows: concerts?.length || 0,
+    totalSets: allSetsList?.length || 0,
+    uniqueArtists: new Set(allSetsList?.map(s => s.artist)).size,
+    festDays: concerts?.filter(c => c.is_festival).length || 0,
+    setlistCount: concerts?.filter(c => c.has_setlist || c.has_setlist_names).length || 0,
+  }), [concerts, allSetsList]);
 
   const artistCounts = useMemo(() => {
     const m = {};
@@ -5146,7 +5147,7 @@ const headerStats = useMemo(() => ({
                   color: '#fff', 
                   textTransform: 'uppercase', 
                   letterSpacing: '1px',
-                  lineHeight: 1.2 // Fixed the clipping
+                  lineHeight: 1.2 
                 }}>
                   {a.name}
                 </span>
@@ -5167,6 +5168,7 @@ const headerStats = useMemo(() => ({
     })}
   </div>
 </Card>
+
                     <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column' }}>
                       <CardTitle>SETLIST SPOTLIGHT 📋</CardTitle>
                       <div style={{ flex: 1, overflow: 'hidden' }}>
@@ -5177,60 +5179,104 @@ const headerStats = useMemo(() => ({
                 </div>
               )}
 
+              {/* ── MAIN STAGE CONTENT (Tabs) ── */}
               {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
-              {activeTab === 'byDay' && <ByDayTab dayGroups={dayGroups} onEdit={setEditTarget} genreMap={artistGenres} isAdmin={true} />}
-              {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={true} onEdit={setEditTarget} />}
-              {activeTab === 'passport' && <PassportTab passport={passport} onNavigateToFest={name => { setActiveTab('byFest'); setTimeout(() => { const el = document.getElementById(`fest-${name.toLowerCase().replace(/\s+/g, '-')}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 450); }} />}
+              
+              {/* These views now respect your login status dynamically */}
+              {activeTab === 'byDay' && <ByDayTab dayGroups={dayGroups} onEdit={isAdmin ? setEditTarget : null} genreMap={artistGenres} isAdmin={isAdmin} />}
+              {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={isAdmin} onEdit={isAdmin ? setEditTarget : null} />}
+              
+              {activeTab === 'passport' && (
+                <PassportTab 
+                  passport={passport} 
+                  onNavigateToFest={name => { 
+                    setActiveTab('byFest'); 
+                    setTimeout(() => { 
+                      const el = document.getElementById(`fest-${name.toLowerCase().replace(/\s+/g, '-')}`); 
+                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+                    }, 450); 
+                  }} 
+                />
+              )}
+              
               {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
               {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
               {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
               {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
+              
+              {/* 🟢 PUBLIC BROWSE: Available to everyone, but editing gated by isAdmin */}
               {activeTab === 'browse' && (
-  <BrowseTab 
-    browseView={browseView}
-    setBrowseView={setBrowseView}
-    search={search}
-    setSearch={setSearch}
-    yearFilter={yearFilter}
-    setYearFilter={setYearFilter}
-    festFilter={festFilter}
-    setFestFilter={setFestFilter}
-    genreFilter={genreFilter}
-    setGenreFilter={setGenreFilter}
-    sortCol={sortCol}
-    setSortCol={setSortCol}
-    sortDir={sortDir}
-    setSortDir={setSortDir}
-    page={page}
-    setPage={setPage}
-    totalPages={totalPages}
-    paged={paged} // 🟢 Must be the variable from the Memo above
-    artistRows={artistRows}
-    years={years}
-    onShare={setShareCard}
-    onEdit={isAdmin ? setEditTarget : null} // Only passes handler if admin
-    isAdmin={isAdmin}
-    onSetGenre={handleSetGenre}
-    genreMap={artistGenres}
-  />
-)}
-              {activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} onDuplicate={handleDuplicate} />}
+                <BrowseTab 
+                  browseView={browseView}
+                  setBrowseView={setBrowseView}
+                  search={search}
+                  setSearch={setSearch}
+                  yearFilter={yearFilter}
+                  setYearFilter={setYearFilter}
+                  festFilter={festFilter}
+                  setFestFilter={setFestFilter}
+                  genreFilter={genreFilter}
+                  setGenreFilter={setGenreFilter}
+                  sortCol={sortCol}
+                  setSortCol={setSortCol}
+                  sortDir={sortDir}
+                  setSortDir={setSortDir}
+                  page={page}
+                  setPage={setPage}
+                  totalPages={totalPages}
+                  paged={paged} 
+                  artistRows={artistRows}
+                  years={years}
+                  onShare={(a, s) => setShareCard({ artist: a, shows: s })}
+                  onEdit={isAdmin ? setEditTarget : null} 
+                  isAdmin={isAdmin}
+                  onSetGenre={handleSetGenre}
+                  genreMap={artistGenres}
+                />
+              )}
+
+              {/* 🔴 ADMIN ONLY: The Office */}
+              {isAdmin && activeTab === 'manage' && (
+                <ManageTab 
+                  concerts={concerts} 
+                  onEdit={setEditTarget} 
+                  onAdd={() => setEditTarget('new')} 
+                  onDuplicate={handleDuplicate} 
+                />
+              )}
             </main>
           </div>
         </div>
 
-        {/* MODALS */}
+        {/* ── MODALS LAYER ── */}
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
-        {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
-        {editTarget && <EditModal concert={editTarget === 'new' ? null : editTarget} onClose={() => setEditTarget(null)} onSave={handleSave} onDelete={handleDelete} />}
+        
+        {shareCard && (
+          <ShareCard 
+            artist={shareCard.artist} 
+            shows={shareCard.shows} 
+            onClose={() => setShareCard(null)} 
+          />
+        )}
+        
+        {editTarget && (
+          <EditModal 
+            concert={editTarget === 'new' ? null : editTarget} 
+            onClose={() => setEditTarget(null)} 
+            onSave={handleSave} 
+            onDelete={handleDelete} 
+          />
+        )}
+        
         {upcomingModal !== null && (
-  <UpcomingModal 
-    show={upcomingModal === 'new' ? null : upcomingModal} 
-    onClose={() => setUpcomingModal(null)} 
-    onSave={handleUpcomingSave} 
-    onDelete={handleUpcomingDelete} 
-  />
-)}
+          <UpcomingModal 
+            show={upcomingModal === 'new' ? null : upcomingModal} 
+            onClose={() => setUpcomingModal(null)} 
+            onSave={handleUpcomingSave} 
+            // Fixed the variable name for the delete handler below
+            onDelete={handleUpcomingDelete} 
+          />
+        )}
       </div>
     </ThemeContext.Provider>
   );
