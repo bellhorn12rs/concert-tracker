@@ -4391,6 +4391,7 @@ const TAB_GROUPS = [
     header: "CHRONICLE",
     tabs: [
       ['byDay', '📅 PAPER TRAIL', '#00e5cc'],
+      ['browse', '🔍 DIGGING', '#00cfff'], // 🟢 MOVED HERE TO BE PUBLIC
     ]
   },
   {
@@ -4417,9 +4418,9 @@ const TAB_GROUPS = [
 ];
 
 const RIGHT_TABS = [
-  ['browse', '🔍 DIGGING', '#00cfff'],
-  ['manage', '⚙️ THE OFFICE', '#888'],
+  ['manage', '⚙️ THE OFFICE', '#888'], // 🔴 ONLY THE OFFICE REMAINS LOCKED
 ];
+
 function TrackRecordLogo({ size = 40 }) {
   const { themeId } = useTheme();
   const currentTheme = THEMES[themeId];
@@ -4461,12 +4462,9 @@ function TrackRecordLogo({ size = 40 }) {
         </style>
       </defs>
 
-      {/* ── THE "RECORD" (Centered Circular Background) ── */}
       <circle cx="50" cy="50" r="48" stroke={getAlpha('#ffffff', 0.1)} strokeWidth="0.5" />
       <circle cx="50" cy="50" r="30" stroke={getAlpha('#ffffff', 0.05)} strokeWidth="0.5" />
 
-      {/* ── THE "TRACK" (Horizontal Waveform) ── */}
-      {/* Waveform Glow Layer */}
       <path 
         d="M15 50L25 45L35 55L45 48L55 52L65 45L75 55L85 50" 
         stroke={color} 
@@ -4476,7 +4474,6 @@ function TrackRecordLogo({ size = 40 }) {
         filter="url(#neonGlow)" 
         opacity="0.4" 
       />
-      {/* Waveform Main Signal */}
       <path 
         className="active-signal" 
         d="M15 50L25 45L35 55L45 48L55 52L65 45L75 55L85 50" 
@@ -4486,7 +4483,6 @@ function TrackRecordLogo({ size = 40 }) {
         strokeLinejoin="round" 
       />
 
-      {/* The Playhead Pointer (Now pointing down at the horizontal track) */}
       <polygon points="50,38 47,32 53,32" fill={color} filter="url(#neonGlow)" />
     </svg>
   );
@@ -4784,28 +4780,28 @@ export default function App() {
   }
 
   const handleUpcomingSave = async (id, formData) => {
-  try {
-    if (id) {
-      // UPDATE EXISTING
-      const { error } = await supabase
-        .from('upcoming_concerts')
-        .update(formData)
-        .eq('id', id);
-      if (error) throw error;
-    } else {
-      // INSERT NEW
-      const { error } = await supabase
-        .from('upcoming_concerts')
-        .insert([formData]);
-      if (error) throw error;
+    try {
+      if (id) {
+        // UPDATE EXISTING
+        const { error } = await supabase
+          .from('upcoming_concerts')
+          .update(formData)
+          .eq('id', id);
+        if (error) throw error;
+      } else {
+        // INSERT NEW
+        const { error } = await supabase
+          .from('upcoming_concerts')
+          .insert([formData]);
+        if (error) throw error;
+      }
+      // Refresh the local data
+      await fetchUpcoming();
+      setUpcomingModal(null); // Close modal
+    } catch (err) {
+      alert("Save failed: " + err.message);
     }
-    // Refresh the local data
-    await fetchUpcoming();
-    setUpcomingModal(null); // Close modal
-  } catch (err) {
-    alert("Save failed: " + err.message);
-  }
-};
+  };
 
   async function handleUpcomingDelete(id) {
     if (window.confirm('Remove show?')) {
@@ -4820,6 +4816,7 @@ export default function App() {
     await supabase.from('concerts').insert([{ ...rest, date: '', festival_day: '' }]);
     fetchConcerts();
   }
+
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
@@ -4849,8 +4846,7 @@ export default function App() {
           overflow: 'hidden', 
           width: '100%',
           position: 'relative'
-        }}>
-          <MarqueeStyles />
+        }}>       <MarqueeStyles />
 
           {/* ── VERTICAL SIDEBAR ── */}
 <aside style={{
@@ -4914,14 +4910,12 @@ export default function App() {
   {/* ── MAIN NAV AREA ── */}
 <div style={{ flex: 1, overflowY: 'auto', padding: '20px 0' }} className="wristband-bin">
   {TAB_GROUPS.map((group) => {
-    
-    // 1. Determine which individual tabs this specific user can see
+    // 🟢 Filter individual tabs: show everything except 'manage' to the public
     const visibleTabs = group.tabs.filter(([id]) => {
-      if (id === 'manage' && !isAdmin) return false; // Hide 'The Office' from public
-      return true; // Show 'Browse', 'Timeline', etc. to everyone
+      if (id === 'manage' && !isAdmin) return false;
+      return true;
     });
 
-    // 2. If no tabs are visible in this group for this user, hide the whole header
     if (visibleTabs.length === 0) return null;
 
     return (
@@ -4934,12 +4928,9 @@ export default function App() {
             {group.header}
           </div>
         )}
-        
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {visibleTabs.map(([id, label, color]) => (
-            <button 
-              key={id} 
-              onClick={() => { setActiveTab(id); if(isMobile) setNavCollapsed(true); }}
+            <button key={id} onClick={() => { setActiveTab(id); if(isMobile) setNavCollapsed(true); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 14, fontFamily: "'Space Mono'", fontSize: '11px',
                 color: activeTab === id ? '#fff' : C.gray, 
@@ -4958,55 +4949,38 @@ export default function App() {
   })}
 </div>
 
-  {/* 🟢 STEP 3: SYSTEM BOOTH (ADMIN ONLY) */}
+{/* ── SYSTEM BOOTH (ADMIN ONLY) ── */}
 {isAdmin && (
   <div style={{ 
-    padding: '20px 12px', 
-    borderTop: `1px solid ${hexToRgba(C.teal, 0.3)}`, // Teal hint for admin area
-    background: 'rgba(0,0,0,0.3)', 
-    marginTop: 'auto',
-    flexShrink: 0
+    padding: '20px 12px', borderTop: `1px solid ${hexToRgba(C.teal, 0.3)}`, 
+    background: 'rgba(0,0,0,0.3)', marginTop: 'auto' 
   }}>
-    {(!navCollapsed || isMobile) && (
-      <div style={{ 
-        fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: C.teal, 
-        letterSpacing: 3, padding: '0 12px 12px', display: 'flex', 
-        justifyContent: 'space-between', alignItems: 'center' 
-      }}>
-        <span>SYSTEM BOOTH</span>
-        <span style={{ fontSize: '8px', fontFamily: "'Space Mono'", opacity: 0.5 }}>v1.0.4-RLS</span>
-      </div>
-    )}
-
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: C.teal, letterSpacing: 2, padding: '0 12px 10px' }}>
+      SYSTEM BOOTH
+    </div>
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {/* ── Admin Tabs ── */}
       {RIGHT_TABS.map(([id, label, color]) => (
-        <button key={id} onClick={() => { setActiveTab(id); if(isMobile) setNavCollapsed(true); }}
+        <button key={id} onClick={() => setActiveTab(id)}
           style={{
-            display: 'flex', alignItems: 'center', justifyContent: (navCollapsed && !isMobile) ? 'center' : 'flex-start',
-            gap: 14, fontFamily: "'Space Mono'", fontSize: '11px',
+            display: 'flex', alignItems: 'center', gap: 14, fontFamily: "'Space Mono'", fontSize: '11px',
             color: activeTab === id ? '#fff' : C.grayDim, 
             background: activeTab === id ? hexToRgba(color, 0.1) : 'transparent',
             border: 'none', borderLeft: `3px solid ${activeTab === id ? color : 'transparent'}`,
-            padding: '12px 18px', cursor: 'pointer', borderRadius: '0 4px 4px 0', textAlign: 'left', textTransform: 'uppercase'
+            padding: '10px 18px', cursor: 'pointer', borderRadius: '0 4px 4px 0', textAlign: 'left', textTransform: 'uppercase'
           }}>
           <span style={{ fontSize: '1.2rem' }}>{label.split(' ')[0]}</span>
           {(!navCollapsed || isMobile) && <span>{label.split(' ').slice(1).join(' ')}</span>}
         </button>
       ))}
-
-      {/* ── 🔴 TERMINATE SESSION (LOGOUT) ── */}
+      
+      {/* Logout functionality tucked into the bottom of the Booth */}
       <button 
-        onClick={() => {
-          if(window.confirm("TERMINATE ADMIN SESSION?")) {
-            supabase.auth.signOut();
-          }
-        }}
+        onClick={() => { if(window.confirm("TERMINATE SESSION?")) supabase.auth.signOut(); }}
         style={{
-          display: 'flex', alignItems: 'center', justifyContent: (navCollapsed && !isMobile) ? 'center' : 'flex-start',
-          gap: 14, marginTop: 10, padding: '12px 18px', cursor: 'pointer', background: 'rgba(255, 68, 68, 0.05)',
-          border: 'none', borderLeft: '3px solid #ff4444', borderRadius: '0 4px 4px 0',
-          fontFamily: "'Space Mono'", fontSize: '10px', color: '#ff4444', fontWeight: 900
+          marginTop: 10, padding: '10px 18px', background: 'rgba(255, 68, 68, 0.05)', 
+          border: 'none', borderLeft: '3px solid #ff4444', color: '#ff4444', 
+          fontFamily: "'Space Mono'", fontSize: '10px', fontWeight: 900, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: 14
         }}
       >
         <span style={{ fontSize: '1.2rem' }}>⏻</span>
