@@ -3468,6 +3468,7 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
         </div>
       );
     }
+  }
 
     // Lolla Bold: dark, massive type, high impact
     return (
