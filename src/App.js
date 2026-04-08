@@ -3871,12 +3871,57 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
         </div>
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25, position: 'relative', zIndex: 1 }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, letterSpacing: '0.05em' }}>
-            {isNew ? 'STAGING NEW SHOW' : 'REVISING SHOW'}
-          </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: C.gray, fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1 }}>✕</button>
-        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1px', flex: 1, background: C.border, border: `1px solid ${C.border}`, borderRadius: '4px', overflow: 'hidden' }}>
+  {[
+    { value: headerStats.totalSets, label: 'SETS', color: C.teal, onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } },
+    { value: headerStats.uniqueArtists, label: 'ACTS', color: C.cyan, onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } },
+    { value: headerStats.totalShows, label: 'DAYS', color: C.purple, onClick: () => setActiveTab('timeline') },
+    { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'VENUES', color: C.red, onClick: () => setActiveTab('venues') },
+    { value: headerStats.setlistCount, label: 'FILES', color: C.gold, onClick: () => setActiveTab('vault') }
+  ].map((s, i) => (
+    <div 
+      key={s.label} 
+      onClick={s.onClick} 
+      style={{ 
+        textAlign: 'center', 
+        padding: '10px 2px', 
+        cursor: 'pointer',
+        background: C.bg, // Solid black background for the module
+        position: 'relative',
+        transition: 'all 0.2s ease',
+        borderTop: `2px solid ${s.color}`, // The Neon Highlight
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.background = hexToRgba(s.color, 0.05);
+        e.currentTarget.style.boxShadow = `inset 0 0 15px ${hexToRgba(s.color, 0.1)}`;
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = C.bg;
+        e.currentTarget.style.boxShadow = 'none';
+      }}
+    >
+      <div style={{ 
+        fontFamily: "'Bebas Neue'", 
+        fontSize: isMobile ? '1.2rem' : '2.2rem', 
+        color: s.color, 
+        lineHeight: 1,
+        textShadow: `0 0 10px ${hexToRgba(s.color, 0.4)}` // Subtle neon glow
+      }}>
+        {s.value}
+      </div>
+      <div style={{ 
+        fontFamily: "'Space Mono'", 
+        fontSize: '7px', 
+        color: C.grayDim, 
+        letterSpacing: '2px', 
+        fontWeight: 700, 
+        marginTop: 4 
+      }}>
+        {s.label}
+      </div>
+    </div>
+  ))}
+</div>
 
         {/* Form */}
         <div style={{ position: 'relative', zIndex: 1 }}>
@@ -4719,16 +4764,18 @@ export default function App() {
                 </div>
              </div>
              
-             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                <ThemeSwitcher isMobile={isMobile} />
-                {!isMobile && (
-                  <div style={{ position: 'relative', height: '40px', width: '80px' }}>
-                    <div style={{ position: 'absolute', top: '-110px', right: 0 }}>
-                       <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
-                    </div>
-                  </div>
-                )}
-             </div>
+             <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
+  {/* Move Lanyard HERE, before the Switcher */}
+  {!isMobile && (
+    <div style={{ position: 'relative', height: '40px', width: '60px' }}>
+      <div style={{ position: 'absolute', top: '-110px', left: 0 }}> {/* Changed right: 0 to left: 0 */}
+         <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
+      </div>
+    </div>
+  )}
+  
+  <ThemeSwitcher isMobile={isMobile} />
+</div>
           </header>
 
           <main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
