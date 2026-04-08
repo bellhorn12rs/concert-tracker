@@ -3872,40 +3872,56 @@ function ShareCard({ artist, shows, onClose }) {
 }
 
 // ─── THEME SWITCHER ───────────────────────────────────────────────────────────
-function ThemeSwitcher() {
+function ThemeSwitcher({ isMobile }) {
   const { themeId, setThemeId } = useTheme();
   const [open, setOpen] = useState(false);
   const current = THEMES[themeId];
 
   return (
-    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-      {/* Smaller, cleaner label */}
-      <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 1, fontWeight: 700, whiteSpace: 'nowrap' }}>
-        CONSOLE_VIBE:
-      </span>
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: isMobile ? 4 : 8, flexShrink: 0 }}>
+      {/* HIDE THE LABEL COMPLETELY ON MOBILE */}
+      {!isMobile && (
+        <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 1, fontWeight: 700, whiteSpace: 'nowrap' }}>
+          CONSOLE_VIBE:
+        </span>
+      )}
 
       <button
         onClick={() => setOpen(o => !o)}
         style={{ 
-          display: 'flex', alignItems: 'center', gap: 8, 
+          display: 'flex', alignItems: 'center', gap: isMobile ? 5 : 8, 
           background: 'rgba(0,0,0,0.6)', border: `1px solid ${current.dot}`, 
-          borderRadius: '4px', padding: '4px 10px', cursor: 'pointer', 
+          borderRadius: '4px', padding: isMobile ? '4px 6px' : '4px 10px', cursor: 'pointer', 
           transition: 'all 0.2s',
           boxShadow: `0 0 10px ${hexToRgba(current.dot, 0.2)}`
         }}
       >
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: current.dot, boxShadow: `0 0 8px ${current.dot}` }} />
-        <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff', letterSpacing: '1px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+        {/* The "Status Light" */}
+        <div style={{ 
+          width: isMobile ? 5 : 6, height: isMobile ? 5 : 6, 
+          borderRadius: '50%', background: current.dot, 
+          boxShadow: `0 0 8px ${current.dot}` 
+        }} />
+        
+        <span style={{ 
+          fontFamily: "'Bebas Neue'", 
+          fontSize: isMobile ? '0.7rem' : '0.9rem', 
+          color: '#fff', 
+          letterSpacing: '0.5px', 
+          textTransform: 'uppercase', 
+          whiteSpace: 'nowrap' 
+        }}>
           {current.name}
         </span>
-        <span style={{ color: C.gray, fontSize: 8 }}>{open ? '▲' : '▼'}</span>
+        
+        <span style={{ color: C.gray, fontSize: isMobile ? 6 : 8 }}>{open ? '▲' : '▼'}</span>
       </button>
 
       {open && (
         <div style={{ 
           position: 'absolute', top: 'calc(100% + 10px)', right: 0, 
           background: '#050508', border: `1px solid ${C.border}`, 
-          borderRadius: 4, padding: 8, minWidth: 180, zIndex: 10000, 
+          borderRadius: 4, padding: 6, minWidth: isMobile ? 140 : 180, zIndex: 10000, 
           boxShadow: `0 20px 50px rgba(0,0,0,0.9)`
         }}>
           {THEME_ORDER.map(id => {
@@ -3915,13 +3931,11 @@ function ThemeSwitcher() {
                 style={{ 
                   display: 'flex', alignItems: 'center', gap: 10, width: '100%', 
                   background: id === themeId ? `${t.dot}15` : 'transparent', 
-                  border: 'none', borderRadius: 2, padding: '10px', cursor: 'pointer'
+                  border: 'none', borderRadius: 2, padding: '8px', cursor: 'pointer'
                 }}
               >
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.dot }} />
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff' }}>{t.name}</div>
-                </div>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: t.dot }} />
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: '#fff' }}>{t.name}</div>
               </button>
             );
           })}
