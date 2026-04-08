@@ -4013,12 +4013,8 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
     setSaving(false);
   };
 
-  const handleDelete = () => {
-    onDelete(show.id);
-  };
-
   const lbl = { display: 'block', fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 };
-  const inp = { ...inputSt, width: '100%', marginBottom: 15 };
+  const inp = { ...inputSt, width: '100%', marginBottom: 15, background: 'rgba(0,0,0,0.4)', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '4px' };
 
   return (
     <div
@@ -4029,63 +4025,37 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
         className="fade-in"
         style={{ background: C.bgCard, border: `1px solid ${C.gold}`, borderRadius: 12, padding: 32, width: '100%', maxWidth: 420, boxShadow: `0 0 50px ${hexToRgba(C.gold, 0.2)}`, position: 'relative' }}
       >
-        {/* Watermark */}
-        <div style={{ position: 'absolute', top: -10, right: -10, fontFamily: "'Bebas Neue'", fontSize: '6rem', color: 'rgba(255,204,0,0.03)', pointerEvents: 'none', zIndex: 0 }}>
-          {isNew ? 'NEW' : 'EDIT'}
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, marginBottom: 20 }}>{isNew ? 'SCHEDULE NEW SHOW' : 'EDIT UPCOMING'}</div>
+
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <label style={lbl}>Artist / Band *</label>
+          <input style={inp} value={form.artist} onChange={e => set('artist', e.target.value)} placeholder="e.g. Tame Impala" />
+
+          <label style={lbl}>Venue</label>
+          <input style={inp} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="e.g. Red Rocks" />
+
+          <label style={lbl}>Date *</label>
+          <input style={{ ...inp, colorScheme: 'dark' }} type="date" value={form.date} onChange={e => set('date', e.target.value)} />
+
+          <label style={lbl}>Status</label>
+          <select style={inp} value={form.status} onChange={e => set('status', e.target.value)}>
+            <option value="TICKETS">TICKETS</option>
+            <option value="PENDING">PENDING</option>
+            <option value="DREAMING">DREAMING</option>
+          </select>
         </div>
 
-        {/* Header */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1px', flex: 1, background: C.border, border: `1px solid ${C.border}`, borderRadius: '4px', overflow: 'hidden' }}>
-  {[
-    { value: headerStats.totalSets, label: 'SETS', color: C.teal, onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } },
-    { value: headerStats.uniqueArtists, label: 'ACTS', color: C.cyan, onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } },
-    { value: headerStats.totalShows, label: 'DAYS', color: C.purple, onClick: () => setActiveTab('timeline') },
-    { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'VENUES', color: C.red, onClick: () => setActiveTab('venues') },
-    { value: headerStats.setlistCount, label: 'FILES', color: C.gold, onClick: () => setActiveTab('vault') }
-  ].map((s, i) => (
-    <div 
-      key={s.label} 
-      onClick={s.onClick} 
-      style={{ 
-        textAlign: 'center', 
-        padding: '10px 2px', 
-        cursor: 'pointer',
-        background: C.bg, // Solid black background for the module
-        position: 'relative',
-        transition: 'all 0.2s ease',
-        borderTop: `2px solid ${s.color}`, // The Neon Highlight
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.background = hexToRgba(s.color, 0.05);
-        e.currentTarget.style.boxShadow = `inset 0 0 15px ${hexToRgba(s.color, 0.1)}`;
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.background = C.bg;
-        e.currentTarget.style.boxShadow = 'none';
-      }}
-    >
-      <div style={{ 
-        fontFamily: "'Bebas Neue'", 
-        fontSize: isMobile ? '1.2rem' : '2.2rem', 
-        color: s.color, 
-        lineHeight: 1,
-        textShadow: `0 0 10px ${hexToRgba(s.color, 0.4)}` // Subtle neon glow
-      }}>
-        {s.value}
-      </div>
-      <div style={{ 
-        fontFamily: "'Space Mono'", 
-        fontSize: '7px', 
-        color: C.grayDim, 
-        letterSpacing: '2px', 
-        fontWeight: 700, 
-        marginTop: 4 
-      }}>
-        {s.label}
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 10 }}>
+           {!isNew && <Btn variant="danger" onClick={() => onDelete(show.id)}>DELETE</Btn>}
+           <div style={{ display:'flex', gap: 10, marginLeft: 'auto' }}>
+              <Btn variant="secondary" onClick={onClose}>CANCEL</Btn>
+              <Btn onClick={handleSave} disabled={saving}>{saving ? 'SAVING...' : 'SAVE'}</Btn>
+           </div>
+        </div>
       </div>
     </div>
-  ))}
-</div>
+  );
+}
 
         {/* Form */}
         <div style={{ position: 'relative', zIndex: 1 }}>
@@ -4764,7 +4734,7 @@ export default function App() {
       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
     </div>
   );
-}
+
   return (
     <ThemeContext.Provider value={themeCtx}>
       <div key={themeId} style={{ 
@@ -5044,29 +5014,29 @@ export default function App() {
   gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', 
   gap: 20,
   alignItems: 'stretch',
-  height: isMobile ? 'auto' : '480px', // <── LOCK THE HEIGHT HERE
+  height: isMobile ? 'auto' : '480px', 
   marginBottom: 20
 }}>
-  gap: 20,
-  alignItems: 'stretch' // <── ADD THIS LINE
-}}>
-                  <Card neon>
-  <DonutChart 
-    fest={headerStats.festDays} 
-    solo={headerStats.totalShows - headerStats.festDays} 
-    concerts={concerts} 
-  />
-</Card>
-                  <Card neon><CardTitle>Festival Passports</CardTitle><TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} /></Card>
-                  <Card neon>
-  <CardTitle>By Decade</CardTitle>
-  <DecadeBlocks 
-    sets={allSetsList} 
-    headerStats={headerStats} 
-    concerts={concerts} 
-  />
-</Card>
-                </div>
+  <Card neon>
+    <DonutChart 
+      fest={headerStats.festDays} 
+      solo={headerStats.totalShows - headerStats.festDays} 
+      concerts={concerts} 
+    />
+  </Card>
+  <Card neon>
+    <CardTitle>Festival Passports</CardTitle>
+    <TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} />
+  </Card>
+  <Card neon>
+    <CardTitle>By Decade</CardTitle>
+    <DecadeBlocks 
+      sets={allSetsList} 
+      headerStats={headerStats} 
+      concerts={concerts} 
+    />
+  </Card>
+</div>
 
                 {/* ── ROW 4: LEADERBOARD and SPOTLIGHT ── */}
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
