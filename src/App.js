@@ -1537,112 +1537,129 @@ function DonutChart({ fest, solo, concerts }) {
   const [mode, setMode] = useState('fest');
   if (!concerts || concerts.length === 0) return null;
 
-  // ─── DYNAMIC DATA ENGINE ───
   const stats = useMemo(() => {
     const total = concerts.length;
     if (mode === 'legacy') {
-      const legacyCount = concerts.filter(c => getYear(c.date) <= 2014).length;
+      const v1 = concerts.filter(c => getYear(c.date) <= 2014).length;
       return { 
-        val1: legacyCount, val2: total - legacyCount, 
+        val1: v1, val2: total - v1, 
         label1: 'LEGACY', label2: 'MODERN', 
-        title: 'ERA BREAKDOWN', color: '#ffcc00' 
+        title: 'ERA BREAKDOWN', color: '#ffcc00',
+        insight: v1 > (total - v1) ? "Deep Archive focus." : "Modern Era dominant."
       };
     }
     if (mode === 'city') {
-      const homeCount = concerts.filter(c => c.city === "Austin").length;
+      const v1 = concerts.filter(c => c.city === "Austin").length;
       return { 
-        val1: homeCount, val2: total - homeCount, 
+        val1: v1, val2: total - v1, 
         label1: 'AUSTIN', label2: 'ON ROAD', 
-        title: 'GEOGRAPHIC FOCUS', color: '#00cfff' 
+        title: 'GEOGRAPHIC FOCUS', color: '#00cfff',
+        insight: v1 > (total / 2) ? "Local legend status." : "Touring heavily."
       };
     }
     if (mode === 'weekend') {
-      const wkndCount = concerts.filter(c => [0, 5, 6].includes(new Date(c.date + 'T12:00:00').getDay())).length;
+      const v1 = concerts.filter(c => [0, 5, 6].includes(new Date(c.date + 'T12:00:00').getDay())).length;
       return { 
-        val1: wkndCount, val2: total - wkndCount, 
+        val1: v1, val2: total - v1, 
         label1: 'WEEKEND', label2: 'WEEKDAY', 
-        title: 'TEMPORAL VIBE', color: '#9966ff' 
+        title: 'TEMPORAL VIBE', color: '#9966ff',
+        insight: v1 > (total / 2) ? "Weekend Warrior." : "Mid-week specialist."
       };
     }
-    // Default: Festival
     return { 
       val1: fest, val2: solo, 
       label1: 'FEST', label2: 'SOLO', 
-      title: 'STAGING RATIO', color: '#00e5cc' 
+      title: 'STAGING RATIO', color: '#00e5cc',
+      insight: fest > solo ? "Festival Circuit regular." : "Club show preference."
     };
   }, [mode, fest, solo, concerts]);
 
   const total = stats.val1 + stats.val2 || 1;
-  const pct = Math.round((stats.val1 / total) * 100);
+  const pct1 = Math.round((stats.val1 / total) * 100);
   const r = 48, cx = 70, cy = 70, circ = 2 * Math.PI * r;
+  
+  // "Other" color constant
+  const OTHER_COLOR = "#666";
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '5px' }}>
       
-      {/* 🟢 DYNAMIC HEADER LEGEND */}
+      {/* 🟢 LEGEND: COLOR-CODED */}
       <div style={{ marginBottom: 15, textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: stats.color, letterSpacing: '2px', fontWeight: 900, marginBottom: 10 }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: stats.color, letterSpacing: '2px', fontWeight: 900, marginBottom: 12 }}>
           {stats.title}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 15, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: stats.color, opacity: 0.8 }}>{stats.label1}</div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', lineHeight: 1 }}>{stats.val1}</div>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 20 }}>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: stats.color }}>{stats.label1}</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: stats.color, lineHeight: 1 }}>{stats.val1}</div>
           </div>
-          <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)' }} />
-          <div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#666' }}>{stats.label2}</div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#444', lineHeight: 1 }}>{stats.val2}</div>
+          <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: OTHER_COLOR }}>{stats.label2}</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: OTHER_COLOR, lineHeight: 1 }}>{stats.val2}</div>
           </div>
         </div>
       </div>
 
-      {/* NEON TURNTABLE BASE */}
+      {/* NEON TURNTABLE */}
       <div style={{ 
-        position: 'relative', width: 160, height: 160, 
-        background: '#1a1a1a', // Darkened hardware for better neon contrast
-        borderRadius: 14, padding: 5, alignSelf: 'center', 
-        boxShadow: `inset 0 0 20px rgba(0,0,0,0.6), 0 10px 40px rgba(0,0,0,0.5), 0 0 20px ${hexToRgba(stats.color, 0.1)}`,
-        border: `1px solid ${hexToRgba(stats.color, 0.2)}`,
-        transition: 'all 0.5s ease'
+        position: 'relative', width: 165, height: 165, 
+        background: '#0a0a0c', 
+        borderRadius: '50%', padding: 5, alignSelf: 'center', 
+        boxShadow: `0 0 0 4px #15151a, 0 15px 35px rgba(0,0,0,0.6), inset 0 0 15px rgba(255,255,255,0.02)`,
+        border: `1px solid ${hexToRgba(stats.color, 0.2)}`
       }}>
-        <div style={{ position: 'absolute', inset: 10, borderRadius: '50%', background: '#000', border: '1px solid rgba(255,255,255,0.03)' }} />
-
-        <svg className="record-vinyl-spinning" width="140" height="140" viewBox="0 0 140 140" style={{ position: 'relative', zIndex: 2 }}>
-          {/* Vinyl Disc */}
-          <circle cx={cx} cy={cy} r={66} fill="#080808" stroke="#151515" strokeWidth={1} />
-          {[60, 54, 48, 42].map(rad => <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#121212" strokeWidth={1} />)}
+        <svg className="record-vinyl-spinning" width="155" height="155" viewBox="0 0 140 140">
+          <circle cx={cx} cy={cy} r={68} fill="#050505" />
+          {[62, 56, 50, 44].map(rad => <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#111" strokeWidth={0.5} />)}
           
-          {/* 🔘 THE GHOST TRACK (Background 100% Ring) */}
+          {/* 🔘 THE "OTHER" TRACK (Bright Grey) */}
           <circle 
             cx={cx} cy={cy} r={r} fill="none" 
-            stroke={hexToRgba(stats.color, 0.05)} 
+            stroke={OTHER_COLOR} 
             strokeWidth={12} 
-            strokeDasharray="2 2" // Gives it a "grooved" look
+            opacity="0.4"
           />
           
-          {/* 🔵 THE ACTIVE DATA TRACK */}
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={12} 
-            strokeDasharray={`${(pct / 100) * circ} ${circ}`} strokeLinecap="round" 
+          {/* 🔵 THE PRIMARY TRACK (Neon) */}
+          <circle 
+            cx={cx} cy={cy} r={r} fill="none" 
+            stroke={stats.color} 
+            strokeWidth={12} 
+            strokeDasharray={`${(pct1 / 100) * circ} ${circ}`} 
+            strokeLinecap="round" 
             transform={`rotate(-90 ${cx} ${cy})`} 
             style={{ 
-              filter: `drop-shadow(0 0 8px ${stats.color})`, 
+              filter: `drop-shadow(0 0 10px ${stats.color})`, 
               transition: 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)' 
             }} 
           />
           
-          {/* Center Label */}
-          <circle cx={cx} cy={cy} r={16} fill="#000" stroke={stats.color} strokeWidth={1} />
-          <text x={cx} y={cy + 4} textAnchor="middle" style={{ fontFamily: "'Bebas Neue'", fontSize: 10, fill: stats.color, fontWeight: 'bold' }}>{pct}%</text>
+          <circle cx={cx} cy={cy} r={18} fill="#000" stroke={stats.color} strokeWidth={1} />
+          <text x={cx} y={cy + 4} textAnchor="middle" style={{ fontFamily: "'Bebas Neue'", fontSize: 11, fill: stats.color }}>{pct1}%</text>
         </svg>
 
         {/* Tone Arm Base */}
         <div style={{ 
-          position: 'absolute', top: 8, right: 8, width: 24, height: 24, 
-          borderRadius: '50%', background: '#222', 
-          border: `1px solid ${hexToRgba(stats.color, 0.4)}`, zIndex: 9,
-          boxShadow: `0 0 10px ${hexToRgba(stats.color, 0.15)}`
+          position: 'absolute', top: 10, right: 10, width: 20, height: 20, 
+          borderRadius: '50%', background: '#111', 
+          border: `1px solid ${OTHER_COLOR}`, zIndex: 9 
         }} />
+      </div>
+
+      {/* 📉 FILLING THE DEAD SPACE: VIBE STATUS */}
+      <div style={{ marginTop: 25, textAlign: 'center' }}>
+         <div style={{ 
+           display: 'inline-block', padding: '4px 12px', 
+           background: hexToRgba(stats.color, 0.05), 
+           border: `1px solid ${hexToRgba(stats.color, 0.15)}`,
+           borderRadius: 20 
+         }}>
+            <span style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: stats.color, letterSpacing: '1px', textTransform: 'uppercase' }}>
+              SYSTEM INSIGHT: <span style={{ color: '#fff' }}>{stats.insight}</span>
+            </span>
+         </div>
       </div>
 
       {/* MODE SELECTORS */}
@@ -1656,16 +1673,15 @@ function DonutChart({ fest, solo, concerts }) {
           <div 
             key={item.id} 
             onMouseDown={() => setMode(item.id)} 
-            className="crate-sleeve" 
             style={{ 
               flex: 1, height: mode === item.id ? '100%' : '80%', 
               background: mode === item.id ? item.col : 'rgba(255,255,255,0.03)', 
-              border: `1px solid ${mode === item.id ? item.col : 'rgba(255,255,255,0.1)'}`, 
+              borderBottom: mode === item.id ? `3px solid ${item.col}` : 'none',
               borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-              fontSize: 12, transition: 'all 0.2s ease'
+              fontSize: 12, cursor: 'pointer', transition: '0.2s'
             }}
           >
-            <span style={{ filter: mode === item.id ? 'none' : 'grayscale(100%) opacity(0.3)' }}>{item.icon}</span>
+            <span style={{ filter: mode === item.id ? 'none' : 'grayscale(100%) opacity(0.2)' }}>{item.icon}</span>
           </div>
         ))}
       </div>
