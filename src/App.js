@@ -4115,19 +4115,17 @@ const RIGHT_TABS = [
   ['browse', '🔍 DIGGING', '#00cfff'],
   ['manage', '⚙️ THE OFFICE', '#888'],
 ];
-function TrackRecordLogo({ size = 50 }) {
-  // We grab the theme directly from context so it's self-sufficient
+function TrackRecordLogo({ size = 40 }) {
   const { themeId } = useTheme();
   const currentTheme = THEMES[themeId];
-  const color = currentTheme.dot; // This is your primary accent (Teal, Gold, etc.)
+  const color = currentTheme.dot;
   
   const isMobile = window.innerWidth < 768;
-  const logoSize = isMobile ? (size * 0.8) : size;
+  const logoSize = isMobile ? (size * 0.9) : size;
 
-  // Internal helper to prevent crashing if hexToRgba isn't available
   const getAlpha = (hex, alpha) => {
     if (typeof hexToRgba === 'function') return hexToRgba(hex, alpha);
-    return hex; // Fallback
+    return hex;
   };
 
   return (
@@ -4158,20 +4156,33 @@ function TrackRecordLogo({ size = 50 }) {
         </style>
       </defs>
 
-      {/* ── THE "RECORD" ── */}
+      {/* ── THE "RECORD" (Centered Circular Background) ── */}
       <circle cx="50" cy="50" r="48" stroke={getAlpha('#ffffff', 0.1)} strokeWidth="0.5" />
-      <circle cx="50" cy="50" r="38" stroke={getAlpha('#ffffff', 0.05)} strokeWidth="0.5" strokeDasharray="2 4" />
-      <circle cx="50" cy="50" r="28" stroke={getAlpha('#ffffff', 0.03)} strokeWidth="0.5" />
+      <circle cx="50" cy="50" r="30" stroke={getAlpha('#ffffff', 0.05)} strokeWidth="0.5" />
 
-      {/* THE "SPINDLE HOLE" */}
-      <circle cx="50" cy="50" r="4" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+      {/* ── THE "TRACK" (Horizontal Waveform) ── */}
+      {/* Waveform Glow Layer */}
+      <path 
+        d="M15 50L25 45L35 55L45 48L55 52L65 45L75 55L85 50" 
+        stroke={color} 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        filter="url(#neonGlow)" 
+        opacity="0.4" 
+      />
+      {/* Waveform Main Signal */}
+      <path 
+        className="active-signal" 
+        d="M15 50L25 45L35 55L45 48L55 52L65 45L75 55L85 50" 
+        stroke="#ffffff" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+      />
 
-      {/* ── THE "TRACK" (Sonic Pulse) ── */}
-      <path d="M50 15L45 25L55 35L48 45L52 55L45 65L55 75L50 85" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" filter="url(#neonGlow)" opacity="0.3" />
-      <path className="active-signal" d="M50 15L45 25L55 35L48 45L52 55L45 65L55 75L50 85" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-
-      {/* The Playhead Pointer */}
-      <polygon points="38,50 42,48 42,52" fill={color} filter="url(#neonGlow)" />
+      {/* The Playhead Pointer (Now pointing down at the horizontal track) */}
+      <polygon points="50,38 47,32 53,32" fill={color} filter="url(#neonGlow)" />
     </svg>
   );
 }
@@ -4510,16 +4521,45 @@ export default function App() {
           </button>
 
           {/* LOGO AREA */}
-          <div style={{ padding: '0 24px 30px', borderBottom: `1px solid ${C.border}`, marginBottom: 20, minHeight: '130px', display: 'flex', flexDirection: 'column', alignItems: navCollapsed && !isMobile ? 'center' : 'flex-start' }}>
-             <div style={{ marginBottom: 15, position: 'relative' }}>
-                <TrackRecordLogo size={60} />
+          {/* LOGO AREA - CENTERED IDENTITY */}
+          <div style={{ 
+            padding: '40px 24px 30px', 
+            borderBottom: `1px solid ${C.border}`, 
+            marginBottom: 20, 
+            minHeight: '160px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', // Always centered
+            textAlign: 'center'    // Always centered
+          }}>
+             <div style={{ marginBottom: 20, position: 'relative' }}>
+                {/* Sized down to 45 for a cleaner fit */}
+                <TrackRecordLogo size={45} />
              </div>
+             
              {(!navCollapsed || isMobile) && (
                <div className="fade-in">
-                 <h1 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', margin: 0, lineHeight: 1, letterSpacing: '1px' }}>
+                 <h1 style={{ 
+                   fontFamily: "'Bebas Neue', sans-serif", 
+                   fontSize: '2.2rem', 
+                   margin: 0, 
+                   lineHeight: 0.9, 
+                   letterSpacing: '3px', // Increased tracking for a more "Architectural" feel
+                   fontWeight: 400,
+                   color: C.white 
+                 }}>
                    TRACK<span style={{ color: C.teal }}>RECORD</span>
                  </h1>
-                 <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, letterSpacing: 2, marginTop: 8 }}>
+                 
+                 <div style={{ 
+                   fontFamily: "'Space Mono', monospace", 
+                   fontSize: '7px', 
+                   color: C.grayDim, 
+                   letterSpacing: '3px', 
+                   marginTop: 10,
+                   textTransform: 'uppercase',
+                   opacity: 0.8
+                 }}>
                    {isAdmin ? 'ADMIN CONSOLE V.2026.04' : 'LIVE // ARCHIVE SYSTEM'}
                  </div>
                </div>
