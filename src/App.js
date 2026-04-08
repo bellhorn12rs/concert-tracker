@@ -888,90 +888,7 @@ function FerrisWheel({ size = 120 }) {
     </svg>
   );
 }
-function TrackRecordLogo({ size = 50, themeColor = C.teal }) {
-  const isMobile = window.innerWidth < 768;
-  const logoSize = isMobile ? (size * 0.8) : size;
 
-  return (
-    <svg 
-      width={logoSize} 
-      height={logoSize} 
-      viewBox="0 0 100 100" 
-      fill="none" 
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ overflow: 'visible' }}
-    >
-      <defs>
-        {/* The intense neon glow filter */}
-        <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-        
-        {/* Subtle, pulsing signal animation */}
-        <style>
-          {`
-            @keyframes pulseSignal {
-              0% { opacity: 0.6; stroke-width: 2px; }
-              50% { opacity: 1; stroke-width: 3px; }
-              100% { opacity: 0.6; stroke-width: 2px; }
-            }
-            .active-signal {
-              animation: pulseSignal 2s infinite ease-in-out;
-            }
-          `}
-        </style>
-      </defs>
-
-      {/* ── THE "RECORD" (Outer Grooves) ── */}
-      <circle cx="50" cy="50" r="48" stroke={hexToRgba(C.border, 0.5)} strokeWidth="0.5" />
-      <circle cx="50" cy="50" r="38" stroke={hexToRgba(C.border, 0.3)} strokeWidth="0.5" strokeDasharray="2 4" />
-      <circle cx="50" cy="50" r="28" stroke={hexToRgba(C.border, 0.2)} strokeWidth="0.5" />
-
-      {/* THE "SPINDLE HOLE" */}
-      <circle cx="50" cy="50" r="4" fill={hexToRgba(C.border, 0.2)} stroke={C.border} strokeWidth="1"/>
-
-      {/* ── THE "TRACK" (Sonic Pulse) ── */}
-      <path 
-        d="M50 8V92" 
-        stroke={C.bgCard} 
-        strokeWidth="6" 
-        strokeLinecap="round"
-      />
-      
-      {/* Waveform 1 (Glow Layer) */}
-      <path 
-        d="M50 15L45 25L55 35L48 45L52 55L45 65L55 75L50 85" 
-        stroke={themeColor} 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        filter="url(#neonGlow)" 
-        opacity="0.3"
-      />
-
-      {/* Waveform 2 (Main Signal - Pulsing) */}
-      <path 
-        className="active-signal"
-        d="M50 15L45 25L55 35L48 45L52 55L45 65L55 75L50 85" 
-        stroke={C.white} 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-      />
-
-      {/* The Playhead Pointer */}
-      <polygon 
-        points="38,50 42,48 42,52" 
-        fill={themeColor} 
-        filter="url(#neonGlow)"
-      />
-    </svg>
-  );
-}
 // ─── NEWS TICKER ──────────────────────────────────────────────────────────────
 function NewsTicker({ concerts, artistCounts, genreStats }) {
   const items = useMemo(() => {
@@ -4064,16 +3981,86 @@ const RIGHT_TABS = [
   ['browse', '🔍 DIGGING', '#00cfff'],
   ['manage', '⚙️ THE OFFICE', '#888'],
 ];
+function TrackRecordLogo({ size = 50 }) {
+  // We grab the theme directly from context so it's self-sufficient
+  const { themeId } = useTheme();
+  const currentTheme = THEMES[themeId];
+  const color = currentTheme.dot; // This is your primary accent (Teal, Gold, etc.)
+  
+  const isMobile = window.innerWidth < 768;
+  const logoSize = isMobile ? (size * 0.8) : size;
 
+  // Internal helper to prevent crashing if hexToRgba isn't available
+  const getAlpha = (hex, alpha) => {
+    if (typeof hexToRgba === 'function') return hexToRgba(hex, alpha);
+    return hex; // Fallback
+  };
+
+  return (
+    <svg 
+      width={logoSize} 
+      height={logoSize} 
+      viewBox="0 0 100 100" 
+      fill="none" 
+      style={{ overflow: 'visible' }}
+    >
+      <defs>
+        <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <style>
+          {`
+            @keyframes pulseSignal {
+              0% { opacity: 0.6; stroke-width: 2px; }
+              50% { opacity: 1; stroke-width: 3px; }
+              100% { opacity: 0.6; stroke-width: 2px; }
+            }
+            .active-signal { animation: pulseSignal 2s infinite ease-in-out; }
+          `}
+        </style>
+      </defs>
+
+      {/* ── THE "RECORD" ── */}
+      <circle cx="50" cy="50" r="48" stroke={getAlpha('#ffffff', 0.1)} strokeWidth="0.5" />
+      <circle cx="50" cy="50" r="38" stroke={getAlpha('#ffffff', 0.05)} strokeWidth="0.5" strokeDasharray="2 4" />
+      <circle cx="50" cy="50" r="28" stroke={getAlpha('#ffffff', 0.03)} strokeWidth="0.5" />
+
+      {/* THE "SPINDLE HOLE" */}
+      <circle cx="50" cy="50" r="4" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+
+      {/* ── THE "TRACK" (Sonic Pulse) ── */}
+      <path d="M50 15L45 25L55 35L48 45L52 55L45 65L55 75L50 85" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" filter="url(#neonGlow)" opacity="0.3" />
+      <path className="active-signal" d="M50 15L45 25L55 35L48 45L52 55L45 65L55 75L50 85" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+
+      {/* The Playhead Pointer */}
+      <polygon points="38,50 42,48 42,52" fill={color} filter="url(#neonGlow)" />
+    </svg>
+  );
+}
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
-  // ── THEME ────────────────────────────────────────────────────────────────────
+  // ── THEME STATE ──
   const [themeId, setThemeIdRaw] = useState(() => localStorage.getItem('concert-theme') || 'neon-noir');
-// ── MOBILE & COLLAPSE LOGIC ──
+  
+  // ── MOBILE & COLLAPSE LOGIC ──
   const [navCollapsed, setNavCollapsed] = useState(window.innerWidth < 768); 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
+  // ── STEP 2: ADMIN STATUS ──
+  // Controls if you can see "Manage" and "Edit" buttons
+  const isAdmin = true; 
+
+  // ── STEP 3: THE COLOR SHORTCUT (C) ──
+  // We initialize C with the current theme data so the whole app can use C.teal, etc.
+  const theme = THEMES[themeId];
+  const C = theme.colors;
+
+  // ── EFFECTS & HANDLERS ──
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
@@ -4083,16 +4070,24 @@ export default function App() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
   const setThemeId = (id) => {
-    Object.assign(C, THEMES[id]);
+    // This updates the global color object and the state
+    Object.assign(C, THEMES[id].colors);
     setThemeIdRaw(id);
     localStorage.setItem('concert-theme', id);
   };
 
-  useEffect(() => { Object.assign(C, THEMES[themeId]); }, []);
+  // Sync colors on initial mount
+  useEffect(() => { 
+    if (THEMES[themeId]) {
+      Object.assign(C, THEMES[themeId].colors); 
+    }
+  }, [themeId]);
 
   const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
 
+  // --- REST OF YOUR USESTATES (activeTab, concerts, etc.) GO HERE ---
   // ── DATA STATE ───────────────────────────────────────────────────────────────
   const [concerts, setConcerts]         = useState([]);
   const [artistGenres, setArtistGenres] = useState({}); // <── THIS WAS MISSING
