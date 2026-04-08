@@ -4511,11 +4511,15 @@ function TrackRecordLogo({ size = 40 }) {
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
-  // ── 1. THEME & SYSTEM STATE ──
+  // ── 1. AUTH & SYSTEM STATE ──
+  const [session, setSession] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
   const [themeId, setThemeIdRaw] = useState(() => localStorage.getItem('concert-theme') || 'neon-noir');
   const [navCollapsed, setNavCollapsed] = useState(window.innerWidth < 768); 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const isAdmin = true; 
+
+  // 🟢 Dynamic Admin Check: Tied to your verified email
+  const isAdmin = session?.user?.email === 'bellhorn12rs@gmail.com';
 
   // Initialize C with current theme data immediately
   const theme = THEMES[themeId] || THEMES['neon-noir'];
@@ -4544,14 +4548,31 @@ export default function App() {
   const [page, setPage] = useState(1);
 
   // ── 5. SYSTEM HANDLERS & EFFECTS ──
+
+  // Global Lifecycle: Auth & Window Resize
   useEffect(() => {
+    // Check for active session on boot
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Listen for Auth changes (Login/Logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       if (mobile) setNavCollapsed(true); 
     };
+
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const setThemeId = (id) => {
@@ -4562,7 +4583,7 @@ export default function App() {
     }
   };
 
-  // Sync colors and fetch data on mount
+  // Sync colors and fetch data on mount/theme change
   useEffect(() => { 
     if (THEMES[themeId]) {
       Object.assign(C, THEMES[themeId]); 
@@ -4576,7 +4597,6 @@ export default function App() {
   }, [themeId]);
 
   const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
-
 // ── 6. DATA DERIVATION ENGINE ──
   const genreMap = useMemo(() => artistGenres || {}, [artistGenres]);
 
@@ -4834,85 +4854,153 @@ export default function App() {
           <MarqueeStyles />
 
           {/* ── VERTICAL SIDEBAR ── */}
-          <aside style={{
-            width: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
-            minWidth: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
-            height: '100%',
-            position: isMobile ? 'fixed' : 'relative',
-            top: 0,
-            left: isMobile && navCollapsed ? '-280px' : '0', 
-            background: `linear-gradient(to right, ${C.bgCard} 0%, #050508 100%)`,
-            borderRight: `1px solid ${C.border}`,
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '0',
-            zIndex: 5000, 
-            transition: 'all 0.3s ease-in-out',
-            overflow: 'hidden',
-            flexShrink: 0 
+<aside style={{
+  width: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
+  minWidth: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
+  height: '100%',
+  position: isMobile ? 'fixed' : 'relative',
+  top: 0,
+  left: isMobile && navCollapsed ? '-280px' : '0', 
+  background: `linear-gradient(to right, ${C.bgCard} 0%, #050508 100%)`,
+  borderRight: `1px solid ${C.border}`,
+  display: 'flex',
+  flexDirection: 'column',
+  padding: '0',
+  zIndex: 5000, 
+  transition: 'all 0.3s ease-in-out',
+  overflow: 'hidden',
+  flexShrink: 0 
+}}>
+  {/* Toggle Button */}
+  <button onClick={() => setNavCollapsed(!navCollapsed)} style={{ position: 'absolute', right: 15, top: 15, background: 'none', border: 'none', color: C.teal, cursor: 'pointer', fontSize: '1.2rem', zIndex: 10 }}>
+    {isMobile ? '✕' : (navCollapsed ? '→' : '←')}
+  </button>
+
+  {/* 🟢 STEP 1: THE LOGO TRIGGER (Double-click to Login) */}
+  <div 
+    onDoubleClick={() => setShowLogin(true)} 
+    style={{ 
+      height: isMobile ? '70px' : '80px', 
+      borderBottom: `1px solid ${C.border}`, 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      gap: '2px', 
+      flexShrink: 0,
+      cursor: 'pointer' 
+    }}
+  >
+     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '24px' }}>
+        <TrackRecordLogo size={34} />
+     </div>
+     
+     {(!navCollapsed || isMobile) && (
+       <div className="fade-in">
+         <h1 style={{ 
+           fontFamily: "'Bebas Neue', sans-serif", 
+           fontSize: '1.5rem', 
+           margin: 0, 
+           lineHeight: 0.8, 
+           letterSpacing: '4px', 
+           color: isAdmin ? C.teal : C.white, // Turns teal when you're logged in
+           textTransform: 'uppercase' 
+         }}>
+           TRACK<span style={{ color: C.teal }}>RECORD</span>
+         </h1>
+       </div>
+     )}
+  </div>
+
+  {/* MAIN NAV AREA */}
+  <div style={{ flex: 1, overflowY: 'auto', padding: '20px 0' }} className="wristband-bin">
+    {TAB_GROUPS.map((group) => {
+      // 🟢 STEP 2: HIDE "OFFICE" FROM PUBLIC
+      if (group.header === "OFFICE" && !isAdmin) return null;
+
+      return (
+        <div key={group.header} style={{ marginBottom: 35 }}>
+          {(!navCollapsed || isMobile) && (
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.teal, letterSpacing: '3px', padding: '0 20px 14px' }}>{group.header}</div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {group.tabs.map(([id, label, color]) => (
+              <button key={id} onClick={() => { setActiveTab(id); if(isMobile) setNavCollapsed(true); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14, fontFamily: "'Space Mono'", fontSize: '11px',
+                  color: activeTab === id ? '#fff' : C.gray, background: activeTab === id ? hexToRgba(color, 0.15) : 'transparent', 
+                  border: 'none', borderLeft: `3px solid ${activeTab === id ? color : 'transparent'}`,
+                  padding: '12px 20px', cursor: 'pointer', textAlign: 'left', borderRadius: '0 4px 4px 0'
+                }}
+              >
+                <span style={{ fontSize: '1.2rem' }}>{label.split(' ')[0]}</span>
+                {(!navCollapsed || isMobile) && <span style={{ textTransform: 'uppercase' }}>{label.split(' ').slice(1).join(' ')}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  {/* 🟢 STEP 3: SYSTEM BOOTH (ADMIN ONLY) */}
+{isAdmin && (
+  <div style={{ 
+    padding: '20px 12px', 
+    borderTop: `1px solid ${hexToRgba(C.teal, 0.3)}`, // Teal hint for admin area
+    background: 'rgba(0,0,0,0.3)', 
+    marginTop: 'auto',
+    flexShrink: 0
+  }}>
+    {(!navCollapsed || isMobile) && (
+      <div style={{ 
+        fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: C.teal, 
+        letterSpacing: 3, padding: '0 12px 12px', display: 'flex', 
+        justifyContent: 'space-between', alignItems: 'center' 
+      }}>
+        <span>SYSTEM BOOTH</span>
+        <span style={{ fontSize: '8px', fontFamily: "'Space Mono'", opacity: 0.5 }}>v1.0.4-RLS</span>
+      </div>
+    )}
+
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {/* ── Admin Tabs ── */}
+      {RIGHT_TABS.map(([id, label, color]) => (
+        <button key={id} onClick={() => { setActiveTab(id); if(isMobile) setNavCollapsed(true); }}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: (navCollapsed && !isMobile) ? 'center' : 'flex-start',
+            gap: 14, fontFamily: "'Space Mono'", fontSize: '11px',
+            color: activeTab === id ? '#fff' : C.grayDim, 
+            background: activeTab === id ? hexToRgba(color, 0.1) : 'transparent',
+            border: 'none', borderLeft: `3px solid ${activeTab === id ? color : 'transparent'}`,
+            padding: '12px 18px', cursor: 'pointer', borderRadius: '0 4px 4px 0', textAlign: 'left', textTransform: 'uppercase'
           }}>
-            <button onClick={() => setNavCollapsed(!navCollapsed)} style={{ position: 'absolute', right: 15, top: 15, background: 'none', border: 'none', color: C.teal, cursor: 'pointer', fontSize: '1.2rem', zIndex: 10 }}>
-              {isMobile ? '✕' : (navCollapsed ? '→' : '←')}
-            </button>
+          <span style={{ fontSize: '1.2rem' }}>{label.split(' ')[0]}</span>
+          {(!navCollapsed || isMobile) && <span>{label.split(' ').slice(1).join(' ')}</span>}
+        </button>
+      ))}
 
-            <div style={{ height: isMobile ? '70px' : '80px', borderBottom: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', flexShrink: 0 }}>
-               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '24px' }}>
-                  <TrackRecordLogo size={34} />
-               </div>
-               {(!navCollapsed || isMobile) && (
-                 <div className="fade-in">
-                   <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', margin: 0, lineHeight: 0.8, letterSpacing: '4px', color: C.white, textTransform: 'uppercase' }}>
-                     TRACK<span style={{ color: C.teal }}>RECORD</span>
-                   </h1>
-                 </div>
-               )}
-            </div>
-
-            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 0' }} className="wristband-bin">
-              {TAB_GROUPS.map((group) => (
-                <div key={group.header} style={{ marginBottom: 35 }}>
-                  {(!navCollapsed || isMobile) && (
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.teal, letterSpacing: '3px', padding: '0 20px 14px' }}>{group.header}</div>
-                  )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {group.tabs.map(([id, label, color]) => (
-                      <button key={id} onClick={() => { setActiveTab(id); if(isMobile) setNavCollapsed(true); }}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 14, fontFamily: "'Space Mono'", fontSize: '11px',
-                          color: activeTab === id ? '#fff' : C.gray, background: activeTab === id ? hexToRgba(color, 0.15) : 'transparent', 
-                          border: 'none', borderLeft: `3px solid ${activeTab === id ? color : 'transparent'}`,
-                          padding: '12px 20px', cursor: 'pointer', textAlign: 'left', borderRadius: '0 4px 4px 0'
-                        }}
-                      >
-                        <span style={{ fontSize: '1.2rem' }}>{label.split(' ')[0]}</span>
-                        {(!navCollapsed || isMobile) && <span style={{ textTransform: 'uppercase' }}>{label.split(' ').slice(1).join(' ')}</span>}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ padding: '20px 12px', borderTop: `1px solid ${C.border}`, background: 'rgba(0,0,0,0.2)', marginTop: 'auto' }}>
-              {(!navCollapsed || isMobile) && <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: C.grayDim, letterSpacing: 2, padding: '0 12px 12px' }}>SYSTEM BOOTH</div>}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {RIGHT_TABS.map(([id, label, color]) => (
-                    <button key={id} onClick={() => { setActiveTab(id); if(isMobile) setNavCollapsed(true); }}
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: (navCollapsed && !isMobile) ? 'center' : 'flex-start',
-                        gap: 14, fontFamily: "'Space Mono'", fontSize: '11px',
-                        color: activeTab === id ? '#fff' : C.grayDim, background: activeTab === id ? hexToRgba(color, 0.1) : 'transparent',
-                        border: 'none', borderLeft: `3px solid ${activeTab === id ? color : 'transparent'}`,
-                        padding: '12px 18px', cursor: 'pointer', borderRadius: '0 4px 4px 0', textAlign: 'left', textTransform: 'uppercase'
-                      }}>
-                      <span style={{ fontSize: '1.2rem' }}>{label.split(' ')[0]}</span>
-                      {(!navCollapsed || isMobile) && <span>{label.split(' ').slice(1).join(' ')}</span>}
-                    </button>
-                ))}
-              </div>
-            </div>
-          </aside>
-
+      {/* ── 🔴 TERMINATE SESSION (LOGOUT) ── */}
+      <button 
+        onClick={() => {
+          if(window.confirm("TERMINATE ADMIN SESSION?")) {
+            supabase.auth.signOut();
+          }
+        }}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: (navCollapsed && !isMobile) ? 'center' : 'flex-start',
+          gap: 14, marginTop: 10, padding: '12px 18px', cursor: 'pointer', background: 'rgba(255, 68, 68, 0.05)',
+          border: 'none', borderLeft: '3px solid #ff4444', borderRadius: '0 4px 4px 0',
+          fontFamily: "'Space Mono'", fontSize: '10px', color: '#ff4444', fontWeight: 900
+        }}
+      >
+        <span style={{ fontSize: '1.2rem' }}>⏻</span>
+        {(!navCollapsed || isMobile) && <span>LOGOUT</span>}
+      </button>
+    </div>
+  </div>
+)}
+</aside>
           {/* ── 4. THE MAIN STAGE ── */}
           <div style={{ flex: 1, height: '100%', overflowY: 'auto', overflowX: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', background: C.bg }}>
             
@@ -4960,7 +5048,11 @@ export default function App() {
                   
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr', gap: 20 }}>
                     <ArtistInsights concerts={concerts} />
-                    <TheaterMarquee upcoming={upcoming} onAdd={() => setUpcomingModal('new')} onEdit={setUpcomingModal} />
+                    <TheaterMarquee 
+  upcoming={upcoming} 
+  onAdd={isAdmin ? () => setUpcomingModal('new') : null} 
+  onEdit={isAdmin ? setUpcomingModal : null} 
+/>
                     <RandomShow concerts={concerts} />
                   </div>
 
@@ -5103,10 +5195,84 @@ export default function App() {
         </div>
 
         {/* MODALS */}
+        {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
         {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
         {editTarget && <EditModal concert={editTarget === 'new' ? null : editTarget} onClose={() => setEditTarget(null)} onSave={handleSave} onDelete={handleDelete} />}
         {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
       </div>
     </ThemeContext.Provider>
+  );
+}
+function LoginModal({ onClose }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    // This talks to the Supabase Auth you set up in Step 1
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      alert("ACCESS DENIED: " + error.message);
+    } else {
+      onClose();
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ 
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', 
+      zIndex: 20000, display: 'flex', alignItems: 'center', 
+      justifyContent: 'center', backdropFilter: 'blur(12px)' 
+    }}>
+      <div style={{ 
+        background: '#0a0a0c', border: `1px solid ${C.teal}`, padding: 40, 
+        borderRadius: 12, width: '100%', maxWidth: 360, 
+        boxShadow: `0 0 60px ${hexToRgba(C.teal, 0.2)}`,
+        textAlign: 'center'
+      }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.teal, marginBottom: 10, letterSpacing: 3 }}>
+          ADMIN LOGIN
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#555', marginBottom: 25, textTransform: 'uppercase' }}>
+          Authorized Personnel Only // System Override Active
+        </div>
+        
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+          <input 
+            type="email" placeholder="ADMIN EMAIL" value={email} 
+            onChange={e => setEmail(e.target.value)}
+            style={{ 
+              background: '#000', border: '1px solid #222', color: '#fff', 
+              padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none' 
+            }}
+          />
+          <input 
+            type="password" placeholder="PASSWORD" value={password} 
+            onChange={e => setPassword(e.target.value)}
+            style={{ 
+              background: '#000', border: '1px solid #222', color: '#fff', 
+              padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none' 
+            }}
+          />
+          <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+            <button 
+              type="button" onClick={onClose}
+              style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: '#666', padding: '12px', cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: '10px' }}
+            >
+              ABORT
+            </button>
+            <button 
+              type="submit" disabled={loading}
+              style={{ flex: 2, background: C.teal, border: 'none', color: '#000', padding: '12px', cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', fontWeight: 900 }}
+            >
+              {loading ? 'VERIFYING...' : 'INITIALIZE'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
