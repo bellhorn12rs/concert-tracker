@@ -3489,68 +3489,253 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
   };
 
   return (
-    <div style={{ padding:'24px 0' }} className="fade-in">
-      <div style={{ textAlign:'center', marginBottom:32 }}>
-        <div style={{ fontFamily:"'Bebas Neue'", fontSize:'clamp(2rem,5vw,3.5rem)', color:C.white, letterSpacing:'0.06em', marginBottom:8 }}>🎨 POSTER <span style={{ color:C.teal }}>GENERATOR</span></div>
-        <div style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:C.gray }}>Build your dream festival from your concert history</div>
+  <div style={{ padding: isMobile ? '10px 0' : '24px 0' }} className="fade-in">
+    {/* ── HEADER ── */}
+    <div style={{ textAlign: 'center', marginBottom: 24 }}>
+      <div style={{ 
+        fontFamily: "'Bebas Neue'", 
+        fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', 
+        color: C.white, 
+        letterSpacing: '0.05em', 
+        lineHeight: 1,
+        marginBottom: 8 
+      }}>
+        🎨 POSTER <span style={{ color: C.teal }}>// GENERATOR</span>
       </div>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24, marginBottom:32 }}>
-        <div>
-          <Card neon style={{ marginBottom:16 }}>
-            <CardTitle>Genre Mix</CardTitle>
-            <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:totalPct===100?C.green:totalPct>100?C.red:C.gold, marginBottom:12 }}>Total: {totalPct}% {totalPct!==100&&'(should equal 100)'}</div>
-            {GENRES.filter(g=>g!=='Other').map(g => (
-              <div key={g} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
-                <div style={{ width:10, height:10, borderRadius:'50%', background:GENRE_COLORS[g], flexShrink:0 }} />
-                <span style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, width:90, flexShrink:0 }}>{g}</span>
-                <input type="range" min={0} max={100} value={genreMix[g]||0} onChange={e=>setGenreMix(p=>({...p,[g]:+e.target.value}))} style={{ flex:1, accentColor:GENRE_COLORS[g] }} />
-                <span style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:GENRE_COLORS[g], width:32, textAlign:'right', flexShrink:0 }}>{genreMix[g]||0}%</span>
-              </div>
-            ))}
-          </Card>
-          <Card neon style={{ marginBottom:16 }}>
-            <CardTitle>Options</CardTitle>
-            <div style={{ marginBottom:12 }}>
-              <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, marginBottom:6 }}>TOTAL ACTS: {totalActs}</div>
-              <input type="range" min={5} max={40} value={totalActs} onChange={e=>setTotalActs(+e.target.value)} style={{ width:'100%', accentColor:C.teal }} />
-            </div>
-            <div style={{ marginBottom:12 }}>
-              <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, marginBottom:6 }}>HEADLINERS: {headlinerCount}</div>
-              <input type="range" min={1} max={4} value={headlinerCount} onChange={e=>setHeadlinerCount(+e.target.value)} style={{ width:'100%', accentColor:C.gold }} />
-            </div>
-            <div style={{ marginBottom:12 }}>
-              <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, marginBottom:6 }}>FESTIVAL NAME (leave blank to auto-generate)</div>
-              <input value={festName} onChange={e=>setFestName(e.target.value)} placeholder="e.g. Neon Pines Festival" style={{ ...inputSt, width:'100%' }} />
-            </div>
-          </Card>
-          <Card neon>
-            <CardTitle>Template</CardTitle>
-            <div style={{ display:'flex', gap:8 }}>
-              {POSTER_TEMPLATES.map((t,i) => (
-                <div key={t.id} onClick={()=>setTemplateIdx(i)} style={{ flex:1, background:t.bg, border:`2px solid ${i===templateIdx?t.accent:C.border}`, borderRadius:6, padding:'10px 6px', cursor:'pointer', textAlign:'center', boxShadow:i===templateIdx?`0 0 12px rgba(0,0,0,0.5)`:'none', transition:'all 0.2s' }}>
-                  <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:t.dark?t.accent:'#1a1a2e', textTransform:'uppercase', letterSpacing:1, lineHeight:1.4 }}>{t.name}</div>
-                </div>
-              ))}
-            </div>
-          </Card>
-          <div style={{ marginTop:20 }}>
-            <Btn onClick={generate} style={{ width:'100%', padding:'14px', fontSize:13, letterSpacing:'0.2em' }}>⚡ GENERATE POSTER</Btn>
-          </div>
-        </div>
-        <div>
-          {generated
-            ? <PosterPreview {...generated} />
-            : <div style={{ background:C.bgCard, border:`2px dashed ${C.border}`, borderRadius:12, minHeight:600, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16 }}>
-                <div style={{ fontSize:'4rem' }}>🎨</div>
-                <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.5rem', color:C.grayDim }}>YOUR POSTER APPEARS HERE</div>
-                <div style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:C.grayDim }}>Configure your mix and hit Generate</div>
-              </div>
-          }
-        </div>
+      <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 10, color: C.gray, letterSpacing: '0.1em' }}>
+        BUILD YOUR LEGACY LINEUP FROM THE ARCHIVE
       </div>
     </div>
-  );
-}
+
+    {/* ── THE "5+ CLUB" TICKER ── */}
+    <div style={{ 
+      background: 'rgba(0,0,0,0.3)', 
+      borderTop: `1px solid ${C.border}`, 
+      borderBottom: `1px solid ${C.border}`, 
+      padding: '12px 0', 
+      marginBottom: 32,
+      overflow: 'hidden',
+      position: 'relative'
+    }}>
+      <div style={{ 
+        position: 'absolute', 
+        left: 0, 
+        top: 0, 
+        bottom: 0, 
+        background: C.bg, 
+        zIndex: 2, 
+        padding: '0 15px', 
+        display: 'flex', 
+        alignItems: 'center',
+        borderRight: `1px solid ${C.teal}`,
+        fontFamily: "'Bebas Neue'",
+        fontSize: '0.9rem',
+        color: C.teal
+      }}>
+        THE 5+ CLUB
+      </div>
+      <marquee scrollamount="6" style={{ width: '100%' }}>
+        <div style={{ display: 'flex', gap: 40, alignItems: 'center' }}>
+          {artistCounts.filter(a => a.count >= 5).map(artist => (
+            <div key={artist.name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: C.white, whiteSpace: 'nowrap' }}>
+                {artist.name.toUpperCase()}
+              </span>
+              <span style={{ 
+                fontFamily: "'Space Mono'", 
+                fontSize: 10, 
+                background: C.teal, 
+                color: '#000', 
+                padding: '2px 6px', 
+                borderRadius: 3,
+                fontWeight: 900 
+              }}>
+                {artist.count}X
+              </span>
+              <span style={{ color: C.border }}>•</span>
+            </div>
+          ))}
+        </div>
+      </marquee>
+    </div>
+
+    {/* ── GENERATOR MAIN GRID ── */}
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
+      gap: 32, 
+      marginBottom: 32 
+    }}>
+      
+      {/* LEFT COLUMN: CONTROLS */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        
+        {/* GENRE MIX CARD */}
+        <Card neon>
+          <CardTitle>GENRE DISTRIBUTION 🎚️</CardTitle>
+          <div style={{ 
+            fontFamily: "'Space Mono',monospace", 
+            fontSize: 9, 
+            color: totalPct === 100 ? C.teal : totalPct > 100 ? C.red : C.gold, 
+            marginBottom: 16,
+            padding: '8px',
+            background: 'rgba(0,0,0,0.2)',
+            borderRadius: 4,
+            textAlign: 'center',
+            border: `1px solid ${totalPct === 100 ? C.teal + '44' : C.border}`
+          }}>
+            SYSTEM MIX: {totalPct}% {totalPct !== 100 && '(BALANCE TO 100%)'}
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {GENRES.filter(g => g !== 'Other').map(g => (
+              <div key={g} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: GENRE_COLORS[g] || C.teal, flexShrink: 0 }} />
+                <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, color: C.gray, width: 100, flexShrink: 0 }}>{g.toUpperCase()}</span>
+                <input 
+                  type="range" 
+                  min={0} max={100} 
+                  value={genreMix[g] || 0} 
+                  onChange={e => setGenreMix(p => ({ ...p, [g]: +e.target.value }))} 
+                  style={{ flex: 1, accentColor: GENRE_COLORS[g] || C.teal, height: 4 }} 
+                />
+                <span style={{ 
+                  fontFamily: "'Bebas Neue'", 
+                  fontSize: '1.2rem', 
+                  color: (genreMix[g] || 0) > 0 ? C.white : C.grayDim, 
+                  width: 40, 
+                  textAlign: 'right' 
+                }}>
+                  {genreMix[g] || 0}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* OPTIONS CARD */}
+        <Card neon>
+          <CardTitle>FESTIVAL PARAMETERS ⚙️</CardTitle>
+          
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray }}>TOTAL LINEUP SIZE</span>
+              <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.teal }}>{totalActs} ACTS</span>
+            </div>
+            <input type="range" min={10} max={60} value={totalActs} onChange={e => setTotalActs(+e.target.value)} style={{ width: '100%', accentColor: C.teal }} />
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray }}>HEADLINER SLOTS</span>
+              <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.gold }}>{headlinerCount} NIGHTS</span>
+            </div>
+            <input type="range" min={1} max={4} value={headlinerCount} onChange={e => setHeadlinerCount(+e.target.value)} style={{ width: '100%', accentColor: C.gold }} />
+          </div>
+
+          <div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 8 }}>FESTIVAL BRANDING</div>
+            <input 
+              value={festName} 
+              onChange={e => setFestName(e.target.value)} 
+              placeholder="e.g. SONIC ARCHIVE 2026" 
+              style={{ ...inputSt, width: '100%', border: `1px solid ${C.border}`, fontSize: 11 }} 
+            />
+          </div>
+        </Card>
+
+        {/* TEMPLATE PICKER */}
+        <Card neon>
+          <CardTitle>VISUAL TEMPLATE 🎨</CardTitle>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+            {POSTER_TEMPLATES.map((t, i) => (
+              <div 
+                key={t.id} 
+                onClick={() => setTemplateIdx(i)} 
+                style={{ 
+                  background: t.bg, 
+                  border: `2px solid ${i === templateIdx ? t.accent : 'transparent'}`, 
+                  borderRadius: 6, 
+                  padding: '12px 8px', 
+                  cursor: 'pointer', 
+                  textAlign: 'center',
+                  boxShadow: i === templateIdx ? `0 0 15px ${hexToRgba(t.accent, 0.3)}` : 'none',
+                  transition: 'all 0.2s',
+                  opacity: i === templateIdx ? 1 : 0.6
+                }}
+              >
+                <div style={{ 
+                  fontFamily: "'Bebas Neue'", 
+                  fontSize: '0.8rem', 
+                  color: t.dark ? t.accent : '#000', 
+                  textTransform: 'uppercase', 
+                  letterSpacing: 1 
+                }}>
+                  {t.name}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Btn onClick={generate} style={{ 
+          width: '100%', 
+          padding: '20px', 
+          fontSize: '1.4rem', 
+          letterSpacing: '0.3em',
+          background: totalPct === 100 ? C.teal : C.bgCardAlt,
+          color: totalPct === 100 ? '#000' : C.gray,
+          cursor: totalPct === 100 ? 'pointer' : 'not-allowed',
+          marginTop: 10
+        }}>
+          {totalPct === 100 ? '⚡ GENERATE LINEUP' : 'FIX GENRE MIX TO START'}
+        </Btn>
+      </div>
+
+      {/* RIGHT COLUMN: PREVIEW */}
+      <div style={{ position: 'sticky', top: 100 }}>
+        {generated ? (
+          <div className="fade-in">
+             <PosterPreview {...generated} />
+             <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
+                <button 
+                  onClick={() => window.print()}
+                  style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.border}`, color: C.white, fontFamily: "'Space Mono'", fontSize: 10, borderRadius: 6, cursor: 'pointer' }}
+                >
+                  💾 EXPORT AS PDF
+                </button>
+                <button 
+                  onClick={generate}
+                  style={{ flex: 1, padding: '12px', background: 'none', border: `1px solid ${C.teal}`, color: C.teal, fontFamily: "'Space Mono'", fontSize: 10, borderRadius: 6, cursor: 'pointer' }}
+                >
+                  🔄 RE-ROLL LINEUP
+                </button>
+             </div>
+          </div>
+        ) : (
+          <div style={{ 
+            background: `linear-gradient(135deg, ${C.bgCard} 0%, ${C.bg} 100%)`, 
+            border: `2px dashed ${C.border}`, 
+            borderRadius: 16, 
+            height: isMobile ? 400 : 700, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            gap: 20,
+            opacity: 0.5
+          }}>
+            <div style={{ fontSize: '5rem', filter: 'grayscale(1)' }}>🎞️</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.grayDim }}>AWAITING INPUT</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.grayDim }}>POSTER WILL RENDER HERE</div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
 
 // ─── MANAGE TAB ───────────────────────────────────────────────────────────────
 function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
