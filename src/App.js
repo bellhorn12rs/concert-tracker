@@ -4080,8 +4080,9 @@ export default function App() {
 
   // ── STEP 3: THE COLOR SHORTCUT (C) ──
   // We initialize C with the current theme data so the whole app can use C.teal, etc.
-  cconst theme = THEMES[themeId] || THEMES['neon-noir'];
-const C = theme;
+  // Fix the pathing: THEMES is a flat object, it doesn't have a .colors sub-object
+  const theme = THEMES[themeId] || THEMES['neon-noir'];
+  const C = theme; // Use the theme object directly as C
 
   // ── EFFECTS & HANDLERS ──
   useEffect(() => {
@@ -4095,12 +4096,12 @@ const C = theme;
   }, []);
 
   const setThemeId = (id) => {
-  if (THEMES[id]) {
-    Object.assign(C, THEMES[id]); 
-    setThemeIdRaw(id);
-    localStorage.setItem('concert-theme', id);
-  }
-};
+    if (THEMES[id]) {
+      Object.assign(C, THEMES[id]); // Remove .colors from here too
+      setThemeIdRaw(id);
+      localStorage.setItem('concert-theme', id);
+    }
+  };
 
   // Sync colors on initial mount
   useEffect(() => { 
