@@ -4577,96 +4577,96 @@ export default function App() {
 
   const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
 // ── 6. DATA DERIVATION ENGINE ──
-  const PER_PAGE = 50; 
+const PER_PAGE = 50; 
 
-  const genreMap = useMemo(() => artistGenres || {}, [artistGenres]);
+const genreMap = useMemo(() => artistGenres || {}, [artistGenres]);
 
-  const allSetsList = useMemo(() => {
-    const r = [];
-    if (!concerts || !Array.isArray(concerts)) return r;
-    concerts.forEach(c => { 
-      if (!c) return; 
-      const bands = Array.isArray(c.bands) ? c.bands : [c.artist].filter(Boolean); 
-      bands.forEach(band => { 
-        if (band && typeof band === 'string') r.push({ ...c, artist: band }); 
-      }); 
-    });
-    return r;
-  }, [concerts]);
+const allSetsList = useMemo(() => {
+  const r = [];
+  if (!concerts || !Array.isArray(concerts)) return r;
+  concerts.forEach(c => { 
+    if (!c) return; 
+    const bands = Array.isArray(c.bands) ? c.bands : [c.artist].filter(Boolean); 
+    bands.forEach(band => { 
+      if (band) r.push({ ...c, artist: String(band) }); 
+    }); 
+  });
+  return r;
+}, [concerts]);
 
-  const years = useMemo(() => {
-    const ySet = new Set();
-    concerts.forEach(c => { const y = getYear(c.date); if (y) ySet.add(y); });
-    return [...ySet].sort((a, b) => b - a);
-  }, [concerts]);
+const years = useMemo(() => {
+  const ySet = new Set();
+  concerts.forEach(c => { 
+    const y = getYear(c.date); 
+    if (y) ySet.add(String(y)); 
+  });
+  return [...ySet].sort((a, b) => b - a);
+}, [concerts]);
 
-  const applyFilters = useCallback((list, isSet = false) => {
-    if (!list || !Array.isArray(list)) return [];
-    let d = list;
-    
-    if (yearFilter !== 'all') d = d.filter(r => getYear(r.date) === +yearFilter);
-    if (festFilter === 'fest') d = d.filter(r => r.is_festival);
-    if (festFilter === 'solo') d = d.filter(r => !r.is_festival);
-    
-    if (genreFilter !== 'all') {
-      d = d.filter(r => { 
-        const g = isSet ? (artistGenres[r.artist || '']) : (r.genre); 
-        return g === genreFilter; 
-      });
-    }
-    
-    if (search) {
-      const q = search.toLowerCase();
-      d = d.filter(r => {
-        const bands = isSet ? [r.artist] : (r.bands || []);
-        const v = r.venue || '';
-        const ci = r.city || '';
-        const f = r.festival_name || '';
-        return bands.some(b => b && String(b).toLowerCase().includes(q)) || 
-               v.toLowerCase().includes(q) || ci.toLowerCase().includes(q) || f.toLowerCase().includes(q);
-      });
-    }
-    return d;
-  }, [yearFilter, festFilter, genreFilter, search, artistGenres]);
-
-  const filteredSets = useMemo(() => {
-    const d = applyFilters(allSetsList, true);
-    return [...d].sort((a, b) => { 
-      const col = sortCol || 'date';
-      const av = col === 'artist' ? (a.artist || '').toLowerCase() : (String(a[col] || '')).toLowerCase();
-      const bv = col === 'artist' ? (b.artist || '').toLowerCase() : (String(b[col] || '')).toLowerCase();
-      if (col === 'date') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
-      return sortDir === 'asc' ? (av < bv ? -1 : 1) : (av > bv ? -1 : 1);
-    });
-  }, [allSetsList, applyFilters, sortCol, sortDir]);
-
-  const artistRows = useMemo(() => {
-    if (browseView !== 'artists') return [];
-    const m = {};
-    const filtered = applyFilters(allSetsList, true);
-    filtered.forEach(s => { 
-      if (!s.artist) return;
-      if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; 
-      m[s.artist].shows.push(s); 
-    });
-    return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
-  }, [allSetsList, applyFilters, browseView]);
-
-  const dayGroups = useMemo(() => applyFilters(concerts).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [concerts, applyFilters]);
+const applyFilters = useCallback((list, isSet = false) => {
+  if (!list || !Array.isArray(list)) return [];
+  let d = list;
   
-  const paged = useMemo(() => {
-    return filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-  }, [filteredSets, page]);
+  // 1. Year Filter (Ensuring String vs Number match)
+  if (yearFilter !== 'all') {
+    d = d.filter(r => String(getYear(r.date)) === String(yearFilter));
+  }
+  
+  // 2. Fest Filter
+  if (festFilter === 'fest') d = d.filter(r => r.is_festival);
+  if (festFilter === 'solo') d = d.filter(r => !r.is_festival);
+  
+  // 3. Genre Filter
+  if (genreFilter !== 'all') {
+    d = d.filter(r => { 
+      const g = isSet ? (artistGenres[r.artist] || 'Other') : (r.genre || 'Other'); 
+      return g === genreFilter; 
+    });
+  }
+  
+  // 4. Search Filter (Resilient to nulls)
+  if (search && search.trim() !== '') {
+    const q = search.toLowerCase().trim();
+    d = d.filter(r => {
+      const a = String(r.artist || '').toLowerCase();
+      const v = String(r.venue || '').toLowerCase();
+      const ci = String(r.city || '').toLowerCase();
+      const f = String(r.festival_name || '').toLowerCase();
+      return a.includes(q) || v.includes(q) || ci.includes(q) || f.includes(q);
+    });
+  }
+  return d;
+}, [yearFilter, festFilter, genreFilter, search, artistGenres]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredSets.length / PER_PAGE));
+const filteredSets = useMemo(() => {
+  const d = applyFilters(allSetsList, true) || [];
+  const col = sortCol || 'date';
+  
+  return [...d].sort((a, b) => { 
+    const av = String(a[col] || '').toLowerCase();
+    const bv = String(b[col] || '').toLowerCase();
+    if (col === 'date') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    return sortDir === 'asc' ? (av < bv ? -1 : 1) : (av > bv ? -1 : 1);
+  });
+}, [allSetsList, applyFilters, sortCol, sortDir]);
 
-  const headerStats = useMemo(() => ({
-    totalShows: concerts.length,
-    totalSets: allSetsList.length,
-    uniqueArtists: new Set(allSetsList.map(s => s.artist)).size,
-    festDays: concerts.filter(c => c.is_festival).length,
-    setlistCount: concerts.filter(c => c.has_setlist || c.has_setlist_names).length,
-  }), [concerts, allSetsList]);
+// 🟢 CRITICAL: This powers the Browse table
+const paged = useMemo(() => {
+  const start = (page - 1) * PER_PAGE;
+  const end = start + PER_PAGE;
+  return filteredSets.slice(start, end);
+}, [filteredSets, page]);
+
+const totalPages = Math.max(1, Math.ceil(filteredSets.length / PER_PAGE));
+
+// Remaining stats logic...
+const headerStats = useMemo(() => ({
+  totalShows: concerts.length,
+  totalSets: allSetsList.length,
+  uniqueArtists: new Set(allSetsList.map(s => s.artist)).size,
+  festDays: concerts.filter(c => c.is_festival).length,
+  setlistCount: concerts.filter(c => c.has_setlist || c.has_setlist_names).length,
+}), [concerts, allSetsList]);
 
   const artistCounts = useMemo(() => {
     const m = {};
@@ -5187,14 +5187,31 @@ export default function App() {
               {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
               {activeTab === 'browse' && (
   <BrowseTab 
-    browseView={browseView} 
-    setBrowseView={setBrowseView} 
-    search={search} 
-    setSearch={setSearch} 
-    // ... rest of your props ...
-    onEdit={isAdmin ? setEditTarget : null} // 🟢 Only allow editing if Admin
-    isAdmin={isAdmin} // 🟢 Pass the flag so the component hides the UI
-    genreMap={artistGenres} 
+    browseView={browseView}
+    setBrowseView={setBrowseView}
+    search={search}
+    setSearch={setSearch}
+    yearFilter={yearFilter}
+    setYearFilter={setYearFilter}
+    festFilter={festFilter}
+    setFestFilter={setFestFilter}
+    genreFilter={genreFilter}
+    setGenreFilter={setGenreFilter}
+    sortCol={sortCol}
+    setSortCol={setSortCol}
+    sortDir={sortDir}
+    setSortDir={setSortDir}
+    page={page}
+    setPage={setPage}
+    totalPages={totalPages}
+    paged={paged} // 🟢 Must be the variable from the Memo above
+    artistRows={artistRows}
+    years={years}
+    onShare={setShareCard}
+    onEdit={isAdmin ? setEditTarget : null} // Only passes handler if admin
+    isAdmin={isAdmin}
+    onSetGenre={handleSetGenre}
+    genreMap={artistGenres}
   />
 )}
               {activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} onDuplicate={handleDuplicate} />}
