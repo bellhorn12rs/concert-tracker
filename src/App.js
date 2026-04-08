@@ -2842,13 +2842,29 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
         const themeColor = FEST_COLORS[fi % FEST_COLORS.length];
         const yearsSorted = Object.keys(fest.years).sort((a, b) => b.localeCompare(a));
         const allShows = Object.values(fest.years).flat();
+        
+        // ── THE FIX: Generate the ID slug to match the Passport teleport logic
+        const festSlug = `fest-${fest.name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')}`;
 
         return (
-          <div key={fest.name} style={{ marginBottom: 120 }}>
+          <div 
+            key={fest.name} 
+            id={festSlug} // <── THE ANCHOR
+            style={{ 
+              marginBottom: 120, 
+              scrollMarginTop: '120px' // <── Ensures header doesn't cover the title after teleport
+            }}
+          >
             
             {/* 🏆 FESTIVAL HEADER */}
             <div style={{ marginBottom: '60px', borderLeft: `10px solid ${themeColor}`, paddingLeft: '30px' }}>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(3rem, 8vw, 6rem)', lineHeight: 0.8, color: C.white, textShadow: `0 0 40px ${hexToRgba(themeColor, 0.4)}` }}>
+              <div style={{ 
+                fontFamily: "'Bebas Neue'", 
+                fontSize: 'clamp(3rem, 8vw, 6rem)', 
+                lineHeight: 0.8, 
+                color: C.white, 
+                textShadow: `0 0 40px ${hexToRgba(themeColor, 0.4)}` 
+              }}>
                 {fest.name.toUpperCase()}
               </div>
               <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: themeColor, marginTop: '15px', letterSpacing: '5px', fontWeight: 900 }}>
@@ -2866,15 +2882,21 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
                     position: 'relative', border: `6px solid ${hexToRgba(themeColor, 0.3)}`, borderRadius: '24px',
                     padding: '80px 40px 40px 40px', background: 'rgba(255,255,255,0.01)',
                     boxShadow: `0 30px 100px rgba(0,0,0,0.5), inset 0 0 50px ${hexToRgba(themeColor, 0.05)}`,
-                    overflow: 'visible' // Important for hovering photos!
+                    overflow: 'visible' 
                   }}>
                     
                     {/* YEAR TAB */}
                     <div style={{ position: 'absolute', top: '-40px', left: '40px', display: 'flex', alignItems: 'baseline', gap: '15px' }}>
-                      <div style={{ background: themeColor, color: '#000', fontFamily: "'Bebas Neue'", fontSize: '4rem', padding: '0 30px', borderRadius: '8px', boxShadow: `0 10px 30px rgba(0,0,0,0.5)` }}>
+                      <div style={{ 
+                        background: themeColor, color: '#000', fontFamily: "'Bebas Neue'", 
+                        fontSize: '4rem', padding: '0 30px', borderRadius: '8px', 
+                        boxShadow: `0 10px 30px rgba(0,0,0,0.5)` 
+                      }}>
                         {yr}
                       </div>
-                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, opacity: 0.5 }}>{fest.name.toUpperCase()}</div>
+                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, opacity: 0.5 }}>
+                        {fest.name.toUpperCase()}
+                      </div>
                     </div>
 
                     {/* DAY ROWS */}
@@ -2883,7 +2905,6 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
                         const dayColor = getDayColor(themeColor, idx);
                         const venueLabel = fest.name;
                         
-                        // 🟢 SPLIT THE MEDIA LINKS
                         const photos = show.personal_photo_url ? show.personal_photo_url.split(',').map(u => u.trim()).filter(Boolean) : [];
                         const setlists = show.setlist_image_url ? show.setlist_image_url.split(',').map(u => u.trim()).filter(Boolean) : [];
                         
@@ -2907,12 +2928,15 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
                                 <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: '5px' }}>
                                   {fmtDateShort(show.date)}
                                 </div>
-                                <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: '#fff', lineHeight: 1.5, borderTop: `1px solid ${hexToRgba(dayColor, 0.2)}`, marginTop: '15px', paddingTop: '10px' }}>
+                                <div style={{ 
+                                  fontFamily: "'Space Mono'", fontSize: '11px', color: '#fff', lineHeight: 1.5, 
+                                  borderTop: `1px solid ${hexToRgba(dayColor, 0.2)}`, marginTop: '15px', paddingTop: '10px' 
+                                }}>
                                   {show.bands?.join(' · ').toUpperCase()}
                                 </div>
                               </div>
 
-                              {/* Right: Media Cluster (The Fix!) */}
+                              {/* Right: Media Cluster */}
                               <div style={{ display: 'flex', alignItems: 'center', marginLeft: '30px' }}>
                                 {setlists.length > 0 && (
                                   <div style={{ display: 'flex' }}>
@@ -4526,12 +4550,22 @@ async function handleUpcomingDelete(id) {
                 passport={passport} 
                 genreStats={genreStats} 
                 onNavigateToFest={name => { 
+                  // 1. Switch the tab
                   setActiveTab('byFest'); 
+                  
+                  // 2. Teleport logic
                   setTimeout(() => { 
-                    const festId = `fest-${name.toLowerCase().replace(/\s+/g, '-')}`; 
-                    const el = document.getElementById(festId); 
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
-                  }, 300); 
+                    // Create a URL-friendly version of the name (e.g. "Bonnaroo 2024" -> "fest-bonnaroo-2024")
+                    const slug = name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+                    const targetId = `fest-${slug}`;
+                    const el = document.getElementById(targetId); 
+                    
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } else {
+                      console.warn("Teleport target not found:", targetId);
+                    }
+                  }, 450); // Increased delay for slower renders
                 }} 
               />
             )}
