@@ -3101,87 +3101,183 @@ function PassportTab({ passport, onNavigateToFest }) {
   );
 }
 // ─── BROWSE TAB ───────────────────────────────────────────────────────────────
-// ─── BROWSE TAB (Fixed for Artist Genres) ─────────────────────────────────────
-function BrowseTab({ browseView, setBrowseView, search, setSearch, yearFilter, setYearFilter, festFilter, setFestFilter, sortCol, setSortCol, sortDir, setSortDir, paged, page, setPage, totalPages, artistRows, years, onShare, onEdit, onSetGenre, genreMap, genreFilter, setGenreFilter }) {
+// ─── BROWSE TAB (Fixed & Armor-Plated) ─────────────────────────────────────
+function BrowseTab({ 
+  browseView, setBrowseView, search, setSearch, 
+  yearFilter, setYearFilter, festFilter, setFestFilter, 
+  genreFilter, setGenreFilter, sortCol, setSortCol, sortDir, setSortDir, 
+  paged, page, setPage, totalPages, artistRows, years, 
+  onShare, onEdit, onSetGenre, genreMap 
+}) {
   
-  // ── SAFETY GATES ──
-  if (!Array.isArray(paged)) paged = [];
-  if (!Array.isArray(artistRows)) artistRows = [];
-  if (!Array.isArray(years)) years = [];
+  // ── 1. SAFETY GATES (Prevents crashes on null data) ──
+  const safePaged = Array.isArray(paged) ? paged : [];
+  const safeArtistRows = Array.isArray(artistRows) ? artistRows : [];
+  const safeYears = Array.isArray(years) ? years : [];
   const safeGenreMap = genreMap || {};
 
+  // ── 2. INTERNAL STYLING (Prevents Reference Errors) ──
+  const internalInputSt = { 
+    background: 'rgba(0,0,0,0.3)', 
+    border: `1px solid ${C.border || '#333'}`, 
+    borderRadius: 4, 
+    padding: '7px 10px', 
+    color: '#fff', 
+    fontSize: '0.85rem', 
+    outline: 'none' 
+  };
+
   return (
-    <div style={{ marginTop:20 }} className="fade-in">
-      <div style={{ display:'flex', flexWrap:'wrap', gap:10, marginBottom:20, background:C.bgCard, padding:15, borderRadius:8, border:`1px solid ${C.border}` }}>
-        <input placeholder="Search artists, venues, cities..." value={search} onChange={e=>setSearch(e.target.value)} style={{ ...inputSt, flex:'1 1 260px' }} />
-        <select value={yearFilter} onChange={e=>setYearFilter(e.target.value)} style={{ ...inputSt, minWidth:100 }}><option value="all">All Years</option>{years.map(y=><option key={y} value={y}>{y}</option>)}</select>
-        <select value={festFilter} onChange={e=>setFestFilter(e.target.value)} style={{ ...inputSt, minWidth:130 }}><option value="all">All Types</option><option value="fest">Festival Only</option><option value="solo">Standalone Only</option></select>
-        <select value={genreFilter} onChange={e=>setGenreFilter(e.target.value)} style={{ ...inputSt, minWidth:130 }}><option value="all">All Genres</option>{GENRES.map(g=><option key={g} value={g}>{g}</option>)}</select>
-        <div style={{ display:'flex', background:C.bgCardAlt, borderRadius:4, padding:2, border:`1px solid ${C.border}` }}>
-          {['shows','artists'].map(v=><button key={v} onClick={()=>setBrowseView(v)} style={{ padding:'6px 14px', fontSize:10, fontFamily:"'Space Mono'", letterSpacing:'0.1em', textTransform:'uppercase', background:browseView===v?C.teal:'transparent', color:browseView===v?C.bg:C.gray, border:'none', cursor:'pointer', borderRadius:3, transition:'0.15s' }}>{v}</button>)}
+    <div style={{ marginTop: 20 }} className="fade-in">
+      {/* FILTER BAR */}
+      <div style={{ 
+        display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20, 
+        background: C.bgCard, padding: 15, borderRadius: 8, border: `1px solid ${C.border}` 
+      }}>
+        <input 
+          placeholder="Search artists, venues, cities..." 
+          value={search || ''} 
+          onChange={e => setSearch(e.target.value)} 
+          style={{ ...internalInputSt, flex: '1 1 260px' }} 
+        />
+        
+        <select value={yearFilter} onChange={e => setYearFilter(e.target.value)} style={{ ...internalInputSt, minWidth: 100 }}>
+          <option value="all">All Years</option>
+          {safeYears.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+
+        <select value={festFilter} onChange={e => setFestFilter(e.target.value)} style={{ ...internalInputSt, minWidth: 130 }}>
+          <option value="all">All Types</option>
+          <option value="fest">Festival Only</option>
+          <option value="solo">Standalone Only</option>
+        </select>
+
+        <select value={genreFilter} onChange={e => setGenreFilter(e.target.value)} style={{ ...internalInputSt, minWidth: 130 }}>
+          <option value="all">All Genres</option>
+          {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+        </select>
+
+        <div style={{ display: 'flex', background: C.bgCardAlt, borderRadius: 4, padding: 2, border: `1px solid ${C.border}` }}>
+          {['shows', 'artists'].map(v => (
+            <button 
+              key={v} 
+              onClick={() => setBrowseView(v)} 
+              style={{ 
+                padding: '6px 14px', fontSize: 10, fontFamily: "'Space Mono'", letterSpacing: '0.1em', 
+                textTransform: 'uppercase', background: browseView === v ? C.teal : 'transparent', 
+                color: browseView === v ? C.bg : C.gray, border: 'none', cursor: 'pointer', borderRadius: 3, transition: '0.15s' 
+              }}
+            >
+              {v}
+            </button>
+          ))}
         </div>
       </div>
 
-      {browseView==='shows' && (
+      {/* VIEW: SHOWS (SETS) */}
+      {browseView === 'shows' && (
         <>
-          <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:8, overflow:'hidden' }}>
-            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'0.78rem' }}>
+          <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
               <thead>
-                <tr style={{ background:C.bgCardAlt }}>
-                  {[['date','Date'],['artist','Artist'],['venue','Venue'],['city','City']].map(([col,label]) => (
-                    <th key={col} onClick={()=>{setSortCol(col);setSortDir(d=>d==='asc'?'desc':'asc');}} style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', padding:'10px 12px', textAlign:'left', color:sortCol===col?C.teal:C.tealDim, borderBottom:`1px solid ${C.border}`, cursor:'pointer', userSelect:'none' }}>{label} {sortCol===col?(sortDir==='asc'?'▲':'▼'):''}</th>
+                <tr style={{ background: C.bgCardAlt }}>
+                  {[['date', 'Date'], ['artist', 'Artist'], ['venue', 'Venue'], ['city', 'City']].map(([col, label]) => (
+                    <th 
+                      key={col} 
+                      onClick={() => { setSortCol(col); setSortDir(d => d === 'asc' ? 'desc' : 'asc'); }} 
+                      style={{ 
+                        fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', 
+                        textTransform: 'uppercase', padding: '10px 12px', textAlign: 'left', 
+                        color: sortCol === col ? C.teal : C.tealDim, borderBottom: `1px solid ${C.border}`, 
+                        cursor: 'pointer', userSelect: 'none' 
+                      }}
+                    >
+                      {label} {sortCol === col ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                    </th>
                   ))}
-                  <th style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', padding:'10px 12px', textAlign:'left', color:C.tealDim, borderBottom:`1px solid ${C.border}` }}>Genre</th>
-                  <th style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', padding:'10px 12px', textAlign:'left', color:C.tealDim, borderBottom:`1px solid ${C.border}` }}>📋</th>
-                  <th style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', padding:'10px 12px', textAlign:'left', color:C.tealDim, borderBottom:`1px solid ${C.border}` }}>Type</th>
+                  <th style={{ fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', padding: '10px 12px', textAlign: 'left', color: C.tealDim, borderBottom: `1px solid ${C.border}` }}>Genre</th>
+                  <th style={{ fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', padding: '10px 12px', textAlign: 'left', color: C.tealDim, borderBottom: `1px solid ${C.border}` }}>📋</th>
+                  <th style={{ fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', padding: '10px 12px', textAlign: 'left', color: C.tealDim, borderBottom: `1px solid ${C.border}` }}>Type</th>
                 </tr>
               </thead>
               <tbody>
-                {paged.map((s,i) => {
-                  // HERE IS THE FIX: Pull genre from the artist-specific map
-                  const artistGenre = genreMap[s.artist] || null;
+                {safePaged.map((s, i) => {
+                  const artistGenre = safeGenreMap[s.artist] || null;
                   return (
-                    <tr key={`${s.id}-${s.artist}`} className="row-hover" onClick={()=>onEdit(s)} style={{ borderBottom:`1px solid ${C.border}`, background:i%2===1?C.bgCardAlt:'transparent' }}>
-                      <td style={{ padding:'9px 12px', fontFamily:"'Space Mono',monospace", fontSize:'0.7rem', color:C.gray, whiteSpace:'nowrap' }}>{fmtDate(s.date)}</td>
-                      <td style={{ padding:'9px 12px', color:C.teal, fontWeight:600 }}>{s.artist}</td>
-                      <td style={{ padding:'9px 12px', color:C.gray }}>{s.venue||'—'}</td>
-                      <td style={{ padding:'9px 12px', color:C.gray }}>{s.city||'—'}{s.state?`, ${s.state}`:''}</td>
-                      <td style={{ padding:'9px 12px' }}>{artistGenre ? <GenreBadge genre={artistGenre} color={GENRE_COLORS[artistGenre]} small /> : <span style={{ color:C.grayDim, fontSize:8 }}>—</span>}</td>
-                      <td style={{ padding:'9px 12px', textAlign:'center' }}>{(s.has_setlist||(s.has_setlist_names?.trim()))?<a href={`https://www.setlist.fm/search?query=${encodeURIComponent(s.artist)}`} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ textDecoration:'none', fontSize:12, filter:'drop-shadow(0 0 3px gold)' }} title="setlist.fm">📋</a>:<span style={{ color:C.grayDim }}>—</span>}</td>
-                      <td style={{ padding:'9px 12px' }}>{s.is_festival?<Badge color={C.teal}>Fest</Badge>:<Badge color={C.grayDim} bg="transparent">Solo</Badge>}</td>
+                    <tr key={`${s.id}-${s.artist}-${i}`} className="row-hover" onClick={() => onEdit(s)} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 1 ? C.bgCardAlt : 'transparent', cursor: 'pointer' }}>
+                      <td style={{ padding: '9px 12px', fontFamily: "'Space Mono',monospace", fontSize: '0.7rem', color: C.gray, whiteSpace: 'nowrap' }}>{fmtDate(s.date)}</td>
+                      <td style={{ padding: '9px 12px', color: C.teal, fontWeight: 600 }}>{s.artist}</td>
+                      <td style={{ padding: '9px 12px', color: C.gray }}>{s.venue || '—'}</td>
+                      <td style={{ padding: '9px 12px', color: C.gray }}>{s.city || '—'}{s.state ? `, ${s.state}` : ''}</td>
+                      <td style={{ padding: '9px 12px' }}>
+                        {artistGenre ? <GenreBadge genre={artistGenre} color={GENRE_COLORS[artistGenre]} small /> : <span style={{ color: C.grayDim, fontSize: 8 }}>—</span>}
+                      </td>
+                      <td style={{ padding: '9px 12px', textAlign: 'center' }}>
+                        {(s.has_setlist || (s.has_setlist_names?.trim())) ? (
+                          <a 
+                            href={getSetlistFmUrl(s.artist, s.date)} 
+                            target="_blank" rel="noopener noreferrer" 
+                            onClick={e => e.stopPropagation()} 
+                            style={{ textDecoration: 'none', fontSize: 12, filter: 'drop-shadow(0 0 3px gold)' }} 
+                            title="setlist.fm"
+                          >📋</a>
+                        ) : <span style={{ color: C.grayDim }}>—</span>}
+                      </td>
+                      <td style={{ padding: '9px 12px' }}>{s.is_festival ? <Badge color={C.teal}>Fest</Badge> : <Badge color={C.grayDim} bg="transparent">Solo</Badge>}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-          {totalPages>1 && (
-            <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:10, marginTop:16 }}>
-              <Btn variant="secondary" onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} style={{ padding:'5px 12px' }}>← Prev</Btn>
-              <span style={{ fontFamily:"'Space Mono',monospace", fontSize:9, color:C.gray }}>Page {page} of {totalPages}</span>
-              <Btn variant="secondary" onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} style={{ padding:'5px 12px' }}>Next →</Btn>
+
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 16 }}>
+              <Btn variant="secondary" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: '5px 12px' }}>← Prev</Btn>
+              <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, color: C.gray }}>Page {page} of {totalPages}</span>
+              <Btn variant="secondary" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ padding: '5px 12px' }}>Next →</Btn>
             </div>
           )}
         </>
       )}
 
-      {browseView==='artists' && (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:12 }}>
-          {artistRows.map(row => {
-            const genre = genreMap[row.artist] || null;
+      {/* VIEW: ARTISTS (ACTS) */}
+      {browseView === 'artists' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+          {safeArtistRows.map(row => {
+            const genre = safeGenreMap[row.artist] || null;
             const gc = genre ? (GENRE_COLORS[genre] || null) : null;
             return (
-              <div key={row.artist} style={{ background:gc?`linear-gradient(135deg,${C.bgCard},${hexToRgba(gc,0.1)})`:C.bgCard, border:`1px solid ${gc?hexToRgba(gc,0.5):C.border}`, boxShadow:gc?`0 0 12px ${hexToRgba(gc,0.2)}`:'none', borderRadius:8, padding:'14px 16px', position:'relative' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
+              <div key={row.artist} style={{ 
+                background: gc ? `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(gc, 0.1)})` : C.bgCard, 
+                border: `1px solid ${gc ? hexToRgba(gc, 0.5) : C.border}`, 
+                boxShadow: gc ? `0 0 12px ${hexToRgba(gc, 0.2)}` : 'none', 
+                borderRadius: 8, padding: '14px 16px', position: 'relative' 
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                   <div>
-                    <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.2rem', color:gc||C.teal, marginBottom:4, cursor:'pointer' }} onClick={()=>onShare(row.artist,row.shows)}>{row.artist}</div>
-                    <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray }}>{row.shows.length} shows</div>
+                    <div 
+                      style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: gc || C.teal, marginBottom: 4, cursor: 'pointer' }} 
+                      onClick={() => onShare(row.artist, row.shows)}
+                    >
+                      {row.artist}
+                    </div>
+                    <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 8, color: C.gray }}>{row.shows.length} shows</div>
                   </div>
                 </div>
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:10, paddingTop:10, borderTop:`1px solid ${C.border}` }}>
-                  <select value={genre||''} onChange={e=>onSetGenre(row.artist, e.target.value||null)} style={{ flex:1, background:gc?hexToRgba(gc,0.15):C.bgCardAlt, border:`1px solid ${gc?hexToRgba(gc,0.4):C.border}`, borderRadius:4, color:gc||C.gray, fontSize:9, padding:'3px 6px', fontFamily:"'Space Mono'", cursor:'pointer' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
+                  <select 
+                    value={genre || ''} 
+                    onChange={e => onSetGenre(row.artist, e.target.value || null)} 
+                    style={{ 
+                      flex: 1, background: gc ? hexToRgba(gc, 0.15) : C.bgCardAlt, 
+                      border: `1px solid ${gc ? hexToRgba(gc, 0.4) : C.border}`, 
+                      borderRadius: 4, color: gc || C.gray, fontSize: 9, padding: '3px 6px', 
+                      fontFamily: "'Space Mono'", cursor: 'pointer' 
+                    }}
+                  >
                     <option value="">— unset —</option>
-                    {GENRES.map(g=><option key={g} value={g}>{g}</option>)}
+                    {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
                 </div>
               </div>
