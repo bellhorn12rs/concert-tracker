@@ -4280,12 +4280,12 @@ async function handleUpcomingDelete(id) {
         minHeight: '100vh', 
         display: 'flex', 
         color: C.white,
-        overflow: 'hidden', // Prevents the whole browser from scrolling horizontally
+        overflow: 'hidden', 
         width: '100vw'
       }}>
         <MarqueeStyles />
 
-        {/* ── 1. VERTICAL SIDEBAR (RECALIBRATED) ── */}
+        {/* ── 1. VERTICAL SIDEBAR ── */}
         <aside style={{
           width: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
           minWidth: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
@@ -4301,14 +4301,14 @@ async function handleUpcomingDelete(id) {
           zIndex: 5000, 
           transition: 'all 0.3s ease-in-out',
           overflow: 'hidden',
-          flexShrink: 0 // CRITICAL: Prevents main content from squishing the sidebar
+          flexShrink: 0 
         }}>
           {/* Toggle Button */}
           <button onClick={() => setNavCollapsed(!navCollapsed)} style={{ position: 'absolute', right: 15, top: 15, background: 'none', border: 'none', color: C.teal, cursor: 'pointer', fontSize: '1.2rem', zIndex: 10 }}>
             {isMobile ? '✕' : (navCollapsed ? '→' : '←')}
           </button>
 
-          {/* LOGO AREA - RESTORED */}
+          {/* LOGO AREA */}
           <div style={{ padding: '0 24px 30px', borderBottom: `1px solid ${C.border}`, marginBottom: 20, minHeight: '100px' }}>
              <h1 style={{ fontFamily: "'Bebas Neue'", fontSize: navCollapsed && !isMobile ? '1.5rem' : '2.2rem', margin: 0, lineHeight: 1 }}>
                🎸 {(!navCollapsed || isMobile) ? <span style={{ color: C.teal }}>LIVE // ARCHIVE</span> : <span style={{ color: C.teal }}>L//A</span>}
@@ -4320,6 +4320,7 @@ async function handleUpcomingDelete(id) {
              )}
           </div>
 
+          {/* MAIN NAV AREA */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px' }} className="wristband-bin">
             {TAB_GROUPS.map((group) => (
               <div key={group.header} style={{ marginBottom: 35 }}>
@@ -4344,44 +4345,61 @@ async function handleUpcomingDelete(id) {
               </div>
             ))}
           </div>
+
+          {/* SYSTEM BOOTH (BOTTOM) */}
+          <div style={{ padding: '20px 12px', borderTop: `1px solid ${C.border}`, background: 'rgba(0,0,0,0.2)', marginTop: 'auto' }}>
+            {(!navCollapsed || isMobile) && <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: C.grayDim, letterSpacing: 2, padding: '0 12px 12px' }}>SYSTEM BOOTH</div>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {RIGHT_TABS.map(([id, label, color]) => {
+                const isActive = activeTab === id;
+                return (
+                  <button key={id} onClick={() => { setActiveTab(id); if(isMobile) setNavCollapsed(true); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: (navCollapsed && !isMobile) ? 'center' : 'flex-start',
+                      gap: 14, fontFamily: "'Space Mono'", fontSize: '11px',
+                      color: isActive ? '#fff' : C.grayDim, background: isActive ? hexToRgba(color, 0.1) : 'transparent',
+                      border: 'none', borderLeft: `3px solid ${isActive ? color : 'transparent'}`,
+                      padding: '12px 18px', cursor: 'pointer', borderRadius: '0 4px 4px 0', textAlign: 'left', textTransform: 'uppercase'
+                    }}>
+                    <span style={{ fontSize: '1.2rem' }}>{label.split(' ')[0]}</span>
+                    {(!navCollapsed || isMobile) && <span>{label.split(' ').slice(1).join(' ')}</span>}
+                  </button>
+                );
+              })}
+              {(!navCollapsed || isMobile) && (
+                <div style={{ padding: '10px 16px' }}>
+                   <ThemeSwitcher />
+                </div>
+              )}
+            </div>
+          </div>
         </aside>
 
         {/* ── 2. THE MAIN STAGE ── */}
-        <div style={{ 
-          flex: 1, 
-          height: '100vh', 
-          overflowY: 'auto', 
-          overflowX: 'hidden', // Prevents components on right from being "lost"
-          position: 'relative', 
-          display: 'flex', 
-          flexDirection: 'column',
-          background: C.bg
-        }}>
+        <div style={{ flex: 1, height: '100vh', overflowY: 'auto', overflowX: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', background: C.bg }}>
           
-          {/* STAT HEADER (SCALED DOWN) */}
           <header style={{ 
             padding: '10px 30px', 
             background: `linear-gradient(to bottom, ${C.bg} 95%, transparent)`, 
             position: 'sticky', top: 0, zIndex: 100,
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             borderBottom: `1px solid ${C.border}`,
-            height: '80px',
-            flexShrink: 0
+            height: '80px', flexShrink: 0
           }}>
-             <div style={{ display: 'flex', flex: 1, maxWidth: 'calc(100% - 300px)', gap: 10 }}>
+             <div style={{ display: 'flex', flex: 1, maxWidth: 'calc(100% - 350px)', gap: 10 }}>
                 {isMobile && (
                   <button onClick={() => setNavCollapsed(false)} style={{ background: 'none', border: `1px solid ${C.teal}`, color: C.teal, padding: '5px 10px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 9 }}>MENU</button>
                 )}
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 0, flex: 1 }}>
                   {[
-                    { value: headerStats.totalSets, label: 'SETS', color: C.teal },
-                    { value: headerStats.uniqueArtists, label: 'ACTS', color: C.cyan },
-                    { value: headerStats.totalShows, label: 'DAYS', color: C.purple },
-                    { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'VENUES', color: C.red },
-                    { value: headerStats.setlistCount, label: 'FILES', color: C.gold }
+                    { value: headerStats.totalSets, label: 'SETS', color: C.teal, onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } },
+                    { value: headerStats.uniqueArtists, label: 'ACTS', color: C.cyan, onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } },
+                    { value: headerStats.totalShows, label: 'DAYS', color: C.purple, onClick: () => setActiveTab('timeline') },
+                    { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'VENUES', color: C.red, onClick: () => setActiveTab('venues') },
+                    { value: headerStats.setlistCount, label: 'FILES', color: C.gold, onClick: () => setActiveTab('vault') }
                   ].map((s, i) => (
-                    <div key={s.label} style={{ textAlign: 'center', borderRight: i < 4 ? `1px solid ${C.border}` : 'none', padding: '0 5px' }}>
+                    <div key={s.label} onClick={s.onClick} style={{ textAlign: 'center', borderRight: i < 4 ? `1px solid ${C.border}` : 'none', padding: '0 5px', cursor: 'pointer' }}>
                       <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.2rem' : '1.8rem', color: s.color, lineHeight: 1 }}>{s.value}</div>
                       <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, letterSpacing: 1 }}>{s.label}</div>
                     </div>
@@ -4405,14 +4423,11 @@ async function handleUpcomingDelete(id) {
             {activeTab === 'dashboard' && (
               <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <OnThisDay concerts={concerts} />
-                
-                {/* Dashboard Grids - Adjusted for better scaling */}
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr', gap: 20 }}>
                   <ArtistInsights concerts={concerts} />
                   <TheaterMarquee upcoming={upcoming} onAdd={() => setUpcomingModal('new')} onEdit={setUpcomingModal} />
                   <RandomShow concerts={concerts} />
                 </div>
-
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: 20 }}>
                   <VenueDonutCard concerts={concerts} onNavigateToVenues={() => setActiveTab('venues')} />
                   <Card neon>
@@ -4432,13 +4447,11 @@ async function handleUpcomingDelete(id) {
                     </div>
                   </Card>
                 </div>
-
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20 }}>
                   <Card neon><CardTitle>Fest vs Standalone</CardTitle><DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} concerts={concerts} /></Card>
                   <Card neon><CardTitle>Festival Passports</CardTitle><TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} /></Card>
                   <Card neon><CardTitle>By Decade</CardTitle><DecadeBlocks sets={allSetsList} /></Card>
                 </div>
-
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
                   <Card neon><CardTitle>Most Seen Artists</CardTitle>
                     <div style={{ display: 'grid', gap: 8 }}>
@@ -4456,11 +4469,25 @@ async function handleUpcomingDelete(id) {
               </div>
             )}
 
-            {/* REST OF TABS (STABLE) */}
             {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
             {activeTab === 'byDay' && <ByDayTab dayGroups={dayGroups} onEdit={setEditTarget} genreMap={artistGenres} isAdmin={true} />}
             {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={true} onEdit={setEditTarget} />}
-            {activeTab === 'passport' && <PassportTab passport={passport} genreStats={genreStats} onNavigateToFest={() => setActiveTab('byFest')} />}
+            
+            {activeTab === 'passport' && (
+              <PassportTab 
+                passport={passport} 
+                genreStats={genreStats} 
+                onNavigateToFest={name => { 
+                  setActiveTab('byFest'); 
+                  setTimeout(() => { 
+                    const festId = `fest-${name.toLowerCase().replace(/\s+/g, '-')}`; 
+                    const el = document.getElementById(festId); 
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+                  }, 300); 
+                }} 
+              />
+            )}
+
             {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
             {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
             {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
