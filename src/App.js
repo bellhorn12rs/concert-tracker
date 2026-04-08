@@ -4400,7 +4400,7 @@ async function handleUpcomingDelete(id) {
       }}>
         <MarqueeStyles />
 
-        {/* ── 1. VERTICAL SIDEBAR ── */}
+        {/* ── 1. VERTICAL SIDEBAR (TRACKRECORD IDENTITY) ── */}
         <aside style={{
           width: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
           minWidth: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
@@ -4423,7 +4423,7 @@ async function handleUpcomingDelete(id) {
             {isMobile ? '✕' : (navCollapsed ? '→' : '←')}
           </button>
 
-          {/* LOGO AREA - TRACKRECORD IDENTITY */}
+          {/* LOGO AREA */}
           <div style={{ padding: '0 24px 30px', borderBottom: `1px solid ${C.border}`, marginBottom: 20, minHeight: '130px', display: 'flex', flexDirection: 'column', alignItems: navCollapsed && !isMobile ? 'center' : 'flex-start' }}>
              <div style={{ marginBottom: 15, position: 'relative' }}>
                 <TrackRecordLogo size={60} />
@@ -4486,20 +4486,15 @@ async function handleUpcomingDelete(id) {
                   </button>
                 );
               })}
-              {(!navCollapsed || isMobile) && (
-                <div style={{ padding: '10px 16px' }}>
-                   <ThemeSwitcher />
-                </div>
-              )}
             </div>
           </div>
         </aside>
 
-       {/* ── 2. THE MAIN STAGE ── */}
+        {/* ── 2. THE MAIN STAGE ── */}
         <div style={{ flex: 1, height: '100vh', overflowY: 'auto', overflowX: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', background: C.bg }}>
           
           <header style={{ 
-            padding: isMobile ? '8px 12px' : '10px 30px', // Tighten padding on mobile
+            padding: isMobile ? '8px 12px' : '10px 30px', 
             background: `linear-gradient(to bottom, ${C.bg} 95%, transparent)`, 
             position: 'sticky', top: 0, zIndex: 100,
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -4510,7 +4505,7 @@ async function handleUpcomingDelete(id) {
              <div style={{ 
                display: 'flex', 
                flex: 1, 
-               maxWidth: isMobile ? 'calc(100% - 100px)' : 'calc(100% - 300px)', 
+               maxWidth: isMobile ? 'calc(100% - 100px)' : 'calc(100% - 350px)', 
                gap: isMobile ? 4 : 10 
              }}>
                 {isMobile && (
@@ -4538,7 +4533,6 @@ async function handleUpcomingDelete(id) {
                 </div>
              </div>
              
-             {/* Pass isMobile to the switcher */}
              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                 <ThemeSwitcher isMobile={isMobile} />
                 {!isMobile && (
@@ -4648,7 +4642,6 @@ async function handleUpcomingDelete(id) {
               </div>
             )}
 
-            {/* REST OF TABS */}
             {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
             {activeTab === 'byDay' && <ByDayTab dayGroups={dayGroups} onEdit={setEditTarget} genreMap={artistGenres} isAdmin={true} />}
             {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={true} onEdit={setEditTarget} />}
@@ -4658,22 +4651,17 @@ async function handleUpcomingDelete(id) {
                 passport={passport} 
                 genreStats={genreStats} 
                 onNavigateToFest={name => { 
-                  // 1. Switch the tab
                   setActiveTab('byFest'); 
-                  
-                  // 2. Teleport logic
                   setTimeout(() => { 
-                    // Create a URL-friendly version of the name (e.g. "Bonnaroo 2024" -> "fest-bonnaroo-2024")
                     const slug = name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
                     const targetId = `fest-${slug}`;
                     const el = document.getElementById(targetId); 
-                    
                     if (el) {
                       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     } else {
                       console.warn("Teleport target not found:", targetId);
                     }
-                  }, 450); // Increased delay for slower renders
+                  }, 450); 
                 }} 
               />
             )}
