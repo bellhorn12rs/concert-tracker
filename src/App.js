@@ -3512,13 +3512,48 @@ function VenuesTab({ concerts }) {
                              </div>
                            </div>
                          ) : hasImg ? (
-                           <div style={{ padding: '6px', background: '#fff', boxShadow: '0 10px 20px rgba(0,0,0,0.4)', borderRadius: 2, transform: 'rotate(-1deg)' }}>
-                             <img src={show.image_url.split(',')[0]} alt="artifact" style={{ width: '100%', height: '160px', objectFit: 'cover' }} />
-                             <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#000', textAlign: 'center', padding: '6px 0', fontWeight: 900 }}>
-                               {fmtDateShort(show.date)}
-                             </div>
-                           </div>
-                         ) : (
+  /* 📸 FULL-VIEW PHOTO HEADER (No Cropping) */
+  <div style={{ 
+    padding: '8px', 
+    background: '#fff', 
+    boxShadow: '0 12px 24px rgba(0,0,0,0.5)', 
+    borderRadius: 2, 
+    transform: 'rotate(-0.5deg)', 
+    border: '1px solid #ddd' 
+  }}>
+    {/* Black Inner Frame ensures the white border looks consistent if the image is narrow */}
+    <div style={{ 
+      background: '#000', 
+      width: '100%', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      overflow: 'hidden' 
+    }}>
+      <img 
+        src={show.image_url.split(',')[0]} 
+        alt="artifact" 
+        style={{ 
+          width: '100%', 
+          height: 'auto', 
+          maxHeight: '220px', // Increased height for better visibility
+          objectFit: 'contain', // <── THE FIX: Ensures whole image is shown
+          display: 'block'
+        }} 
+      />
+    </div>
+    <div style={{ 
+      fontFamily: "'Space Mono'", 
+      fontSize: 8, 
+      color: '#000', 
+      textAlign: 'center', 
+      padding: '10px 0 2px 0', 
+      fontWeight: 900 
+    }}>
+      {fmtDateShort(show.date)}
+    </div>
+  </div>
+) : (
                            <DecorativeTicket event={show} templateIdx={idx} />
                          )}
 
