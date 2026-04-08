@@ -4370,54 +4370,54 @@ async function handleUpcomingDelete(id) {
         {/* ── 2. THE MAIN STAGE ── */}
         <div style={{ flex: 1, height: '100vh', overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column' }}>
           
-          <{/* ── HIGH-FIDELITY STAT CONSOLE ── */}
-        <header style={{ 
-          padding: '12px 30px', 
-          background: `linear-gradient(to bottom, ${C.bg} 95%, transparent)`, 
-          position: 'sticky', top: 0, zIndex: 100,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          borderBottom: `1px solid ${C.border}`,
-          height: '75px'
-        }}>
-           {/* THE BIG 5 STATS (Flexible Area) */}
-           <div style={{ display: 'flex', flex: 1, maxWidth: 'calc(100% - 350px)' }}>
-              {[
-                { value: headerStats.totalSets, label: 'TOTAL SETS', color: C.teal, icon: '🎵', onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } },
-                { value: headerStats.uniqueArtists, label: 'UNIQUE ACTS', color: C.cyan, icon: '🎤', onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } },
-                { value: headerStats.totalShows, label: 'SHOW DAYS', color: C.purple, icon: '📅', onClick: () => setActiveTab('timeline') },
-                { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'VENUES', color: C.red, icon: '📍', onClick: () => setActiveTab('venues') },
-                { value: headerStats.setlistCount, label: 'SETLISTS', color: C.gold, icon: '📋', onClick: () => setActiveTab('vault') }
-              ].map((s, i) => (
-                <div key={s.label} onClick={s.onClick}
-                  style={{ 
-                    flex: 1, padding: '0 10px', 
-                    borderRight: i < 4 ? `1px solid ${C.border}` : 'none', 
-                    textAlign: 'center', cursor: 'pointer', position: 'relative'
-                  }}
-                >
-                  <div style={{ fontSize: '0.8rem', marginBottom: 2, opacity: 0.6 }}>{s.icon}</div>
-                  <div style={{ whiteSpace: 'nowrap' }}>
-                    <CountUpStat value={s.value} label={s.label} color={s.color} />
+          {/* ── HIGH-FIDELITY STAT CONSOLE ── */}
+          <header style={{ 
+            padding: '12px 30px', 
+            background: `linear-gradient(to bottom, ${C.bg} 95%, transparent)`, 
+            position: 'sticky', top: 0, zIndex: 100,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            borderBottom: `1px solid ${C.border}`,
+            height: '75px'
+          }}>
+             {/* THE BIG 5 STATS (Flexible Area) */}
+             <div style={{ display: 'flex', flex: 1, maxWidth: 'calc(100% - 350px)' }}>
+                {[
+                  { value: headerStats.totalSets, label: 'TOTAL SETS', color: C.teal, icon: '🎵', onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } },
+                  { value: headerStats.uniqueArtists, label: 'UNIQUE ACTS', color: C.cyan, icon: '🎤', onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } },
+                  { value: headerStats.totalShows, label: 'SHOW DAYS', color: C.purple, icon: '📅', onClick: () => setActiveTab('timeline') },
+                  { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'VENUES', color: C.red, icon: '📍', onClick: () => setActiveTab('venues') },
+                  { value: headerStats.setlistCount, label: 'SETLISTS', color: C.gold, icon: '📋', onClick: () => setActiveTab('vault') }
+                ].map((s, i) => (
+                  <div key={s.label} onClick={s.onClick}
+                    style={{ 
+                      flex: 1, padding: '0 10px', 
+                      borderRight: i < 4 ? `1px solid ${C.border}` : 'none', 
+                      textAlign: 'center', cursor: 'pointer', position: 'relative'
+                    }}
+                  >
+                    <div style={{ fontSize: '0.8rem', marginBottom: 2, opacity: 0.6 }}>{s.icon}</div>
+                    <div style={{ whiteSpace: 'nowrap' }}>
+                      <CountUpStat value={s.value} label={s.label} color={s.color} />
+                    </div>
+                    {/* Neon Underline */}
+                    <div style={{ position: 'absolute', bottom: -12, left: '20%', right: '20%', height: 2, background: s.color, boxShadow: `0 0 8px ${s.color}`, opacity: 0.6 }} />
                   </div>
-                  {/* Neon Underline */}
-                  <div style={{ position: 'absolute', bottom: -12, left: '20%', right: '20%', height: 2, background: s.color, boxShadow: `0 0 8px ${s.color}`, opacity: 0.6 }} />
-                </div>
-              ))}
-           </div>
-           
-           {/* THEME + LANYARD GROUP (Fixed Area) */}
-           <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginLeft: 30, flexShrink: 0 }}>
-              <ThemeSwitcher />
-              
-              <div style={{ width: 1, height: 24, background: C.border }} />
+                ))}
+             </div>
+             
+             {/* THEME + LANYARD GROUP (Fixed Area) */}
+             <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginLeft: 30, flexShrink: 0 }}>
+                <ThemeSwitcher />
+                
+                <div style={{ width: 1, height: 24, background: C.border }} />
 
-              <div style={{ position: 'relative', height: '40px', width: '80px' }}>
-                <div style={{ position: 'absolute', top: '-110px', right: 0 }}>
-                   <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
+                <div style={{ position: 'relative', height: '40px', width: '80px' }}>
+                  <div style={{ position: 'absolute', top: '-110px', right: 0 }}>
+                     <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
+                  </div>
                 </div>
-              </div>
-           </div>
-        </header>
+             </div>
+          </header>
 
           <main style={{ padding: isMobile ? '10px 10px 100px' : '0 40px 100px', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
             {activeTab === 'dashboard' && (
