@@ -1539,75 +1539,35 @@ function DonutChart({ fest, solo, concerts }) {
 
   const stats = useMemo(() => {
     const total = concerts.length;
-    
-    // Helper to get top 3 based on a key
     const getTop3 = (list, key) => {
       const counts = {};
       list.forEach(c => { if(c[key]) counts[c[key]] = (counts[c[key]] || 0) + 1; });
-      return Object.entries(counts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
-        .map(entry => entry[0]);
+      return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(entry => entry[0]);
     };
 
     if (mode === 'legacy') {
       const filtered = concerts.filter(c => getYear(c.date) <= 2014);
-      return { 
-        val1: filtered.length, val2: total - filtered.length, 
-        label1: 'LEGACY', label2: 'MODERN', 
-        title: 'ERA BREAKDOWN', color: '#ffcc00',
-        insight: "Deep Archive focus.",
-        topLabel: "TOP LEGACY ACTS",
-        top: getTop3(filtered, 'artist')
-      };
+      return { val1: filtered.length, val2: total - filtered.length, label1: 'LEGACY', label2: 'MODERN', title: 'ERA BREAKDOWN', color: '#ffcc00', insight: "Deep Archive focus.", topLabel: "TOP LEGACY ACTS", top: getTop3(filtered, 'artist') };
     }
     if (mode === 'city') {
       const filtered = concerts.filter(c => c.city === "Austin");
-      return { 
-        val1: filtered.length, val2: total - filtered.length, 
-        label1: 'AUSTIN', label2: 'ON ROAD', 
-        title: 'GEOGRAPHIC FOCUS', color: '#00cfff',
-        insight: filtered.length > (total / 2) ? "Local legend status." : "Touring heavily.",
-        topLabel: "TOP ATX VENUES",
-        top: getTop3(filtered, 'venue')
-      };
+      return { val1: filtered.length, val2: total - filtered.length, label1: 'AUSTIN', label2: 'ON ROAD', title: 'GEOGRAPHIC FOCUS', color: '#00cfff', insight: "Local legend status.", topLabel: "TOP ATX VENUES", top: getTop3(filtered, 'venue') };
     }
     if (mode === 'weekend') {
       const wknd = concerts.filter(c => [0, 5, 6].includes(new Date(c.date + 'T12:00:00').getDay()));
-      return { 
-        val1: wknd.length, val2: total - wknd.length, 
-        label1: 'WEEKEND', label2: 'WEEKDAY', 
-        title: 'TEMPORAL VIBE', color: '#9966ff',
-        insight: "Weekend Warrior.",
-        topLabel: "PRIME DAYS",
-        top: ["SATURDAY", "SUNDAY", "FRIDAY"]
-      };
+      return { val1: wknd.length, val2: total - wknd.length, label1: 'WEEKEND', label2: 'WEEKDAY', title: 'TEMPORAL VIBE', color: '#9966ff', insight: "Weekend Warrior.", topLabel: "PRIME DAYS", top: ["SATURDAY", "SUNDAY", "FRIDAY"] };
     }
-    // Default: Fest
     const filtered = concerts.filter(c => c.is_festival);
-    return { 
-      val1: fest, val2: solo, 
-      label1: 'FEST', label2: 'SOLO', 
-      title: 'STAGING RATIO', color: '#00e5cc',
-      insight: fest > solo ? "Festival Circuit regular." : "Club show preference.",
-      topLabel: "TOP FESTIVALS",
-      top: getTop3(filtered, 'festival_name')
-    };
+    return { val1: fest, val2: solo, label1: 'FEST', label2: 'SOLO', title: 'STAGING RATIO', color: '#00e5cc', insight: "Club show preference.", topLabel: "TOP FESTIVALS", top: getTop3(filtered, 'festival_name') };
   }, [mode, fest, solo, concerts]);
 
-  const total = stats.val1 + stats.val2 || 1;
-  const pct1 = Math.round((stats.val1 / total) * 100);
+  const pct1 = Math.round((stats.val1 / (stats.val1 + stats.val2 || 1)) * 100);
   const r = 48, cx = 70, cy = 70, circ = 2 * Math.PI * r;
-  const OTHER_COLOR = "#666";
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '440px', justifyContent: 'space-between', padding: '5px' }}>
-      
-      {/* 🟢 LEGEND SECTION */}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '440px', justifyContent: 'space-between', padding: '5px' }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: stats.color, letterSpacing: '2px', fontWeight: 900, marginBottom: 12 }}>
-          {stats.title}
-        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: stats.color, letterSpacing: '2px', fontWeight: 900, marginBottom: 12 }}>{stats.title}</div>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 20 }}>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: stats.color }}>{stats.label1}</div>
@@ -1615,61 +1575,34 @@ function DonutChart({ fest, solo, concerts }) {
           </div>
           <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
           <div style={{ textAlign: 'left' }}>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: OTHER_COLOR }}>{stats.label2}</div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: OTHER_COLOR, lineHeight: 1 }}>{stats.val2}</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#666' }}>{stats.label2}</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: '#666', lineHeight: 1 }}>{stats.val2}</div>
           </div>
         </div>
       </div>
 
-      {/* 📀 THE TURNTABLE DECK */}
-      <div style={{ 
-        position: 'relative', width: 160, height: 160, 
-        background: '#0a0a0c', borderRadius: '50%', padding: 5, alignSelf: 'center', 
-        boxShadow: `0 0 0 4px #15151a, 0 15px 35px rgba(0,0,0,0.6), inset 0 0 15px rgba(255,255,255,0.02)`,
-        border: `1px solid ${hexToRgba(stats.color, 0.2)}`
-      }}>
-        <div style={{ 
-          position: 'absolute', top: 15, right: 15, width: 6, height: 80, 
-          background: 'linear-gradient(to right, #777, #eee, #555)', 
-          transform: `rotate(${25 + (pct1 * 0.1)}deg)`, transformOrigin: 'top center', 
-          borderRadius: 10, zIndex: 10, border: '1px solid #444', transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
-        }}>
-           <div style={{ position: 'absolute', bottom: -5, left: -4, width: 14, height: 18, background: '#111', borderRadius: 2, border: '1px solid #333' }}>
-              <div style={{ width: 4, height: 4, background: stats.color, borderRadius: '50%', margin: '4px auto', boxShadow: `0 0 5px ${stats.color}` }} />
-           </div>
-        </div>
-        <svg className="record-vinyl-spinning" width="150" height="150" viewBox="0 0 140 140">
+      <div style={{ position: 'relative', width: 150, height: 150, background: '#0a0a0c', borderRadius: '50%', padding: 5, alignSelf: 'center', border: `1px solid ${hexToRgba(stats.color, 0.2)}`, boxShadow: `0 15px 35px rgba(0,0,0,0.6)` }}>
+        <svg className="record-vinyl-spinning" width="140" height="140" viewBox="0 0 140 140">
           <circle cx={cx} cy={cy} r={68} fill="#050505" />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={OTHER_COLOR} strokeWidth={12} opacity="0.3" />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={12} strokeDasharray={`${(pct1 / 100) * circ} ${circ}`} strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 10px ${stats.color})`, transition: 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke="#666" strokeWidth={12} opacity="0.3" />
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={12} strokeDasharray={`${(pct1 / 100) * circ} ${circ}`} strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 10px ${stats.color})`, transition: 'all 0.8s ease' }} />
           <text x={cx} y={cy + 4} textAnchor="middle" style={{ fontFamily: "'Bebas Neue'", fontSize: 11, fill: stats.color }}>{pct1}%</text>
         </svg>
       </div>
 
-      {/* 🎶 TRACKLIST (Fills the gap) */}
-      <div style={{ padding: '0 20px', marginTop: 10 }}>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#444', borderBottom: '1px solid #222', paddingBottom: 4, marginBottom: 8, letterSpacing: 1 }}>{stats.topLabel}</div>
+      <div style={{ padding: '0 15px' }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#444', borderBottom: '1px solid #222', paddingBottom: 4, marginBottom: 8 }}>{stats.topLabel}</div>
         {stats.top.map((name, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
              <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: stats.color }}>0{i+1}</span>
-             <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff', letterSpacing: 0.5 }}>{name?.toUpperCase() || '---'}</span>
+             <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.85rem', color: '#fff', letterSpacing: 0.5 }}>{name?.toUpperCase() || '---'}</span>
           </div>
         ))}
       </div>
 
-      {/* 📉 SYSTEM INSIGHT */}
-      <div style={{ textAlign: 'center', marginTop: 10 }}>
-         <div style={{ display: 'inline-block', padding: '4px 12px', background: hexToRgba(stats.color, 0.05), border: `1px solid ${hexToRgba(stats.color, 0.15)}`, borderRadius: 20 }}>
-            <span style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: stats.color, letterSpacing: '1px', textTransform: 'uppercase' }}>
-              INSIGHT: <span style={{ color: '#fff' }}>{stats.insight}</span>
-            </span>
-         </div>
-      </div>
-
-      {/* 🎚️ MODE SELECTORS */}
-      <div style={{ display: 'flex', gap: 4, height: 35, marginTop: 15 }}>
+      <div style={{ display: 'flex', gap: 4, height: 35, marginTop: 10 }}>
         {[{ id: 'fest', icon: '🎪' }, { id: 'legacy', icon: '📜' }, { id: 'city', icon: '📍' }, { id: 'weekend', icon: '🍺' }].map((item) => (
-          <div key={item.id} onMouseDown={() => setMode(item.id)} style={{ flex: 1, height: mode === item.id ? '100%' : '80%', background: mode === item.id ? stats.color : 'rgba(255,255,255,0.03)', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: '0.2s' }}>
+          <div key={item.id} onMouseDown={() => setMode(item.id)} style={{ flex: 1, background: mode === item.id ? stats.color : 'rgba(255,255,255,0.03)', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <span style={{ filter: mode === item.id ? 'none' : 'grayscale(100%) opacity(0.2)' }}>{item.icon}</span>
           </div>
         ))}
@@ -1680,91 +1613,46 @@ function DonutChart({ fest, solo, concerts }) {
 // ─── 2. THE PHYSICAL WRISTBANDS (MIDDLE) ──────────────────────────
 function TopFestBlocks({ festBreakdown, concerts }) {
   if (!concerts || !festBreakdown || festBreakdown.length === 0) return null;
-  
   const colors = ['#00e5cc', '#00cfff', '#9966ff', '#ffcc00', '#00cc88', '#ff6699'];
 
-  // Calculate Footer Stats
   const stats = useMemo(() => {
-    const totalFests = festBreakdown.length;
     const totalDays = festBreakdown.reduce((sum, f) => sum + f[1], 0);
     const festShows = concerts.filter(c => c.is_festival);
-    const avgSets = totalDays > 0 ? (festShows.length / totalDays).toFixed(1) : 0;
-    return { totalFests, avgSets };
+    return { totalFests: festBreakdown.length, avgSets: totalDays > 0 ? (festShows.length / totalDays).toFixed(1) : 0 };
   }, [festBreakdown, concerts]);
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      height: '100%', 
-      minHeight: '440px', // Matches the Stadium Stage height
-      justifyContent: 'space-between' 
-    }}>
-      
-      {/* 1. SCROLLABLE WRISTBAND BIN */}
-      <div className="wristband-bin" style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: 12, 
-        flex: 1,
-        overflowY: 'auto', 
-        paddingRight: 8,
-        marginBottom: 15
-      }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '440px', justifyContent: 'space-between', overflow: 'hidden' }}>
+      <div className="wristband-bin" style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflowY: 'auto', paddingRight: 8, marginBottom: 15 }}>
         {festBreakdown.map(([name, days], i) => {
           const color = colors[i % colors.length];
-          const festShows = concerts.filter(c => c.festival_name === name);
-          const uniqueActs = new Set(festShows.flatMap(s => s.bands || [])).size;
-          
+          const uniqueActs = new Set(concerts.filter(c => c.festival_name === name).flatMap(s => s.bands || [])).size;
           return (
-            <div key={name} style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
-              {/* Clasp */}
+            <div key={name} style={{ display: 'flex', alignItems: 'center', position: 'relative', flexShrink: 0 }}>
               <div style={{ position: 'absolute', left: 38, width: 14, height: 20, background: '#111', border: `1px solid ${color}`, borderRadius: 2, zIndex: 10 }} />
-              
-              {/* RFID Chip */}
-              <div style={{ width: 45, height: 42, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', borderRadius: 4, zIndex: 5, boxShadow: `0 4px 10px rgba(0,0,0,0.3)` }}>
-                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#000', lineHeight: 0.8 }}>{days}</div>
+              <div style={{ width: 45, height: 42, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', borderRadius: 4, zIndex: 5 }}>
+                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#000', lineHeight: 0.8 }}>{days}</div>
                  <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: '#000', fontWeight: 900 }}>DAYS</div>
               </div>
-              
-              {/* Fabric Band */}
-              <div style={{ flex: 1, height: 32, marginLeft: -10, padding: '0 20px 0 35px', background: color, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '0 4px 4px 0', boxShadow: 'inset 0 0 15px rgba(0,0,0,0.2)' }}>
-                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#000', letterSpacing: 0.5 }}>{name.toUpperCase()}</div>
+              <div style={{ flex: 1, height: 32, marginLeft: -10, padding: '0 20px 0 35px', background: color, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '0 4px 4px 0' }}>
+                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#000', overflow: 'hidden', whiteSpace: 'nowrap' }}>{name.toUpperCase()}</div>
                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: 'rgba(0,0,0,0.4)', fontWeight: 900 }}>{uniqueActs} ACTS</div>
               </div>
             </div>
           );
         })}
       </div>
-
-      {/* 🟢 2. PASSPORT STAMP SUMMARY (The "Anchor") */}
-      <div style={{ 
-        paddingTop: 15, 
-        borderTop: `1px solid ${C.border}`,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        background: 'rgba(255,255,255,0.02)',
-        borderRadius: '0 0 8px 8px',
-        padding: '15px 10px'
-      }}>
+      <div style={{ paddingTop: 15, borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', padding: '10px' }}>
         <div style={{ textAlign: 'center', flex: 1 }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, letterSpacing: 1 }}>TOTAL FESTIVALS</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.teal, lineHeight: 1, marginTop: 4 }}>
-            {stats.totalFests}
-          </div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim }}>TOTAL FESTS</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: C.teal }}>{stats.totalFests}</div>
         </div>
-
-        <div style={{ width: 1, height: 30, background: '#222' }} />
-
+        <div style={{ width: 1, height: 25, background: '#222' }} />
         <div style={{ textAlign: 'center', flex: 1 }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, letterSpacing: 1 }}>AVG SETS / DAY</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.purple, lineHeight: 1, marginTop: 4 }}>
-            {stats.avgSets}
-          </div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim }}>AVG SETS/DAY</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: C.purple }}>{stats.avgSets}</div>
         </div>
       </div>
-      
     </div>
   );
 }
@@ -1772,17 +1660,14 @@ function TopFestBlocks({ festBreakdown, concerts }) {
 // ─── 3. THE DECADE STAGE (RIGHT) ────────────────────────────────
 function DecadeBlocks({ sets, headerStats, concerts }) {
   const [statIdx, setStatIdx] = useState(0);
-
   if (!sets || !headerStats || !concerts) return null;
 
   const counts = useMemo(() => {
     const c = {'90s': 0, '00s': 0, '10s': 0, '20s': 0};
     sets.forEach(s => {
-      const y = getYear(s.date); if (!y) return;
-      if (y < 2000) c['90s']++; 
-      else if (y < 2010) c['00s']++; 
-      else if (y < 2020) c['10s']++; 
-      else c['20s']++;
+      const y = getYear(s.date);
+      if (y < 2000) c['90s']++; else if (y < 2010) c['00s']++; 
+      else if (y < 2020) c['10s']++; else c['20s']++;
     });
     return c;
   }, [sets]);
@@ -1796,9 +1681,7 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
   ], [headerStats, concerts]);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setStatIdx((prev) => (prev + 1) % rotatingStats.length);
-    }, 3000); // Slightly faster rotation
+    const timer = setInterval(() => setStatIdx(p => (p + 1) % rotatingStats.length), 3000);
     return () => clearInterval(timer);
   }, [rotatingStats.length]);
 
@@ -1806,126 +1689,52 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
   const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '440px', gap: 15, overflow: 'hidden' }}>
-      
+    <div style={{ display: 'flex', flexDirection: 'column', height: '440px', justifyContent: 'space-between' }}>
       <style>{`
-        @keyframes woofer-pulse {
-          0%, 100% { transform: scale(1); filter: brightness(1.2); }
-          50% { transform: scale(1.1); filter: brightness(2) drop-shadow(0 0 12px ${C.teal}); }
-        }
+        @keyframes woofer-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); filter: brightness(1.5); } }
         .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
-        
-        @keyframes beam-swing {
-          0%, 100% { transform: rotate(-10deg); }
-          50% { transform: rotate(10deg); }
-        }
+        @keyframes beam-swing { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
         .moving-light { animation: beam-swing 3s ease-in-out infinite; transform-origin: top center; }
-        
-        @keyframes truss-flash {
-          0%, 100% { background: #fff; box-shadow: 0 0 15px #fff; }
-          50% { background: #444; box-shadow: none; }
-        }
-        .truss-bulb { animation: truss-flash 1.5s infinite; }
-
-        @keyframes floor-glow {
-           0%, 100% { opacity: 0.3; }
-           50% { opacity: 0.6; }
-        }
-        .stage-wash { animation: floor-glow 3s infinite; }
       `}</style>
 
-      {/* 🟢 TOP DECADE BARS */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
         {Object.entries(counts).map(([decade, count]) => {
           const m = { '90s': {label:'ANALOG', col:C.purple}, '00s': {label:'DIGITAL', col:C.cyan}, '10s': {label:'STREAM', col:C.teal}, '20s': {label:'HYPER', col:C.gold} }[decade];
           return (
-            <div key={decade} style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: 6, border: `1px solid ${hexToRgba(m.col, 0.3)}` }}>
+            <div key={decade} style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 10px', borderRadius: 4, border: `1px solid ${m.col}33` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: m.col, fontWeight: 900 }}>{m.label}</span>
-                <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff' }}>{decade}</span>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: m.col, fontWeight: 900 }}>{m.label}</span>
+                <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: '#fff' }}>{decade}</span>
               </div>
-              <div style={{ height: 2, background: '#000', borderRadius: 1, overflow: 'hidden', marginTop: 4 }}>
-                <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.col, boxShadow: `0 0 12px ${m.col}` }} />
+              <div style={{ height: 2, background: '#000', borderRadius: 1, overflow: 'hidden', marginTop: 3 }}>
+                <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.col }} />
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* 🎭 THE MAIN STAGE (Vivid Edition) */}
-      <div style={{ flex: 1, borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
-        <div style={{ 
-          width: '100%', height: '100%', background: '#010102', borderRadius: 8, 
-          border: `1px solid ${C.border}`, position: 'relative', overflow: 'hidden',
-          boxShadow: 'inset 0 0 80px rgba(0,0,0,1)'
-        }}>
-          
-          {/* 1. BRIGHT OVERHEAD TRUSS */}
-          <div style={{ position: 'absolute', top: 0, width: '100%', height: '22px', background: '#111', borderBottom: '2px solid #555', zIndex: 100, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-             {[...Array(12)].map((_, i) => <div key={i} className="truss-bulb" style={{ width: 4, height: 4, borderRadius: '50%', animationDelay: `${i*0.15}s` }} />)}
+      <div style={{ flex: 1, borderTop: `1px solid ${C.border}`, paddingTop: 10, position: 'relative', overflow: 'hidden', background: '#010102', borderRadius: 8 }}>
+          <div style={{ position: 'absolute', top: 0, width: '100%', height: '15px', background: '#111', display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+             {[...Array(8)].map((_, i) => <div key={i} style={{ width: 3, height: 3, borderRadius: '50%', background: '#fff' }} />)}
           </div>
-
-          {/* 2. HIGH-INTENSITY SVG LIGHTING RIG */}
-          <div style={{ position: 'absolute', inset: 0, zIndex: 10 }}>
-             <svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-                {/* Massive White Center Spot */}
-                <polygon points="500,0 200,1000 800,1000" fill="rgba(255,255,255,0.25)" style={{ filter: 'blur(20px)' }} />
-
-                {/* 6 High-Opacity Color Beams */}
-                {[...Array(6)].map((_, i) => {
-                  const isLeft = i < 3;
-                  const color = isLeft ? C.purple : C.cyan;
-                  const xBase = isLeft ? (150 + i * 100) : (550 + (i-3) * 100);
-                  return (
-                    <g key={i} className="moving-light" style={{ animationDelay: `${i*0.4}s` }}>
-                      <polygon points={`${xBase},0 ${xBase-200},1000 ${xBase+200},1000`} fill={hexToRgba(color, 0.45)} style={{ mixBlendMode: 'screen', filter: 'blur(15px)' }} />
-                    </g>
-                  );
-                })}
-             </svg>
+          <svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0 }}>
+            <polygon points="500,0 200,1000 800,1000" fill="rgba(255,255,255,0.1)" />
+            <g className="moving-light"><polygon points="200,0 0,1000 400,1000" fill={hexToRgba(C.purple, 0.2)} /></g>
+            <g className="moving-light" style={{ animationDelay: '1.5s' }}><polygon points="800,0 600,1000 1000,1000" fill={hexToRgba(C.cyan, 0.2)} /></g>
+          </svg>
+          <div style={{ position: 'absolute', top: 40, left: '10%', right: '10%', height: '50px', border: `1px solid ${currentStat.color}`, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 20px ${hexToRgba(currentStat.color, 0.2)}` }}>
+               <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: currentStat.color }}>{currentStat.label}</div>
+               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff' }}>{currentStat.val}</div>
           </div>
-
-          {/* 3. CENTER BACK-WALL (Kills the empty black) */}
-          <div style={{ 
-            position: 'absolute', top: 40, left: '25%', right: '25%', bottom: 60,
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`,
-            backgroundSize: '15px 15px', zIndex: 5, opacity: 0.5, border: '1px solid rgba(255,255,255,0.03)'
-          }} />
-
-          {/* 4. LARGE IMAG SCREENS */}
-          <div style={{ position: 'absolute', top: 55, left: '6%', width: '25%', height: '70px', zIndex: 20 }} className="side-screen">
-            <div style={{ width: '100%', height: '100%', background: '#000', border: `2px solid ${currentStat.color}`, borderRadius: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 30px ${hexToRgba(currentStat.color, 0.3)}` }}>
-               <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: currentStat.color, letterSpacing: 2, fontWeight: 900 }}>{currentStat.label}</div>
-            </div>
-          </div>
-          
-          <div style={{ position: 'absolute', top: 55, right: '6%', width: '25%', height: '70px', zIndex: 20 }} className="side-screen">
-            <div style={{ width: '100%', height: '100%', background: '#000', border: `2px solid ${currentStat.color}`, borderRadius: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 30px ${hexToRgba(currentStat.color, 0.3)}` }}>
-               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', textShadow: `0 0 10px ${currentStat.color}` }}>{currentStat.val}</div>
-            </div>
-          </div>
-
-          {/* 5. SPEAKER STACKS */}
-          {[ {side: 'left'}, {side: 'right'} ].map(s => (
-            <div key={s.side} style={{ position: 'absolute', [s.side]: 12, bottom: 45, width: 38, height: 130, background: '#0a0a0c', border: `2px solid #222`, borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 6, padding: 5, zIndex: 30, boxShadow: '0 10px 40px #000' }}>
-              {[1,2,3,4].map(i => <div key={i} style={{ flex: 1, background: '#000', borderRadius: '50%', border: '1px solid #1a1a1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="speaker-cone" style={{ width: 18, height: 18, borderRadius: '50%', border: `2.2px solid ${C.teal}`, background: 'radial-gradient(circle, #000, #111)' }} /></div>)}
+          {[10, 920].map(x => (
+            <div key={x} style={{ position: 'absolute', left: x === 10 ? 10 : 'auto', right: x === 920 ? 10 : 'auto', bottom: 30, width: 30, height: 80, background: '#0a0a0c', border: '1px solid #222', display: 'flex', flexDirection: 'column', gap: 4, padding: 3 }}>
+              {[1,2,3].map(i => <div key={i} style={{ flex: 1, borderRadius: '50%', border: `1px solid ${C.teal}`, background: '#000' }} className="speaker-cone" />)}
             </div>
           ))}
-
-          {/* 6. ILLUMINATED STAGE FLOOR */}
-          <div style={{ position: 'absolute', bottom: 35, width: '100%', height: '70px', background: '#1a1a1e', borderTop: '3px solid #444', zIndex: 20, clipPath: 'polygon(5% 0%, 95% 0%, 100% 100%, 0% 100%)' }}>
-             {/* Dynamic Floor Wash */}
-             <div className="stage-wash" style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at center top, ${hexToRgba(currentStat.color, 0.4)}, transparent 70%)`, transition: 'background 0.5s ease' }} />
-             <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.1) 0px, rgba(255,255,255,0.1) 1px, transparent 1px, transparent 20px)' }} />
+          <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '25px', background: '#000', borderTop: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+             <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: currentStat.color, letterSpacing: '3px' }}>{currentStat.label} // RIG ACTIVE</div>
           </div>
-
-          {/* 7. FRONT OF HOUSE BAR */}
-          <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '32px', background: '#000', zIndex: 60, borderTop: '2px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-             <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: currentStat.color, letterSpacing: '5px', fontWeight: 900, textShadow: `0 0 8px ${currentStat.color}`, transition: 'color 0.5s ease' }}>
-                {currentStat.label} // RIG STATUS: ACTIVE
-             </div>
-          </div>
-        </div>
       </div>
     </div>
   );
