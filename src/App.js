@@ -4028,11 +4028,20 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
   );
 }
 // ─── MODALS ───────────────────────────────────────────────────────────────────
+// ─── UPCOMING MODAL (CLEAN & ARMORED) ───────────────────────────────────
 function UpcomingModal({ show, onClose, onSave, onDelete }) {
   const isNew = !show?.id;
-  const [form, setForm] = useState({ artist: '', venue: '', date: '', status: 'TICKETS BOUGHT' });
+  
+  // Initialize form with show data or defaults
+  const [form, setForm] = useState({ 
+    artist: '', 
+    venue: '', 
+    date: '', 
+    status: 'TICKETS BOUGHT' 
+  });
   const [saving, setSaving] = useState(false);
 
+  // Sync state when "show" prop changes
   useEffect(() => {
     if (show && show.id) {
       setForm({
@@ -4048,253 +4057,149 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const handleSave = async () => {
+  const handleSave = async (e) => {
+    if (e) e.preventDefault();
     if (!form.artist || !form.date) return alert('Artist and date required.');
+    
     setSaving(true);
-    await onSave(show?.id, form);
+    // Note: We pass the ID if editing, null if new
+    await onSave(show?.id || null, form);
     setSaving(false);
+    onClose();
   };
 
-  const handleDelete = () => {
-    onDelete(show.id);
+  const lbl = { 
+    display: 'block', 
+    fontFamily: "'Space Mono', monospace", 
+    fontSize: 8, 
+    letterSpacing: '0.15em', 
+    textTransform: 'uppercase', 
+    color: C.gold, 
+    marginBottom: 4 
   };
 
-  const lbl = { display: 'block', fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.tealDim, marginBottom: 4 };
-  const inp = { ...inputSt, width: '100%', marginBottom: 15 };
+  const inpStLocal = { 
+    width: '100%', 
+    background: 'rgba(0,0,0,0.5)', 
+    border: `1px solid ${C.gold}44`, 
+    color: '#fff', 
+    padding: '12px', 
+    fontFamily: "'Space Mono'", 
+    borderRadius: '6px', 
+    outline: 'none',
+    marginBottom: 15,
+    boxSizing: 'border-box'
+  };
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(10px)' }}
+      style={{ 
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', 
+        zIndex: 9000, display: 'flex', alignItems: 'center', 
+        justifyContent: 'center', padding: 20, backdropFilter: 'blur(10px)' 
+      }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <div
         className="fade-in"
-        style={{ background: C.bgCard, border: `1px solid ${C.gold}`, borderRadius: 12, padding: 32, width: '100%', maxWidth: 420, boxShadow: `0 0 50px ${hexToRgba(C.gold, 0.2)}`, position: 'relative' }}
+        style={{ 
+          background: C.bgCard, border: `1px solid ${C.gold}`, 
+          borderRadius: 16, padding: 35, width: '100%', maxWidth: 420, 
+          boxShadow: `0 0 50px ${hexToRgba(C.gold, 0.2)}`, position: 'relative' 
+        }}
       >
-        {/* Watermark */}
-        <div style={{ position: 'absolute', top: -10, right: -10, fontFamily: "'Bebas Neue'", fontSize: '6rem', color: 'rgba(255,204,0,0.03)', pointerEvents: 'none', zIndex: 0 }}>
-          {isNew ? 'NEW' : 'EDIT'}
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.white, letterSpacing: '1px' }}>
+            {isNew ? 'NEW PLAN' : 'UPDATE INTEL'}
+          </div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 2 }}>
+            STATUS: ACTIVE
+          </div>
         </div>
 
-        {/* Header */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1px', flex: 1, background: C.border, border: `1px solid ${C.border}`, borderRadius: '4px', overflow: 'hidden' }}>
-  {[
-    { value: headerStats.totalSets, label: 'SETS', color: C.teal, onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } },
-    { value: headerStats.uniqueArtists, label: 'ACTS', color: C.cyan, onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } },
-    { value: headerStats.totalShows, label: 'DAYS', color: C.purple, onClick: () => setActiveTab('timeline') },
-    { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'VENUES', color: C.red, onClick: () => setActiveTab('venues') },
-    { value: headerStats.setlistCount, label: 'FILES', color: C.gold, onClick: () => setActiveTab('vault') }
-  ].map((s, i) => (
-    <div 
-      key={s.label} 
-      onClick={s.onClick} 
-      style={{ 
-        textAlign: 'center', 
-        padding: '10px 2px', 
-        cursor: 'pointer',
-        background: C.bg, // Solid black background for the module
-        position: 'relative',
-        transition: 'all 0.2s ease',
-        borderTop: `2px solid ${s.color}`, // The Neon Highlight
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.background = hexToRgba(s.color, 0.05);
-        e.currentTarget.style.boxShadow = `inset 0 0 15px ${hexToRgba(s.color, 0.1)}`;
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.background = C.bg;
-        e.currentTarget.style.boxShadow = 'none';
-      }}
-    >
-      <div style={{ 
-        fontFamily: "'Bebas Neue'", 
-        fontSize: isMobile ? '1.2rem' : '2.2rem', 
-        color: s.color, 
-        lineHeight: 1,
-        textShadow: `0 0 10px ${hexToRgba(s.color, 0.4)}` // Subtle neon glow
-      }}>
-        {s.value}
-      </div>
-      <div style={{ 
-        fontFamily: "'Space Mono'", 
-        fontSize: '7px', 
-        color: C.grayDim, 
-        letterSpacing: '2px', 
-        fontWeight: 700, 
-        marginTop: 4 
-      }}>
-        {s.label}
-      </div>
-    </div>
-  ))}
-</div>
-
-        {/* Form */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
+        {/* Form Body */}
+        <form onSubmit={handleSave}>
           <label style={lbl}>Artist / Band *</label>
-          <input style={inp} value={form.artist} onChange={e => set('artist', e.target.value)} placeholder="e.g. Tame Impala" />
+          <input 
+            style={inpStLocal} 
+            value={form.artist} 
+            onChange={e => set('artist', e.target.value)} 
+            placeholder="e.g. Tame Impala" 
+            required
+          />
 
           <label style={lbl}>Venue</label>
-          <input style={inp} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="e.g. Red Rocks" />
+          <input 
+            style={inpStLocal} 
+            value={form.venue} 
+            onChange={e => set('venue', e.target.value)} 
+            placeholder="e.g. Red Rocks" 
+          />
 
-          <label style={lbl}>Date *</label>
-          <input style={{ ...inp, colorScheme: 'dark' }} type="date" value={form.date} onChange={e => set('date', e.target.value)} />
+          <label style={lbl}>Target Date *</label>
+          <input 
+            style={{ ...inpStLocal, colorScheme: 'dark' }} 
+            type="date" 
+            value={form.date} 
+            onChange={e => set('date', e.target.value)} 
+            required
+          />
 
-          <label style={lbl}>Status</label>
-          <select style={inp} value={form.status} onChange={e => set('status', e.target.value)}>
-            <option value="TICKETS">TICKETS</option>
-            <option value="PENDING">PENDING</option>
+          <label style={lbl}>Logistics Status</label>
+          <select 
+            style={inpStLocal} 
+            value={form.status} 
+            onChange={e => set('status', e.target.value)}
+          >
+            <option value="TICKETS BOUGHT">TICKETS BOUGHT</option>
+            <option value="ON SALE SOON">ON SALE SOON</option>
             <option value="DREAMING">DREAMING</option>
+            <option value="MANIFESTING">MANIFESTING</option>
           </select>
-        </div>
 
-        {/* Buttons — outside the zIndex stacking, plain siblings */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 20 }}>
-          <div>
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
             {!isNew && (
               <button
                 type="button"
-                onClick={handleDelete}
-                style={{ background: 'none', border: `1px solid ${C.red}`, color: C.red, padding: '10px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9, fontWeight: 700, letterSpacing: '0.1em' }}
+                onClick={() => { if(window.confirm('Delete this show?')) onDelete(show.id); }}
+                style={{ 
+                  background: 'rgba(255,68,68,0.1)', border: `1px solid ${C.red}`, 
+                  color: C.red, padding: '12px 20px', borderRadius: 8, cursor: 'pointer', 
+                  fontFamily: "'Bebas Neue'", fontSize: '1.2rem' 
+                }}
               >
                 DELETE
               </button>
             )}
-          </div>
-          <div style={{ display: 'flex', gap: 12 }}>
+            
             <button
               type="button"
               onClick={onClose}
-              style={{ background: C.bgCardAlt, border: `1px solid ${C.border}`, color: C.gray, padding: '10px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9, letterSpacing: '0.1em' }}
+              style={{ 
+                flex: 1, background: 'transparent', border: `1px solid ${C.border}`, 
+                color: C.gray, padding: '12px 20px', borderRadius: 8, cursor: 'pointer', 
+                fontFamily: "'Bebas Neue'", fontSize: '1.2rem' 
+              }}
             >
               CANCEL
             </button>
+
             <button
-              type="button"
-              onClick={handleSave}
+              type="submit"
               disabled={saving}
-              style={{ background: C.gold, color: '#000', border: 'none', padding: '10px 24px', borderRadius: 4, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'Space Mono'", fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', opacity: saving ? 0.7 : 1 }}
+              style={{ 
+                flex: 2, background: C.gold, border: 'none', color: '#000', 
+                padding: '12px 20px', borderRadius: 8, cursor: saving ? 'not-allowed' : 'pointer', 
+                fontFamily: "'Bebas Neue'", fontSize: '1.4rem', fontWeight: 900,
+                boxShadow: `0 0 20px ${hexToRgba(C.gold, 0.4)}`
+              }}
             >
-              {saving ? 'SAVING...' : 'SAVE SHOW'}
+              {saving ? 'SYNCING...' : isNew ? 'CONFIRM' : 'UPDATE'}
             </button>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── 5. EDIT MODAL (TRIPLE-THREAT IMAGE VERSION) ─────────────────────────────
-// ─── 5. EDIT MODAL (HIGH-VISIBILITY GOLD VERSION) ───────────────────────────
-function EditModal({ concert, onClose, onSave, onDelete }) {
-  const [form, setForm] = useState({ 
-    date: concert?.date || '', 
-    bands: Array.isArray(concert?.bands) ? concert.bands.join(', ') : (concert?.bands || ''), 
-    venue: concert?.venue || '', 
-    city: concert?.city || '', 
-    state: concert?.state || '', 
-    is_festival: concert?.is_festival || false, 
-    festival_name: concert?.festival_name || '', 
-    festival_day: concert?.festival_day || '', 
-    has_setlist_names: concert?.has_setlist_names || '', 
-    genre: concert?.genre || '', 
-    image_url: concert?.image_url || '',           // Top: Setlist
-    personal_photo_url: concert?.personal_photo_url || '' // Bottom: Personal
-  });
-
-  const [saving, setSaving] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
-  const handleSave = async () => { 
-    setSaving(true); 
-    const bandList = typeof form.bands === 'string' 
-      ? form.bands.split(',').map(b => b.trim()).filter(Boolean)
-      : form.bands;
-    
-    await onSave(concert?.id, {
-      ...form,
-      bands: bandList,
-      has_setlist: !!(form.has_setlist_names?.trim())
-    }); 
-    setSaving(false); 
-  };
-
-  // Standard labels (Teal)
-  const lbl = { display: 'block', fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.teal, marginBottom: 4, opacity: 0.8 };
-  
-  // Highlight labels (Yellow/Gold)
-  const lblGold = { ...lbl, color: C.gold, opacity: 1, fontWeight: 'bold' };
-  
-  const inpSt = { width: '100%', background: 'rgba(0,0,0,0.4)', border: `1px solid ${C.teal}44`, color: '#fff', padding: '12px', fontFamily: "'Space Mono'", borderRadius: '6px', outline: 'none' };
-  const inpStGold = { ...inpSt, border: `1px solid ${C.gold}44` };
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.94)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(12px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.teal}66`, borderRadius: 16, padding: 35, width: '100%', maxWidth: 550, maxHeight: '92vh', overflowY: 'auto', boxShadow: `0 0 80px rgba(0,210,255,0.2)` }}>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.white, letterSpacing: '1px' }}>{concert?.id ? 'EDIT ARCHIVE' : 'NEW ENTRY'}</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.8rem', cursor: 'pointer', opacity: 0.3 }}>✕</button>
-        </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: 20, marginBottom: 20 }}>
-          <div><label style={lbl}>Show Date</label><input style={inpSt} type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <label style={lbl}>Festival?</label>
-            <input type="checkbox" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} style={{ width: 24, height: 24, cursor: 'pointer' }} />
-          </div>
-        </div>
-
-        {form.is_festival && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20, padding: '20px', background: 'rgba(0,210,255,0.03)', borderRadius: 10, border: `1px solid ${C.teal}22` }}>
-            <div><label style={lbl}>Festival Name</label><input style={inpSt} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} /></div>
-            <div><label style={lbl}>Day Label</label><input style={inpSt} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} /></div>
-          </div>
-        )}
-
-        <div style={{ marginBottom: 20 }}><label style={lbl}>Artists</label><input style={inpSt} value={form.bands} onChange={e => set('bands', e.target.value)} placeholder="Comma separated..." /></div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15, marginBottom: 30 }}>
-          <div><label style={lbl}>Venue</label><input style={inpSt} value={form.venue} onChange={e => set('venue', e.target.value)} /></div>
-          <div><label style={lbl}>City</label><input style={inpSt} value={form.city} onChange={e => set('city', e.target.value)} /></div>
-        </div>
-
-        {/* 🏆 THE GOLD MEDIA ZONE (High Contrast) */}
-        <div style={{ marginBottom: 35, padding: '25px', background: 'rgba(255, 215, 0, 0.03)', borderRadius: '12px', border: `1px solid ${C.gold}33` }}>
-          
-          <div style={{ marginBottom: 25 }}>
-            <label style={lblGold}>Setlist Image URL</label>
-            <textarea 
-              style={{ ...inpStGold, height: '70px', fontSize: '11px', resize: 'none' }} 
-              value={form.image_url} 
-              onChange={e => set('image_url', e.target.value)} 
-              placeholder="Paste link(s) here..." 
-            />
-          </div>
-
-          <div>
-            <label style={lblGold}>Personal Photo URL</label>
-            <textarea 
-              style={{ ...inpStGold, height: '70px', fontSize: '11px', resize: 'none' }} 
-              value={form.personal_photo_url} 
-              onChange={e => set('personal_photo_url', e.target.value)} 
-              placeholder="Paste link(s) here..." 
-            />
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 15, justifyContent: 'flex-end', paddingTop: 25, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-          {concert?.id && (
-            <button onClick={() => confirming ? onDelete(concert.id) : setConfirming(true)} type="button" style={{ background: confirming ? '#ff4444' : 'transparent', border: '1px solid #ff4444', color: '#fff', padding: '12px 24px', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}>
-              {confirming ? 'CONFIRM DELETE' : 'DELETE'}
-            </button>
-          )}
-          <button onClick={onClose} type="button" style={{ background: 'transparent', border: '1px solid #444', color: '#888', padding: '12px 24px', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}>CANCEL</button>
-          <button onClick={handleSave} disabled={saving} type="button" style={{ background: C.teal, border: 'none', color: '#000', padding: '12px 40px', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.4rem', cursor: 'pointer', boxShadow: `0 0 20px ${C.teal}44` }}>
-            {saving ? 'SAVING...' : 'SAVE'}
-          </button>
-        </div>
+        </form>
       </div>
     </div>
   );
@@ -4800,13 +4705,29 @@ export default function App() {
     if (!error) setArtistGenres(prev => ({ ...prev, [artist]: genre }));
   }
 
-  async function handleUpcomingSave(id, payload) {
-    const cleanPayload = { artist: payload.artist, venue: payload.venue, date: payload.date, status: payload.status };
-    if (id) await supabase.from('upcoming_concerts').update(cleanPayload).eq('id', id);
-    else await supabase.from('upcoming_concerts').insert([cleanPayload]);
-    fetchUpcoming();
-    setUpcomingModal(null);
+  const handleUpcomingSave = async (id, formData) => {
+  try {
+    if (id) {
+      // UPDATE EXISTING
+      const { error } = await supabase
+        .from('upcoming_concerts')
+        .update(formData)
+        .eq('id', id);
+      if (error) throw error;
+    } else {
+      // INSERT NEW
+      const { error } = await supabase
+        .from('upcoming_concerts')
+        .insert([formData]);
+      if (error) throw error;
+    }
+    // Refresh the local data
+    await fetchUpcoming();
+    setUpcomingModal(null); // Close modal
+  } catch (err) {
+    alert("Save failed: " + err.message);
   }
+};
 
   async function handleUpcomingDelete(id) {
     if (window.confirm('Remove show?')) {
@@ -5198,7 +5119,14 @@ export default function App() {
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
         {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
         {editTarget && <EditModal concert={editTarget === 'new' ? null : editTarget} onClose={() => setEditTarget(null)} onSave={handleSave} onDelete={handleDelete} />}
-        {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
+        {upcomingModal !== null && (
+  <UpcomingModal 
+    show={upcomingModal === 'new' ? null : upcomingModal} 
+    onClose={() => setUpcomingModal(null)} 
+    onSave={handleUpcomingSave} 
+    onDelete={handleUpcomingDelete} 
+  />
+)}
       </div>
     </ThemeContext.Provider>
   );
