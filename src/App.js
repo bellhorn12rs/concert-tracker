@@ -1537,20 +1537,39 @@ function DonutChart({ fest, solo, concerts }) {
   const [mode, setMode] = useState('fest');
   if (!concerts || concerts.length === 0) return null;
 
+  // ─── DYNAMIC DATA ENGINE ───
   const stats = useMemo(() => {
+    const total = concerts.length;
     if (mode === 'legacy') {
-      const legacy = concerts.filter(c => getYear(c.date) <= 2014).length;
-      return { val1: legacy, val2: concerts.length - legacy, label: 'LEGACY', sub: 'CLASSICS', color: '#ffcc00' };
+      const legacyCount = concerts.filter(c => getYear(c.date) <= 2014).length;
+      return { 
+        val1: legacyCount, val2: total - legacyCount, 
+        label1: 'LEGACY', label2: 'MODERN', 
+        title: 'ERA BREAKDOWN', color: '#ffcc00' 
+      };
     }
     if (mode === 'city') {
-      const home = concerts.filter(c => c.city === "Austin").length;
-      return { val1: home, val2: concerts.length - home, label: 'HOME', sub: 'TURF', color: '#00cfff' };
+      const homeCount = concerts.filter(c => c.city === "Austin").length;
+      return { 
+        val1: homeCount, val2: total - homeCount, 
+        label1: 'AUSTIN', label2: 'ON ROAD', 
+        title: 'GEOGRAPHIC FOCUS', color: '#00cfff' 
+      };
     }
     if (mode === 'weekend') {
-      const wknd = concerts.filter(c => [0,5,6].includes(new Date(c.date+'T12:00:00').getDay())).length;
-      return { val1: wknd, val2: concerts.length - wknd, label: 'WEEKEND', sub: 'WARRIOR', color: '#9966ff' };
+      const wkndCount = concerts.filter(c => [0, 5, 6].includes(new Date(c.date + 'T12:00:00').getDay())).length;
+      return { 
+        val1: wkndCount, val2: total - wkndCount, 
+        label1: 'WEEKEND', label2: 'WEEKDAY', 
+        title: 'TEMPORAL VIBE', color: '#9966ff' 
+      };
     }
-    return { val1: fest, val2: solo, label: 'FEST', sub: 'RATIO', color: '#00e5cc' };
+    // Default: Festival
+    return { 
+      val1: fest, val2: solo, 
+      label1: 'FEST', label2: 'SOLO', 
+      title: 'STAGING RATIO', color: '#00e5cc' 
+    };
   }, [mode, fest, solo, concerts]);
 
   const total = stats.val1 + stats.val2 || 1;
@@ -1558,64 +1577,95 @@ function DonutChart({ fest, solo, concerts }) {
   const r = 48, cx = 70, cy = 70, circ = 2 * Math.PI * r;
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', height: '100%' }}>
-      {/* Header Legend */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 15, marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: stats.color }}>{stats.label}</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{stats.val1}</div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      
+      {/* 🟢 DYNAMIC HEADER LEGEND */}
+      <div style={{ marginBottom: 15, textAlign: 'center' }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: stats.color, letterSpacing: '2px', fontWeight: 900, marginBottom: 10 }}>
+          {stats.title}
         </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#444' }}>OTHER</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#444' }}>{stats.val2}</div>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 15, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: stats.color, opacity: 0.8 }}>{stats.label1}</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', lineHeight: 1 }}>{stats.val1}</div>
+          </div>
+          <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)' }} />
+          <div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#666' }}>{stats.label2}</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#444', lineHeight: 1 }}>{stats.val2}</div>
+          </div>
         </div>
       </div>
 
-      {/* NEON GREEN TURNTABLE BASE */}
+      {/* NEON TURNTABLE BASE */}
       <div style={{ 
         position: 'relative', width: 160, height: 160, 
-        background: '#39ff14', // Neon Green Hardware
-        borderRadius: 12, padding: 5, alignSelf: 'center', 
-        boxShadow: 'inset 0 0 20px rgba(0,0,0,0.4), 0 10px 30px rgba(57,255,20,0.2)',
-        border: '2px solid #2dbd11'
+        background: '#1a1a1a', // Darkened hardware for better neon contrast
+        borderRadius: 14, padding: 5, alignSelf: 'center', 
+        boxShadow: `inset 0 0 20px rgba(0,0,0,0.6), 0 10px 40px rgba(0,0,0,0.5), 0 0 20px ${hexToRgba(stats.color, 0.1)}`,
+        border: `1px solid ${hexToRgba(stats.color, 0.2)}`,
+        transition: 'all 0.5s ease'
       }}>
-        {/* Platter Recess */}
-        <div style={{ position:'absolute', inset: 10, borderRadius: '50%', background: '#000', border: '1px solid rgba(0,0,0,0.5)' }} />
+        <div style={{ position: 'absolute', inset: 10, borderRadius: '50%', background: '#000', border: '1px solid rgba(255,255,255,0.03)' }} />
 
         <svg className="record-vinyl-spinning" width="140" height="140" viewBox="0 0 140 140" style={{ position: 'relative', zIndex: 2 }}>
-          {/* Deep Black Vinyl Disc */}
-          <circle cx={cx} cy={cy} r={66} fill="#080808" stroke="#111" strokeWidth={1} />
-          {[60, 54, 48, 42].map(rad => <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#151515" strokeWidth={1} />)}
+          {/* Vinyl Disc */}
+          <circle cx={cx} cy={cy} r={66} fill="#080808" stroke="#151515" strokeWidth={1} />
+          {[60, 54, 48, 42].map(rad => <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#121212" strokeWidth={1} />)}
           
-          {/* The Data Ring */}
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth={10} />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={10} 
-            strokeDasharray={`${(pct/100) * circ} ${circ}`} strokeLinecap="round" 
-            transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 5px ${stats.color})`, transition: 'all 0.5s' }} 
+          {/* 🔘 THE GHOST TRACK (Background 100% Ring) */}
+          <circle 
+            cx={cx} cy={cy} r={r} fill="none" 
+            stroke={hexToRgba(stats.color, 0.05)} 
+            strokeWidth={12} 
+            strokeDasharray="2 2" // Gives it a "grooved" look
           />
           
-          {/* Center Label with Percentage */}
-          <circle cx={cx} cy={cy} r={16} fill="#111" stroke={stats.color} strokeWidth={1} />
-          <text x={cx} y={cy+4} textAnchor="middle" style={{ fontFamily: "'Bebas Neue'", fontSize: 10, fill: stats.color, fontWeight: 'bold' }}>{pct}%</text>
+          {/* 🔵 THE ACTIVE DATA TRACK */}
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={12} 
+            strokeDasharray={`${(pct / 100) * circ} ${circ}`} strokeLinecap="round" 
+            transform={`rotate(-90 ${cx} ${cy})`} 
+            style={{ 
+              filter: `drop-shadow(0 0 8px ${stats.color})`, 
+              transition: 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)' 
+            }} 
+          />
+          
+          {/* Center Label */}
+          <circle cx={cx} cy={cy} r={16} fill="#000" stroke={stats.color} strokeWidth={1} />
+          <text x={cx} y={cy + 4} textAnchor="middle" style={{ fontFamily: "'Bebas Neue'", fontSize: 10, fill: stats.color, fontWeight: 'bold' }}>{pct}%</text>
         </svg>
 
-        {/* Chrome Tone Arm */}
+        {/* Tone Arm Base */}
         <div style={{ 
-          position: 'absolute', top: 12, right: 12, width: 6, height: 75, 
-          background: 'linear-gradient(to right, #999, #fff, #777)', 
-          transform: 'rotate(28deg)', transformOrigin: 'top center', 
-          borderRadius: 10, zIndex: 10, border: '1px solid #666',
-          boxShadow: '3px 3px 8px rgba(0,0,0,0.6)'
-        }}>
-           <div style={{ position: 'absolute', bottom: -4, left: -3, width: 12, height: 16, background: '#222', borderRadius: 2, border: '1px solid #444' }} />
-        </div>
-        <div style={{ position: 'absolute', top: 8, right: 8, width: 22, height: 22, borderRadius: '50%', background: '#222', border: '2px solid #444', zIndex: 9 }} />
+          position: 'absolute', top: 8, right: 8, width: 24, height: 24, 
+          borderRadius: '50%', background: '#222', 
+          border: `1px solid ${hexToRgba(stats.color, 0.4)}`, zIndex: 9,
+          boxShadow: `0 0 10px ${hexToRgba(stats.color, 0.15)}`
+        }} />
       </div>
 
-      <div style={{ display: 'flex', gap: 4, height: 35, marginTop: 15 }}>
-        {[{ id: 'fest', col: '#00e5cc', icon: '🎪' }, { id: 'legacy', col: '#ffcc00', icon: '📜' }, { id: 'city', col: '#00cfff', icon: '📍' }, { id: 'weekend', col: '#9966ff', icon: '🍺' }].map((item) => (
-          <div key={item.id} onMouseDown={() => setMode(item.id)} className="crate-sleeve" style={{ flex: 1, height: mode === item.id ? '100%' : '80%', background: mode === item.id ? item.col : 'rgba(255,255,255,0.05)', border: `1px solid ${mode === item.id ? item.col : 'rgba(255,255,255,0.1)'}`, borderRadius: '2px 2px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
-            <span style={{ filter: mode === item.id ? 'none' : 'grayscale(100%) opacity(0.5)' }}>{item.icon}</span>
+      {/* MODE SELECTORS */}
+      <div style={{ display: 'flex', gap: 4, height: 35, marginTop: 20 }}>
+        {[
+          { id: 'fest', col: '#00e5cc', icon: '🎪' }, 
+          { id: 'legacy', col: '#ffcc00', icon: '📜' }, 
+          { id: 'city', col: '#00cfff', icon: '📍' }, 
+          { id: 'weekend', col: '#9966ff', icon: '🍺' }
+        ].map((item) => (
+          <div 
+            key={item.id} 
+            onMouseDown={() => setMode(item.id)} 
+            className="crate-sleeve" 
+            style={{ 
+              flex: 1, height: mode === item.id ? '100%' : '80%', 
+              background: mode === item.id ? item.col : 'rgba(255,255,255,0.03)', 
+              border: `1px solid ${mode === item.id ? item.col : 'rgba(255,255,255,0.1)'}`, 
+              borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+              fontSize: 12, transition: 'all 0.2s ease'
+            }}
+          >
+            <span style={{ filter: mode === item.id ? 'none' : 'grayscale(100%) opacity(0.3)' }}>{item.icon}</span>
           </div>
         ))}
       </div>
@@ -4874,7 +4924,13 @@ export default function App() {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20 }}>
-                  <Card neon><CardTitle>Fest vs Standalone</CardTitle><DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} concerts={concerts} /></Card>
+                  <Card neon>
+  <DonutChart 
+    fest={headerStats.festDays} 
+    solo={headerStats.totalShows - headerStats.festDays} 
+    concerts={concerts} 
+  />
+</Card>
                   <Card neon><CardTitle>Festival Passports</CardTitle><TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} /></Card>
                   <Card neon><CardTitle>By Decade</CardTitle><DecadeBlocks sets={allSetsList} /></Card>
                 </div>
