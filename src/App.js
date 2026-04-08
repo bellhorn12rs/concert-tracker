@@ -1567,116 +1567,133 @@ function DonutChart({ fest, solo, concerts }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between', padding: '5px' }}>
       
-      {/* 🔴 TOP STAT READOUT */}
+      {/* 🔴 HEADER READOUT (High Contrast) */}
       <div style={{ textAlign: 'center', marginBottom: 5 }}>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: stats.color, letterSpacing: '3px', fontWeight: 900, marginBottom: 8 }}>{stats.title}</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: stats.color, letterSpacing: '3px', fontWeight: 900, marginBottom: 8, textShadow: `0 0 10px ${hexToRgba(stats.color, 0.3)}` }}>{stats.title}</div>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 25 }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: stats.color }}>{stats.label1}</div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: stats.color, lineHeight: 1 }}>{stats.val1}</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: stats.color, fontWeight: 700 }}>{stats.label1}</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: '#fff', lineHeight: 1 }}>{stats.val1}</div>
           </div>
-          <div style={{ width: 2, height: 20, background: 'rgba(255,255,255,0.05)' }} />
+          <div style={{ width: 2, height: 30, background: 'rgba(255,255,255,0.1)' }} />
           <div style={{ textAlign: 'left' }}>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#555' }}>{stats.label2}</div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: '#555', lineHeight: 1 }}>{stats.val2}</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#666', fontWeight: 700 }}>{stats.label2}</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: '#444', lineHeight: 1 }}>{stats.val2}</div>
           </div>
         </div>
       </div>
 
-      {/* 📀 THE PHYSICAL TURNTABLE UNIT */}
+      {/* 📀 THE PHYSICAL TURNTABLE UNIT (Brighter & More Depth) */}
       <div style={{ 
-        position: 'relative', width: '210px', height: '190px', 
-        background: '#111', alignSelf: 'center', borderRadius: '4px',
-        border: '1px solid #222',
-        boxShadow: `0 20px 50px rgba(0,0,0,0.8), 0 0 15px ${hexToRgba(stats.color, 0.1)}`,
+        position: 'relative', width: '220px', height: '200px', 
+        background: 'linear-gradient(135deg, #1a1a1e 0%, #111114 100%)', // Lighter brushed finish
+        alignSelf: 'center', borderRadius: '6px',
+        border: '1px solid #333',
+        // High intensity underglow
+        boxShadow: `
+          0 25px 50px rgba(0,0,0,0.9), 
+          0 0 20px ${hexToRgba(stats.color, 0.15)},
+          inset 0 1px 1px rgba(255,255,255,0.1)
+        `,
         display: 'flex', alignItems: 'center', justifyContent: 'center'
       }}>
-        {/* Decorative Hardware Elements */}
-        <div style={{ position: 'absolute', bottom: 10, left: 10, width: 25, height: 25, background: '#1a1a1a', border: '1px solid #333', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 6, color: '#444', fontFamily: "'Space Mono'" }}>START</div>
-        <div style={{ position: 'absolute', top: 20, right: 15, width: 8, height: 60, background: '#0a0a0a', border: '1px solid #222', borderRadius: 1 }}>
-           <div style={{ position: 'absolute', top: '40%', left: -2, width: 12, height: 6, background: '#333', borderRadius: 1 }} />
+        {/* Hardware Detail: Power Light */}
+        <div style={{ position: 'absolute', top: 12, left: 12, width: 6, height: 6, borderRadius: '50%', background: stats.color, boxShadow: `0 0 8px ${stats.color}` }} />
+        
+        {/* Hardware Detail: Start Button */}
+        <div style={{ position: 'absolute', bottom: 15, left: 15, width: 32, height: 22, background: '#222', border: '1px solid #444', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#888', fontFamily: "'Space Mono'", fontWeight: 900, boxShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>START</div>
+
+        {/* Hardware Detail: Pitch Slider */}
+        <div style={{ position: 'absolute', top: 30, right: 15, width: 12, height: 80, background: '#080808', border: '1px solid #222', borderRadius: 2 }}>
+           <div style={{ position: 'absolute', top: '30%', left: -4, width: 20, height: 10, background: '#444', borderRadius: 1, border: '1px solid #666', boxShadow: '0 2px 4px rgba(0,0,0,0.8)' }} />
         </div>
 
-        {/* The Platter Well (The Hole the record sits in) */}
+        {/* 🕳️ THE PLATTER WELL (Deep Carved Effect) */}
         <div style={{ 
-          width: 160, height: 160, background: '#000', borderRadius: '50%',
-          boxShadow: 'inset 0 0 20px rgba(0,0,0,1), 0 0 0 4px #15151a',
+          width: 165, height: 165, background: '#000', borderRadius: '50%',
+          boxShadow: `
+            inset 0 0 30px rgba(0,0,0,1), 
+            0 0 0 6px #1a1a1f,
+            0 0 20px ${hexToRgba(stats.color, 0.1)}
+          `,
           position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
           
-          {/* Chrome Tone Arm */}
+          {/* 🦾 CHROME TONE ARM (High Shine) */}
           <div style={{ 
-            position: 'absolute', top: -5, right: -5, width: 6, height: 85, 
-            background: 'linear-gradient(to right, #666, #eee, #999)', 
-            transform: `rotate(${25 + (pct1 * 0.12)}deg)`, transformOrigin: 'top center', 
-            borderRadius: 10, zIndex: 100, border: '1px solid #333',
-            boxShadow: '5px 5px 15px rgba(0,0,0,0.7)', transition: 'transform 0.8s ease'
+            position: 'absolute', top: -5, right: -5, width: 7, height: 95, 
+            background: 'linear-gradient(to right, #666 0%, #eee 40%, #fff 50%, #eee 60%, #666 100%)', 
+            transform: `rotate(${25 + (pct1 * 0.14)}deg)`, transformOrigin: 'top center', 
+            borderRadius: 12, zIndex: 100, border: '1px solid #333',
+            boxShadow: '10px 10px 20px rgba(0,0,0,0.8)', transition: 'transform 0.8s ease'
           }}>
-             <div style={{ position: 'absolute', bottom: -4, left: -4, width: 14, height: 18, background: '#111', borderRadius: 2, border: '1px solid #444' }}>
-                <div style={{ width: 4, height: 4, background: stats.color, borderRadius: '50%', margin: '4px auto', boxShadow: `0 0 10px ${stats.color}` }} />
+             <div style={{ position: 'absolute', bottom: -5, left: -5, width: 18, height: 24, background: '#111', borderRadius: 3, border: '1px solid #444', boxShadow: '0 4px 8px rgba(0,0,0,0.5)' }}>
+                <div style={{ width: 4, height: 4, background: stats.color, borderRadius: '50%', margin: '6px auto', boxShadow: `0 0 10px ${stats.color}` }} />
              </div>
           </div>
 
           {/* SVG RECORD */}
-          <svg className="record-vinyl-spinning" width="150" height="150" viewBox="0 0 140 140">
-            <circle cx={cx} cy={cy} r={69} fill="#080808" />
+          <svg className="record-vinyl-spinning" width="155" height="155" viewBox="0 0 140 140">
+            <circle cx={cx} cy={cy} r={69} fill="#0a0a0a" />
             
-            {/* Platter Edge Strobe Pattern */}
-            {[...Array(36)].map((_, i) => (
-              <rect key={i} x={70} y={1} width={2} height={3} fill="#222" transform={`rotate(${i * 10} 70 70)`} />
+            {/* Brightened Strobe Pattern */}
+            {[...Array(40)].map((_, i) => (
+              <rect key={i} x={70} y={1} width={2.5} height={4} fill="#333" transform={`rotate(${i * 9} 70 70)`} />
             ))}
 
-            {/* Vinyl Grooves */}
+            {/* High-Vis Vinyl Grooves */}
             {[62, 58, 54, 50, 42, 38].map(rad => (
-              <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#121212" strokeWidth={0.5} />
+              <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#181818" strokeWidth={1} />
             ))}
 
-            {/* 🔵 THE "OTHER" STAT (63%) - Now a glowing Graphite Color */}
+            {/* ⚪ THE "OTHER" STAT TRACK (Now highly visible grey) */}
             <circle 
               cx={cx} cy={cy} r={r} fill="none" 
-              stroke="#252528" 
-              strokeWidth={10} 
-              style={{ filter: `drop-shadow(0 0 2px rgba(255,255,255,0.05))` }}
+              stroke="#333338" 
+              strokeWidth={11} 
+              style={{ filter: `drop-shadow(0 0 2px rgba(255,255,255,0.1))` }}
             />
             
-            {/* 🟢 THE PRIMARY STAT (37%) - High Intensity Neon */}
+            {/* 🟢 THE PRIMARY NEON TRACK */}
             <circle 
               cx={cx} cy={cy} r={r} fill="none" 
               stroke={stats.color} 
-              strokeWidth={10} 
+              strokeWidth={11} 
               strokeDasharray={`${(pct1 / 100) * circ} ${circ}`} 
               strokeLinecap="round" 
               transform={`rotate(-90 ${cx} ${cy})`} 
-              style={{ filter: `drop-shadow(0 0 12px ${stats.color})`, transition: 'all 0.8s ease' }} 
+              style={{ filter: `drop-shadow(0 0 15px ${stats.color})`, transition: 'all 0.8s ease' }} 
             />
             
-            <circle cx={cx} cy={cy} r={18} fill="#000" stroke={stats.color} strokeWidth={1} />
-            <text x={cx} y={cy + 4} textAnchor="middle" style={{ fontFamily: "'Bebas Neue'", fontSize: 11, fill: stats.color, filter: `drop-shadow(0 0 5px ${stats.color})` }}>{pct1}%</text>
+            {/* Center Label */}
+            <circle cx={cx} cy={cy} r={20} fill="#000" stroke={stats.color} strokeWidth={1.5} />
+            <text x={cx} y={cy + 5} textAnchor="middle" style={{ fontFamily: "'Bebas Neue'", fontSize: 13, fill: stats.color, filter: `drop-shadow(0 0 8px ${stats.color})`, fontWeight: 900 }}>{pct1}%</text>
           </svg>
         </div>
       </div>
 
-      {/* 🎶 TRACKLIST SECTION */}
-      <div style={{ padding: '0 20px', marginTop: 10 }}>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#333', borderBottom: '1px solid #1a1a1c', paddingBottom: 4, marginBottom: 8, letterSpacing: 1 }}>{stats.topLabel}</div>
+      {/* 🎶 TRACKLIST (Tightened & Brightened) */}
+      <div style={{ padding: '0 20px', marginTop: 5 }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#555', borderBottom: '1px solid #222', paddingBottom: 4, marginBottom: 8, letterSpacing: 1, fontWeight: 900 }}>{stats.topLabel}</div>
         {stats.top.map((name, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-             <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: stats.color }}>0{i+1}</span>
-             <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff', letterSpacing: 0.5 }}>{name?.toUpperCase() || '---'}</span>
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+             <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: stats.color, fontWeight: 900 }}>0{i+1}</span>
+             <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#fff', letterSpacing: 1 }}>{name?.toUpperCase() || '---'}</span>
           </div>
         ))}
       </div>
 
-      {/* 🎚️ MODE SELECTORS */}
-      <div style={{ display: 'flex', gap: 4, height: 35, marginTop: 10 }}>
+      {/* 🎚️ MODE SELECTORS (High Contrast) */}
+      <div style={{ display: 'flex', gap: 6, height: 40, marginTop: 10 }}>
         {[{ id: 'fest', icon: '🎪' }, { id: 'legacy', icon: '📜' }, { id: 'city', icon: '📍' }, { id: 'weekend', icon: '🍺' }].map((item) => (
           <div key={item.id} onMouseDown={() => setMode(item.id)} style={{ 
-            flex: 1, height: mode === item.id ? '100%' : '80%', 
-            background: mode === item.id ? stats.color : 'rgba(255,255,255,0.02)', 
-            borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: '0.2s',
-            borderBottom: mode === item.id ? '2px solid #fff' : 'none'
+            flex: 1, height: mode === item.id ? '100%' : '85%', 
+            background: mode === item.id ? stats.color : 'rgba(255,255,255,0.05)', 
+            borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: '0.2s',
+            border: mode === item.id ? `1px solid #fff` : '1px solid transparent',
+            boxShadow: mode === item.id ? `0 0 15px ${hexToRgba(stats.color, 0.4)}` : 'none'
           }}>
-            <span style={{ filter: mode === item.id ? 'none' : 'grayscale(100%) opacity(0.1)' }}>{item.icon}</span>
+            <span style={{ fontSize: 14, filter: mode === item.id ? 'none' : 'grayscale(100%) opacity(0.3)' }}>{item.icon}</span>
           </div>
         ))}
       </div>
