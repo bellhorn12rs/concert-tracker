@@ -5056,7 +5056,7 @@ export default function App() {
 </Card>
                 </div>
 
-                {/* ── ROW 4: LEADERBOARD & SPOTLIGHT ── */}
+                {/* ── ROW 4: LEADERBOARD and SPOTLIGHT ── */}
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
                   <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column' }}>
                     <CardTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
