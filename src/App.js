@@ -4764,7 +4764,7 @@ export default function App() {
       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
     </div>
   );
-
+}
   return (
     <ThemeContext.Provider value={themeCtx}>
       <div key={themeId} style={{ 
