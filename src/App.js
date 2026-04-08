@@ -4729,28 +4729,36 @@ export default function App() {
   position: 'sticky', top: 0, zIndex: 100,
   display: 'flex', alignItems: 'stretch',
   borderBottom: `2px solid ${C.border}`,
-  height: isMobile ? '70px' : '90px', 
+  height: isMobile ? '75px' : '90px', // Slightly taller for mobile legibility
   flexShrink: 0,
   boxSizing: 'border-box',
   overflow: 'visible'
 }}>
   
-  {/* ── LEFT: IDENTITY BLOCK ── */}
+  {/* ── LEFT: IDENTITY (Slimmed for Mobile) ── */}
   <div style={{ 
-    width: isMobile ? '100px' : '280px', 
+    width: isMobile ? '60px' : '280px', // Dropped from 100px to 60px
     borderRight: `1px solid ${C.border}`, 
     display: 'flex', 
     alignItems: 'center', 
     justifyContent: 'center',
-    background: `linear-gradient(135deg, ${C.bgCard} 0%, #08080c 100%)`
+    background: `linear-gradient(135deg, ${C.bgCard} 0%, #08080c 100%)`,
+    flexShrink: 0
   }}>
-    <div style={{ transform: isMobile ? 'scale(0.8)' : 'none' }}>
+    <div style={{ transform: isMobile ? 'scale(0.7)' : 'none' }}>
       <TrackRecordLogo size={40} />
     </div>
   </div>
 
-  {/* ── CENTER: HIGH-CONTRAST STAT PANELS ── */}
-  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', flex: 1, gap: '1px', background: C.border }}>
+  {/* ── CENTER: STAT PANELS (High Density) ── */}
+  <div style={{ 
+    display: 'grid', 
+    gridTemplateColumns: 'repeat(5, 1fr)', 
+    flex: 1, 
+    gap: '1px', 
+    background: C.border,
+    minWidth: 0 // Prevents grid blowout
+  }}>
     {[
       { value: headerStats.totalSets, label: 'SETS', color: C.teal, onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } },
       { value: headerStats.uniqueArtists, label: 'ACTS', color: C.cyan, onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } },
@@ -4766,42 +4774,33 @@ export default function App() {
           cursor: 'pointer',
           position: 'relative',
           background: `linear-gradient(180deg, ${hexToRgba(s.color, 0.08)} 0%, #050508 100%)`,
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          overflow: 'hidden'
-        }}
-        onMouseEnter={e => {
-          e.currentTarget.style.background = hexToRgba(s.color, 0.2);
-          e.currentTarget.firstChild.style.transform = 'scale(1.1)';
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.background = hexToRgba(s.color, 0.08);
-          e.currentTarget.firstChild.style.transform = 'scale(1)';
+          transition: 'all 0.3s ease',
+          overflow: 'hidden',
+          padding: isMobile ? '0 2px' : '0'
         }}
       >
-        {/* Glowing Bottom Bar */}
-        <div style={{ position: 'absolute', bottom: 0, left: '15%', right: '15%', height: '3px', background: s.color, boxShadow: `0 0 15px ${s.color}`, borderRadius: '2px 2px 0 0' }} />
+        <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: '2px', background: s.color, boxShadow: `0 0 10px ${s.color}`, opacity: 0.8 }} />
 
-        {/* LARGE NUMBER */}
+        {/* Scaled-down numbers for mobile */}
         <div style={{ 
           fontFamily: "'Bebas Neue'", 
-          fontSize: isMobile ? '1.5rem' : '3rem', 
+          fontSize: isMobile ? '1.1rem' : '3rem', 
           color: s.color, 
           lineHeight: 1,
-          transition: 'transform 0.3s ease',
-          textShadow: `0 0 20px ${hexToRgba(s.color, 0.4)}`
+          textShadow: isMobile ? 'none' : `0 0 20px ${hexToRgba(s.color, 0.4)}`
         }}>
           {s.value}
         </div>
 
-        {/* LABEL */}
+        {/* Bolder, smaller labels for mobile */}
         <div style={{ 
           fontFamily: "'Space Mono'", 
-          fontSize: '8px', 
+          fontSize: isMobile ? '5px' : '8px', 
           color: '#fff', 
-          letterSpacing: '3px', 
+          letterSpacing: isMobile ? '1px' : '3px', 
           fontWeight: 900, 
-          marginTop: 6,
-          opacity: 0.6
+          marginTop: 4,
+          opacity: 0.5
         }}>
           {s.label}
         </div>
@@ -4809,13 +4808,14 @@ export default function App() {
     ))}
   </div>
 
-  {/* ── RIGHT: SYSTEM CONTROLS ── */}
+  {/* ── RIGHT: SYSTEM (Compact for Mobile) ── */}
   <div style={{ 
-    display: 'flex', alignItems: 'center', padding: '0 30px', 
+    display: 'flex', alignItems: 'center', 
+    padding: isMobile ? '0 10px' : '0 30px', 
     background: `linear-gradient(225deg, ${hexToRgba(C.teal, 0.05)} 0%, #050508 100%)`,
-    borderLeft: `1px solid ${C.border}`
+    borderLeft: `1px solid ${C.border}`,
+    flexShrink: 0
   }}>
-    {/* ID Card / Lanyard Container completely removed */}
     <ThemeSwitcher isMobile={isMobile} />
   </div>
 </header>
