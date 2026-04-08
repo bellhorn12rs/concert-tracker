@@ -4914,25 +4914,32 @@ export default function App() {
   {/* ── MAIN NAV AREA ── */}
 <div style={{ flex: 1, overflowY: 'auto', padding: '20px 0' }} className="wristband-bin">
   {TAB_GROUPS.map((group) => {
-    // We no longer return null for the whole group. 
-    // Instead, we filter the tabs INSIDE the group.
+    
+    // 1. Determine which individual tabs this specific user can see
     const visibleTabs = group.tabs.filter(([id]) => {
-      if (id === 'manage' && !isAdmin) return false; // Lock the Office
-      return true; // Everything else (Browse, HOF, etc.) is public
+      if (id === 'manage' && !isAdmin) return false; // Hide 'The Office' from public
+      return true; // Show 'Browse', 'Timeline', etc. to everyone
     });
 
+    // 2. If no tabs are visible in this group for this user, hide the whole header
     if (visibleTabs.length === 0) return null;
 
     return (
       <div key={group.header} style={{ marginBottom: 35 }}>
         {(!navCollapsed || isMobile) && (
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.teal, letterSpacing: '3px', padding: '0 20px 14px' }}>
+          <div style={{ 
+            fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.teal, 
+            letterSpacing: '3px', padding: '0 20px 14px' 
+          }}>
             {group.header}
           </div>
         )}
+        
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {visibleTabs.map(([id, label, color]) => (
-            <button key={id} onClick={() => { setActiveTab(id); if(isMobile) setNavCollapsed(true); }}
+            <button 
+              key={id} 
+              onClick={() => { setActiveTab(id); if(isMobile) setNavCollapsed(true); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 14, fontFamily: "'Space Mono'", fontSize: '11px',
                 color: activeTab === id ? '#fff' : C.gray, 
