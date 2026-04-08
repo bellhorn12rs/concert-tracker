@@ -4520,32 +4520,35 @@ export default function App() {
             {isMobile ? '✕' : (navCollapsed ? '→' : '←')}
           </button>
 
-          {/* LOGO AREA - MATCHED TO HEADER HEIGHT */}
+          {/* LOGO AREA - PRECISION ALIGNMENT */}
           <div style={{ 
             padding: '0 20px', 
             borderBottom: `1px solid ${C.border}`, 
-            height: isMobile ? '70px' : '80px', // Matches exactly with the main header
+            height: isMobile ? '70px' : '80px', // Matches Main Header height exactly
             display: 'flex', 
             flexDirection: 'column', 
             alignItems: 'center', 
             justifyContent: 'center',
-            flexShrink: 0
+            gap: '2px', // Tighter integration between logo and text
+            flexShrink: 0,
+            overflow: 'hidden'
           }}>
-             <div style={{ marginBottom: 4 }}>
-                <TrackRecordLogo size={32} />
+             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '24px' }}>
+                <TrackRecordLogo size={34} />
              </div>
              
              {(!navCollapsed || isMobile) && (
-               <div className="fade-in">
+               <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                  <h1 style={{ 
                    fontFamily: "'Bebas Neue', sans-serif", 
-                   fontSize: '1.4rem', // Reduced size to sit elegantly in the 80px bar
+                   fontSize: '1.5rem', 
                    margin: 0, 
-                   lineHeight: 1, 
-                   letterSpacing: '4px', // Architectural high-tracking
+                   lineHeight: 0.8, // Pulls the baseline up for a tighter look
+                   letterSpacing: '4px', 
                    fontWeight: 400,
                    color: C.white,
-                   textAlign: 'center'
+                   textAlign: 'center',
+                   textTransform: 'uppercase'
                  }}>
                    TRACK<span style={{ color: C.teal }}>RECORD</span>
                  </h1>
