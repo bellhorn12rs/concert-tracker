@@ -1786,18 +1786,9 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
   const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-      <style>{`
-        @keyframes woofer-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); filter: brightness(1.8) drop-shadow(0 0 8px ${C.teal}); } }
-        .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
-        @keyframes beam-swing { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
-        .moving-light { animation: beam-swing 3s ease-in-out infinite; transform-origin: top center; }
-        @keyframes floor-glow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.6; } }
-        .stage-wash { animation: floor-glow 3s infinite; }
-      `}</style>
-
-      {/* DECADE BARS */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 12 }}>
+      {/* 📊 TOP BARS */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, flexShrink: 0 }}>
         {Object.entries(counts).map(([decade, count]) => {
           const m = { '90s': {label:'ANALOG', col:C.purple}, '00s': {label:'DIGITAL', col:C.cyan}, '10s': {label:'STREAM', col:C.teal}, '20s': {label:'HYPER', col:C.gold} }[decade];
           return (
@@ -1814,55 +1805,49 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
         })}
       </div>
 
-      {/* 🏟️ THE PRODUCTION RIG */}
-      <div style={{ flex: 1, borderTop: `1px solid ${C.border}`, paddingTop: 10, position: 'relative', overflow: 'hidden', background: '#010102', borderRadius: 8 }}>
-        {/* Overhead Truss */}
-        <div style={{ position: 'absolute', top: 0, width: '100%', height: '20px', background: '#111', borderBottom: '1.5px solid #444', zIndex: 100, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-           {[...Array(12)].map((_, i) => <div key={i} style={{ width: 3, height: 3, borderRadius: '50%', background: '#fff', boxShadow: '0 0 10px #fff' }} />)}
+      {/* 🎭 THE RIG (Now properly constrained) */}
+      <div style={{ 
+        flex: 1, 
+        position: 'relative', 
+        overflow: 'hidden', 
+        background: '#010102', 
+        borderRadius: 8, 
+        border: `1px solid ${C.border}`,
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        {/* LIGHTING LAYER */}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }}>
+          <svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+             <polygon points="500,0 200,1000 800,1000" fill="rgba(255,255,255,0.15)" style={{ filter: 'blur(30px)' }} />
+             {[...Array(4)].map((_, i) => (
+                <g key={i} className="moving-light" style={{ animationDelay: `${i*0.8}s` }}>
+                  <polygon points={`${200+i*200},0 ${i*200-100},1000 ${i*200+300},1000`} fill={hexToRgba(i % 2 === 0 ? C.purple : C.cyan, 0.35)} style={{ mixBlendMode: 'screen', filter: 'blur(20px)' }} />
+                </g>
+             ))}
+          </svg>
         </div>
 
-        {/* 7-Beam Array */}
-        <svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, zIndex: 10 }}>
-          <polygon points="500,0 200,1000 800,1000" fill="rgba(255,255,255,0.2)" style={{ filter: 'blur(20px)' }} />
-          {[...Array(6)].map((_, i) => {
-            const isLeft = i < 3;
-            const color = isLeft ? C.purple : C.cyan;
-            const xBase = isLeft ? (150 + i * 100) : (550 + (i-3) * 100);
-            return (
-              <g key={i} className="moving-light" style={{ animationDelay: `${i*0.4}s` }}>
-                <polygon points={`${xBase},0 ${xBase-200},1000 ${xBase+200},1000`} fill={hexToRgba(color, 0.4)} style={{ mixBlendMode: 'screen', filter: 'blur(15px)' }} />
-              </g>
-            );
-          })}
-        </svg>
-
-        {/* Back Wall Grid */}
-        <div style={{ position: 'absolute', top: 40, left: '20%', right: '20%', bottom: 60, backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`, backgroundSize: '15px 15px', zIndex: 5, opacity: 0.5 }} />
-
-        {/* IMAG Screens */}
-        <div style={{ position: 'absolute', top: 50, left: '6%', width: '25%', height: '65px', background: '#000', border: `2px solid ${currentStat.color}`, borderRadius: 4, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 20px ${hexToRgba(currentStat.color, 0.2)}` }}>
-           <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: currentStat.color, fontWeight: 900 }}>{currentStat.label}</div>
-        </div>
-        <div style={{ position: 'absolute', top: 50, right: '6%', width: '25%', height: '65px', background: '#000', border: `2px solid ${currentStat.color}`, borderRadius: 4, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 20px ${hexToRgba(currentStat.color, 0.2)}` }}>
-           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#fff' }}>{currentStat.val}</div>
+        {/* IMAG SCREEN */}
+        <div style={{ position: 'relative', zIndex: 10, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: 40 }}>
+           <div style={{ 
+             background: '#000', 
+             border: `2px solid ${currentStat.color}`, 
+             padding: '15px 30px', 
+             borderRadius: 4, 
+             textAlign: 'center',
+             boxShadow: `0 0 30px ${hexToRgba(currentStat.color, 0.3)}`
+           }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: currentStat.color, letterSpacing: 3, fontWeight: 900, marginBottom: 5 }}>{currentStat.label}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: '#fff', lineHeight: 1 }}>{currentStat.val}</div>
+           </div>
         </div>
 
-        {/* Speakers */}
-        {[8, 930].map(x => (
-          <div key={x} style={{ position: 'absolute', left: x < 500 ? x : 'auto', right: x > 500 ? 10 : 'auto', bottom: 45, width: 32, height: 120, background: '#0a0a0c', border: '1.5px solid #222', borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 5, padding: 4, zIndex: 30, boxShadow: '0 10px 30px #000' }}>
-            {[1,2,3,4].map(i => <div key={i} style={{ flex: 1, background: '#000', borderRadius: '50%', border: '1px solid #1a1a1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="speaker-cone" style={{ width: 14, height: 14, borderRadius: '50%', border: `1.5px solid ${C.teal}`, boxShadow: `inset 0 0 5px ${C.teal}` }} /></div>)}
-          </div>
-        ))}
-
-        {/* Illuminated Floor */}
-        <div style={{ position: 'absolute', bottom: 35, width: '100%', height: '60px', background: '#121216', borderTop: '3px solid #333', zIndex: 20, clipPath: 'polygon(5% 0%, 95% 0%, 100% 100%, 0% 100%)' }}>
-           <div className="stage-wash" style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at center top, ${hexToRgba(currentStat.color, 0.4)}, transparent 70%)` }} />
-           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 25px)' }} />
-        </div>
-
-        {/* FOH Bar */}
-        <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '32px', background: '#000', zIndex: 60, borderTop: '2px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-           <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: currentStat.color, letterSpacing: '4px', fontWeight: 900, textShadow: `0 0 8px ${currentStat.color}` }}>{currentStat.label} // RIG ACTIVE</div>
+        {/* STAGE FLOOR & FOH BAR */}
+        <div style={{ height: '40px', background: '#000', borderTop: `2px solid ${C.border}`, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+           <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: currentStat.color, letterSpacing: '4px', fontWeight: 900, textShadow: `0 0 8px ${currentStat.color}` }}>
+              SYSTEM STATUS // RIG ACTIVE
+           </div>
         </div>
       </div>
     </div>
@@ -5023,39 +5008,76 @@ export default function App() {
 
                   {/* ROW 4: LEADERBOARD & SPOTLIGHT */}
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
-                    <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column' }}>
-                      <CardTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span>HEAVY ROTATION 🎸</span>
-                        <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, opacity: 0.8 }}>{artistCounts.filter(a => a.count >= 5).length} ACTS QUALIFIED</span>
-                      </CardTitle>
-                      <div className="wristband-bin" style={{ flex: 1, overflowY: 'auto', paddingRight: 8, marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {artistCounts.filter(a => a.count >= 5).map((a, i) => {
-                          const maxCount = artistCounts[0].count;
-                          const percent = (a.count / maxCount) * 100;
-                          const isTop3 = i < 3;
-                          const accentColor = isTop3 ? [C.gold, C.cyan, C.purple][i] : C.tealDim;
-                          return (
-                            <div key={a.name} onClick={() => { setSearch(a.name); setBrowseView('shows'); setActiveTab('browse'); }}
-                              style={{ position: 'relative', padding: '14px 16px', background: 'rgba(0,0,0,0.5)', border: `1px solid ${i < 3 ? hexToRgba(accentColor, 0.4) : 'rgba(255,255,255,0.05)'}`, borderRadius: 8, cursor: 'pointer', overflow: 'hidden' }}>
-                              <div style={{ position: 'absolute', bottom: 0, left: 0, height: 2, width: `${percent}%`, background: isTop3 ? accentColor : C.tealDim, opacity: 0.5 }} />
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
-                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: i < 3 ? '1.4rem' : '1.1rem', color: isTop3 ? accentColor : C.grayDim, width: 30, textAlign: 'center' }}>#{i + 1}</div>
-                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                      <span style={{ fontSize: i < 3 ? '1.1rem' : '0.9rem', fontWeight: 800, color: '#fff', textTransform: 'uppercase' }}>{a.name}</span>
-                                      <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>{i === 0 ? '🏆 LEADER' : `${maxCount - a.count} BEHIND`}</span>
-                                    </div>
-                                 </div>
-                                 <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: i < 3 ? '2.2rem' : '1.6rem', color: isTop3 ? accentColor : '#fff', lineHeight: 0.9 }}>{a.count}</div>
-                                    <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim }}>SETS</div>
-                                 </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </Card>
+                    <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+  <CardTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+    <span>HEAVY ROTATION 🎸</span>
+    <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, opacity: 0.8 }}>
+      {artistCounts.filter(a => a.count >= 5).length} ACTS QUALIFIED
+    </span>
+  </CardTitle>
+  
+  <div className="wristband-bin" style={{ 
+    flex: 1, 
+    overflowY: 'auto', 
+    paddingRight: 8, 
+    marginTop: 5,
+    display: 'flex', 
+    flexDirection: 'column', 
+    gap: 12 // Increased gap to prevent crowding
+  }}>
+    {artistCounts.filter(a => a.count >= 5).map((a, i) => {
+      const isTop3 = i < 3;
+      const accentColor = isTop3 ? [C.gold, C.cyan, C.purple][i] : C.tealDim;
+      const percent = (a.count / artistCounts[0].count) * 100;
+
+      return (
+        <div key={a.name} onClick={() => { setSearch(a.name); setBrowseView('shows'); setActiveTab('browse'); }}
+          style={{ 
+            position: 'relative', 
+            padding: '12px 16px', // Balanced padding
+            background: 'rgba(255,255,255,0.03)', 
+            border: `1px solid ${isTop3 ? hexToRgba(accentColor, 0.3) : 'rgba(255,255,255,0.05)'}`,
+            borderRadius: 8, 
+            cursor: 'pointer', 
+            overflow: 'hidden',
+            flexShrink: 0,
+            minHeight: '54px' // Ensures consistency
+          }}
+        >
+          {/* Progress Bar Underglow */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, height: 2, width: `${percent}%`, background: accentColor, boxShadow: `0 0 10px ${accentColor}`, opacity: 0.4 }} />
+          
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: isTop3 ? accentColor : C.grayDim, width: 30, textAlign: 'center' }}>#{i + 1}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <span style={{ 
+                  fontFamily: "'Bebas Neue'", 
+                  fontSize: isTop3 ? '1.3rem' : '1.1rem', 
+                  color: '#fff', 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '1px',
+                  lineHeight: 1.2 // Fixed the clipping
+                }}>
+                  {a.name}
+                </span>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, marginTop: -2 }}>
+                  {i === 0 ? '🏆 ALL-TIME LEADER' : `${artistCounts[0].count - a.count} BEHIND`}
+                </span>
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: isTop3 ? '2rem' : '1.6rem', color: isTop3 ? accentColor : '#fff', lineHeight: 1 }}>
+                {a.count}
+              </div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, marginTop: 2 }}>SETS</div>
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</Card>
                     <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column' }}>
                       <CardTitle>SETLIST SPOTLIGHT 📋</CardTitle>
                       <div style={{ flex: 1, overflow: 'hidden' }}>
