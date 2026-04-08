@@ -4458,46 +4458,144 @@ async function handleUpcomingDelete(id) {
 
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
                   {/* UPGRADED: HEAVY ROTATION LEADERBOARD */}
-                  <Card neon style={{ minHeight: isMobile ? 'auto' : 420 }}>
-                    <CardTitle>HEAVY ROTATION 🎸</CardTitle>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
-                      {artistCounts.slice(0, 6).map((a, i) => {
-                        const maxCount = artistCounts[0].count;
-                        const percent = (a.count / maxCount) * 100;
-                        const isTop3 = i < 3;
-                        const accentColor = [C.gold, C.cyan, C.purple][i] || C.teal;
+                  <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column' }}>
+  <CardTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <span>HEAVY ROTATION 🎸</span>
+    <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, opacity: 0.8 }}>
+      {artistCounts.filter(a => a.count >= 5).length} ACTS QUALIFIED
+    </span>
+  </CardTitle>
+  
+  {/* SCROLLABLE WRAPPER */}
+  <div 
+    className="wristband-bin"
+    style={{ 
+      flex: 1, 
+      overflowY: 'auto', 
+      paddingRight: 8, 
+      marginTop: 10,
+      maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)',
+      WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10
+    }}
+  >
+    {artistCounts
+      .filter(a => a.count >= 5) // SHOW EVERYONE IN THE 5+ CLUB
+      .map((a, i) => {
+        const maxCount = artistCounts[0].count;
+        const percent = (a.count / maxCount) * 100;
+        const isTop3 = i < 3;
+        const accentColor = isTop3 ? [C.gold, C.cyan, C.purple][i] : C.tealDim;
 
-                        return (
-                          <div 
-                            key={a.name}
-                            onClick={() => { setSearch(a.name); setBrowseView('shows'); setActiveTab('browse'); }}
-                            style={{ 
-                              position: 'relative', padding: '12px 16px', background: 'rgba(0,0,0,0.4)', 
-                              border: `1px solid ${isTop3 ? hexToRgba(accentColor, 0.4) : C.border}`,
-                              borderRadius: 8, cursor: 'pointer', overflow: 'hidden', transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.transform = 'translateX(8px)'; e.currentTarget.style.borderColor = accentColor; }}
-                            onMouseLeave={e => { e.currentTarget.style.transform = 'translateX(0)'; e.currentTarget.style.borderColor = isTop3 ? hexToRgba(accentColor, 0.4) : C.border; }}
-                          >
-                            <div style={{ position: 'absolute', bottom: 0, left: 0, height: 2, width: `${percent}%`, background: accentColor, boxShadow: `0 0 10px ${accentColor}`, opacity: 0.6 }} />
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: isTop3 ? accentColor : C.grayDim, width: 25 }}>#{i + 1}</div>
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                  <span style={{ fontSize: '1rem', fontWeight: 700, color: isTop3 ? C.white : C.gray, letterSpacing: '0.5px' }}>{a.name.toUpperCase()}</span>
-                                  <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 1 }}>{i === 0 ? 'ALL-TIME LEADER' : `${maxCount - a.count} BEHIND CHASE`}</span>
-                                </div>
-                              </div>
-                              <div style={{ textAlign: 'right' }}>
-                                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: accentColor, lineHeight: 1 }}>{a.count}</div>
-                                <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim }}>SETS</div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </Card>
+        return (
+          <div 
+            key={a.name}
+            onClick={() => { setSearch(a.name); setBrowseView('shows'); setActiveTab('browse'); }}
+            style={{ 
+              position: 'relative', 
+              padding: '14px 16px', 
+              background: 'rgba(0,0,0,0.5)', 
+              border: `1px solid ${isTop3 ? hexToRgba(accentColor, 0.4) : 'rgba(255,255,255,0.05)'}`,
+              borderRadius: 8, 
+              cursor: 'pointer', 
+              overflow: 'hidden', 
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              flexShrink: 0
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'scale(1.02) translateX(5px)';
+              e.currentTarget.style.borderColor = accentColor;
+              e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'scale(1) translateX(0)';
+              e.currentTarget.style.borderColor = isTop3 ? hexToRgba(accentColor, 0.4) : 'rgba(255,255,255,0.05)';
+              e.currentTarget.style.background = 'rgba(0,0,0,0.5)';
+            }}
+          >
+            {/* PROGRESS HEAT-BAR */}
+            <div style={{ 
+              position: 'absolute', 
+              bottom: 0, 
+              left: 0, 
+              height: 2, 
+              width: `${percent}%`, 
+              background: accentColor, 
+              boxShadow: `0 0 10px ${accentColor}`, 
+              opacity: 0.5 
+            }} />
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {/* RANKING */}
+                <div style={{ 
+                  fontFamily: "'Bebas Neue'", 
+                  fontSize: isTop3 ? '1.4rem' : '1.1rem', 
+                  color: isTop3 ? accentColor : C.grayDim, 
+                  width: 30,
+                  textAlign: 'center'
+                }}>
+                  #{i + 1}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ 
+                    fontSize: isTop3 ? '1.1rem' : '0.9rem', 
+                    fontWeight: isTop3 ? 800 : 600, 
+                    color: isTop3 ? C.white : C.gray, 
+                    letterSpacing: '0.5px',
+                    textTransform: 'uppercase'
+                  }}>
+                    {a.name}
+                  </span>
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 1 }}>
+                    {i === 0 ? '🏆 ALL-TIME LEADER' : `${maxCount - a.count} BEHIND LEAD`}
+                  </span>
+                </div>
+              </div>
+
+              {/* COUNT DISPLAY */}
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ 
+                  fontFamily: "'Bebas Neue'", 
+                  fontSize: isTop3 ? '2.2rem' : '1.6rem', 
+                  color: isTop3 ? accentColor : C.white, 
+                  lineHeight: 0.9 
+                }}>
+                  {a.count}
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, letterSpacing: 1 }}>SETS</div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+  </div>
+
+  {/* FOOTER STAT */}
+  <div style={{ 
+    padding: '12px 0 0', 
+    borderTop: `1px solid ${C.border}`, 
+    marginTop: 10,
+    display: 'flex',
+    justifyContent: 'center'
+  }}>
+    <button 
+      onClick={() => { setBrowseView('artists'); setActiveTab('browse'); }}
+      style={{ 
+        background: 'none', border: 'none', color: C.teal, 
+        fontFamily: "'Space Mono'", fontSize: 8, cursor: 'pointer', 
+        letterSpacing: 2, opacity: 0.6 
+      }}
+      onMouseEnter={e => e.currentTarget.style.opacity = 1}
+      onMouseLeave={e => e.currentTarget.style.opacity = 0.6}
+    >
+      EXPLORE FULL ROSTER [TOTAL: {artistCounts.length}]
+    </button>
+  </div>
+</Card>/Card>
                   
                   <Card neon style={{ minHeight: 400 }}><CardTitle>Setlist Spotlight 📋</CardTitle><SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} /></Card>
                 </div>
