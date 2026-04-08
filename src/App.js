@@ -3878,8 +3878,8 @@ function ThemeSwitcher({ isMobile }) {
   const current = THEMES[themeId];
 
   return (
-    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: isMobile ? 4 : 8, flexShrink: 0 }}>
-      {/* HIDE THE LABEL COMPLETELY ON MOBILE */}
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+      {/* Hide label completely on mobile */}
       {!isMobile && (
         <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 1, fontWeight: 700, whiteSpace: 'nowrap' }}>
           CONSOLE_VIBE:
@@ -3889,39 +3889,33 @@ function ThemeSwitcher({ isMobile }) {
       <button
         onClick={() => setOpen(o => !o)}
         style={{ 
-          display: 'flex', alignItems: 'center', gap: isMobile ? 5 : 8, 
+          display: 'flex', alignItems: 'center', gap: isMobile ? 4 : 8, 
           background: 'rgba(0,0,0,0.6)', border: `1px solid ${current.dot}`, 
           borderRadius: '4px', padding: isMobile ? '4px 6px' : '4px 10px', cursor: 'pointer', 
           transition: 'all 0.2s',
           boxShadow: `0 0 10px ${hexToRgba(current.dot, 0.2)}`
         }}
       >
-        {/* The "Status Light" */}
-        <div style={{ 
-          width: isMobile ? 5 : 6, height: isMobile ? 5 : 6, 
-          borderRadius: '50%', background: current.dot, 
-          boxShadow: `0 0 8px ${current.dot}` 
-        }} />
+        <div style={{ width: 5, height: 5, borderRadius: '50%', background: current.dot, boxShadow: `0 0 8px ${current.dot}` }} />
         
+        {/* Shorten name/font on mobile */}
         <span style={{ 
           fontFamily: "'Bebas Neue'", 
-          fontSize: isMobile ? '0.7rem' : '0.9rem', 
+          fontSize: isMobile ? '0.75rem' : '0.9rem', 
           color: '#fff', 
           letterSpacing: '0.5px', 
-          textTransform: 'uppercase', 
-          whiteSpace: 'nowrap' 
+          textTransform: 'uppercase' 
         }}>
           {current.name}
         </span>
-        
-        <span style={{ color: C.gray, fontSize: isMobile ? 6 : 8 }}>{open ? '▲' : '▼'}</span>
+        <span style={{ color: C.gray, fontSize: 8 }}>{open ? '▲' : '▼'}</span>
       </button>
 
       {open && (
         <div style={{ 
-          position: 'absolute', top: 'calc(100% + 10px)', right: 0, 
+          position: 'absolute', top: 'calc(100% + 8px)', right: 0, 
           background: '#050508', border: `1px solid ${C.border}`, 
-          borderRadius: 4, padding: 6, minWidth: isMobile ? 140 : 180, zIndex: 10000, 
+          borderRadius: 4, padding: 6, minWidth: isMobile ? 130 : 180, zIndex: 10000, 
           boxShadow: `0 20px 50px rgba(0,0,0,0.9)`
         }}>
           {THEME_ORDER.map(id => {
@@ -3931,7 +3925,7 @@ function ThemeSwitcher({ isMobile }) {
                 style={{ 
                   display: 'flex', alignItems: 'center', gap: 10, width: '100%', 
                   background: id === themeId ? `${t.dot}15` : 'transparent', 
-                  border: 'none', borderRadius: 2, padding: '8px', cursor: 'pointer'
+                  border: 'none', borderRadius: 2, padding: '10px', cursor: 'pointer'
                 }}
               >
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: t.dot }} />
@@ -4417,16 +4411,27 @@ async function handleUpcomingDelete(id) {
         <div style={{ flex: 1, height: '100vh', overflowY: 'auto', overflowX: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', background: C.bg }}>
           
           <header style={{ 
-            padding: '10px 30px', 
+            padding: isMobile ? '8px 12px' : '10px 30px', // Tighten padding on mobile
             background: `linear-gradient(to bottom, ${C.bg} 95%, transparent)`, 
             position: 'sticky', top: 0, zIndex: 100,
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             borderBottom: `1px solid ${C.border}`,
-            height: '80px', flexShrink: 0
+            height: isMobile ? '70px' : '80px', 
+            flexShrink: 0
           }}>
-             <div style={{ display: 'flex', flex: 1, maxWidth: 'calc(100% - 350px)', gap: 10 }}>
+             <div style={{ 
+               display: 'flex', 
+               flex: 1, 
+               maxWidth: isMobile ? 'calc(100% - 100px)' : 'calc(100% - 300px)', 
+               gap: isMobile ? 4 : 10 
+             }}>
                 {isMobile && (
-                  <button onClick={() => setNavCollapsed(false)} style={{ background: 'none', border: `1px solid ${C.teal}`, color: C.teal, padding: '5px 10px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 9 }}>MENU</button>
+                  <button 
+                    onClick={() => setNavCollapsed(false)} 
+                    style={{ background: 'none', border: `1px solid ${C.teal}`, color: C.teal, padding: '4px 8px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 8, marginRight: 4 }}
+                  >
+                    MENU
+                  </button>
                 )}
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 0, flex: 1 }}>
@@ -4437,16 +4442,17 @@ async function handleUpcomingDelete(id) {
                     { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'VENUES', color: C.red, onClick: () => setActiveTab('venues') },
                     { value: headerStats.setlistCount, label: 'FILES', color: C.gold, onClick: () => setActiveTab('vault') }
                   ].map((s, i) => (
-                    <div key={s.label} onClick={s.onClick} style={{ textAlign: 'center', borderRight: i < 4 ? `1px solid ${C.border}` : 'none', padding: '0 5px', cursor: 'pointer' }}>
-                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.2rem' : '1.8rem', color: s.color, lineHeight: 1 }}>{s.value}</div>
-                      <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, letterSpacing: 1 }}>{s.label}</div>
+                    <div key={s.label} onClick={s.onClick} style={{ textAlign: 'center', borderRight: i < 4 ? `1px solid ${C.border}` : 'none', padding: '0 2px', cursor: 'pointer' }}>
+                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1rem' : '1.8rem', color: s.color, lineHeight: 1 }}>{s.value}</div>
+                      <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: C.grayDim, letterSpacing: 0.5 }}>{s.label}</div>
                     </div>
                   ))}
                 </div>
              </div>
              
-             <div style={{ display: 'flex', alignItems: 'center', gap: 15, flexShrink: 0 }}>
-                <ThemeSwitcher />
+             {/* Pass isMobile to the switcher */}
+             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                <ThemeSwitcher isMobile={isMobile} />
                 {!isMobile && (
                   <div style={{ position: 'relative', height: '40px', width: '80px' }}>
                     <div style={{ position: 'absolute', top: '-110px', right: 0 }}>
