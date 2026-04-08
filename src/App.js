@@ -1803,7 +1803,7 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
   useEffect(() => {
     const timer = setInterval(() => {
       setStatIdx((prev) => (prev + 1) % rotatingStats.length);
-    }, 3000); // Slightly faster rotation
+    }, 3000); 
     return () => clearInterval(timer);
   }, [rotatingStats.length]);
 
@@ -1812,26 +1812,22 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-      
       <style>{`
         @keyframes woofer-pulse {
           0%, 100% { transform: scale(1); filter: brightness(1.2); }
           50% { transform: scale(1.1); filter: brightness(2) drop-shadow(0 0 12px ${C.teal}); }
         }
         .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
-        
         @keyframes beam-swing {
           0%, 100% { transform: rotate(-10deg); }
           50% { transform: rotate(10deg); }
         }
         .moving-light { animation: beam-swing 3s ease-in-out infinite; transform-origin: top center; }
-        
         @keyframes truss-flash {
           0%, 100% { background: #fff; box-shadow: 0 0 15px #fff; }
           50% { background: #444; box-shadow: none; }
         }
         .truss-bulb { animation: truss-flash 1.5s infinite; }
-
         @keyframes floor-glow {
            0%, 100% { opacity: 0.3; }
            50% { opacity: 0.6; }
@@ -1857,7 +1853,7 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
         })}
       </div>
 
-      {/* 🎭 THE MAIN STAGE (Vivid Edition) */}
+      {/* 🎭 THE MAIN STAGE */}
       <div style={{ flex: 1, borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
         <div style={{ 
           width: '100%', height: '100%', background: '#010102', borderRadius: 8, 
@@ -1865,18 +1861,13 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
           boxShadow: 'inset 0 0 80px rgba(0,0,0,1)'
         }}>
           
-          {/* 1. BRIGHT OVERHEAD TRUSS */}
           <div style={{ position: 'absolute', top: 0, width: '100%', height: '22px', background: '#111', borderBottom: '2px solid #555', zIndex: 100, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
              {[...Array(12)].map((_, i) => <div key={i} className="truss-bulb" style={{ width: 4, height: 4, borderRadius: '50%', animationDelay: `${i*0.15}s` }} />)}
           </div>
 
-          {/* 2. HIGH-INTENSITY SVG LIGHTING RIG */}
           <div style={{ position: 'absolute', inset: 0, zIndex: 10 }}>
              <svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-                {/* Massive White Center Spot */}
                 <polygon points="500,0 200,1000 800,1000" fill="rgba(255,255,255,0.25)" style={{ filter: 'blur(20px)' }} />
-
-                {/* 6 High-Opacity Color Beams */}
                 {[...Array(6)].map((_, i) => {
                   const isLeft = i < 3;
                   const color = isLeft ? C.purple : C.cyan;
@@ -1890,14 +1881,8 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
              </svg>
           </div>
 
-          {/* 3. CENTER BACK-WALL (Kills the empty black) */}
-          <div style={{ 
-            position: 'absolute', top: 40, left: '25%', right: '25%', bottom: 60,
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`,
-            backgroundSize: '15px 15px', zIndex: 5, opacity: 0.5, border: '1px solid rgba(255,255,255,0.03)'
-          }} />
+          <div style={{ position: 'absolute', top: 40, left: '25%', right: '25%', bottom: 60, backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`, backgroundSize: '15px 15px', zIndex: 5, opacity: 0.5, border: '1px solid rgba(255,255,255,0.03)' }} />
 
-          {/* 4. LARGE IMAG SCREENS */}
           <div style={{ position: 'absolute', top: 55, left: '6%', width: '25%', height: '70px', zIndex: 20 }} className="side-screen">
             <div style={{ width: '100%', height: '100%', background: '#000', border: `2px solid ${currentStat.color}`, borderRadius: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 30px ${hexToRgba(currentStat.color, 0.3)}` }}>
                <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: currentStat.color, letterSpacing: 2, fontWeight: 900 }}>{currentStat.label}</div>
@@ -1910,21 +1895,17 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
             </div>
           </div>
 
-          {/* 5. SPEAKER STACKS */}
           {[ {side: 'left'}, {side: 'right'} ].map(s => (
             <div key={s.side} style={{ position: 'absolute', [s.side]: 12, bottom: 45, width: 38, height: 130, background: '#0a0a0c', border: `2px solid #222`, borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 6, padding: 5, zIndex: 30, boxShadow: '0 10px 40px #000' }}>
               {[1,2,3,4].map(i => <div key={i} style={{ flex: 1, background: '#000', borderRadius: '50%', border: '1px solid #1a1a1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="speaker-cone" style={{ width: 18, height: 18, borderRadius: '50%', border: `2.2px solid ${C.teal}`, background: 'radial-gradient(circle, #000, #111)' }} /></div>)}
             </div>
           ))}
 
-          {/* 6. ILLUMINATED STAGE FLOOR */}
           <div style={{ position: 'absolute', bottom: 35, width: '100%', height: '70px', background: '#1a1a1e', borderTop: '3px solid #444', zIndex: 20, clipPath: 'polygon(5% 0%, 95% 0%, 100% 100%, 0% 100%)' }}>
-             {/* Dynamic Floor Wash */}
              <div className="stage-wash" style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at center top, ${hexToRgba(currentStat.color, 0.4)}, transparent 70%)`, transition: 'background 0.5s ease' }} />
              <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.1) 0px, rgba(255,255,255,0.1) 1px, transparent 1px, transparent 20px)' }} />
           </div>
 
-          {/* 7. FRONT OF HOUSE BAR */}
           <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '32px', background: '#000', zIndex: 60, borderTop: '2px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
              <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: currentStat.color, letterSpacing: '5px', fontWeight: 900, textShadow: `0 0 8px ${currentStat.color}`, transition: 'color 0.5s ease' }}>
                 {currentStat.label} // RIG STATUS: ACTIVE
@@ -4926,27 +4907,37 @@ export default function App() {
                 </Card>
               </div>
 
-              {/* ROW 3: TURNTABLE, PASSPORTS, STAGE */}
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', 
-                gap: 20,
-                alignItems: 'stretch',
-                height: isMobile ? 'auto' : '480px', 
-                marginBottom: 20
-              }}>
-                <Card neon>
-                  <DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} concerts={concerts} />
-                </Card>
-                <Card neon>
-                  <CardTitle>Festival Passports</CardTitle>
-                  <TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} />
-                </Card>
-                <Card neon>
-                  <CardTitle>By Decade</CardTitle>
-                  <DecadeBlocks sets={allSetsList} headerStats={headerStats} concerts={concerts} />
-                </Card>
-              </div>
+              {/* ── ROW 3: TURNTABLE, PASSPORTS, STAGE ── */}
+<div style={{ 
+  display: 'grid', 
+  gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', 
+  gap: 20,
+  alignItems: 'stretch',
+  height: isMobile ? 'auto' : '480px', 
+  marginBottom: 20
+}}>
+  <Card neon>
+    <DonutChart 
+      fest={headerStats.festDays} 
+      solo={headerStats.totalShows - headerStats.festDays} 
+      concerts={concerts} 
+    />
+  </Card>
+  
+  <Card neon>
+    <CardTitle>Festival Passports</CardTitle>
+    <TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} />
+  </Card>
+  
+  <Card neon>
+    <CardTitle>By Decade</CardTitle>
+    <DecadeBlocks 
+      sets={allSetsList} 
+      headerStats={headerStats} 
+      concerts={concerts} 
+    />
+  </Card>
+</div>
 
               {/* ROW 4: LEADERBOARD & SPOTLIGHT */}
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
