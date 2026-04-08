@@ -1725,6 +1725,7 @@ function TopFestBlocks({ festBreakdown, concerts }) {
 }
 
 // ─── 3. THE DECADE STAGE (RIGHT) ────────────────────────────────
+// ─── 3. THE DECADE STAGE (RIGHT) ────────────────────────────────
 function DecadeBlocks({ sets }) {
   if (!sets) return null;
   
@@ -1754,28 +1755,27 @@ function DecadeBlocks({ sets }) {
       
       <style>{`
         @keyframes woofer-pulse {
-          0%, 100% { transform: scale(1); opacity: 0.8; }
-          50% { transform: scale(1.15); opacity: 1; filter: brightness(1.5); }
+          0%, 100% { transform: scale(1); filter: brightness(1); }
+          50% { transform: scale(1.1); filter: brightness(1.8) drop-shadow(0 0 5px ${C.teal}); }
         }
         .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
         
-        @keyframes chasing-lights {
-          0% { opacity: 0.3; }
-          50% { opacity: 1; box-shadow: 0 0 10px #fff; }
-          100% { opacity: 0.3; }
+        @keyframes light-swing {
+          0%, 100% { transform: rotate(-5deg); opacity: 0.4; }
+          50% { transform: rotate(5deg); opacity: 0.7; }
         }
-        .truss-bulb { animation: chasing-lights 1s infinite; }
+        .swing-beam { animation: light-swing 3s ease-in-out infinite; transform-origin: top center; }
       `}</style>
 
-      {/* 🟢 DATA ROWS (The "Header") */}
+      {/* 🟢 DATA ROWS */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {Object.entries(counts).map(([decade, count]) => {
           const m = media[decade];
           return (
             <div key={decade} style={{ 
               display: 'flex', alignItems: 'center', gap: 12, 
-              background: 'rgba(255,255,255,0.02)', padding: '8px 14px', 
-              borderRadius: 6, border: `1px solid ${hexToRgba(m.color, 0.15)}` 
+              background: 'rgba(255,255,255,0.03)', padding: '8px 14px', 
+              borderRadius: 6, border: `1px solid ${hexToRgba(m.color, 0.2)}` 
             }}>
               <span style={{ fontSize: '1rem' }}>{m.icon}</span>
               <div style={{ flex: 1 }}>
@@ -1784,10 +1784,7 @@ function DecadeBlocks({ sets }) {
                   <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff', opacity: 0.6 }}>{decade}</span>
                 </div>
                 <div style={{ height: 3, background: '#000', borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{ 
-                    height: '100%', width: `${(count/maxVal)*100}%`, 
-                    background: m.color, boxShadow: `0 0 10px ${m.color}` 
-                  }} />
+                  <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.color, boxShadow: `0 0 10px ${m.color}` }} />
                 </div>
               </div>
               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', minWidth: 40, textAlign: 'right' }}>{count}</div>
@@ -1796,95 +1793,95 @@ function DecadeBlocks({ sets }) {
         })}
       </div>
 
-      {/* 🎭 THE GROUNDS: FERRIS WHEEL + MAIN STAGE */}
+      {/* 🎭 THE GROUNDS */}
       <div style={{ 
         flex: 1, display: 'grid', gridTemplateColumns: '120px 1fr', 
         borderTop: `1px solid ${C.border}`, paddingTop: 15, alignItems: 'end' 
       }}>
         
-        {/* FERRIS WHEEL SIDEBAR */}
+        {/* FERRIS WHEEL SECTION */}
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '180px', borderRight: `1px dashed ${C.border}` }}>
-           <FerrisWheel size={130} />
+           <FerrisWheel size={110} />
         </div>
 
-        {/* 🏟️ THE CONCERT STAGE RIG */}
+        {/* 🏟️ THE CONCERT STAGE (Depth-Fixed) */}
         <div style={{ padding: '0 10px', height: '180px' }}>
           <div style={{ 
-            width: '100%', height: '100%', background: '#050508', borderRadius: 8, 
-            border: `1px solid ${C.border}`, position: 'relative', overflow: 'hidden'
+            width: '100%', height: '100%', background: '#08080a', borderRadius: 8, 
+            border: `1px solid ${C.border}`, position: 'relative', overflow: 'hidden',
+            boxShadow: 'inset 0 0 40px #000'
           }}>
             
-            {/* 1. OVERHEAD TRUSSING (The Ceiling) */}
+            {/* 1. BACK WALL (Defined with subtle grid) */}
             <div style={{ 
-              position: 'absolute', top: 0, width: '100%', height: '18px', 
-              background: '#111', borderBottom: '1px solid #444', zIndex: 40,
-              display: 'flex', justifyContent: 'space-around', alignItems: 'center'
+              position: 'absolute', inset: '0 0 50px 0', 
+              backgroundImage: `linear-gradient(${C.border} 1px, transparent 1px), linear-gradient(90deg, ${C.border} 1px, transparent 1px)`,
+              backgroundSize: '20px 20px', opacity: 0.05, zIndex: 1
+            }} />
+
+            {/* 2. LIGHTING BEAMS (Brighter & Swinging) */}
+            <div style={{ position: 'absolute', inset: 0, zIndex: 5 }}>
+              <div className="swing-beam" style={{ position: 'absolute', left: '20%', top: -10, width: 60, height: '140%', background: `linear-gradient(to bottom, ${hexToRgba(C.purple, 0.8)}, transparent)`, clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
+              <div className="swing-beam" style={{ position: 'absolute', right: '20%', top: -10, width: 60, height: '140%', background: `linear-gradient(to bottom, ${hexToRgba(C.cyan, 0.8)}, transparent)`, clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', animationDelay: '1.5s' }} />
+            </div>
+
+            {/* 3. THE STAGE FLOOR (High Contrast Grid) */}
+            <div style={{ 
+              position: 'absolute', bottom: 35, width: '100%', height: '60px', 
+              background: '#121216', // Lighter grey for visibility
+              borderTop: `2px solid #333`, zIndex: 10,
+              clipPath: 'polygon(12% 0%, 88% 0%, 100% 100%, 0% 100%)',
+              boxShadow: '0 -10px 20px rgba(0,0,0,0.5)'
             }}>
-               {[...Array(12)].map((_, i) => (
-                 <div key={i} className="truss-bulb" style={{ 
-                   width: 3, height: 3, borderRadius: '50%', background: '#fff', 
-                   animationDelay: `${i * 0.1}s` 
-                 }} />
-               ))}
+               {/* Reflection Grid */}
+               <div style={{ 
+                 position: 'absolute', inset: 0, 
+                 backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.1) 0px, rgba(255,255,255,0.1) 1px, transparent 1px, transparent 15px)',
+                 opacity: 0.5
+               }} />
+               {/* Light Pool on Floor */}
+               <div style={{ position: 'absolute', top: 0, left: '20%', width: '60%', height: '100%', background: `radial-gradient(ellipse at top, ${hexToRgba(C.teal, 0.2)}, transparent 70%)` }} />
             </div>
 
-            {/* 2. LIGHTING BEAMS */}
-            <div style={{ position: 'absolute', inset: 0, zIndex: 5, opacity: 0.4 }}>
-              <div className="ultra-beam" style={{ position: 'absolute', left: '10%', top: -10, width: 80, height: '150%', background: `linear-gradient(to bottom, ${C.purple}, transparent)`, clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
-              <div className="ultra-beam" style={{ position: 'absolute', right: '10%', top: -10, width: 80, height: '150%', background: `linear-gradient(to bottom, ${C.cyan}, transparent)`, clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
-            </div>
-
-            {/* 3. SPEAKER STACKS (Grounded to Floor) */}
-            {[ {side: 'left'}, {side: 'right'} ].map(s => (
+            {/* 4. SPEAKER STACKS (Pop against floor) */}
+            {[ {side: 'left', pos: 8}, {side: 'right', pos: 8} ].map(s => (
               <div key={s.side} style={{ 
-                position: 'absolute', [s.side]: 10, bottom: 40, // Anchored above floor
-                width: 30, height: 90, background: '#0a0a0c', 
-                border: `1px solid ${hexToRgba(C.teal, 0.3)}`, borderRadius: 4, 
-                display: 'flex', flexDirection: 'column', gap: 6, padding: 4, zIndex: 30
+                position: 'absolute', [s.side]: s.pos, bottom: 45, 
+                width: 28, height: 80, background: '#000', 
+                border: `1.5px solid #222`, borderRadius: 4, 
+                display: 'flex', flexDirection: 'column', gap: 4, padding: 3, zIndex: 30,
+                boxShadow: `0 5px 15px rgba(0,0,0,0.8), 0 0 10px ${hexToRgba(C.teal, 0.1)}`
               }}>
                 {[1,2,3].map(i => (
-                  <div key={i} style={{ flex: 1, background: '#000', borderRadius: '50%', border: '1px solid #1a1a1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div className="speaker-cone" style={{ width: 16, height: 16, borderRadius: '50%', border: `1px solid ${C.teal}`, boxShadow: `inset 0 0 5px ${C.teal}` }} />
+                  <div key={i} style={{ flex: 1, background: '#050505', borderRadius: '50%', border: '1px solid #1a1a1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="speaker-cone" style={{ width: 14, height: 14, borderRadius: '50%', border: `1.5px solid ${C.teal}`, background: '#000' }} />
                   </div>
                 ))}
               </div>
             ))}
 
-            {/* 4. THE STAGE FLOOR (Perspective) */}
+            {/* 5. THE BARRICADE (Silver/Metallic for Visibility) */}
             <div style={{ 
-              position: 'absolute', bottom: 35, width: '100%', height: '50px', 
-              background: 'linear-gradient(to bottom, #0f0f12 0%, #050508 100%)',
-              borderTop: '2px solid #222', zIndex: 10,
-              clipPath: 'polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%)'
+              position: 'absolute', bottom: 32, left: 0, right: 0, height: 5, 
+              background: 'linear-gradient(to bottom, #777, #444)', // Metallic gradient
+              borderBottom: '1px solid #111', zIndex: 50 
             }}>
-               <div style={{ 
-                 position: 'absolute', inset: 0, 
-                 backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 20px)' 
-               }} />
-            </div>
-
-            {/* 5. THE BARRICADE (Physical Gap) */}
-            <div style={{ 
-              position: 'absolute', bottom: 32, left: 0, right: 0, height: 4, 
-              background: '#333', borderTop: '1px solid #555', borderBottom: '1px solid #111', zHeight: 50 
-            }}>
-               {/* Barricade Posts */}
-               <div style={{ display: 'flex', justifyContent: 'space-around', padding: '0 5px' }}>
-                 {[...Array(15)].map((_, i) => <div key={i} style={{ width: 1, height: 6, background: '#222' }} />)}
+               <div style={{ display: 'flex', justifyContent: 'space-around', padding: '0 2px' }}>
+                 {[...Array(24)].map((_, i) => <div key={i} style={{ width: 1, height: 8, background: '#555' }} />)}
                </div>
             </div>
 
-            {/* 6. STAFF PIT / ACCESS (The Foreground) */}
+            {/* 6. STAFF PIT (Grounded with text) */}
             <div style={{ 
               position: 'absolute', bottom: 0, width: '100%', height: '32px', 
-              background: '#030305', zIndex: 60, borderTop: '1px solid #111',
+              background: '#030305', zIndex: 60, borderTop: '2px solid #111',
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
                <div style={{ 
-                 fontFamily: "'Space Mono'", fontSize: '6px', color: C.grayDim, 
-                 letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.6 
+                 fontFamily: "'Space Mono'", fontSize: '6px', color: C.teal, 
+                 letterSpacing: '3px', textTransform: 'uppercase', fontWeight: 900
                }}>
-                 // SECURE ACCESS PIT // STAFF ONLY
+                 TRACKRECORD // ACCESS PIT
                </div>
             </div>
 
