@@ -888,7 +888,90 @@ function FerrisWheel({ size = 120 }) {
     </svg>
   );
 }
+function TrackRecordLogo({ size = 50, themeColor = C.teal }) {
+  const isMobile = window.innerWidth < 768;
+  const logoSize = isMobile ? (size * 0.8) : size;
 
+  return (
+    <svg 
+      width={logoSize} 
+      height={logoSize} 
+      viewBox="0 0 100 100" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ overflow: 'visible' }}
+    >
+      <defs>
+        {/* The intense neon glow filter */}
+        <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        
+        {/* Subtle, pulsing signal animation */}
+        <style>
+          {`
+            @keyframes pulseSignal {
+              0% { opacity: 0.6; stroke-width: 2px; }
+              50% { opacity: 1; stroke-width: 3px; }
+              100% { opacity: 0.6; stroke-width: 2px; }
+            }
+            .active-signal {
+              animation: pulseSignal 2s infinite ease-in-out;
+            }
+          `}
+        </style>
+      </defs>
+
+      {/* ── THE "RECORD" (Outer Grooves) ── */}
+      <circle cx="50" cy="50" r="48" stroke={hexToRgba(C.border, 0.5)} strokeWidth="0.5" />
+      <circle cx="50" cy="50" r="38" stroke={hexToRgba(C.border, 0.3)} strokeWidth="0.5" strokeDasharray="2 4" />
+      <circle cx="50" cy="50" r="28" stroke={hexToRgba(C.border, 0.2)} strokeWidth="0.5" />
+
+      {/* THE "SPINDLE HOLE" */}
+      <circle cx="50" cy="50" r="4" fill={hexToRgba(C.border, 0.2)} stroke={C.border} strokeWidth="1"/>
+
+      {/* ── THE "TRACK" (Sonic Pulse) ── */}
+      <path 
+        d="M50 8V92" 
+        stroke={C.bgCard} 
+        strokeWidth="6" 
+        strokeLinecap="round"
+      />
+      
+      {/* Waveform 1 (Glow Layer) */}
+      <path 
+        d="M50 15L45 25L55 35L48 45L52 55L45 65L55 75L50 85" 
+        stroke={themeColor} 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        filter="url(#neonGlow)" 
+        opacity="0.3"
+      />
+
+      {/* Waveform 2 (Main Signal - Pulsing) */}
+      <path 
+        className="active-signal"
+        d="M50 15L45 25L55 35L48 45L52 55L45 65L55 75L50 85" 
+        stroke={C.white} 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+      />
+
+      {/* The Playhead Pointer */}
+      <polygon 
+        points="38,50 42,48 42,52" 
+        fill={themeColor} 
+        filter="url(#neonGlow)"
+      />
+    </svg>
+  );
+}
 // ─── NEWS TICKER ──────────────────────────────────────────────────────────────
 function NewsTicker({ concerts, artistCounts, genreStats }) {
   const items = useMemo(() => {
@@ -4340,14 +4423,19 @@ async function handleUpcomingDelete(id) {
             {isMobile ? '✕' : (navCollapsed ? '→' : '←')}
           </button>
 
-          {/* LOGO AREA */}
-          <div style={{ padding: '0 24px 30px', borderBottom: `1px solid ${C.border}`, marginBottom: 20, minHeight: '100px' }}>
-             <h1 style={{ fontFamily: "'Bebas Neue'", fontSize: navCollapsed && !isMobile ? '1.5rem' : '2.2rem', margin: 0, lineHeight: 1 }}>
-               🎸 {(!navCollapsed || isMobile) ? <span style={{ color: C.teal }}>LIVE // ARCHIVE</span> : <span style={{ color: C.teal }}>L//A</span>}
-             </h1>
+          {/* LOGO AREA - TRACKRECORD IDENTITY */}
+          <div style={{ padding: '0 24px 30px', borderBottom: `1px solid ${C.border}`, marginBottom: 20, minHeight: '130px', display: 'flex', flexDirection: 'column', alignItems: navCollapsed && !isMobile ? 'center' : 'flex-start' }}>
+             <div style={{ marginBottom: 15, position: 'relative' }}>
+                <TrackRecordLogo size={60} />
+             </div>
              {(!navCollapsed || isMobile) && (
-               <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, letterSpacing: 2, marginTop: 8 }}>
-                 V.2026.04.PRODUCTION
+               <div className="fade-in">
+                 <h1 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', margin: 0, lineHeight: 1, letterSpacing: '1px' }}>
+                   TRACK<span style={{ color: C.teal }}>RECORD</span>
+                 </h1>
+                 <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, letterSpacing: 2, marginTop: 8 }}>
+                   {isAdmin ? 'ADMIN CONSOLE V.2026.04' : 'LIVE // ARCHIVE SYSTEM'}
+                 </div>
                </div>
              )}
           </div>
