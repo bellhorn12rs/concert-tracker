@@ -3103,7 +3103,15 @@ function PassportTab({ passport, onNavigateToFest }) {
 // ─── BROWSE TAB ───────────────────────────────────────────────────────────────
 // ─── BROWSE TAB (Fixed for Artist Genres) ─────────────────────────────────────
 function BrowseTab({ browseView, setBrowseView, search, setSearch, yearFilter, setYearFilter, festFilter, setFestFilter, sortCol, setSortCol, sortDir, setSortDir, paged, page, setPage, totalPages, artistRows, years, onShare, onEdit, onSetGenre, genreMap, genreFilter, setGenreFilter }) {
+  
+  // ── SAFETY GATES ──
+  if (!Array.isArray(paged)) paged = [];
+  if (!Array.isArray(artistRows)) artistRows = [];
+  if (!Array.isArray(years)) years = [];
+  const safeGenreMap = genreMap || {};
+
   return (
+    <div style={{ marginTop:20 }} className="fade-in">
     <div style={{ marginTop:20 }} className="fade-in">
       <div style={{ display:'flex', flexWrap:'wrap', gap:10, marginBottom:20, background:C.bgCard, padding:15, borderRadius:8, border:`1px solid ${C.border}` }}>
         <input placeholder="Search artists, venues, cities..." value={search} onChange={e=>setSearch(e.target.value)} style={{ ...inputSt, flex:'1 1 260px' }} />
@@ -4158,78 +4166,66 @@ export default function App() {
   // This now pulls from the dedicated artist_genres table instead of concert rows
   const genreMap = useMemo(() => artistGenres, [artistGenres]);
 
+  // ── SAFE DATA DERIVATION ──
   const allSetsList = useMemo(() => {
     const r = [];
+    if (!concerts || !Array.isArray(concerts)) return r;
+    
     concerts.forEach(c => { 
+      if (!c) return; // Skip null rows
       const bands = Array.isArray(c.bands) ? c.bands : [c.artist].filter(Boolean); 
-      bands.forEach(band => { if (band) r.push({ ...c, artist: band }); }); 
+      bands.forEach(band => { 
+        if (band && typeof band === 'string') {
+          r.push({ ...c, artist: band }); 
+        }
+      }); 
     });
     return r;
   }, [concerts]);
 
-  const years = useMemo(() => [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort(), [concerts]);
-  const stateCounts = useMemo(() => { const m = {}; concerts.forEach(c => { if (c.state) m[c.state] = (m[c.state] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); }, [concerts]);
-
-  const headerStats = useMemo(() => ({
-    totalShows: concerts.length,
-    totalSets: allSetsList.length,
-    uniqueArtists: new Set(allSetsList.map(s => s.artist)).size,
-    festDays: concerts.filter(c => c.is_festival).length,
-    setlistCount: concerts.filter(c => c.has_setlist || c.has_setlist_names).length,
-  }), [concerts, allSetsList]);
-
-  // Per-band genre counts (Now using the dedicated genre table)
-  const genreStats = useMemo(() => {
-    const counts = {};
-    allSetsList.forEach(s => { 
-      const g = artistGenres[s.artist] || 'Other'; 
-      counts[g] = (counts[g] || 0) + 1; 
-    });
-    return Object.entries(counts)
-      .map(([name, count]) => ({ name, count, color: GENRE_COLORS[name] || GENRE_COLORS['Other'] }))
-      .sort((a, b) => b.count - a.count);
-  }, [allSetsList, artistGenres]);
-
-  // Grouping logic for the Stacked Bar Chart (TOP 15)
-const stackedTimelineData = useMemo(() => {
-  const yearsMap = {};
-  
-  // 1. Organize data by year and venue
-  allSetsList.forEach(s => {
-    const y = getYear(s.date);
-    if (!y) return;
-    if (!yearsMap[y]) yearsMap[y] = { year: String(y).slice(2), fullYear: y };
+  const applyFilters = useCallback((list, isSet = false) => {
+    if (!list || !Array.isArray(list)) return [];
     
-    const v = s.venue || 'Unknown Venue';
-    yearsMap[y][v] = (yearsMap[y][v] || 0) + 1;
-  });
+    let d = list;
+    if (yearFilter !== 'all') d = d.filter(r => getYear(r.date) === +yearFilter);
+    if (festFilter === 'fest') d = d.filter(r => r.is_festival);
+    if (festFilter === 'solo') d = d.filter(r => !r.is_festival);
+    
+    if (genreFilter !== 'all') {
+      d = d.filter(r => { 
+        const g = isSet ? (artistGenres[r.artist || '']) : (r.genre); 
+        return g === genreFilter; 
+      });
+    }
 
-  // 2. Identify Top 15 venues globally
-  const venueTotals = {};
-  allSetsList.forEach(s => {
-    const v = s.venue || 'Unknown Venue';
-    venueTotals[v] = (venueTotals[v] || 0) + 1;
-  });
-  
-  const topVenues = Object.entries(venueTotals)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 15) // <── Expanded to 15
-    .map(v => v[0]);
+    if (search) {
+      const q = search.toLowerCase();
+      d = d.filter(r => {
+        const bands = isSet ? [r.artist] : (r.bands || []);
+        const venue = r.venue || '';
+        const city = r.city || '';
+        const fest = r.festival_name || '';
+        
+        return bands.some(b => b && String(b).toLowerCase().includes(q)) || 
+               venue.toLowerCase().includes(q) || 
+               city.toLowerCase().includes(q) || 
+               fest.toLowerCase().includes(q);
+      });
+    }
+    return d;
+  }, [yearFilter, festFilter, genreFilter, search, artistGenres]);
 
-  // 3. Final formatting
-  return Object.values(yearsMap).sort((a, b) => a.fullYear - b.fullYear).map(yearData => {
-    const formatted = { ...yearData, other: 0 };
-    Object.keys(yearData).forEach(key => {
-      if (key !== 'year' && key !== 'fullYear') {
-        if (!topVenues.includes(key)) {
-          formatted.other += yearData[key];
-          delete formatted[key];
-        }
-      }
+  const filteredSets = useMemo(() => {
+    const d = applyFilters(allSetsList, true);
+    return [...d].sort((a, b) => { 
+      const col = sortCol || 'date';
+      const av = col === 'artist' ? (a.artist || '').toLowerCase() : (String(a[col] || '')).toLowerCase();
+      const bv = col === 'artist' ? (b.artist || '').toLowerCase() : (String(b[col] || '')).toLowerCase();
+      
+      if (col === 'date') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      return sortDir === 'asc' ? (av < bv ? -1 : 1) : (av > bv ? -1 : 1);
     });
-    return formatted;
-  });
-}, [allSetsList]);
+  }, [allSetsList, applyFilters, sortCol, sortDir]);
 
 // Get the list of venue keys for the <Bar /> components
 const venueKeys = useMemo(() => {
@@ -4296,7 +4292,14 @@ const venueKeys = useMemo(() => {
   const artistRows = useMemo(() => {
     if (browseView !== 'artists') return [];
     const m = {};
-    applyFilters(allSetsList, true).forEach(s => { if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; m[s.artist].shows.push(s); });
+    const filtered = applyFilters(allSetsList, true);
+    
+    filtered.forEach(s => { 
+      if (!s.artist) return;
+      if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; 
+      m[s.artist].shows.push(s); 
+    });
+    
     return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
   }, [allSetsList, applyFilters, browseView]);
 
