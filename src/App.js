@@ -3854,62 +3854,49 @@ function ThemeSwitcher() {
   const current = THEMES[themeId];
 
   return (
-    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12 }}>
-      {/* THE CALLOUT LABEL */}
-      <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.tealDim, letterSpacing: 2, fontWeight: 900, opacity: 0.8 }}>
-        UI_CONSOLE_VIBE:
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+      {/* Smaller, cleaner label */}
+      <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 1, fontWeight: 700, whiteSpace: 'nowrap' }}>
+        CONSOLE_VIBE:
       </span>
 
       <button
         onClick={() => setOpen(o => !o)}
         style={{ 
-          display: 'flex', alignItems: 'center', gap: 10, 
-          background: 'rgba(0,0,0,0.5)', border: `2px solid ${current.dot}`, 
-          borderRadius: '4px', padding: '8px 16px', cursor: 'pointer', 
-          transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-          boxShadow: `0 0 15px ${hexToRgba(current.dot, 0.3)}, inset 0 0 10px ${hexToRgba(current.dot, 0.1)}`
+          display: 'flex', alignItems: 'center', gap: 8, 
+          background: 'rgba(0,0,0,0.6)', border: `1px solid ${current.dot}`, 
+          borderRadius: '4px', padding: '4px 10px', cursor: 'pointer', 
+          transition: 'all 0.2s',
+          boxShadow: `0 0 10px ${hexToRgba(current.dot, 0.2)}`
         }}
-        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
       >
-        <div style={{ 
-          width: 10, height: 10, borderRadius: '50%', background: current.dot, 
-          boxShadow: `0 0 12px ${current.dot}`, animation: 'pulse 2s infinite' 
-        }} />
-        <span style={{ 
-          fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', 
-          letterSpacing: '1.5px', textTransform: 'uppercase' 
-        }}>
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: current.dot, boxShadow: `0 0 8px ${current.dot}` }} />
+        <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff', letterSpacing: '1px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
           {current.name}
         </span>
-        <span style={{ color: C.gray, fontSize: 10, marginLeft: 5 }}>{open ? '▲' : '▼'}</span>
+        <span style={{ color: C.gray, fontSize: 8 }}>{open ? '▲' : '▼'}</span>
       </button>
 
       {open && (
         <div style={{ 
-          position: 'absolute', top: 'calc(100% + 12px)', right: 0, 
+          position: 'absolute', top: 'calc(100% + 10px)', right: 0, 
           background: '#050508', border: `1px solid ${C.border}`, 
-          borderRadius: 4, padding: 10, minWidth: 200, zIndex: 10000, 
-          boxShadow: `0 20px 50px rgba(0,0,0,0.9)`,
-          animation: 'fade-in 0.2s ease-out'
+          borderRadius: 4, padding: 8, minWidth: 180, zIndex: 10000, 
+          boxShadow: `0 20px 50px rgba(0,0,0,0.9)`
         }}>
           {THEME_ORDER.map(id => {
             const t = THEMES[id];
             return (
               <button key={id} onClick={() => { setThemeId(id); setOpen(false); }}
                 style={{ 
-                  display: 'flex', alignItems: 'center', gap: 12, width: '100%', 
-                  background: id === themeId ? `${t.dot}22` : 'transparent', 
-                  border: 'none', borderRadius: 2, padding: '12px', cursor: 'pointer', 
-                  transition: '0.2s', marginBottom: 2
+                  display: 'flex', alignItems: 'center', gap: 10, width: '100%', 
+                  background: id === themeId ? `${t.dot}15` : 'transparent', 
+                  border: 'none', borderRadius: 2, padding: '10px', cursor: 'pointer'
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                onMouseLeave={e => id !== themeId && (e.currentTarget.style.background = 'transparent')}
               >
-                <div style={{ width: 12, height: 12, borderRadius: '50%', background: t.dot }} />
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.dot }} />
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#fff' }}>{t.name}</div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim }}>{t.desc || 'SYSTEM AESTHETIC'}</div>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff' }}>{t.name}</div>
                 </div>
               </button>
             );
@@ -4383,46 +4370,54 @@ async function handleUpcomingDelete(id) {
         {/* ── 2. THE MAIN STAGE ── */}
         <div style={{ flex: 1, height: '100vh', overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column' }}>
           
-          <header style={{ 
-            padding: isMobile ? '10px 15px' : '15px 40px', 
-            background: `linear-gradient(to bottom, ${C.bg} 90%, transparent)`, 
-            position: 'sticky', top: 0, zIndex: 100,
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            borderBottom: `1px solid ${C.border}`,
-            height: isMobile ? 'auto' : '85px'
-          }}>
-             <div style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'space-between' }}>
-                {isMobile && (
-                  <button onClick={() => setNavCollapsed(false)} style={{ background: 'rgba(0,229,204,0.1)', border: `1px solid ${C.teal}`, color: C.teal, padding: '8px 12px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 10 }}>MENU ☰</button>
-                )}
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: isMobile ? 5 : 0, flex: 1, maxWidth: isMobile ? '100%' : '1000px', marginLeft: isMobile ? 10 : 0 }}>
-                  {[
-                    { value: headerStats.totalSets, label: 'SETS', color: C.teal, icon: '🎵', onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } },
-                    { value: headerStats.uniqueArtists, label: 'ACTS', color: C.cyan, icon: '🎤', onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } },
-                    { value: headerStats.totalShows, label: 'DAYS', color: C.purple, icon: '📅', onClick: () => setActiveTab('timeline') },
-                    { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'VENUES', color: C.red, icon: '📍', onClick: () => setActiveTab('venues') },
-                    { value: headerStats.setlistCount, label: 'FILES', color: C.gold, icon: '📋', onClick: () => setActiveTab('vault') }
-                  ].map((s, i) => (
-                    <div key={s.label} onClick={s.onClick} style={{ padding: '5px', textAlign: 'center', cursor: 'pointer', borderRight: i < 4 && !isMobile ? `1px solid ${C.border}` : 'none' }}>
-                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.1rem' : '1.8rem', color: s.color, lineHeight: 1 }}>{s.value}</div>
-                      <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: C.grayDim, letterSpacing: 1 }}>{s.label}</div>
-                    </div>
-                  ))}
-                </div>
-             </div>
-             
-             <div style={{ display: 'flex', alignItems: 'center', gap: 15, marginLeft: isMobile ? 10 : 40 }}>
-                <ThemeSwitcher />
-                {!isMobile && (
-                  <div style={{ position: 'relative', height: '40px', width: '100px' }}>
-                    <div style={{ position: 'absolute', top: '-110px', right: 0 }}>
-                       <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
-                    </div>
+          <{/* ── HIGH-FIDELITY STAT CONSOLE ── */}
+        <header style={{ 
+          padding: '12px 30px', 
+          background: `linear-gradient(to bottom, ${C.bg} 95%, transparent)`, 
+          position: 'sticky', top: 0, zIndex: 100,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          borderBottom: `1px solid ${C.border}`,
+          height: '75px'
+        }}>
+           {/* THE BIG 5 STATS (Flexible Area) */}
+           <div style={{ display: 'flex', flex: 1, maxWidth: 'calc(100% - 350px)' }}>
+              {[
+                { value: headerStats.totalSets, label: 'TOTAL SETS', color: C.teal, icon: '🎵', onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } },
+                { value: headerStats.uniqueArtists, label: 'UNIQUE ACTS', color: C.cyan, icon: '🎤', onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } },
+                { value: headerStats.totalShows, label: 'SHOW DAYS', color: C.purple, icon: '📅', onClick: () => setActiveTab('timeline') },
+                { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'VENUES', color: C.red, icon: '📍', onClick: () => setActiveTab('venues') },
+                { value: headerStats.setlistCount, label: 'SETLISTS', color: C.gold, icon: '📋', onClick: () => setActiveTab('vault') }
+              ].map((s, i) => (
+                <div key={s.label} onClick={s.onClick}
+                  style={{ 
+                    flex: 1, padding: '0 10px', 
+                    borderRight: i < 4 ? `1px solid ${C.border}` : 'none', 
+                    textAlign: 'center', cursor: 'pointer', position: 'relative'
+                  }}
+                >
+                  <div style={{ fontSize: '0.8rem', marginBottom: 2, opacity: 0.6 }}>{s.icon}</div>
+                  <div style={{ whiteSpace: 'nowrap' }}>
+                    <CountUpStat value={s.value} label={s.label} color={s.color} />
                   </div>
-                )}
-             </div>
-          </header>
+                  {/* Neon Underline */}
+                  <div style={{ position: 'absolute', bottom: -12, left: '20%', right: '20%', height: 2, background: s.color, boxShadow: `0 0 8px ${s.color}`, opacity: 0.6 }} />
+                </div>
+              ))}
+           </div>
+           
+           {/* THEME + LANYARD GROUP (Fixed Area) */}
+           <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginLeft: 30, flexShrink: 0 }}>
+              <ThemeSwitcher />
+              
+              <div style={{ width: 1, height: 24, background: C.border }} />
+
+              <div style={{ position: 'relative', height: '40px', width: '80px' }}>
+                <div style={{ position: 'absolute', top: '-110px', right: 0 }}>
+                   <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
+                </div>
+              </div>
+           </div>
+        </header>
 
           <main style={{ padding: isMobile ? '10px 10px 100px' : '0 40px 100px', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
             {activeTab === 'dashboard' && (
