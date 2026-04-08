@@ -1601,7 +1601,7 @@ function DonutChart({ fest, solo, concerts }) {
   const OTHER_COLOR = "#666";
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '440px', justifyContent: 'space-between', padding: '5px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between', padding: '10px' }}>
       
       {/* 🟢 LEGEND SECTION */}
       <div style={{ textAlign: 'center' }}>
@@ -1683,7 +1683,7 @@ function TopFestBlocks({ festBreakdown, concerts }) {
   
   const colors = ['#00e5cc', '#00cfff', '#9966ff', '#ffcc00', '#00cc88', '#ff6699'];
 
-  // Calculate Footer Stats
+  // 1. Calculate Footer Stats
   const stats = useMemo(() => {
     const totalFests = festBreakdown.length;
     const totalDays = festBreakdown.reduce((sum, f) => sum + f[1], 0);
@@ -1697,18 +1697,19 @@ function TopFestBlocks({ festBreakdown, concerts }) {
       display: 'flex', 
       flexDirection: 'column', 
       height: '100%', 
-      minHeight: '440px', // Matches the Stadium Stage height
-      justifyContent: 'space-between' 
+      maxHeight: '440px', // Prevents stretching the dashboard row
+      justifyContent: 'space-between',
+      overflow: 'hidden' // Keeps everything contained
     }}>
       
-      {/* 1. SCROLLABLE WRISTBAND BIN */}
+      {/* 2. SCROLLABLE WRISTBAND BIN */}
       <div className="wristband-bin" style={{ 
         display: 'flex', 
         flexDirection: 'column', 
         gap: 12, 
-        flex: 1,
-        overflowY: 'auto', 
-        paddingRight: 8,
+        flex: 1,           // Takes up available space
+        overflowY: 'auto', // Enables internal scrolling
+        paddingRight: 8,   // Space for the scrollbar
         marginBottom: 15
       }}>
         {festBreakdown.map(([name, days], i) => {
@@ -1717,7 +1718,7 @@ function TopFestBlocks({ festBreakdown, concerts }) {
           const uniqueActs = new Set(festShows.flatMap(s => s.bands || [])).size;
           
           return (
-            <div key={name} style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+            <div key={name} style={{ display: 'flex', alignItems: 'center', position: 'relative', flexShrink: 0 }}>
               {/* Clasp */}
               <div style={{ position: 'absolute', left: 38, width: 14, height: 20, background: '#111', border: `1px solid ${color}`, borderRadius: 2, zIndex: 10 }} />
               
@@ -1729,28 +1730,33 @@ function TopFestBlocks({ festBreakdown, concerts }) {
               
               {/* Fabric Band */}
               <div style={{ flex: 1, height: 32, marginLeft: -10, padding: '0 20px 0 35px', background: color, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '0 4px 4px 0', boxShadow: 'inset 0 0 15px rgba(0,0,0,0.2)' }}>
-                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#000', letterSpacing: 0.5 }}>{name.toUpperCase()}</div>
-                 <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: 'rgba(0,0,0,0.4)', fontWeight: 900 }}>{uniqueActs} ACTS</div>
+                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#000', letterSpacing: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {name.toUpperCase()}
+                 </div>
+                 <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: 'rgba(0,0,0,0.4)', fontWeight: 900, flexShrink: 0 }}>
+                    {uniqueActs} ACTS
+                 </div>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* 🟢 2. PASSPORT STAMP SUMMARY (The "Anchor") */}
+      {/* 3. PASSPORT STAMP SUMMARY (The Footer Anchor) */}
       <div style={{ 
         paddingTop: 15, 
-        borderTop: `1px solid ${C.border}`,
+        borderTop: `1px solid ${C.border || '#333'}`,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         background: 'rgba(255,255,255,0.02)',
         borderRadius: '0 0 8px 8px',
-        padding: '15px 10px'
+        padding: '12px 10px',
+        flexShrink: 0 // Prevents the footer from disappearing
       }}>
         <div style={{ textAlign: 'center', flex: 1 }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, letterSpacing: 1 }}>TOTAL FESTIVALS</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.teal, lineHeight: 1, marginTop: 4 }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim || '#8899aa', letterSpacing: 1 }}>TOTAL FESTIVALS</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.teal || '#00e5cc', lineHeight: 1, marginTop: 4 }}>
             {stats.totalFests}
           </div>
         </div>
@@ -1758,8 +1764,8 @@ function TopFestBlocks({ festBreakdown, concerts }) {
         <div style={{ width: 1, height: 30, background: '#222' }} />
 
         <div style={{ textAlign: 'center', flex: 1 }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, letterSpacing: 1 }}>AVG SETS / DAY</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.purple, lineHeight: 1, marginTop: 4 }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim || '#8899aa', letterSpacing: 1 }}>AVG SETS / DAY</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.purple || '#9966ff', lineHeight: 1, marginTop: 4 }}>
             {stats.avgSets}
           </div>
         </div>
@@ -1768,7 +1774,6 @@ function TopFestBlocks({ festBreakdown, concerts }) {
     </div>
   );
 }
-
 // ─── 3. THE DECADE STAGE (RIGHT) ────────────────────────────────
 function DecadeBlocks({ sets, headerStats, concerts }) {
   const [statIdx, setStatIdx] = useState(0);
@@ -1806,7 +1811,7 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
   const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '440px', gap: 15, overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
       
       <style>{`
         @keyframes woofer-pulse {
@@ -5034,7 +5039,14 @@ export default function App() {
 
                 <div style={{ 
   display: 'grid', 
+  <div style={{ 
+  display: 'grid', 
   gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', 
+  gap: 20,
+  alignItems: 'stretch',
+  height: isMobile ? 'auto' : '480px', // <── LOCK THE HEIGHT HERE
+  marginBottom: 20
+}}>
   gap: 20,
   alignItems: 'stretch' // <── ADD THIS LINE
 }}>
