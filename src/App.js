@@ -1895,7 +1895,7 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
       </div>
     </div>
   );
-}.
+}
 // ─── HALL OFFAME (RESTORED & ARMORED) ───────────────────────────────────────
 function HallOfFame({ sets, genreMap, onShare }) {
   const [selected, setSelected] = useState(null);
