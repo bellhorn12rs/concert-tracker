@@ -4130,29 +4130,29 @@ export default function App() {
 
   // --- REST OF YOUR USESTATES (activeTab, concerts, etc.) GO HERE ---
   // ── DATA STATE ───────────────────────────────────────────────────────────────
-  const [concerts, setConcerts]         = useState([]);
-  const [artistGenres, setArtistGenres] = useState({}); // <── THIS WAS MISSING
-  const [upcoming, setUpcoming]         = useState([]);
-  const [loading, setLoading]           = useState(true);
+  // ── 1. DATA STATE ──
+  const [concerts, setConcerts] = useState([]);
+  const [artistGenres, setArtistGenres] = useState({});
+  const [upcoming, setUpcoming] = useState([]);
+  const [loading, setLoading] = useState(true);
   
-  // ── UI STATE ─────────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab]       = useState('dashboard');
-  const [editTarget, setEditTarget]     = useState(null);
-  const [shareCard, setShareCard]       = useState(null);
+  // ── 2. UI & NAVIGATION STATE ──
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [editTarget, setEditTarget] = useState(null);
+  const [shareCard, setShareCard] = useState(null);
   const [upcomingModal, setUpcomingModal] = useState(null);
 
-  // ── FILTER STATE ─────────────────────────────────────────────────────────────
-  const [search, setSearch]             = useState('');
-  const [yearFilter, setYearFilter]     = useState('all');
-  const [festFilter, setFestFilter]     = useState('all');
-  const [genreFilter, setGenreFilter]   = useState('all');
-  const [browseView, setBrowseView]     = useState('shows');
-  const [sortCol, setSortCol]           = useState('date');
-  const [sortDir, setSortDir]           = useState('desc');
-  const [page, setPage]                 = useState(1);
+  // ── 3. FILTER & BROWSER STATE ──
+  const [search, setSearch] = useState('');
+  const [yearFilter, setYearFilter] = useState('all');
+  const [festFilter, setFestFilter] = useState('all');
+  const [genreFilter, setGenreFilter] = useState('all');
+  const [browseView, setBrowseView] = useState('shows');
+  const [sortCol, setSortCol] = useState('date');
+  const [sortDir, setSortDir] = useState('desc');
+  const [page, setPage] = useState(1);
 
-  // ── INITIAL FETCH ───────────────────────────────────────────────────────────
-  // This replaces your old useEffect to make sure genres load first
+  // ── 4. INITIAL FETCH ──
   useEffect(() => { 
     const init = async () => {
       setLoading(true);
@@ -4161,12 +4161,10 @@ export default function App() {
     };
     init();
   }, []);
-  // ── DERIVED DATA ────────────────────────────────────────────────────────────
-  // ── DERIVED DATA ────────────────────────────────────────────────────────────
-  // This now pulls from the dedicated artist_genres table instead of concert rows
-  const genreMap = useMemo(() => artistGenres, [artistGenres]);
 
-  // ── 1. ALL SETS LIST (Flat Data) ──
+  // ── 5. CORE DERIVED DATA ──
+  const genreMap = useMemo(() => artistGenres || {}, [artistGenres]);
+
   const allSetsList = useMemo(() => {
     const r = [];
     if (!concerts || !Array.isArray(concerts)) return r;
@@ -4180,19 +4178,27 @@ export default function App() {
     return r;
   }, [concerts]);
 
-  // ── 2. APPLY FILTERS (Universal Logic) ──
+  const years = useMemo(() => {
+    const ySet = new Set();
+    concerts.forEach(c => { const y = getYear(c.date); if (y) ySet.add(y); });
+    return [...ySet].sort((a, b) => b - a);
+  }, [concerts]);
+
+  // ── 6. THE FILTER ENGINE (CRITICAL FOR SETS/ACTS) ──
   const applyFilters = useCallback((list, isSet = false) => {
     if (!list || !Array.isArray(list)) return [];
     let d = list;
     if (yearFilter !== 'all') d = d.filter(r => getYear(r.date) === +yearFilter);
     if (festFilter === 'fest') d = d.filter(r => r.is_festival);
     if (festFilter === 'solo') d = d.filter(r => !r.is_festival);
+    
     if (genreFilter !== 'all') {
       d = d.filter(r => { 
         const g = isSet ? (artistGenres[r.artist || '']) : (r.genre); 
         return g === genreFilter; 
       });
     }
+
     if (search) {
       const q = search.toLowerCase();
       d = d.filter(r => {
@@ -4207,7 +4213,6 @@ export default function App() {
     return d;
   }, [yearFilter, festFilter, genreFilter, search, artistGenres]);
 
-  // ── 3. FILTERED SETS (The Final Result) ──
   const filteredSets = useMemo(() => {
     const d = applyFilters(allSetsList, true);
     return [...d].sort((a, b) => { 
@@ -4219,7 +4224,6 @@ export default function App() {
     });
   }, [allSetsList, applyFilters, sortCol, sortDir]);
 
-  // ── 4. ARTIST ROWS (For Acts Deep Dive) ──
   const artistRows = useMemo(() => {
     if (browseView !== 'artists') return [];
     const m = {};
@@ -4232,22 +4236,19 @@ export default function App() {
     return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
   }, [allSetsList, applyFilters, browseView]);
 
-// Get the list of venue keys for the <Bar /> components
-const venueKeys = useMemo(() => {
-  const keys = new Set();
-  stackedTimelineData.forEach(d => {
-    Object.keys(d).forEach(k => {
-      if (k !== 'year' && k !== 'fullYear' && k !== 'other') keys.add(k);
-    });
-  });
-  return [...keys, 'other'];
-}, [stackedTimelineData]);
+  // ── 7. DASHBOARD DATA ──
+  const dayGroups = useMemo(() => applyFilters(concerts).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [concerts, applyFilters]);
+  
+  const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const totalPages = Math.ceil(filteredSets.length / PER_PAGE);
 
-  const timelineData = useMemo(() => {
-    const m = {};
-    allSetsList.forEach(s => { const y = getYear(s.date); if (y) m[y] = (m[y] || 0) + 1; });
-    return Object.entries(m).sort((a, b) => +a[0] - +b[0]).map(([year, count]) => ({ year: String(year).slice(2), count, fullYear: +year }));
-  }, [allSetsList]);
+  const headerStats = useMemo(() => ({
+    totalShows: concerts.length,
+    totalSets: allSetsList.length,
+    uniqueArtists: new Set(allSetsList.map(s => s.artist)).size,
+    festDays: concerts.filter(c => c.is_festival).length,
+    setlistCount: concerts.filter(c => c.has_setlist || c.has_setlist_names).length,
+  }), [concerts, allSetsList]);
 
   const artistCounts = useMemo(() => {
     const m = {};
@@ -4263,55 +4264,71 @@ const venueKeys = useMemo(() => {
 
   const passport = useMemo(() => {
     const m = {};
-    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { if (!m[c.festival_name]) m[c.festival_name] = { name: c.festival_name, days: 0, years: new Set() }; m[c.festival_name].days++; const y = getYear(c.date); if (y) m[c.festival_name].years.add(y); });
+    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { 
+      if (!m[c.festival_name]) m[c.festival_name] = { name: c.festival_name, days: 0, years: new Set() }; 
+      m[c.festival_name].days++; 
+      const y = getYear(c.date); 
+      if (y) m[c.festival_name].years.add(y); 
+    });
     return Object.values(m).map(f => ({ ...f, years: [...f.years].sort() })).sort((a, b) => b.days - a.days);
   }, [concerts]);
 
   const festGroupings = useMemo(() => {
     const m = {};
-    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { const yr = getYear(c.date) || 'Unknown'; if (!m[c.festival_name]) m[c.festival_name] = { name: c.festival_name, years: {} }; if (!m[c.festival_name].years[yr]) m[c.festival_name].years[yr] = []; m[c.festival_name].years[yr].push(c); });
+    concerts.filter(c => c.is_festival && c.festival_name).forEach(c => { 
+      const yr = getYear(c.date) || 'Unknown'; 
+      if (!m[c.festival_name]) m[c.festival_name] = { name: c.festival_name, years: {} }; 
+      if (!m[c.festival_name].years[yr]) m[c.festival_name].years[yr] = []; 
+      m[c.festival_name].years[yr].push(c); 
+    });
     return Object.values(m).sort((a, b) => Object.values(b.years).flat().length - Object.values(a.years).flat().length);
   }, [concerts]);
 
-  const applyFilters = useCallback((list, isSet = false) => {
-    let d = list;
-    if (yearFilter !== 'all') d = d.filter(r => getYear(r.date) === +yearFilter);
-    if (festFilter === 'fest') d = d.filter(r => r.is_festival);
-    if (festFilter === 'solo') d = d.filter(r => !r.is_festival);
-    if (genreFilter !== 'all') d = d.filter(r => { const g = isSet ? (artistGenres[r.artist]) : (r.genre); return g === genreFilter; });
-    if (search) {
-      const q = search.toLowerCase();
-      d = d.filter(r => {
-        const bands = isSet ? [r.artist] : (r.bands || []);
-        return bands.some(b => b.toLowerCase().includes(q)) || (r.venue || '').toLowerCase().includes(q) || (r.city || '').toLowerCase().includes(q) || (r.festival_name || '').toLowerCase().includes(q);
-      });
-    }
-    return d;
-  }, [yearFilter, festFilter, genreFilter, search, artistGenres]);
-
-  const filteredSets = useMemo(() => {
-    const d = applyFilters(allSetsList, true);
-    return [...d].sort((a, b) => { const av = sortCol === 'artist' ? (a.artist || '').toLowerCase() : (String(a[sortCol] || '')).toLowerCase(); const bv = sortCol === 'artist' ? (b.artist || '').toLowerCase() : (String(b[sortCol] || '')).toLowerCase(); if (sortCol === 'date') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av); if (av < bv) return sortDir === 'asc' ? -1 : 1; if (av > bv) return sortDir === 'asc' ? 1 : -1; return 0; });
-  }, [allSetsList, applyFilters, sortCol, sortDir]);
-
-  const artistRows = useMemo(() => {
-    if (browseView !== 'artists') return [];
-    const m = {};
-    const filtered = applyFilters(allSetsList, true);
-    
-    filtered.forEach(s => { 
-      if (!s.artist) return;
-      if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; 
-      m[s.artist].shows.push(s); 
+  // ── 8. BAR CHART LOGIC ──
+  const stackedTimelineData = useMemo(() => {
+    const yearsMap = {};
+    allSetsList.forEach(s => {
+      const y = getYear(s.date);
+      if (!y) return;
+      if (!yearsMap[y]) yearsMap[y] = { year: String(y).slice(2), fullYear: y };
+      const v = s.venue || 'Unknown Venue';
+      yearsMap[y][v] = (yearsMap[y][v] || 0) + 1;
     });
-    
-    return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
-  }, [allSetsList, applyFilters, browseView]);
+    const venueTotals = {};
+    allSetsList.forEach(s => { const v = s.venue || 'Unknown Venue'; venueTotals[v] = (venueTotals[v] || 0) + 1; });
+    const topVenues = Object.entries(venueTotals).sort((a, b) => b[1] - a[1]).slice(0, 15).map(v => v[0]);
+    return Object.values(yearsMap).sort((a, b) => a.fullYear - b.fullYear).map(yearData => {
+      const formatted = { ...yearData, other: 0 };
+      Object.keys(yearData).forEach(key => {
+        if (key !== 'year' && key !== 'fullYear') {
+          if (!topVenues.includes(key)) { formatted.other += yearData[key]; delete formatted[key]; }
+        }
+      });
+      return formatted;
+    });
+  }, [allSetsList]);
 
-  const dayGroups = useMemo(() => applyFilters(concerts).sort((a, b) => (b.date || '').localeCompare(a.date || '')), [concerts, applyFilters]);
-  const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE), totalPages = Math.ceil(filteredSets.length / PER_PAGE);
+  const venueKeys = useMemo(() => {
+    const keys = new Set();
+    stackedTimelineData.forEach(d => {
+      Object.keys(d).forEach(k => { if (k !== 'year' && k !== 'fullYear' && k !== 'other') keys.add(k); });
+    });
+    return [...keys, 'other'];
+  }, [stackedTimelineData]);
 
-  // ── DB ACTIONS ──────────────────────────────────────────────────────────────
+  const timelineData = useMemo(() => {
+    const m = {};
+    allSetsList.forEach(s => { const y = getYear(s.date); if (y) m[y] = (m[y] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => +a[0] - +b[0]).map(([year, count]) => ({ year: String(year).slice(2), count, fullYear: +year }));
+  }, [allSetsList]);
+
+  const genreStats = useMemo(() => {
+    const counts = {};
+    allSetsList.forEach(s => { const g = artistGenres[s.artist] || 'Other'; counts[g] = (counts[g] || 0) + 1; });
+    return Object.entries(counts).map(([name, count]) => ({ name, count, color: GENRE_COLORS[name] || GENRE_COLORS['Other'] })).sort((a, b) => b.count - a.count);
+  }, [allSetsList, artistGenres]);
+
+  //  ── DB ACTIONS ──────────────────────────────────────────────────────────────
 
   async function fetchInitialData() {
     setLoading(true);
