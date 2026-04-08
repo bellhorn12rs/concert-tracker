@@ -1577,14 +1577,12 @@ function DonutChart({ fest, solo, concerts }) {
   const total = stats.val1 + stats.val2 || 1;
   const pct1 = Math.round((stats.val1 / total) * 100);
   const r = 48, cx = 70, cy = 70, circ = 2 * Math.PI * r;
-  
-  // "Other" color constant
   const OTHER_COLOR = "#666";
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '5px' }}>
       
-      {/* 🟢 LEGEND: COLOR-CODED */}
+      {/* 🟢 LEGEND SECTION */}
       <div style={{ marginBottom: 15, textAlign: 'center' }}>
         <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: stats.color, letterSpacing: '2px', fontWeight: 900, marginBottom: 12 }}>
           {stats.title}
@@ -1602,27 +1600,40 @@ function DonutChart({ fest, solo, concerts }) {
         </div>
       </div>
 
-      {/* NEON TURNTABLE */}
+      {/* 📀 THE TURNTABLE DECK */}
       <div style={{ 
-        position: 'relative', width: 165, height: 165, 
+        position: 'relative', width: 170, height: 170, 
         background: '#0a0a0c', 
         borderRadius: '50%', padding: 5, alignSelf: 'center', 
         boxShadow: `0 0 0 4px #15151a, 0 15px 35px rgba(0,0,0,0.6), inset 0 0 15px rgba(255,255,255,0.02)`,
         border: `1px solid ${hexToRgba(stats.color, 0.2)}`
       }}>
-        <svg className="record-vinyl-spinning" width="155" height="155" viewBox="0 0 140 140">
+        
+        {/* 🦾 THE CHROME TONE ARM (Re-added & Upgraded) */}
+        <div style={{ 
+          position: 'absolute', top: 15, right: 15, width: 6, height: 85, 
+          background: 'linear-gradient(to right, #777, #eee, #555)', 
+          transform: `rotate(${25 + (pct1 * 0.1)}deg)`, // Subtle movement based on data!
+          transformOrigin: 'top center', 
+          borderRadius: 10, zIndex: 10, border: '1px solid #444',
+          boxShadow: '4px 4px 12px rgba(0,0,0,0.7)',
+          transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
+        }}>
+           {/* Headshell / Needle with Mode LED */}
+           <div style={{ position: 'absolute', bottom: -5, left: -4, width: 14, height: 18, background: '#111', borderRadius: 2, border: '1px solid #333' }}>
+              <div style={{ width: 4, height: 4, background: stats.color, borderRadius: '50%', margin: '4px auto', boxShadow: `0 0 5px ${stats.color}` }} />
+           </div>
+        </div>
+        <div style={{ position: 'absolute', top: 10, right: 10, width: 22, height: 22, borderRadius: '50%', background: '#1a1a1c', border: `1px solid ${OTHER_COLOR}`, zIndex: 9 }} />
+
+        <svg className="record-vinyl-spinning" width="160" height="160" viewBox="0 0 140 140">
           <circle cx={cx} cy={cy} r={68} fill="#050505" />
           {[62, 56, 50, 44].map(rad => <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#111" strokeWidth={0.5} />)}
           
-          {/* 🔘 THE "OTHER" TRACK (Bright Grey) */}
-          <circle 
-            cx={cx} cy={cy} r={r} fill="none" 
-            stroke={OTHER_COLOR} 
-            strokeWidth={12} 
-            opacity="0.4"
-          />
+          {/* THE "OTHER" TRACK (Bright Grey Background) */}
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={OTHER_COLOR} strokeWidth={12} opacity="0.3" />
           
-          {/* 🔵 THE PRIMARY TRACK (Neon) */}
+          {/* THE PRIMARY TRACK (Neon Neon Overlay) */}
           <circle 
             cx={cx} cy={cy} r={r} fill="none" 
             stroke={stats.color} 
@@ -1639,16 +1650,9 @@ function DonutChart({ fest, solo, concerts }) {
           <circle cx={cx} cy={cy} r={18} fill="#000" stroke={stats.color} strokeWidth={1} />
           <text x={cx} y={cy + 4} textAnchor="middle" style={{ fontFamily: "'Bebas Neue'", fontSize: 11, fill: stats.color }}>{pct1}%</text>
         </svg>
-
-        {/* Tone Arm Base */}
-        <div style={{ 
-          position: 'absolute', top: 10, right: 10, width: 20, height: 20, 
-          borderRadius: '50%', background: '#111', 
-          border: `1px solid ${OTHER_COLOR}`, zIndex: 9 
-        }} />
       </div>
 
-      {/* 📉 FILLING THE DEAD SPACE: VIBE STATUS */}
+      {/* 📉 SYSTEM INSIGHT READOUT */}
       <div style={{ marginTop: 25, textAlign: 'center' }}>
          <div style={{ 
            display: 'inline-block', padding: '4px 12px', 
@@ -1662,7 +1666,7 @@ function DonutChart({ fest, solo, concerts }) {
          </div>
       </div>
 
-      {/* MODE SELECTORS */}
+      {/* 🎚️ MODE SELECTORS */}
       <div style={{ display: 'flex', gap: 4, height: 35, marginTop: 20 }}>
         {[
           { id: 'fest', col: '#00e5cc', icon: '🎪' }, 
