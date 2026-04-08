@@ -3400,12 +3400,14 @@ function VenuesTab({ concerts }) {
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState({});
 
+  // 1. SAFETY GATES
   if (!concerts || !Array.isArray(concerts)) {
-    return <div style={{ padding: '80px 0', textAlign: 'center', color: C.gray, fontFamily: "'Space Mono'" }}>INITIALIZING...</div>;
+    return <div style={{ padding: '80px 0', textAlign: 'center', color: '#8899aa', fontFamily: "'Space Mono'" }}>INITIALIZING...</div>;
   }
 
   const toggle = (name) => setExpanded(p => ({ ...p, [name]: !p[name] }));
 
+  // 2. DATA AGGREGATION
   const venues = useMemo(() => {
     const m = {};
     concerts.forEach(c => {
@@ -3414,12 +3416,10 @@ function VenuesTab({ concerts }) {
       if (!m[key]) {
         m[key] = {
           name: key, city: c.city || '', state: c.state || '',
-          count: 0, shows: [], firstDate: c.date, lastDate: c.date,
+          count: 0, shows: [],
         };
       }
       m[key].count++;
-      if (c.date < m[key].firstDate) m[key].firstDate = c.date;
-      if (c.date > m[key].lastDate) m[key].lastDate = c.date;
       m[key].shows.push(c);
     });
     return Object.values(m).map(v => ({
@@ -3435,9 +3435,11 @@ function VenuesTab({ concerts }) {
       list = list.filter(v => v.name.toLowerCase().includes(q) || v.city.toLowerCase().includes(q));
     }
     if (sortBy === 'count') return [...list].sort((a, b) => b.count - a.count);
-    if (sortBy === 'alpha') return [...list].sort((a, b) => a.name.localeCompare(b.name));
-    return list;
+    return [...list].sort((a, b) => a.name.localeCompare(b.name));
   }, [venues, sortBy, search]);
+
+  // Fallback for internal input styling
+  const currentInputSt = typeof inputSt !== 'undefined' ? inputSt : { background: 'rgba(0,0,0,0.4)', border: '1px solid #333', color: '#fff', padding: '12px', borderRadius: '6px' };
 
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
@@ -3452,7 +3454,7 @@ function VenuesTab({ concerts }) {
           placeholder="Search venues..." 
           value={search} 
           onChange={e => setSearch(e.target.value)} 
-          style={{ ...inputSt, flex: 1, borderRadius: 6 }} 
+          style={{ ...currentInputSt, flex: 1 }} 
         />
       </div>
 
@@ -3463,6 +3465,7 @@ function VenuesTab({ concerts }) {
 
           return (
             <div key={v.name} style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderLeft: `4px solid ${rowColor}`, borderRadius: 8, overflow: 'hidden' }}>
+              {/* VENUE HEADER BOX */}
               <div onClick={() => toggle(v.name)} style={{ padding: '18px 24px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff' }}>{v.name}</div>
@@ -3470,29 +3473,32 @@ function VenuesTab({ concerts }) {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: rowColor, lineHeight: 1 }}>{v.count}</div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>LOGS</div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>SETS</div>
                 </div>
               </div>
 
+              {/* THE SCRAPBOOK GRID (EXPANDED) */}
               {isOpen && (
                 <div style={{ 
-                  padding: '40px 20px', 
-                  background: 'rgba(0,0,0,0.4)', 
+                  padding: '50px 25px', 
+                  background: 'rgba(0,0,0,0.5)', 
                   borderTop: `1px solid ${C.border}`,
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                  gap: '30px'
+                  gap: '40px',
+                  alignItems: 'start'
                 }}>
                    {v.shows.map((show, idx) => {
-                     const bands = show.bands || [];
-                     const headliner = bands[0] || 'UNKNOWN';
+                     const bands = Array.isArray(show.bands) ? show.bands : [];
+                     const headliner = bands[0] || 'UNKNOWN ARTIST';
                      const support = bands.slice(1);
                      const hasImg = show.image_url && show.image_url.trim() !== "";
 
                      return (
-                       <div key={show.id} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                       <div key={show.id} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                         
+                         {/* 1. THE ARTIFACT HEADER */}
                          {show.is_festival ? (
-                           /* 🎪 FESTIVAL: WRISTBAND HEADER */
                            <div style={{ position: 'relative' }}>
                              <PhysicalWristband 
                                color={rowColor} 
@@ -3500,35 +3506,39 @@ function VenuesTab({ concerts }) {
                                year={getYear(show.date)} 
                                size="small" 
                              />
-                             <div style={{ position: 'absolute', top: 2, right: 10, fontFamily: "'Space Mono'", fontSize: 8, color: '#000', fontWeight: 900 }}>
+                             {/* High-Visibility Day Tag */}
+                             <div style={{ position: 'absolute', top: -5, right: 10, background: '#000', color: rowColor, border: `1px solid ${rowColor}`, padding: '2px 8px', borderRadius: 2, fontFamily: "'Space Mono'", fontSize: 8, fontWeight: 900, boxShadow: '0 4px 10px rgba(0,0,0,0.5)', zIndex: 10 }}>
                                {show.festival_day?.toUpperCase() || 'LIVE'}
                              </div>
                            </div>
                          ) : hasImg ? (
-                           /* 📸 PHOTO HEADER */
-                           <div style={{ padding: '5px', background: '#fff', boxShadow: '0 5px 15px rgba(0,0,0,0.3)', borderRadius: 2 }}>
-                             <img src={show.image_url.split(',')[0]} alt="artifact" style={{ width: '100%', height: '140px', objectFit: 'cover' }} />
-                             <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#000', textAlign: 'center', padding: '4px 0', fontWeight: 900 }}>
+                           <div style={{ padding: '6px', background: '#fff', boxShadow: '0 10px 20px rgba(0,0,0,0.4)', borderRadius: 2, transform: 'rotate(-1deg)' }}>
+                             <img src={show.image_url.split(',')[0]} alt="artifact" style={{ width: '100%', height: '160px', objectFit: 'cover' }} />
+                             <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#000', textAlign: 'center', padding: '6px 0', fontWeight: 900 }}>
                                {fmtDateShort(show.date)}
                              </div>
                            </div>
                          ) : (
-                           /* 🎫 SOLO: TICKET STUB HEADER */
                            <DecorativeTicket event={show} templateIdx={idx} />
                          )}
 
-                         {/* 📋 SHARED BAND LIST AREA (The "Underneath") */}
-                         <div style={{ padding: '0 5px' }}>
-                            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: show.is_festival ? rowColor : '#fff', letterSpacing: '0.5px' }}>
+                         {/* 2. THE FULL LINEUP LIST (Prevents cutoffs) */}
+                         <div style={{ padding: '0 8px' }}>
+                            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: show.is_festival ? rowColor : '#fff', letterSpacing: '0.5px', lineHeight: 1.1 }}>
                               {headliner.toUpperCase()}
                             </div>
+                            
                             {support.length > 0 && (
-                              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 2, lineHeight: 1.4 }}>
-                                w/ {support.join(' · ').toUpperCase()}
+                              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 4, lineHeight: 1.5, borderLeft: `1px solid ${hexToRgba(rowColor, 0.3)}`, paddingLeft: 8 }}>
+                                {support.join(' • ').toUpperCase()}
                               </div>
                             )}
-                            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, marginTop: 6, borderTop: `1px solid ${hexToRgba(C.white, 0.05)}`, paddingTop: 4 }}>
-                              {show.is_festival ? fmtDateShort(show.date) : show.venue?.toUpperCase()}
+
+                            <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 6 }}>
+                               <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>
+                                 {show.is_festival ? fmtDateShort(show.date) : show.venue?.toUpperCase()}
+                               </span>
+                               {show.personal_photo_url && <span style={{ fontSize: 10 }} title="Photo Archied">📸</span>}
                             </div>
                          </div>
                        </div>
