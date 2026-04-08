@@ -4081,10 +4081,10 @@ const C = theme;
 
   // Sync colors on initial mount
   useEffect(() => { 
-    if (THEMES[themeId]) {
-      Object.assign(C, THEMES[themeId].colors); 
-    }
-  }, [themeId]);
+  if (THEMES[themeId]) {
+    Object.assign(C, THEMES[themeId]); 
+  }
+}, [themeId]);
 
   const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
 
