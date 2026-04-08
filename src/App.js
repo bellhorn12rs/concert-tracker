@@ -4724,59 +4724,110 @@ export default function App() {
         <div style={{ flex: 1, height: '100vh', overflowY: 'auto', overflowX: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', background: C.bg }}>
           
           <header style={{ 
-  padding: isMobile ? '8px 12px' : '10px 30px', 
-  background: `linear-gradient(to bottom, ${C.bg} 95%, transparent)`, 
+  padding: '0', 
+  background: '#050508', 
   position: 'sticky', top: 0, zIndex: 100,
-  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-  borderBottom: `1px solid ${C.border}`,
-  height: isMobile ? '70px' : '80px', // Exact match to Logo Area
+  display: 'flex', alignItems: 'stretch', // Stretch ensures buttons fill the height
+  borderBottom: `2px solid ${C.border}`,
+  height: isMobile ? '70px' : '90px', // Slightly taller for bigger impact
   flexShrink: 0,
-  boxSizing: 'border-box' // CRITICAL for alignment
+  boxSizing: 'border-box',
+  overflow: 'visible'
 }}>
-             <div style={{ 
-               display: 'flex', 
-               flex: 1, 
-               maxWidth: isMobile ? 'calc(100% - 100px)' : 'calc(100% - 350px)', 
-               gap: isMobile ? 4 : 10 
-             }}>
-                {isMobile && (
-                  <button 
-                    onClick={() => setNavCollapsed(false)} 
-                    style={{ background: 'none', border: `1px solid ${C.teal}`, color: C.teal, padding: '4px 8px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 8, marginRight: 4 }}
-                  >
-                    MENU
-                  </button>
-                )}
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 0, flex: 1 }}>
-                  {[
-                    { value: headerStats.totalSets, label: 'SETS', color: C.teal, onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } },
-                    { value: headerStats.uniqueArtists, label: 'ACTS', color: C.cyan, onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } },
-                    { value: headerStats.totalShows, label: 'DAYS', color: C.purple, onClick: () => setActiveTab('timeline') },
-                    { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'VENUES', color: C.red, onClick: () => setActiveTab('venues') },
-                    { value: headerStats.setlistCount, label: 'FILES', color: C.gold, onClick: () => setActiveTab('vault') }
-                  ].map((s, i) => (
-                    <div key={s.label} onClick={s.onClick} style={{ textAlign: 'center', borderRight: i < 4 ? `1px solid ${C.border}` : 'none', padding: '0 2px', cursor: 'pointer' }}>
-                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1rem' : '1.8rem', color: s.color, lineHeight: 1 }}>{s.value}</div>
-                      <div style={{ fontFamily: "'Space Mono'", fontSize: 5, color: C.grayDim, letterSpacing: 0.5 }}>{s.label}</div>
-                    </div>
-                  ))}
-                </div>
-             </div>
-             
-             <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
-  {/* Move Lanyard HERE, before the Switcher */}
-  {!isMobile && (
-    <div style={{ position: 'relative', height: '40px', width: '60px' }}>
-      <div style={{ position: 'absolute', top: '-110px', left: 0 }}> {/* Changed right: 0 to left: 0 */}
-         <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
-      </div>
-    </div>
-  )}
   
-  <ThemeSwitcher isMobile={isMobile} />
-</div>
-          </header>
+  {/* ── LEFT: IDENTITY BLOCK ── */}
+  <div style={{ 
+    width: isMobile ? '100px' : '280px', 
+    borderRight: `1px solid ${C.border}`, 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    background: `linear-gradient(135deg, ${C.bgCard} 0%, #08080c 100%)`
+  }}>
+    <div style={{ transform: isMobile ? 'scale(0.8)' : 'none' }}>
+      <TrackRecordLogo size={40} />
+      {/* Brand name moved inside Logo Component or removed here to maximize space */}
+    </div>
+  </div>
+
+  {/* ── CENTER: HIGH-CONTRAST STAT PANELS ── */}
+  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', flex: 1, gap: '1px', background: C.border }}>
+    {[
+      { value: headerStats.totalSets, label: 'SETS', color: C.teal, onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } },
+      { value: headerStats.uniqueArtists, label: 'ACTS', color: C.cyan, onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } },
+      { value: headerStats.totalShows, label: 'DAYS', color: C.purple, onClick: () => setActiveTab('timeline') },
+      { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'VENUES', color: C.red, onClick: () => setActiveTab('venues') },
+      { value: headerStats.setlistCount, label: 'FILES', color: C.gold, onClick: () => setActiveTab('vault') }
+    ].map((s, i) => (
+      <div 
+        key={s.label} 
+        onClick={s.onClick} 
+        style={{ 
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer',
+          position: 'relative',
+          background: `linear-gradient(180deg, ${hexToRgba(s.color, 0.08)} 0%, #050508 100%)`, // Top-down color bleed
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          overflow: 'hidden'
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = hexToRgba(s.color, 0.2);
+          e.currentTarget.firstChild.style.transform = 'scale(1.1)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = hexToRgba(s.color, 0.08);
+          e.currentTarget.firstChild.style.transform = 'scale(1)';
+        }}
+      >
+        {/* Glowing Bottom Bar */}
+        <div style={{ position: 'absolute', bottom: 0, left: '15%', right: '15%', height: '3px', background: s.color, boxShadow: `0 0 15px ${s.color}`, borderRadius: '2px 2px 0 0' }} />
+
+        {/* LARGE NUMBER */}
+        <div style={{ 
+          fontFamily: "'Bebas Neue'", 
+          fontSize: isMobile ? '1.5rem' : '3rem', // MUCH LARGER
+          color: s.color, 
+          lineHeight: 1,
+          transition: 'transform 0.3s ease',
+          textShadow: `0 0 20px ${hexToRgba(s.color, 0.4)}`
+        }}>
+          {s.value}
+        </div>
+
+        {/* LABEL */}
+        <div style={{ 
+          fontFamily: "'Space Mono'", 
+          fontSize: '8px', 
+          color: '#fff', 
+          letterSpacing: '3px', 
+          fontWeight: 900, 
+          marginTop: 6,
+          opacity: 0.6
+        }}>
+          {s.label}
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {/* ── RIGHT: SYSTEM STATUS & IDENTITY ── */}
+  <div style={{ 
+    display: 'flex', alignItems: 'center', gap: 20, padding: '0 25px', 
+    background: `linear-gradient(225deg, ${hexToRgba(C.teal, 0.05)} 0%, #050508 100%)`,
+    borderLeft: `1px solid ${C.border}`
+  }}>
+    
+    {!isMobile && (
+      <div style={{ position: 'relative', width: '80px' }}>
+        <div style={{ position: 'absolute', top: '-105px', left: 0 }}>
+           <MasterLanyard concerts={concerts} artistGenres={artistGenres} genreStats={genreStats} />
+        </div>
+      </div>
+    )}
+    
+    <ThemeSwitcher isMobile={isMobile} />
+  </div>
+</header>
 
           <main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
             {activeTab === 'dashboard' && (
