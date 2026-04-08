@@ -3112,7 +3112,6 @@ function BrowseTab({ browseView, setBrowseView, search, setSearch, yearFilter, s
 
   return (
     <div style={{ marginTop:20 }} className="fade-in">
-    <div style={{ marginTop:20 }} className="fade-in">
       <div style={{ display:'flex', flexWrap:'wrap', gap:10, marginBottom:20, background:C.bgCard, padding:15, borderRadius:8, border:`1px solid ${C.border}` }}>
         <input placeholder="Search artists, venues, cities..." value={search} onChange={e=>setSearch(e.target.value)} style={{ ...inputSt, flex:'1 1 260px' }} />
         <select value={yearFilter} onChange={e=>setYearFilter(e.target.value)} style={{ ...inputSt, minWidth:100 }}><option value="all">All Years</option>{years.map(y=><option key={y} value={y}>{y}</option>)}</select>
@@ -4149,7 +4148,7 @@ export default function App() {
 
   const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
 
-  // ── 6. DATA DERIVATION ENGINE ──
+// ── 6. DATA DERIVATION ENGINE ──
   const genreMap = useMemo(() => artistGenres || {}, [artistGenres]);
 
   const allSetsList = useMemo(() => {
@@ -4177,14 +4176,12 @@ export default function App() {
     if (yearFilter !== 'all') d = d.filter(r => getYear(r.date) === +yearFilter);
     if (festFilter === 'fest') d = d.filter(r => r.is_festival);
     if (festFilter === 'solo') d = d.filter(r => !r.is_festival);
-    
     if (genreFilter !== 'all') {
       d = d.filter(r => { 
         const g = isSet ? (artistGenres[r.artist || '']) : (r.genre); 
         return g === genreFilter; 
       });
     }
-
     if (search) {
       const q = search.toLowerCase();
       d = d.filter(r => {
@@ -4226,7 +4223,6 @@ export default function App() {
   const paged = filteredSets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const totalPages = Math.ceil(filteredSets.length / PER_PAGE);
 
-  // ── 7. DASHBOARD STATS ──
   const headerStats = useMemo(() => ({
     totalShows: concerts.length,
     totalSets: allSetsList.length,
@@ -4268,7 +4264,6 @@ export default function App() {
     return Object.values(m).sort((a, b) => Object.values(b.years).flat().length - Object.values(a.years).flat().length);
   }, [concerts]);
 
-  // ── 8. VISUALIZATION LOGIC ──
   const stackedTimelineData = useMemo(() => {
     const yearsMap = {};
     allSetsList.forEach(s => {
@@ -4297,19 +4292,25 @@ export default function App() {
     return [...keys, 'other'];
   }, [stackedTimelineData]);
 
-  const timelineData = useMemo(() => {
-    const m = {};
-    allSetsList.forEach(s => { const y = getYear(s.date); if (y) m[y] = (m[y] || 0) + 1; });
-    return Object.entries(m).sort((a, b) => +a[0] - +b[0]).map(([year, count]) => ({ year: String(year).slice(2), count, fullYear: +year }));
-  }, [allSetsList]);
-
   const genreStats = useMemo(() => {
     const counts = {};
     allSetsList.forEach(s => { const g = artistGenres[s.artist] || 'Other'; counts[g] = (counts[g] || 0) + 1; });
     return Object.entries(counts).map(([name, count]) => ({ name, count, color: GENRE_COLORS[name] || GENRE_COLORS['Other'] })).sort((a, b) => b.count - a.count);
   }, [allSetsList, artistGenres]);
 
-  // ── 9. DB ACTIONS ──
+  const timelineData = useMemo(() => {
+    const m = {};
+    allSetsList.forEach(s => { const y = getYear(s.date); if (y) m[y] = (m[y] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => +a[0] - +b[0]).map(([year, count]) => ({ year: String(year).slice(2), count, fullYear: +year }));
+  }, [allSetsList]);
+
+  const handleGenreClick = (genre) => {
+    setGenreFilter(genre);
+    setBrowseView('artists');
+    setActiveTab('browse');
+  };
+
+  // ── 7. DB ACTIONS ──
   async function fetchConcerts() {
     const { data } = await supabase.from('concerts').select('*').order('date', { ascending: false });
     if (data) setConcerts(data);
@@ -4371,13 +4372,6 @@ export default function App() {
     await supabase.from('concerts').insert([{ ...rest, date: '', festival_day: '' }]);
     fetchConcerts();
   }
-
-  const handleGenreClick = (genre) => {
-    setGenreFilter(genre);
-    setBrowseView('artists');
-    setActiveTab('browse');
-  };
-
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
