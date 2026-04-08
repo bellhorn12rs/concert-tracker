@@ -73,7 +73,7 @@ const TicketStub = ({ show }) => {
       </div>
     </div>
   );
-};
+}
 
 // ─── THE BACKSTAGE PASS (IDEA #3) ────────────────────────────────────────────
 const BackstagePass = ({ stats }) => {
@@ -139,7 +139,7 @@ const BackstagePass = ({ stats }) => {
       </div>
     </div>
   );
-};
+}
 
 // ─── THEMES ───────────────────────────────────────────────────────────────────
 const THEMES = {
