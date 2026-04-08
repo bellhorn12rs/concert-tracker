@@ -1566,6 +1566,8 @@ function DonutChart({ fest, solo, concerts }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between', padding: '5px' }}>
+      
+      {/* 🟢 DATA READOUT */}
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: stats.color, letterSpacing: '2px', fontWeight: 900, marginBottom: 12 }}>{stats.title}</div>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 20 }}>
@@ -1575,53 +1577,111 @@ function DonutChart({ fest, solo, concerts }) {
           </div>
           <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
           <div style={{ textAlign: 'left' }}>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#666' }}>{stats.label2}</div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: '#666', lineHeight: 1 }}>{stats.val2}</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#444' }}>{stats.label2}</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: '#444', lineHeight: 1 }}>{stats.val2}</div>
           </div>
         </div>
       </div>
 
-      {/* 📀 TURNTABLE WITH CHROME TONE ARM */}
+      {/* 📀 3D TURNTABLE DECK */}
       <div style={{ 
-        position: 'relative', width: 165, height: 165, background: '#0a0a0c', borderRadius: '50%', padding: 5, alignSelf: 'center', 
-        boxShadow: `0 0 0 4px #15151a, 0 15px 35px rgba(0,0,0,0.6), inset 0 0 15px rgba(255,255,255,0.02)`, border: `1px solid ${hexToRgba(stats.color, 0.2)}`
+        position: 'relative', width: 175, height: 175, 
+        background: '#08080a', borderRadius: '50%', padding: 5, alignSelf: 'center', 
+        // Outer Bezel & Deep Inset Shadow for depth
+        boxShadow: `
+          0 0 0 2px #15151a, 
+          0 20px 40px rgba(0,0,0,0.8), 
+          inset 0 0 30px rgba(0,0,0,0.9),
+          inset 0 0 10px ${hexToRgba(stats.color, 0.1)}
+        `,
+        border: `1px solid ${hexToRgba(stats.color, 0.15)}`
       }}>
-        {/* Chrome Tone Arm */}
+        
+        {/* 🦾 HI-GLOSS CHROME TONE ARM */}
         <div style={{ 
-          position: 'absolute', top: 15, right: 15, width: 6, height: 85, 
-          background: 'linear-gradient(to right, #777, #eee, #555)', 
-          transform: `rotate(${25 + (pct1 * 0.1)}deg)`, transformOrigin: 'top center', 
-          borderRadius: 10, zIndex: 10, border: '1px solid #444', boxShadow: '4px 4px 12px rgba(0,0,0,0.7)', transition: 'transform 0.8s ease'
+          position: 'absolute', top: 15, right: 15, width: 8, height: 90, 
+          background: 'linear-gradient(to right, #444 0%, #eee 45%, #fff 50%, #eee 55%, #444 100%)', 
+          transform: `rotate(${25 + (pct1 * 0.12)}deg)`, transformOrigin: 'top center', 
+          borderRadius: 10, zIndex: 50, border: '1px solid #222', 
+          boxShadow: '8px 8px 15px rgba(0,0,0,0.6)', 
+          transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
         }}>
-           <div style={{ position: 'absolute', bottom: -5, left: -4, width: 14, height: 18, background: '#111', borderRadius: 2, border: '1px solid #333' }}>
-              <div style={{ width: 4, height: 4, background: stats.color, borderRadius: '50%', margin: '4px auto', boxShadow: `0 0 5px ${stats.color}` }} />
+           {/* Headshell with Mode-LED */}
+           <div style={{ position: 'absolute', bottom: -5, left: -4, width: 16, height: 22, background: '#111', borderRadius: 2, border: '1px solid #333' }}>
+              <div style={{ width: 4, height: 4, background: stats.color, borderRadius: '50%', margin: '5px auto', boxShadow: `0 0 8px ${stats.color}` }} />
            </div>
         </div>
 
-        <svg className="record-vinyl-spinning" width="155" height="155" viewBox="0 0 140 140">
+        {/* Tone Arm Base Hub */}
+        <div style={{ position: 'absolute', top: 10, right: 10, width: 26, height: 26, borderRadius: '50%', background: '#1a1a1c', border: `2px solid #333`, zIndex: 40, boxShadow: '0 4px 8px rgba(0,0,0,0.5)' }} />
+
+        {/* VINYL RECORD SVG */}
+        <svg className="record-vinyl-spinning" width="165" height="165" viewBox="0 0 140 140">
           <circle cx={cx} cy={cy} r={68} fill="#050505" />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke="#666" strokeWidth={12} opacity="0.3" />
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={stats.color} strokeWidth={12} strokeDasharray={`${(pct1 / 100) * circ} ${circ}`} strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 10px ${stats.color})`, transition: 'all 0.8s ease' }} />
-          <text x={cx} y={cy + 4} textAnchor="middle" style={{ fontFamily: "'Bebas Neue'", fontSize: 11, fill: stats.color }}>{pct1}%</text>
+          
+          {/* Subtle Vinyl Grooves */}
+          {[64, 60, 56, 52, 44, 40].map(rad => (
+            <circle key={rad} cx={cx} cy={cy} r={rad} fill="none" stroke="#111" strokeWidth={0.5} />
+          ))}
+          
+          {/* THE "GROOVE" TRACK (The Background for the neon) */}
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke="#18181c" strokeWidth={12} />
+          
+          {/* THE NEON DATA TRACK */}
+          <circle 
+            cx={cx} cy={cy} r={r} fill="none" 
+            stroke={stats.color} 
+            strokeWidth={12} 
+            strokeDasharray={`${(pct1 / 100) * circ} ${circ}`} 
+            strokeLinecap="round" 
+            transform={`rotate(-90 ${cx} ${cy})`} 
+            style={{ 
+              filter: `drop-shadow(0 0 12px ${stats.color})`, 
+              transition: 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)' 
+            }} 
+          />
+          
+          {/* Center Label */}
+          <circle cx={cx} cy={cy} r={18} fill="#000" stroke={stats.color} strokeWidth={1} />
+          <text x={cx} y={cy + 4} textAnchor="middle" style={{ fontFamily: "'Bebas Neue'", fontSize: 11, fill: stats.color, filter: `drop-shadow(0 0 5px ${stats.color})` }}>{pct1}%</text>
         </svg>
       </div>
 
-      {/* TRACKLIST */}
+      {/* 🎶 TRACKLIST SECTION */}
       <div style={{ padding: '0 20px' }}>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#444', borderBottom: '1px solid #222', paddingBottom: 4, marginBottom: 8 }}>{stats.topLabel}</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#333', borderBottom: '1px solid #1a1a1c', paddingBottom: 4, marginBottom: 8, letterSpacing: 1 }}>{stats.topLabel}</div>
         {stats.top.map((name, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
              <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: stats.color }}>0{i+1}</span>
-             <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff', letterSpacing: 0.5 }}>{name?.toUpperCase() || '---'}</span>
+             <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#fff', letterSpacing: 0.5, opacity: 0.9 }}>{name?.toUpperCase() || '---'}</span>
           </div>
         ))}
       </div>
 
-      {/* MODE SELECTORS */}
+      {/* 🎚️ MODE SELECTORS */}
       <div style={{ display: 'flex', gap: 4, height: 35, marginTop: 10 }}>
-        {[{ id: 'fest', icon: '🎪' }, { id: 'legacy', icon: '📜' }, { id: 'city', icon: '📍' }, { id: 'weekend', icon: '🍺' }].map((item) => (
-          <div key={item.id} onMouseDown={() => setMode(item.id)} style={{ flex: 1, background: mode === item.id ? stats.color : 'rgba(255,255,255,0.03)', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <span style={{ filter: mode === item.id ? 'none' : 'grayscale(100%) opacity(0.2)' }}>{item.icon}</span>
+        {[
+          { id: 'fest', icon: '🎪' }, 
+          { id: 'legacy', icon: '📜' }, 
+          { id: 'city', icon: '📍' }, 
+          { id: 'weekend', icon: '🍺' }
+        ].map((item) => (
+          <div 
+            key={item.id} 
+            onMouseDown={() => setMode(item.id)} 
+            style={{ 
+              flex: 1, 
+              background: mode === item.id ? stats.color : 'rgba(255,255,255,0.02)', 
+              borderRadius: '4px 4px 0 0', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              cursor: 'pointer',
+              borderBottom: mode === item.id ? `2px solid #fff` : 'none',
+              transition: '0.2s'
+            }}
+          >
+            <span style={{ filter: mode === item.id ? 'none' : 'grayscale(100%) opacity(0.1)' }}>{item.icon}</span>
           </div>
         ))}
       </div>
