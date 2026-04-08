@@ -759,12 +759,35 @@ const CardTitle = ({ children, style = {} }) => (
 );
 
 const Btn = ({ children, onClick, variant = 'primary', style = {}, disabled = false }) => {
-  const V = { primary:{ background:C.teal, color:C.bg }, secondary:{ background:C.bgCardAlt, color:C.gray, border:`1px solid ${C.border}` }, danger:{ background:C.red+'22', color:C.red, border:`1px solid ${C.red}44` }, ghost:{ background:'transparent', color:C.teal, border:`1px solid ${C.borderLit}` } };
-  return <button onClick={onClick} disabled={disabled} style={{ fontFamily:"'Space Mono',monospace", fontSize:10, letterSpacing:'0.12em', textTransform:'uppercase', border:'none', borderRadius:4, padding:'8px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1, transition:'all 0.15s', ...V[variant], ...style }}>{children}</button>;
+  const V = { 
+    primary: { background: C.teal, color: C.bg }, 
+    secondary: { background: C.bgCardAlt, color: C.gray, border: `1px solid ${C.border}` }, 
+    danger: { background: C.red + '22', color: C.red, border: `1px solid ${C.red}44` }, 
+    ghost: { background: 'transparent', color: C.teal, border: `1px solid ${C.borderLit}` } 
+  };
+  return (
+    <button 
+      onClick={onClick} 
+      disabled={disabled} 
+      style={{ 
+        fontFamily: "'Space Mono',monospace", 
+        fontSize: 10, 
+        letterSpacing: '0.12em', 
+        textTransform: 'uppercase', 
+        border: 'none', 
+        borderRadius: 4, 
+        padding: '8px 16px', 
+        cursor: disabled ? 'not-allowed' : 'pointer', 
+        opacity: disabled ? 0.5 : 1, 
+        transition: 'all 0.15s', 
+        ...V[variant], 
+        ...style 
+      }}
+    >
+      {children}
+    </button>
+  );
 };
-
-const inputSt = { background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:4, padding:'7px 10px', color:C.white, fontSize:'0.85rem', outline:'none' };
-
 // ─── COUNT-UP STAT ─────────────────────────────────────────────────────────────
 function CountUpStat({ value, label, sub, color = C.white }) {
   const [display, setDisplay] = useState(0);
