@@ -1778,7 +1778,7 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
   ], [headerStats, concerts]);
 
   useEffect(() => {
-    const timer = setInterval(() => setStatIdx(p => (p + 1) % rotatingStats.length), 3500);
+    const timer = setInterval(() => setStatIdx(p => (p + 1) % rotatingStats.length), 3000);
     return () => clearInterval(timer);
   }, [rotatingStats.length]);
 
@@ -1786,8 +1786,19 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
   const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 12 }}>
-      {/* 📊 TOP BARS */}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between', gap: 10 }}>
+      <style>{`
+        @keyframes woofer-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); filter: brightness(1.5) drop-shadow(0 0 8px ${C.teal}); } }
+        .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
+        
+        @keyframes beam-swing { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+        .moving-light { animation: beam-swing 3s ease-in-out infinite; transform-origin: top center; }
+        
+        @keyframes truss-flash { 0%, 100% { background: #fff; box-shadow: 0 0 10px #fff; } 50% { background: #333; box-shadow: none; } }
+        .truss-bulb { animation: truss-flash 1.5s infinite; }
+      `}</style>
+
+      {/* 🟢 TOP DECADE BARS */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, flexShrink: 0 }}>
         {Object.entries(counts).map(([decade, count]) => {
           const m = { '90s': {label:'ANALOG', col:C.purple}, '00s': {label:'DIGITAL', col:C.cyan}, '10s': {label:'STREAM', col:C.teal}, '20s': {label:'HYPER', col:C.gold} }[decade];
@@ -1805,48 +1816,103 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
         })}
       </div>
 
-      {/* 🎭 THE RIG (Now properly constrained) */}
+      {/* 🏟️ THE MAIN STAGE PRODUCTION */}
       <div style={{ 
         flex: 1, 
+        borderTop: `1px solid ${C.border}`, 
+        paddingTop: 10, 
         position: 'relative', 
         overflow: 'hidden', 
         background: '#010102', 
-        borderRadius: 8, 
-        border: `1px solid ${C.border}`,
+        borderRadius: 8,
         display: 'flex',
         flexDirection: 'column'
       }}>
-        {/* LIGHTING LAYER */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }}>
+        
+        {/* 1. OVERHEAD TRUSS & BULBS */}
+        <div style={{ position: 'absolute', top: 0, width: '100%', height: '20px', background: '#111', borderBottom: '1.5px solid #444', zIndex: 100, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+           {[...Array(12)].map((_, i) => (
+             <div key={i} className="truss-bulb" style={{ width: 3, height: 3, borderRadius: '50%', animationDelay: `${i*0.15}s` }} />
+           ))}
+        </div>
+
+        {/* 2. MULTI-BEAM LIGHTING ARRAY */}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 5 }}>
           <svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-             <polygon points="500,0 200,1000 800,1000" fill="rgba(255,255,255,0.15)" style={{ filter: 'blur(30px)' }} />
-             {[...Array(4)].map((_, i) => (
-                <g key={i} className="moving-light" style={{ animationDelay: `${i*0.8}s` }}>
-                  <polygon points={`${200+i*200},0 ${i*200-100},1000 ${i*200+300},1000`} fill={hexToRgba(i % 2 === 0 ? C.purple : C.cyan, 0.35)} style={{ mixBlendMode: 'screen', filter: 'blur(20px)' }} />
-                </g>
-             ))}
+             {/* Center Wash */}
+             <polygon points="500,0 200,1000 800,1000" fill="rgba(255,255,255,0.1)" style={{ filter: 'blur(40px)' }} />
+             
+             {/* Dynamic Beams */}
+             {[...Array(6)].map((_, i) => {
+                const isLeft = i < 3;
+                const col = isLeft ? C.purple : C.cyan;
+                const xBase = isLeft ? (150 + i * 100) : (550 + (i-3) * 100);
+                return (
+                  <g key={i} className="moving-light" style={{ animationDelay: `${i*0.4}s` }}>
+                    <polygon 
+                      points={`${xBase},0 ${xBase-180},1000 ${xBase+180},1000`} 
+                      fill={hexToRgba(col, 0.4)} 
+                      style={{ mixBlendMode: 'screen', filter: 'blur(15px)' }} 
+                    />
+                  </g>
+                );
+             })}
           </svg>
         </div>
 
-        {/* IMAG SCREEN */}
-        <div style={{ position: 'relative', zIndex: 10, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: 40 }}>
-           <div style={{ 
-             background: '#000', 
-             border: `2px solid ${currentStat.color}`, 
-             padding: '15px 30px', 
-             borderRadius: 4, 
-             textAlign: 'center',
-             boxShadow: `0 0 30px ${hexToRgba(currentStat.color, 0.3)}`
-           }}>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: currentStat.color, letterSpacing: 3, fontWeight: 900, marginBottom: 5 }}>{currentStat.label}</div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: '#fff', lineHeight: 1 }}>{currentStat.val}</div>
-           </div>
+        {/* 3. IMAG SCREENS (STAT DISPLAYS) */}
+        <div style={{ 
+          position: 'absolute', top: 40, left: '6%', width: '25%', height: '65px', 
+          background: '#000', border: `2px solid ${currentStat.color}`, borderRadius: 4, 
+          zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `0 0 20px ${hexToRgba(currentStat.color, 0.3)}`
+        }}>
+           <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: currentStat.color, fontWeight: 900, textAlign: 'center' }}>{currentStat.label}</div>
+        </div>
+        
+        <div style={{ 
+          position: 'absolute', top: 40, right: '6%', width: '25%', height: '65px', 
+          background: '#000', border: `2px solid ${currentStat.color}`, borderRadius: 4, 
+          zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `0 0 20px ${hexToRgba(currentStat.color, 0.3)}`
+        }}>
+           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: '#fff', textShadow: `0 0 10px ${currentStat.color}` }}>{currentStat.val}</div>
         </div>
 
-        {/* STAGE FLOOR & FOH BAR */}
-        <div style={{ height: '40px', background: '#000', borderTop: `2px solid ${C.border}`, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {/* 4. SPEAKER STACKS (PULSING) */}
+        {[ {side: 'left'}, {side: 'right'} ].map(s => (
+          <div key={s.side} style={{ 
+            position: 'absolute', [s.side]: 10, bottom: 42, width: 34, height: 115, 
+            background: '#0a0a0c', border: '1.5px solid #222', borderRadius: 4, 
+            display: 'flex', flexDirection: 'column', gap: 6, padding: 5, zIndex: 40, 
+            boxShadow: '0 10px 30px #000' 
+          }}>
+            {[1,2,3,4].map(i => (
+              <div key={i} style={{ flex: 1, background: '#000', borderRadius: '50%', border: '1px solid #1a1a1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="speaker-cone" style={{ width: 14, height: 14, borderRadius: '50%', border: `1.8px solid ${C.teal}`, background: 'radial-gradient(circle, #333, #000)' }} />
+              </div>
+            ))}
+          </div>
+        ))}
+
+        {/* 5. ILLUMINATED STAGE FLOOR */}
+        <div style={{ 
+          position: 'absolute', bottom: 32, width: '100%', height: '65px', 
+          background: '#121216', borderTop: '2px solid #333', zIndex: 20, 
+          clipPath: 'polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%)' 
+        }}>
+           <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at center top, ${hexToRgba(currentStat.color, 0.35)}, transparent 80%)` }} />
+           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 20px)' }} />
+        </div>
+
+        {/* 6. FOH STATUS BAR (ALIGNED TO BOTTOM) */}
+        <div style={{ 
+          marginTop: 'auto', width: '100%', height: '32px', background: '#000', 
+          zIndex: 60, borderTop: `2px solid ${C.border}`, 
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+        }}>
            <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: currentStat.color, letterSpacing: '4px', fontWeight: 900, textShadow: `0 0 8px ${currentStat.color}` }}>
-              SYSTEM STATUS // RIG ACTIVE
+              {currentStat.label} // RIG STATUS: ACTIVE
            </div>
         </div>
       </div>
