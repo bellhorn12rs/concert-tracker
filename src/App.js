@@ -3085,10 +3085,10 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
 // ─── 🖼️ THE UPDATED ROW COMPONENT (CLICKABLE HEADLINES) ─────────────
 
 function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
-  // 🟢 Dynamic Mobile Check
   const isMobile = window.innerWidth < 768;
-  
   const venueLabel = event.is_festival ? event.festival_name : event.venue;
+  const primaryColor = clusterColor || C.teal;
+  
   const rawSetlists = (event.image_url || "").split(',').map(u => u.trim()).filter(Boolean);
   const rawPhotos = (event.personal_photo_url || "").split(',').map(u => u.trim()).filter(Boolean);
   const finalPhotos = rawPhotos.filter(url => !rawSetlists.includes(url));
@@ -3096,117 +3096,116 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
   return (
     <div style={{ 
       display: 'flex', 
-      // 🟢 Stack vertically on mobile, row on desktop
       flexDirection: isMobile ? 'column' : 'row', 
       alignItems: isMobile ? 'stretch' : 'center', 
-      padding: isMobile ? '15px' : isClustered ? '20px' : '30px',
-      background: isClustered ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.02)',
-      borderRadius: '16px', 
-      border: `1px solid ${isClustered ? hexToRgba(clusterColor, 0.3) : C.border}`,
+      padding: isMobile ? '15px' : '40px 30px',
+      background: isClustered ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.02)',
+      borderRadius: '24px', 
+      border: `1px solid ${isClustered ? hexToRgba(primaryColor, 0.3) : C.border}`,
       position: 'relative', 
-      transition: 'all 0.3s ease', 
-      overflow: 'visible',
-      gap: isMobile ? '20px' : '0'
+      overflow: 'hidden', // 🟢 Necessary for the Ghost Poster to bleed off the edge
+      gap: isMobile ? '20px' : '0',
+      marginBottom: isMobile ? '10px' : '0'
     }}>
       
-      {/* 1. LEFT: THE ARTIFACT */}
+      {/* 🟢 THE BACKGROUND GHOST POSTER (Atmospheric Fill) */}
+      {!isMobile && (
+        <div style={{
+          position: 'absolute',
+          left: '-5%',
+          top: '50%',
+          transform: 'translateY(-50%) rotate(-5deg)',
+          fontFamily: "'Bebas Neue'",
+          fontSize: '12rem',
+          color: primaryColor,
+          opacity: 0.04, // 🟢 Barely visible, just for texture
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+          zIndex: 0,
+          letterSpacing: '-5px'
+        }}>
+          {venueLabel?.toUpperCase()}
+        </div>
+      )}
+
+      {/* 🟢 LEFT SECTION: ARCHAEOLOGY INTEL */}
       <div style={{ 
         flexShrink: 0, 
-        width: isMobile ? '100%' : '300px',
+        width: isMobile ? '100%' : '320px',
+        position: 'relative',
+        zIndex: 2,
         display: 'flex',
-        justifyContent: 'center' 
+        flexDirection: 'column',
+        gap: '15px',
+        alignItems: isMobile ? 'center' : 'flex-start'
       }}>
-        {event.is_festival 
-          ? <WristbandCard event={event} genreMap={genreMap} compact={true} onEdit={isAdmin ? onEdit : null} /> 
-          : <div style={{ transform: isMobile ? 'scale(0.9)' : 'none' }}>
-              <TicketStubCard event={event} onEdit={isAdmin ? onEdit : null} genreMap={genreMap} stubIdx={idx} />
+        {/* 1. The Artifact */}
+        <div style={{ transform: isMobile ? 'scale(0.9)' : 'none' }}>
+          {event.is_festival 
+            ? <WristbandCard event={event} genreMap={genreMap} compact={true} onEdit={isAdmin ? onEdit : null} /> 
+            : <TicketStubCard event={event} onEdit={isAdmin ? onEdit : null} genreMap={genreMap} stubIdx={idx} />
+          }
+        </div>
+
+        {/* 2. Technical Coordinates (The "Map" Vibe) */}
+        {!isMobile && (
+          <div style={{ 
+            paddingLeft: '10px', 
+            borderLeft: `1px solid ${hexToRgba(primaryColor, 0.3)}`,
+            fontFamily: "'Space Mono'", 
+            fontSize: '8px', 
+            color: C.grayDim,
+            letterSpacing: '2px'
+          }}>
+            <div>LOC_ID: {event.city?.toUpperCase()} // {event.state}</div>
+            <div style={{ marginTop: '4px', opacity: 0.5 }}>
+              GRID_COORD: {event.id?.substring(0, 8).toUpperCase()}
             </div>
-        }
+          </div>
+        )}
       </div>
 
-      {/* 2. MIDDLE: THE INTERACTIVE LINEUP */}
+      {/* MIDDLE: THE LINEUP */}
       <div style={{ 
         flex: 1, 
-        paddingLeft: isMobile ? '0' : '40px', 
-        paddingRight: isMobile ? '0' : '20px',
+        paddingLeft: isMobile ? '0' : '50px', 
+        zIndex: 2,
         textAlign: isMobile ? 'center' : 'left'
       }}>
         <div style={{ 
           fontFamily: "'Bebas Neue'", 
-          fontSize: isMobile ? '1.8rem' : isClustered ? '2rem' : '2.8rem', 
-          lineHeight: 1.1,
+          fontSize: isMobile ? '2rem' : '3.5rem', 
+          lineHeight: 0.9,
           letterSpacing: '1px',
-          marginBottom: '10px',
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: isMobile ? 'center' : 'flex-start',
-          columnGap: '12px'
+          marginBottom: '15px',
+          color: '#fff',
+          textShadow: '0 0 20px rgba(0,0,0,0.5)'
         }}>
-          {event.bands?.map((band, bIdx) => (
-            <React.Fragment key={`${event.id}-headline-${bIdx}`}>
-              <a 
-                href={getSetlistFmUrl(band, event.date)} 
-                target="_blank" rel="noreferrer"
-                style={{ 
-                  color: C.white, 
-                  textDecoration: 'none',
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer'
-                }}
-                onMouseEnter={e => { e.target.style.color = C.gold; e.target.style.textDecoration = 'underline'; }}
-                onMouseLeave={e => { e.target.style.color = C.white; e.target.style.textDecoration = 'none'; }}
-              >
-                {band.toUpperCase()}
-              </a>
-              {bIdx < event.bands.length - 1 && (
-                <span style={{ color: 'rgba(255,255,255,0.2)', pointerEvents: 'none' }}>·</span>
-              )}
-            </React.Fragment>
-          ))}
+          {event.bands?.join(' · ').toUpperCase()}
         </div>
         
-        {/* Metadata Row */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: isMobile ? 'center' : 'flex-start',
-          gap: '12px',
-          flexWrap: 'wrap'
-        }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: clusterColor || C.teal, fontWeight: 900 }}>
-            {(isClustered && event.festival_day) ? event.festival_day.toUpperCase() : fmtDateShort(event.date)}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px' }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: primaryColor, fontWeight: 900 }}>
+            {fmtDateShort(event.date)}
           </div>
-          <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
-          <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray }}>
+          <div style={{ width: 1, height: 12, background: C.border }} />
+          <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>
             {event.venue?.toUpperCase()}
           </div>
-          
-          {isAdmin && (
-            <button 
-              onClick={() => onEdit(event)}
-              style={{ background: 'rgba(0,229,204,0.1)', border: `1px solid ${C.teal}33`, color: C.teal, fontFamily: "'Space Mono'", fontSize: '9px', cursor: 'pointer', padding: '2px 8px', borderRadius: '4px' }}
-            >
-              EDIT
-            </button>
-          )}
         </div>
       </div>
 
-      {/* 3. RIGHT: THE MEDIA CLUSTER */}
+      {/* RIGHT: THE MEDIA CLUSTER */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: isMobile ? 'center' : 'flex-end', 
-        // 🟢 THE FIX: Remove minWidth on mobile and allow horizontal scroll if it overflows
         minWidth: isMobile ? '100%' : '400px', 
-        marginLeft: isMobile ? '0' : 'auto',
-        overflowX: isMobile ? 'auto' : 'visible',
-        padding: isMobile ? '10px 0' : '0',
-        WebkitOverflowScrolling: 'touch'
+        zIndex: 2,
+        marginLeft: 'auto'
       }}>
         <div style={{ 
           display: 'flex', 
-          // 🟢 Scale down photos on mobile to fit the screen better
           transform: isMobile ? 'scale(0.8)' : 'none',
           transformOrigin: isMobile ? 'center' : 'right'
         }}>
