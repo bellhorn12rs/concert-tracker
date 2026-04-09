@@ -2849,88 +2849,78 @@ function SetlistPaper({ src, index = 0, total = 1 }) {
 }
 
 // ─── 📸 STACKED POLAROIDS ────────────────────────────────────────────────────
-function PersonalPolaroid({ src, index = 0, total = 1, caption }) {
+function PersonalPolaroid({ src, index = 0, caption, date, venue }) {
   const [isFull, setIsFull] = React.useState(false);
   if (!src) return null;
 
-  // We'll keep the base rotation subtle so the grid stays clean
+  // 🎨 SHARPIE COLOR ENGINE
+  // Picking a random "Marker" color for each photo
+  const markerColors = ['#1a1a1a', '#2233aa', '#aa2233', '#115533', '#5522aa'];
+  const myColor = markerColors[index % markerColors.length];
+
   const baseRotation = (index % 2 === 0 ? -2 : 2);
   
   return (
     <>
       <div 
-        onClick={(e) => {
-          e.stopPropagation(); // Prevent grid interference
-          setIsFull(true);
-        }}
+        onClick={() => setIsFull(true)}
+        className="polaroid-pin-animation"
         style={{
-          padding: '12px 12px 45px 12px', // More room at bottom for handwriting
+          padding: '12px 12px 65px 12px', // Extra room for Date/Venue
           background: '#fff', 
-          boxShadow: '0 15px 35px rgba(0,0,0,0.4), 0 0 5px rgba(0,0,0,0.1)',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
           transform: `rotate(${baseRotation}deg)`, 
-          width: '300px', // 🟢 BUMPED SIZE
-          flexShrink: 0,
+          width: '320px', 
           border: '1px solid #efefef', 
           zIndex: 10 + index, 
-          transition: 'all 0.3s ease-out', // Smoother transition
+          transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)', 
           cursor: 'pointer',
           position: 'relative',
-          userSelect: 'none'
         }}
         onMouseEnter={e => { 
-          e.currentTarget.style.transform = `rotate(0deg) scale(1.05) translateY(-10px)`; 
+          e.currentTarget.style.transform = `rotate(0deg) scale(1.05) translateY(-5px)`; 
           e.currentTarget.style.zIndex = 1000; 
-          e.currentTarget.style.boxShadow = '0 30px 60px rgba(0,0,0,0.6)';
         }}
         onMouseLeave={e => { 
           e.currentTarget.style.transform = `rotate(${baseRotation}deg)`; 
           e.currentTarget.style.zIndex = 10 + index; 
-          e.currentTarget.style.boxShadow = '0 15px 35px rgba(0,0,0,0.4)';
         }}
       >
-        {/* THE PHOTO */}
-        <div style={{ 
-          width: '100%', 
-          aspectRatio: '1/1', 
-          background: `url(${src}) center/cover no-repeat`,
-          borderRadius: '1px',
-          pointerEvents: 'none' // Let clicks pass to the parent
-        }} />
-
-        {/* 🟢 THE HANDWRITTEN CAPTION (NOW INSIDE THE FRAME) */}
-        <div style={{ 
-          fontFamily: "'Caveat', cursive", 
-          fontSize: '1.8rem', // Larger for the bigger frame
-          color: '#1a1a1a', 
-          textAlign: 'center', 
-          marginTop: '18px', 
-          fontWeight: 700,
-          lineHeight: 1,
-          letterSpacing: '-1px',
-          transform: 'rotate(-2deg)', // A bit more "messy" tilt
-          pointerEvents: 'none'
+        {/* 📌 THE THUMB TACK */}
+        <div style={{
+          position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
+          width: 18, height: 18, background: '#cc0000', borderRadius: '50%',
+          boxShadow: 'inset -3px -3px 5px rgba(0,0,0,0.4), 2px 5px 10px rgba(0,0,0,0.3)',
+          zIndex: 100
         }}>
-          {caption}
+          <div style={{ width: 4, height: 4, background: 'rgba(255,255,255,0.6)', borderRadius: '50%', margin: '3px 0 0 4px' }} />
         </div>
 
-        {/* Subtle sheen for that photo-paper look */}
-        <div style={{
-          position: 'absolute',
-          inset: '12px 12px 45px 12px',
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%)',
-          pointerEvents: 'none'
+        {/* PHOTO AREA */}
+        <div style={{ 
+          width: '100%', aspectRatio: '1/1', 
+          background: `url(${src}) center/cover no-repeat`,
+          border: '1px solid rgba(0,0,0,0.1)'
         }} />
+
+        {/* 🖊️ HANDWRITTEN LABELS (ON THE FRAME) */}
+        <div style={{ 
+          fontFamily: "'Caveat', cursive", 
+          textAlign: 'center', 
+          marginTop: '15px', 
+          color: myColor, // Randomized Marker Color
+          pointerEvents: 'none'
+        }}>
+          <div style={{ fontSize: '2.2rem', fontWeight: 700, lineHeight: 0.8, transform: 'rotate(-1deg)' }}>
+            {caption}
+          </div>
+          <div style={{ fontSize: '1.1rem', marginTop: 8, opacity: 0.9, transform: 'rotate(1deg)' }}>
+            {date ? fmtDateShort(date) : ''} — {venue?.split(',')[0].toUpperCase()}
+          </div>
+        </div>
       </div>
 
-      {/* FULL SCREEN LIGHTBOX */}
-      {isFull && (
-        <Lightbox 
-          src={src} 
-          caption={caption} 
-          onClose={() => setIsFull(false)} 
-          type="POLAROID" 
-        />
-      )}
+      {isFull && <Lightbox src={src} caption={caption} onClose={() => setIsFull(false)} type="POLAROID" />}
     </>
   );
 }
@@ -4409,110 +4399,59 @@ function PhotoVaultTab({ concerts }) {
     const results = [];
     safeConcerts.forEach(c => {
       if (!c || !c.personal_photo_url) return;
-
       const displayName = c.artist || c.festival_name || (c.bands && c.bands[0]) || 'Unknown Act';
       const urls = String(c.personal_photo_url).split(',').map(u => u.trim()).filter(Boolean);
       
       urls.forEach((url, idx) => {
-        // 🟢 THE JITTER ENGINE
-        // We generate these once so the photo stays in its "spot" 
-        const rotation = (Math.random() * 12 - 6).toFixed(2); // -6 to +6 degrees
-        const shiftX = (Math.random() * 30 - 15).toFixed(2);   // -15px to +15px drift
-        const shiftY = (Math.random() * 20 - 10).toFixed(2);   // -10px to +10px drift
-        const zIndex = Math.floor(Math.random() * 10);        // Random stacking order
+        // Random "Starting" rotation for each pinned photo
+        const startRotation = (Math.random() * 10 - 5).toFixed(2);
 
         results.push({
           id: `${c.id}-photo-${idx}`,
           url,
           artist: displayName,
-          date: c.date || '',
-          venue: c.venue || c.festival_name || 'Unknown Venue',
-          // Store the physics in the object
-          scatterStyle: {
-            transform: `rotate(${rotation}deg) translate(${shiftX}px, ${shiftY}px)`,
-            zIndex: zIndex
-          }
+          date: c.date,
+          venue: c.venue || c.festival_name,
+          rotation: startRotation
         });
       });
     });
     return results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }, [safeConcerts]);
 
-  if (safeConcerts.length > 0 && photos.length === 0) {
-    return (
-      <div style={{ padding: 100, textAlign: 'center' }}>
-        <div style={{ fontSize: '3rem', marginBottom: 20 }}>📸</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.grayDim, letterSpacing: 3 }}>DECK EMPTY // AWAITING SIGNAL</div>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ padding: '40px 0', overflowX: 'hidden' }} className="fade-in">
-      <div style={{ textAlign: 'center', marginBottom: 80 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: '#fff', lineHeight: 1 }}>
+    <div style={{ padding: '60px 0', overflowX: 'hidden' }} className="fade-in">
+      <div style={{ textAlign: 'center', marginBottom: 100 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '5rem', color: '#fff', lineHeight: 1 }}>
           THE <span style={{ color: C.purple }}>POLAROID</span> DECK
         </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.purple, letterSpacing: 4, fontWeight: 900, marginTop: 10 }}>
-          {photos.length} MEMORIES ARCHIVED // FULL SIGNAL
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.purple, letterSpacing: 5 }}>
+          {photos.length} MEMORIES ARCHIVED // PHYSICAL SIGNAL
         </div>
       </div>
 
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-        gap: '100px 40px', // Increased vertical gap to account for jitter
+        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
+        gap: '120px 40px', // Large gap for swinging
         padding: '0 40px',
-        justifyItems: 'center', // 🟢 THE CRITICAL FIX: Snaps elements to center of their cells
-        alignItems: 'center'
+        justifyItems: 'center'
       }}>
-        {photos.map((p) => (
-          <div key={p.id} style={{ 
-            position: 'relative', 
-            ...p.scatterStyle, 
-            transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)' 
-          }}>
-            {/* The Polaroid Container */}
-            <div className="polaroid-frame">
-              <PersonalPolaroid 
-                src={p.url} 
-                caption={p.artist} 
-                index={0} 
-                total={1} 
-              />
-            </div>
-            
-            {/* 🟢 HANDWRITTEN SUB-LABELS */}
-            <div style={{ 
-              marginTop: 15, 
-              textAlign: 'center', 
-              fontFamily: "'Caveat', cursive", 
-              pointerEvents: 'none' 
-            }}>
-              <div style={{ 
-                fontSize: '1.8rem', 
-                color: '#fff', 
-                lineHeight: 0.9,
-                textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
-              }}>
-                {p.artist}
-              </div>
-              <div style={{ 
-                fontSize: '1.1rem', 
-                color: C.purple, 
-                marginTop: 5,
-                opacity: 0.8 
-              }}>
-                {p.date ? fmtDateShort(p.date) : '??'} — {p.venue?.split(',')[0]}
-              </div>
-            </div>
+        {photos.map((p, i) => (
+          <div key={p.id} style={{ '--rotation': `${p.rotation}deg` }}>
+             <PersonalPolaroid 
+               src={p.url} 
+               caption={p.artist} 
+               date={p.date} 
+               venue={p.venue} 
+               index={i} 
+             />
           </div>
         ))}
       </div>
     </div>
   );
 }
-
 // ─── THEME SWITCHER ───────────────────────────────────────────────────────────
 function ThemeSwitcher({ isMobile }) {
   const { themeId, setThemeId } = useTheme();
