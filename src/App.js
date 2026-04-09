@@ -4316,54 +4316,99 @@ function PhotoVaultTab({ concerts }) {
   const photos = useMemo(() => {
     const results = [];
     safeConcerts.forEach(c => {
+      // 1. Skip if no photo
       if (!c || !c.personal_photo_url) return;
+
+      // 2. Data Detective: Find a name to use for the label
+      // Priority: Main Artist > Festival Name > First Band in List > "Unknown"
+      const displayName = c.artist || c.festival_name || (c.bands && c.bands[0]) || 'Unknown Act';
+
+      // 3. Handle multiple photos in one field (split by comma)
       const urls = String(c.personal_photo_url).split(',').map(u => u.trim()).filter(Boolean);
+      
       urls.forEach((url, idx) => {
         results.push({
-          id: `${c.id}-p-${idx}`,
+          id: `${c.id}-photo-${idx}`,
           url,
-          artist: c.artist || 'Unknown Artist',
+          artist: displayName,
           date: c.date || '',
-          venue: c.venue || 'Unknown Venue'
+          venue: c.venue || c.festival_name || 'Unknown Venue'
         });
       });
     });
+    // Sort Newest to Oldest
     return results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }, [safeConcerts]);
 
-  if (!photos.length) {
+  // Gate for absolute empty state
+  if (safeConcerts.length > 0 && photos.length === 0) {
     return (
       <div style={{ padding: 100, textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.grayDim }}>DECK EMPTY // AWAITING SIGNAL</div>
+        <div style={{ fontSize: '3rem', marginBottom: 20 }}>📸</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.grayDim, letterSpacing: 3 }}>
+          NO PHOTOS FOUND // CHECK 'PERSONAL_PHOTO_URL' FIELDS IN THE OFFICE
+        </div>
       </div>
     );
   }
 
   return (
     <div style={{ padding: '40px 0' }} className="fade-in">
+      {/* HEADER SECTION */}
       <div style={{ textAlign: 'center', marginBottom: 60 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: '#fff' }}>THE <span style={{ color: C.purple }}>POLAROID</span> DECK</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, letterSpacing: 4, fontWeight: 900 }}>{photos.length} DEVELOPED MEMORIES // FULL SIGNAL</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: '#fff', lineHeight: 1 }}>
+          THE <span style={{ color: C.purple }}>POLAROID</span> DECK
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.purple, letterSpacing: 4, fontWeight: 900, marginTop: 10 }}>
+          {photos.length} MEMORIES ARCHIVED // FULL SIGNAL
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '60px' }}>
-        {photos.map((p, i) => (
-          <div key={p.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ transform: `rotate(${(i % 2 === 0 ? 1 : -1) * (i % 3 + 1)}deg)`, transition: '0.3s' }}>
-              {/* Using your existing Polaroid atom */}
-              <PersonalPolaroid 
-                src={p.url} 
-                caption={p.artist.toUpperCase()} 
-                index={0} 
-                total={1} 
-              />
+      {/* PHOTO GRID */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', 
+        gap: '60px', 
+        padding: '0 20px' 
+      }}>
+        {photos.map((p, i) => {
+          // Add a subtle random-ish rotation for the "tossed on a table" look
+          const rotation = (i % 2 === 0 ? 1 : -1) * (i % 5);
+          
+          return (
+            <div key={p.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ transform: `rotate(${rotation}deg)`, transition: '0.3s ease' }}>
+                <PersonalPolaroid 
+                  src={p.url} 
+                  caption={p.artist.toUpperCase()} 
+                  index={i} 
+                  total={photos.length} 
+                />
+              </div>
+              
+              {/* LEGIBLE SUB-LABELS */}
+              <div style={{ marginTop: 20, textAlign: 'center' }}>
+                <div style={{ 
+                  fontFamily: "'Bebas Neue'", 
+                  fontSize: '1.4rem', 
+                  color: '#fff', 
+                  letterSpacing: '1px', 
+                  marginBottom: 2 
+                }}>
+                  {p.artist}
+                </div>
+                <div style={{ 
+                  fontFamily: "'Space Mono'", 
+                  fontSize: '9px', 
+                  color: C.grayDim, 
+                  textTransform: 'uppercase' 
+                }}>
+                  {p.date ? fmtDateShort(p.date) : 'Date Unknown'} // {p.venue?.split(',')[0]}
+                </div>
+              </div>
             </div>
-            <div style={{ marginTop: 20, textAlign: 'center' }}>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff', letterSpacing: 1 }}>{p.artist}</div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim }}>{p.date ? fmtDateShort(p.date) : 'DATE UNKNOWN'}</div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
