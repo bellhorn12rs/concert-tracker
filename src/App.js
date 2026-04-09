@@ -2505,9 +2505,11 @@ function TimelineDot({ item, onTeleport, genreMap, xPos }) {
   );
 }
 // ─── 2. PANORAMIC TIMELINE TAB (High-Contrast Years & Months) ──────────────
+// ─── 2. PANORAMIC TIMELINE TAB (With Jump Drive Navigation) ──────────────
 function TimelineTab({ concerts, setActiveTab, genreMap }) {
   const scrollRef = useRef(null);
   const [currentYear, setCurrentYear] = useState(null);
+  const [showNavigator, setShowNavigator] = useState(true); // Control the entry overlay
   const PX_PER_DAY = 3.5; 
 
   const data = useMemo(() => {
@@ -2518,13 +2520,12 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
     const lastDate = new Date(sorted[sorted.length - 1].date + 'T12:00:00');
     const minTs = firstDate.getTime();
     const MS_PER_DAY = 86400000;
-    const PADDING = 300;
+    const PADDING = 600; // Increased padding for better start/end views
 
     const dateToX = (dateStr) => (PADDING + Math.round((new Date(dateStr + 'T12:00:00').getTime() - minTs) / MS_PER_DAY) * PX_PER_DAY);
     const totalWidth = PADDING * 2 + Math.round((lastDate.getTime() - minTs) / MS_PER_DAY) * PX_PER_DAY;
     const withX = sorted.map((s, i) => ({ ...s, globalIndex: i, xPos: dateToX(s.date) }));
 
-    // ─── STICKY YEAR BLOCKS ───
     const yearBlocks = [];
     for (let yr = firstDate.getFullYear(); yr <= lastDate.getFullYear(); yr++) {
       const xStart = dateToX(`${yr}-01-01`);
@@ -2532,21 +2533,20 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
       yearBlocks.push({ year: yr, x: xStart, width: xEnd - xStart, isAlt: yr % 2 === 1 });
     }
 
-    // ─── MONTH MARKERS (Bigger & Louder) ───
     const monthMarkers = [];
-    const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    const MONTHS_LBL = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     let iter = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
     while (iter <= lastDate) {
       const ds = iter.toISOString().split('T')[0];
-      monthMarkers.push({ x: dateToX(ds), label: MONTHS[iter.getMonth()], isJan: iter.getMonth() === 0 });
+      monthMarkers.push({ x: dateToX(ds), label: MONTHS_LBL[iter.getMonth()], isJan: iter.getMonth() === 0 });
       iter.setMonth(iter.getMonth() + 1);
     }
 
-    // ─── STACKED HIGHLIGHTS ───
     const highlights = [];
     const laneLastX = { up: [-1000,-1000,-1000,-1000], down: [-1000,-1000,-1000,-1000] };
     const MIN_GAP = 140;
 
+    // Highlights logic remains same...
     const festGroups = [];
     withX.forEach(s => {
       if (s.is_festival) {
@@ -2555,7 +2555,6 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
         else festGroups.push({ name: s.festival_name, date: s.date, shows: [s] });
       }
     });
-
     festGroups.forEach((fg, i) => {
       const x = fg.shows.reduce((a, s) => a + s.xPos, 0) / fg.shows.length;
       const side = i % 2 === 0 ? 'up' : 'down';
@@ -2566,7 +2565,6 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
         }
       }
     });
-
     withX.forEach((s, i) => {
       if (s.is_festival) return;
       const side = i % 2 === 0 ? 'up' : 'down';
@@ -2580,6 +2578,20 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
 
     return { sortedShows: withX, yearBlocks, monthMarkers, highlights, totalWidth };
   }, [concerts, genreMap]);
+
+  // 🟢 TELEPORT FUNCTION
+  const jumpTo = (targetX) => {
+    setShowNavigator(false);
+    setTimeout(() => {
+      if (scrollRef.current) {
+        const centerOffset = scrollRef.current.clientWidth / 2;
+        scrollRef.current.scrollTo({
+          left: targetX - centerOffset,
+          behavior: 'smooth'
+        });
+      }
+    }, 100);
+  };
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -2597,8 +2609,69 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
   }, [data.sortedShows]);
 
   return (
-    <div style={{ padding: '20px 0' }} className="fade-in">
+    <div style={{ padding: '20px 0', position: 'relative' }} className="fade-in">
       <GenreLegend />
+
+      {/* 🟢 JUMP DRIVE OVERLAY */}
+      {showNavigator && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 2000, 
+          background: 'rgba(5,5,8,0.95)', backdropFilter: 'blur(10px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          borderRadius: 16, border: `1px solid ${C.border}`
+        }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: '#fff', marginBottom: 10, letterSpacing: 4 }}>TIME MACHINE JUMP</div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginBottom: 40, letterSpacing: 2 }}>SELECT TEMPORAL DESTINATION</div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20, width: '100%', maxWidth: 600 }}>
+            <button onClick={() => jumpTo(data.sortedShows[0].xPos)} style={navBtnSt}>
+              <span style={navIconSt}>📜</span>
+              <span style={navLabelSt}>FIRST RECORD</span>
+              <span style={navSubSt}>{getYear(data.sortedShows[0].date)}</span>
+            </button>
+
+            <button onClick={() => jumpTo(data.sortedShows[data.sortedShows.length - 1].xPos)} style={navBtnSt}>
+              <span style={navIconSt}>⚡</span>
+              <span style={navLabelSt}>MOST RECENT</span>
+              <span style={navSubSt}>{getYear(data.sortedShows[data.sortedShows.length - 1].date)}</span>
+            </button>
+
+            <button onClick={() => {
+              const rand = data.sortedShows[Math.floor(Math.random() * data.sortedShows.length)];
+              jumpTo(rand.xPos);
+            }} style={navBtnSt}>
+              <span style={navIconSt}>🎲</span>
+              <span style={navLabelSt}>RANDOM POINT</span>
+              <span style={navSubSt}>LUCK OF THE DRAW</span>
+            </button>
+
+            <div style={{ ...navBtnSt, cursor: 'default' }}>
+              <span style={navIconSt}>🗓️</span>
+              <span style={navLabelSt}>SPECIFIC YEAR</span>
+              <select 
+                onChange={(e) => {
+                  const block = data.yearBlocks.find(b => b.year === parseInt(e.target.value));
+                  if (block) jumpTo(block.x + (block.width / 2));
+                }}
+                style={{ background: '#000', border: `1px solid ${C.teal}`, color: '#fff', fontFamily: "'Space Mono'", fontSize: 10, padding: '4px 8px', marginTop: 5, borderRadius: 4 }}
+              >
+                <option value="">SELECT...</option>
+                {data.yearBlocks.map(yb => <option key={yb.year} value={yb.year}>{yb.year}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🟢 RE-JUMP TRIGGER (Bottom Corner) */}
+      {!showNavigator && (
+        <button 
+          onClick={() => setShowNavigator(true)}
+          style={{ position: 'absolute', bottom: 40, right: 40, zIndex: 1001, background: '#000', border: `2px solid ${C.teal}`, borderRadius: '50%', width: 50, height: 50, cursor: 'pointer', boxShadow: `0 0 20px ${C.teal}66`, fontSize: '1.5rem' }}
+        >
+          🚀
+        </button>
+      )}
 
       <div style={{ position: 'absolute', top: 80, left: 40, zIndex: 1000, pointerEvents: 'none' }}>
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: C.teal, opacity: 0.6, textShadow: `0 0 20px ${C.teal}44` }}>{currentYear}</div>
@@ -2609,56 +2682,21 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
         background: 'rgba(0,0,0,0.5)', border: `1px solid ${C.border}`, borderRadius: 16, position: 'relative' 
       }}>
         <div style={{ width: data.totalWidth, height: '100%', position: 'relative' }}>
-
-          {/* 🛤 RAIL */}
+          {/* ... [Rest of the Timeline SVG/Dot rendering remains identical] ... */}
           <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 2, background: `linear-gradient(90deg, transparent, ${C.teal}66, ${C.purple}66, transparent)`, zIndex: 10, transform: 'translateY(-50%)' }} />
-
-          {/* 📅 STICKY YEAR BLOCKS: Higher Opacity & Vibrant Glow */}
           {data.yearBlocks.map(yb => (
-            <div key={yb.year} style={{ 
-              position: 'absolute', left: yb.x, top: 0, bottom: 0, width: yb.width, 
-              zIndex: 5, pointerEvents: 'none', borderLeft: `2px solid ${yb.isAlt ? C.purple : C.teal}44` 
-            }}>
-              <div style={{ 
-                position: 'sticky', left: 40, width: 'fit-content',
-                top: yb.isAlt ? '62%' : '22%', 
-              }}>
-                <div style={{ 
-                  fontFamily: "'Bebas Neue'", fontSize: '9rem', 
-                  color: `${yb.isAlt ? C.purple : C.teal}33`, // Boosted from 15 to 33
-                  textShadow: `0 0 30px ${yb.isAlt ? C.purple : C.teal}22`,
-                  whiteSpace: 'nowrap'
-                }}>
-                  {yb.year}
-                </div>
+            <div key={yb.year} style={{ position: 'absolute', left: yb.x, top: 0, bottom: 0, width: yb.width, zIndex: 5, pointerEvents: 'none', borderLeft: `2px solid ${yb.isAlt ? C.purple : C.teal}44` }}>
+              <div style={{ position: 'sticky', left: 40, width: 'fit-content', top: yb.isAlt ? '62%' : '22%' }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '9rem', color: `${yb.isAlt ? C.purple : C.teal}33`, textShadow: `0 0 30px ${yb.isAlt ? C.purple : C.teal}22`, whiteSpace: 'nowrap' }}>{yb.year}</div>
               </div>
             </div>
           ))}
-
-          {/* 🗓 MONTH MARKERS: Taller, Bolder, Larger Text */}
           {data.monthMarkers.map(mm => (
             <div key={`${mm.x}-${mm.label}`} style={{ position: 'absolute', left: mm.x, top: '50%', transform: 'translateY(-50%)', zIndex: 11 }}>
-              <div style={{ 
-                width: 2, // Thicker tick
-                height: mm.isJan ? 35 : 18, // Taller ticks
-                background: mm.isJan ? C.teal : C.grayDim, 
-                boxShadow: mm.isJan ? `0 0 10px ${C.teal}` : 'none',
-                opacity: 0.8 
-              }} />
-              <div style={{ 
-                position: 'absolute', top: 22, left: -12, 
-                fontFamily: "'Space Mono'", fontSize: '11px', // Bumped size
-                color: mm.isJan ? C.teal : C.gray, 
-                fontWeight: 900,
-                opacity: 0.9, 
-                transform: 'rotate(-45deg)', whiteSpace: 'nowrap'
-              }}>
-                {mm.label}
-              </div>
+              <div style={{ width: 2, height: mm.isJan ? 35 : 18, background: mm.isJan ? C.teal : C.grayDim, boxShadow: mm.isJan ? `0 0 10px ${C.teal}` : 'none', opacity: 0.8 }} />
+              <div style={{ position: 'absolute', top: 22, left: -12, fontFamily: "'Space Mono'", fontSize: '11px', color: mm.isJan ? C.teal : C.gray, fontWeight: 900, transform: 'rotate(-45deg)', whiteSpace: 'nowrap' }}>{mm.label}</div>
             </div>
           ))}
-
-          {/* 🔦 STACKED HIGHLIGHTS */}
           {data.highlights.map((h, i) => {
             const laneH = 40 - (h.lane * 8); 
             return (
@@ -2671,17 +2709,30 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
               </div>
             );
           })}
-
-          {/* 🔴 DOTS */}
           {data.sortedShows.map(show => (
             <TimelineDot key={show.id} item={show} xPos={show.xPos} onTeleport={() => setActiveTab('byDay')} genreMap={genreMap} />
           ))}
-
         </div>
       </div>
     </div>
   );
 }
+
+// ─── NAVIGATOR STYLES ───
+const navBtnSt = {
+  background: 'rgba(255,255,255,0.03)',
+  border: `1px solid ${hexToRgba('#fff', 0.1)}`,
+  borderRadius: 12,
+  padding: '30px 20px',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease'
+};
+const navIconSt = { fontSize: '2rem', marginBottom: 10 };
+const navLabelSt = { fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', letterSpacing: 1 };
+const navSubSt = { fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, marginTop: 5, letterSpacing: 2 };
 
 // ─── 4. MEDIA COMPONENTS (SCRAPBOOK EXPANSION) ───────────────────────────────
 
