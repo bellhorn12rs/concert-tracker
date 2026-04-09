@@ -5001,36 +5001,44 @@ export default function App() {
   }
 
   async function handleSave(id, payload) {
-    console.log("Committing to Archive...", payload);
+    console.log("Committing clean payload to Archive...");
 
-    // 1. CLONE & MAP: Translate UI fields to Database columns
-    const dbPayload = { ...payload };
+    // 1. THE WHITE-LIST: Only columns that exist in your Supabase screenshot
+    const dbPayload = {
+      date: payload.date || null,
+      venue: payload.venue || null,
+      city: payload.city || null,
+      state: payload.state || null,
+      artist: payload.artist || null,
+      is_festival: !!payload.is_festival,
+      festival_name: payload.festival_name || null,
+      festival_day: payload.festival_day || null,
+      // Map the UI "Setlist" field to the DB "image_url" column
+      image_url: payload.setlist_image_url || payload.image_url || null,
+      personal_photo_url: payload.personal_photo_url || null,
+    };
 
-    // Move 'setlist_image_url' (UI) to 'image_url' (Supabase)
-    if (dbPayload.setlist_image_url !== undefined) {
-      dbPayload.image_url = dbPayload.setlist_image_url;
-    }
-
-    // 🔴 THE KILL-LIST: Remove any keys that aren't real columns in your screenshot
-    delete dbPayload.setlist_image_url; // Was causing your error
-    delete dbPayload.created_at;        // Managed by Supabase
-    
-    // Ensure bands is a proper array for Postgres
-    if (!Array.isArray(dbPayload.bands)) {
-      dbPayload.bands = [dbPayload.artist || ''];
+    // 2. THE BANDS ARRAY FIX
+    // If bands exists and is an array, use it. 
+    // If not, wrap the artist in an array so the DB is happy.
+    if (Array.isArray(payload.bands) && payload.bands.length > 0) {
+      dbPayload.bands = payload.bands;
+    } else if (dbPayload.artist) {
+      dbPayload.bands = [dbPayload.artist];
+    } else {
+      dbPayload.bands = [];
     }
 
     try {
       let result;
       if (id && id !== 'new') {
-        // 🟢 UPDATE EXISTING
+        // 🟢 UPDATE
         result = await supabase
           .from('concerts')
           .update(dbPayload)
           .eq('id', id);
       } else {
-        // 🟢 INSERT NEW
-        delete dbPayload.id; // DB will generate the UUID
+        // 🟢 INSERT
         result = await supabase
           .from('concerts')
           .insert([dbPayload]);
@@ -5038,11 +5046,12 @@ export default function App() {
 
       if (result.error) throw result.error;
 
-      console.log("Archive Sync Complete.");
-      await fetchConcerts(); // Refresh local list
-      setEditTarget(null);   // Close Modal
+      console.log("Archive Synced Successfully.");
+      await fetchConcerts(); 
+      setEditTarget(null);
     } catch (err) {
-      console.error("DB Sync Failure:", err);
+      console.error("DB Error:", err);
+      // This will now tell us the EXACT column causing the JSON error if it persists
       alert(`SAVE ERROR: ${err.message}`);
     }
   }
