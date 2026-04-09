@@ -5000,9 +5000,9 @@ export default function App() {
   }
 
   async function handleSave(id, payload) {
-    console.log("Committing JSON-safe payload...");
+    // 1. Log exactly what we are sending so we can see it in the console (F12)
+    console.log("SENDING TO DB:", payload);
 
-    // 1. Map the standard fields
     const dbPayload = {
       date: payload.date || null,
       venue: payload.venue || null,
@@ -5016,41 +5016,50 @@ export default function App() {
       personal_photo_url: payload.personal_photo_url || null,
     };
 
-    // 2. THE BANDS JSON FIX
-    // We MUST send an actual Array [] so Supabase can format it as JSON.
-    // We do NOT use .join() here because that creates a plain string.
-    if (Array.isArray(payload.bands) && payload.bands.length > 0) {
-      dbPayload.bands = payload.bands;
+    // 2. THE NUCLEAR BANDS FIX
+    // We ensure 'bands' is a clean JavaScript Array.
+    let cleanBands = [];
+    if (Array.isArray(payload.bands)) {
+      cleanBands = payload.bands;
+    } else if (typeof payload.bands === 'string' && payload.bands.trim() !== '') {
+      cleanBands = payload.bands.split(',').map(s => s.trim()).filter(Boolean);
     } else if (dbPayload.artist) {
-      // If bands is empty, take the headliner and wrap it in an array: ["Artist Name"]
-      dbPayload.bands = [dbPayload.artist];
-    } else {
-      dbPayload.bands = [];
+      cleanBands = [dbPayload.artist];
     }
+
+    // 🟢 FORCE JSON SERIALIZATION
+    // If your column is 'json', this makes it a valid string: '["The National"]'
+    // If your column is 'text[]', Supabase will handle this array correctly.
+    dbPayload.bands = cleanBands;
 
     try {
       let result;
       if (id && id !== 'new') {
-        // UPDATE
-        result = await supabase
-          .from('concerts')
-          .update(dbPayload)
-          .eq('id', id);
+        result = await supabase.from('concerts').update(dbPayload).eq('id', id);
       } else {
-        // INSERT
-        result = await supabase
-          .from('concerts')
-          .insert([dbPayload]);
+        // For new shows, make sure NO id is sent at all
+        const { id: _, ...insertData } = dbPayload;
+        result = await supabase.from('concerts').insert([insertData]);
       }
 
-      if (result.error) throw result.error;
+      if (result.error) {
+        // If it STILL fails with a JSON error, we try to stringify it manually
+        if (result.error.message.includes('json')) {
+          console.warn("Retrying with stringified JSON...");
+          dbPayload.bands = JSON.stringify(cleanBands);
+          const retry = await supabase.from('concerts').upsert([dbPayload]);
+          if (retry.error) throw retry.error;
+        } else {
+          throw result.error;
+        }
+      }
 
-      console.log("Archive Synced Successfully.");
-      await fetchConcerts(); 
+      console.log("Archive update successful!");
+      await fetchConcerts();
       setEditTarget(null);
     } catch (err) {
-      console.error("Database Error:", err);
-      alert(`SAVE ERROR: ${err.message}\n\nCheck that the 'bands' column in Supabase is either JSON or Text Array.`);
+      console.error("Critical DB Error:", err);
+      alert(`DATABASE REJECTED DATA: ${err.message}\n\nCheck the console (F12) to see the 'SENDING TO DB' log.`);
     }
   }
 
