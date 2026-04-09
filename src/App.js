@@ -611,6 +611,30 @@ const MarqueeStyles = () => (
       100% { transform: translateY(0) scale(1) rotate(var(--r, 0deg)); opacity: 1; }
     }
 
+    /* 1. The "Drop & Settle" when the page loads */
+@keyframes pinSettle {
+  0% { transform: translateY(-30px) rotate(15deg); opacity: 0; }
+  60% { transform: translateY(5px) rotate(calc(var(--rotation) * -0.5)); }
+  100% { transform: translateY(0) rotate(var(--rotation)); opacity: 1; }
+}
+
+.polaroid-gravity-swing {
+  transform-origin: top center; /* 🟢 Pivots from the pin! */
+  animation: pinSettle 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+  --rotation: 0deg; /* Default fallback */
+}
+
+/* 2. The "Living" Sway on Hover */
+.polaroid-gravity-swing:hover {
+  animation: physicalSway 3s ease-in-out infinite;
+  box-shadow: 0 40px 70px rgba(0,0,0,0.7) !important;
+}
+
+@keyframes physicalSway {
+  0%, 100% { transform: scale(1.03) rotate(calc(var(--rotation) - 1deg)); }
+  50% { transform: scale(1.03) rotate(calc(var(--rotation) + 1deg)); }
+}
+
     /* ─── CSS CLASSES ─── */
 
     .marquee-text {
@@ -2868,7 +2892,7 @@ function PersonalPolaroid({ src, index = 0, caption, date, venue }) {
         style={{
           padding: '12px 12px 65px 12px', // Extra room for Date/Venue
           background: '#fff', 
-          boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.6), 0 0 5px rgba(0,0,0,0.1), 15px 25px 35px rgba(0,0,0,0.3)',
           transform: `rotate(${baseRotation}deg)`, 
           width: '320px', 
           border: '1px solid #efefef', 
