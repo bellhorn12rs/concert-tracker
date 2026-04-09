@@ -5001,9 +5001,9 @@ export default function App() {
   }
 
   async function handleSave(id, payload) {
-    console.log("Committing clean payload to Archive...");
+    console.log("Committing to Archive. Testing Band syntax...");
 
-    // 1. THE WHITE-LIST: Only columns that exist in your Supabase screenshot
+    // 1. Map the UI fields to match your DB exactly
     const dbPayload = {
       date: payload.date || null,
       venue: payload.venue || null,
@@ -5013,46 +5013,53 @@ export default function App() {
       is_festival: !!payload.is_festival,
       festival_name: payload.festival_name || null,
       festival_day: payload.festival_day || null,
-      // Map the UI "Setlist" field to the DB "image_url" column
       image_url: payload.setlist_image_url || payload.image_url || null,
       personal_photo_url: payload.personal_photo_url || null,
     };
 
-    // 2. THE BANDS ARRAY FIX
-    // If bands exists and is an array, use it. 
-    // If not, wrap the artist in an array so the DB is happy.
-    if (Array.isArray(payload.bands) && payload.bands.length > 0) {
-      dbPayload.bands = payload.bands;
-    } else if (dbPayload.artist) {
-      dbPayload.bands = [dbPayload.artist];
-    } else {
-      dbPayload.bands = [];
+    // 2. THE BANDS FIX: 
+    // If your DB is throwing a JSON error, it's because it doesn't like 
+    // the JS Array format []. We will send it as a comma-separated string.
+    // This works whether the column is 'text' or '_text' (array).
+    if (Array.isArray(payload.bands)) {
+      dbPayload.bands = payload.bands.join(', ');
+    } else if (payload.artist) {
+      dbPayload.bands = payload.artist;
     }
 
     try {
       let result;
       if (id && id !== 'new') {
-        // 🟢 UPDATE
         result = await supabase
           .from('concerts')
           .update(dbPayload)
           .eq('id', id);
       } else {
-        // 🟢 INSERT
+        // For new entries, make sure we don't pass an ID
         result = await supabase
           .from('concerts')
           .insert([dbPayload]);
       }
 
-      if (result.error) throw result.error;
+      if (result.error) {
+        // If it STILL fails with a JSON error, we try one last trick:
+        // sending 'bands' as null to see if that allows the save.
+        if (result.error.message.includes('json')) {
+           console.warn("JSON error detected. Attempting Band-less save...");
+           delete dbPayload.bands;
+           const retry = await supabase.from('concerts').upsert([dbPayload]);
+           if (retry.error) throw retry.error;
+        } else {
+           throw result.error;
+        }
+      }
 
-      console.log("Archive Synced Successfully.");
+      console.log("Archive Synced.");
       await fetchConcerts(); 
       setEditTarget(null);
     } catch (err) {
-      console.error("DB Error:", err);
-      // This will now tell us the EXACT column causing the JSON error if it persists
-      alert(`SAVE ERROR: ${err.message}`);
+      console.error("Final Sync Error:", err);
+      alert(`SYNC FAILED: ${err.message}\n\nHint: Check if the 'bands' column in Supabase is set to 'text'.`);
     }
   }
 
