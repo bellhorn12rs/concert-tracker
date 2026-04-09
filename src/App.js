@@ -4593,8 +4593,7 @@ function TrackRecordLogo({ size = 40 }) {
   );
 }
 
-function EditModal({ concert, onClose, onSave, onDelete }) {
-  // 1. Setup a clean blank state for "New" shows
+function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   const initialState = {
     date: '', artist: '', venue: '', city: '', state: '',
     bands: [], genre: 'Indie Rock', is_festival: false, festival_name: '',
@@ -4604,11 +4603,12 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
 
   const [form, setForm] = useState(initialState);
 
-  // 2. Sync logic: If concert is null, we are in "Add" mode.
   useEffect(() => {
     if (concert && concert !== 'new') {
       setForm({
+        ...initialState,
         ...concert,
+        // Ensure bands is always an array and names are strings
         bands: Array.isArray(concert.bands) ? concert.bands : [concert.artist || ''],
         personal_photo_url: concert.personal_photo_url || '',
         setlist_image_url: concert.setlist_image_url || concert.image_url || ''
@@ -4618,52 +4618,100 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
     }
   }, [concert]);
 
-  // 🟢 The Fix: Don't return null here, just check if the modal should be open
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k, v) => {
+    setForm(prev => {
+      const newForm = { ...prev, [k]: v };
+      
+      // 🟢 VENUE PREFILL LOGIC
+      // If user is typing a venue, look for a match in previous concerts
+      if (k === 'venue' && v.length > 2) {
+        const match = allConcerts.find(c => c.venue?.toLowerCase() === v.toLowerCase());
+        if (match) {
+          newForm.city = match.city || '';
+          newForm.state = match.state || '';
+        }
+      }
+      return newForm;
+    });
+  };
+
+  const handleCommit = () => {
+    // Clean the payload: Ensure artist matches the first band if empty
+    const payload = { ...form };
+    if (!payload.artist && payload.bands.length > 0) payload.artist = payload.bands[0];
+    
+    // Safety: ensure image_url is also updated if setlist_image_url changed
+    payload.image_url = payload.setlist_image_url;
+
+    onSave(concert?.id || null, payload);
+  };
+
+  if (!concert) return null;
+
+  const inputStyle = { width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '6px', outline: 'none', marginBottom: '10px' };
+  const labelStyle = { fontSize: 9, color: C.teal, fontFamily: "'Space Mono'", display: 'block', marginBottom: 4, letterSpacing: 1 };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="fade-in" style={{ background: '#111', border: `2px solid ${C.teal}`, borderRadius: 12, padding: 30, width: '90%', maxWidth: 850, maxHeight: '90vh', overflowY: 'auto', boxShadow: `0 0 50px ${hexToRgba(C.teal, 0.2)}` }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="fade-in" style={{ background: '#111', border: `2px solid ${C.teal}`, borderRadius: 12, padding: 30, width: '90%', maxWidth: 800, maxHeight: '90vh', overflowY: 'auto' }}>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
-          <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', margin: 0, letterSpacing: 2 }}>
-            {concert ? 'EDIT ENTRY' : 'CREATE NEW ENTRY'}
-          </h2>
-          <Btn variant="secondary" onClick={onClose}>CLOSE [ESC]</Btn>
+          <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#fff', margin: 0 }}>{concert === 'new' ? 'CREATE ENTRY' : 'EDIT ARCHIVE'}</h2>
+          <Btn variant="secondary" onClick={onClose}>CANCEL</Btn>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
-            <label style={{ fontSize: 9, color: C.teal, fontFamily: "'Space Mono'" }}>ARTIST / HEADLINER</label>
-            <input style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6 }} value={form.artist} onChange={e => set('artist', e.target.value)} />
-            
-            <label style={{ fontSize: 9, color: C.teal, fontFamily: "'Space Mono'" }}>DATE (YYYY-MM-DD)</label>
-            <input type="date" style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6, colorScheme: 'dark' }} value={form.date} onChange={e => set('date', e.target.value)} />
-            
-            <label style={{ fontSize: 9, color: C.teal, fontFamily: "'Space Mono'" }}>VENUE</label>
-            <input style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6 }} value={form.venue} onChange={e => set('venue', e.target.value)} />
+          {/* COLUMN 1: THE SHOW */}
+          <div>
+            <label style={labelStyle}>MAIN ARTIST / HEADLINER</label>
+            <input style={inputStyle} value={form.artist} onChange={e => set('artist', e.target.value)} placeholder="Band Name" />
+
+            <label style={labelStyle}>DATE</label>
+            <input type="date" style={{ ...inputStyle, colorScheme: 'dark' }} value={form.date} onChange={e => set('date', e.target.value)} />
+
+            <label style={labelStyle}>VENUE (Autofills City/State on match)</label>
+            <input style={inputStyle} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="Search venues..." />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
+              <div>
+                <label style={labelStyle}>CITY</label>
+                <input style={inputStyle} value={form.city} onChange={e => set('city', e.target.value)} />
+              </div>
+              <div>
+                <label style={labelStyle}>STATE</label>
+                <input style={inputStyle} value={form.state} onChange={e => set('state', e.target.value)} maxLength={2} placeholder="TX" />
+              </div>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
-            <label style={{ fontSize: 9, color: C.gold, fontFamily: "'Space Mono'" }}>PHOTO URLS (COMMA SEPARATED)</label>
-            <textarea style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6, height: 80 }} value={form.personal_photo_url} onChange={e => set('personal_photo_url', e.target.value)} />
-            
-            <label style={{ fontSize: 9, color: C.gold, fontFamily: "'Space Mono'" }}>SETLIST URLS</label>
-            <textarea style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6, height: 80 }} value={form.setlist_image_url} onChange={e => set('setlist_image_url', e.target.value)} />
+          {/* COLUMN 2: MEDIA & METADATA */}
+          <div>
+            <label style={{ ...labelStyle, color: C.purple }}>PERSONAL PHOTO URLS (Comma Separated)</label>
+            <textarea style={{ ...inputStyle, height: 80 }} value={form.personal_photo_url} onChange={e => set('personal_photo_url', e.target.value)} placeholder="https://..." />
+
+            <label style={{ ...labelStyle, color: C.gold }}>SETLIST IMAGE URLS</label>
+            <textarea style={{ ...inputStyle, height: 80 }} value={form.setlist_image_url} onChange={e => set('setlist_image_url', e.target.value)} />
+
+            <div style={{ display: 'flex', gap: 20, marginTop: 10 }}>
+              <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} />
+                FESTIVAL?
+              </label>
+              {form.is_festival && (
+                <input style={{ ...inputStyle, flex: 1, marginBottom: 0 }} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} placeholder="Fest Name" />
+              )}
+            </div>
           </div>
         </div>
 
-        <div style={{ marginTop: 40, display: 'flex', gap: 15 }}>
-          <Btn style={{ flex: 2, padding: 15 }} onClick={() => onSave(concert?.id || null, form)}>
-            {concert?.id ? 'COMMIT TO ARCHIVE' : 'INITIALIZE NEW SHOW'}
-          </Btn>
-          {concert?.id && <Btn variant="danger" style={{ flex: 1 }} onClick={() => onDelete(concert.id)}>DELETE</Btn>}
+        <div style={{ marginTop: 30, display: 'flex', gap: 15 }}>
+          <Btn style={{ flex: 2 }} onClick={handleCommit}>SAVE TO DATABASE</Btn>
+          {concert !== 'new' && <Btn variant="danger" style={{ flex: 1 }} onClick={() => onDelete(concert.id)}>DELETE</Btn>}
         </div>
       </div>
     </div>
   );
 }
-
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
@@ -5438,13 +5486,14 @@ export default function App() {
         )}
         
         {editTarget && (
-          <EditModal 
-            concert={editTarget === 'new' ? null : editTarget} 
-            onClose={() => setEditTarget(null)} 
-            onSave={handleSave} 
-            onDelete={handleDelete} 
-          />
-        )}
+  <EditModal 
+    concert={editTarget === 'new' ? 'new' : editTarget} 
+    onClose={() => setEditTarget(null)} 
+    onSave={handleSave} 
+    onDelete={handleDelete} 
+    allConcerts={concerts} // 👈 Add this line to enable prefill
+  />
+)}
         
         {upcomingModal !== null && (
           <UpcomingModal 
