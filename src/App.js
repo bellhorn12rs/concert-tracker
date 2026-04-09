@@ -4309,45 +4309,58 @@ function ShareCard({ artist, shows, onClose }) {
     </div>
   );
 }
-
+// photo vault tab
 function PhotoVaultTab({ concerts }) {
+  const safeConcerts = Array.isArray(concerts) ? concerts : [];
+
   const photos = useMemo(() => {
     const results = [];
-    concerts.forEach(c => {
-      if (!c.personal_photo_url) return;
-      const urls = c.personal_photo_url.split(',').map(u => u.trim()).filter(Boolean);
+    safeConcerts.forEach(c => {
+      if (!c || !c.personal_photo_url) return;
+      const urls = String(c.personal_photo_url).split(',').map(u => u.trim()).filter(Boolean);
       urls.forEach((url, idx) => {
         results.push({
-          id: `${c.id}-photo-${idx}`,
+          id: `${c.id}-p-${idx}`,
           url,
-          artist: c.artist,
-          date: c.date,
-          venue: c.venue
+          artist: c.artist || 'Unknown Artist',
+          date: c.date || '',
+          venue: c.venue || 'Unknown Venue'
         });
       });
     });
-    return results.sort((a, b) => b.date.localeCompare(a.date));
-  }, [concerts]);
+    return results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  }, [safeConcerts]);
+
+  if (!photos.length) {
+    return (
+      <div style={{ padding: 100, textAlign: 'center' }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.grayDim }}>DECK EMPTY // AWAITING SIGNAL</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '40px 0' }} className="fade-in">
       <div style={{ textAlign: 'center', marginBottom: 60 }}>
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: '#fff' }}>THE <span style={{ color: C.purple }}>POLAROID</span> DECK</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, letterSpacing: 4 }}>{photos.length} MEMORIES CAPTURED // FULL SIGNAL</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, letterSpacing: 4, fontWeight: 900 }}>{photos.length} DEVELOPED MEMORIES // FULL SIGNAL</div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '40px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '60px' }}>
         {photos.map((p, i) => (
-          <div key={p.id} style={{ transform: `rotate(${(i % 2 === 0 ? 1 : -1) * (i % 3)}deg)` }}>
-            <PersonalPolaroid 
-              src={p.url} 
-              caption={`${p.artist.toUpperCase()}`} 
-              index={0} 
-              total={1} 
-            />
-            <div style={{ marginTop: 10, textAlign: 'center' }}>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray }}>{fmtDateShort(p.date)}</div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>{p.venue}</div>
+          <div key={p.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ transform: `rotate(${(i % 2 === 0 ? 1 : -1) * (i % 3 + 1)}deg)`, transition: '0.3s' }}>
+              {/* Using your existing Polaroid atom */}
+              <PersonalPolaroid 
+                src={p.url} 
+                caption={p.artist.toUpperCase()} 
+                index={0} 
+                total={1} 
+              />
+            </div>
+            <div style={{ marginTop: 20, textAlign: 'center' }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff', letterSpacing: 1 }}>{p.artist}</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim }}>{p.date ? fmtDateShort(p.date) : 'DATE UNKNOWN'}</div>
             </div>
           </div>
         ))}
@@ -4535,28 +4548,32 @@ function TrackRecordLogo({ size = 40 }) {
   );
 }
 
-// ─── EDIT MODAL (The Missing Component) ────────────────────────────────────
 function EditModal({ concert, onClose, onSave, onDelete }) {
-  const [form, setForm] = useState({
+  // 1. Setup a clean blank state for "New" shows
+  const initialState = {
     date: '', artist: '', venue: '', city: '', state: '',
-    bands: [], genre: '', is_festival: false, festival_name: '',
+    bands: [], genre: 'Indie Rock', is_festival: false, festival_name: '',
     festival_day: '', image_url: '', personal_photo_url: '', setlist_image_url: '',
     has_setlist: false, has_setlist_names: ''
-  });
+  };
 
+  const [form, setForm] = useState(initialState);
+
+  // 2. Sync logic: If concert is null, we are in "Add" mode.
   useEffect(() => {
-    if (concert) {
+    if (concert && concert !== 'new') {
       setForm({
         ...concert,
         bands: Array.isArray(concert.bands) ? concert.bands : [concert.artist || ''],
         personal_photo_url: concert.personal_photo_url || '',
         setlist_image_url: concert.setlist_image_url || concert.image_url || ''
       });
+    } else {
+      setForm(initialState);
     }
   }, [concert]);
 
-  if (!concert) return null;
-
+  // 🟢 The Fix: Don't return null here, just check if the modal should be open
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   return (
@@ -4564,36 +4581,38 @@ function EditModal({ concert, onClose, onSave, onDelete }) {
       <div className="fade-in" style={{ background: '#111', border: `2px solid ${C.teal}`, borderRadius: 12, padding: 30, width: '90%', maxWidth: 850, maxHeight: '90vh', overflowY: 'auto', boxShadow: `0 0 50px ${hexToRgba(C.teal, 0.2)}` }}>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
-          <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', margin: 0, letterSpacing: 2 }}>EDIT ARCHIVE ENTRY</h2>
+          <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', margin: 0, letterSpacing: 2 }}>
+            {concert ? 'EDIT ENTRY' : 'CREATE NEW ENTRY'}
+          </h2>
           <Btn variant="secondary" onClick={onClose}>CLOSE [ESC]</Btn>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30 }}>
-          {/* LEFT: CORE INTEL */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
-            <label style={{ fontSize: 9, color: C.teal, fontFamily: "'Space Mono'", letterSpacing: 2 }}>ARTIST / HEADLINER</label>
+            <label style={{ fontSize: 9, color: C.teal, fontFamily: "'Space Mono'" }}>ARTIST / HEADLINER</label>
             <input style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6 }} value={form.artist} onChange={e => set('artist', e.target.value)} />
             
-            <label style={{ fontSize: 9, color: C.teal, fontFamily: "'Space Mono'", letterSpacing: 2 }}>DATE</label>
+            <label style={{ fontSize: 9, color: C.teal, fontFamily: "'Space Mono'" }}>DATE (YYYY-MM-DD)</label>
             <input type="date" style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6, colorScheme: 'dark' }} value={form.date} onChange={e => set('date', e.target.value)} />
             
-            <label style={{ fontSize: 9, color: C.teal, fontFamily: "'Space Mono'", letterSpacing: 2 }}>VENUE</label>
+            <label style={{ fontSize: 9, color: C.teal, fontFamily: "'Space Mono'" }}>VENUE</label>
             <input style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6 }} value={form.venue} onChange={e => set('venue', e.target.value)} />
           </div>
 
-          {/* RIGHT: MEDIA VAULT */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
-            <label style={{ fontSize: 9, color: C.gold, fontFamily: "'Space Mono'", letterSpacing: 2 }}>PERSONAL PHOTOS (COMMA SEPARATED URLS)</label>
-            <textarea style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6, height: 80 }} value={form.personal_photo_url} onChange={e => set('personal_photo_url', e.target.value)} placeholder="https://image1.jpg, https://image2.jpg" />
+            <label style={{ fontSize: 9, color: C.gold, fontFamily: "'Space Mono'" }}>PHOTO URLS (COMMA SEPARATED)</label>
+            <textarea style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6, height: 80 }} value={form.personal_photo_url} onChange={e => set('personal_photo_url', e.target.value)} />
             
-            <label style={{ fontSize: 9, color: C.gold, fontFamily: "'Space Mono'", letterSpacing: 2 }}>SETLIST IMAGES (COMMA SEPARATED URLS)</label>
+            <label style={{ fontSize: 9, color: C.gold, fontFamily: "'Space Mono'" }}>SETLIST URLS</label>
             <textarea style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6, height: 80 }} value={form.setlist_image_url} onChange={e => set('setlist_image_url', e.target.value)} />
           </div>
         </div>
 
         <div style={{ marginTop: 40, display: 'flex', gap: 15 }}>
-          <Btn style={{ flex: 2, padding: 15 }} onClick={() => onSave(concert.id, form)}>COMMIT TO ARCHIVE</Btn>
-          <Btn variant="danger" style={{ flex: 1 }} onClick={() => onDelete(concert.id)}>DELETE ENTRY</Btn>
+          <Btn style={{ flex: 2, padding: 15 }} onClick={() => onSave(concert?.id || null, form)}>
+            {concert?.id ? 'COMMIT TO ARCHIVE' : 'INITIALIZE NEW SHOW'}
+          </Btn>
+          {concert?.id && <Btn variant="danger" style={{ flex: 1 }} onClick={() => onDelete(concert.id)}>DELETE</Btn>}
         </div>
       </div>
     </div>
