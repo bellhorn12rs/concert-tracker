@@ -5001,41 +5001,49 @@ export default function App() {
   }
 
   async function handleSave(id, payload) {
-    // 1. DATA CLEANING: Remove UI-only fields that aren't in your Supabase table
-    // We map 'setlist_image_url' (from the form) back to 'image_url' (for the DB)
-    const { setlist_image_url, ...dbPayload } = payload; 
+    console.log("Committing to Archive...", payload);
+
+    // 1. CLONE & MAP: Translate UI fields to Database columns
+    const dbPayload = { ...payload };
+
+    // Move 'setlist_image_url' (UI) to 'image_url' (Supabase)
+    if (dbPayload.setlist_image_url !== undefined) {
+      dbPayload.image_url = dbPayload.setlist_image_url;
+    }
+
+    // 🔴 THE KILL-LIST: Remove any keys that aren't real columns in your screenshot
+    delete dbPayload.setlist_image_url; // Was causing your error
+    delete dbPayload.created_at;        // Managed by Supabase
     
-    // Ensure the setlist images are saved to the correct column
-    if (setlist_image_url) {
-      dbPayload.image_url = setlist_image_url;
+    // Ensure bands is a proper array for Postgres
+    if (!Array.isArray(dbPayload.bands)) {
+      dbPayload.bands = [dbPayload.artist || ''];
     }
 
     try {
       let result;
       if (id && id !== 'new') {
-        // 🟢 UPDATE EXISTING SHOW
+        // 🟢 UPDATE EXISTING
         result = await supabase
           .from('concerts')
           .update(dbPayload)
           .eq('id', id);
       } else {
-        // 🟢 INSERT NEW SHOW
-        // Ensure we don't send a null or 'new' string as an ID
-        const { id: _, ...newShowPayload } = dbPayload;
+        // 🟢 INSERT NEW
+        delete dbPayload.id; // DB will generate the UUID
         result = await supabase
           .from('concerts')
-          .insert([newShowPayload]);
+          .insert([dbPayload]);
       }
 
       if (result.error) throw result.error;
 
-      // 2. REFRESH & CLOSE
-      console.log("Archive updated successfully.");
-      await fetchConcerts(); // Sync local state with DB
-      setEditTarget(null);   // Close the modal
+      console.log("Archive Sync Complete.");
+      await fetchConcerts(); // Refresh local list
+      setEditTarget(null);   // Close Modal
     } catch (err) {
-      console.error("Database Error:", err);
-      alert(`SAVE FAILED: ${err.message}`);
+      console.error("DB Sync Failure:", err);
+      alert(`SAVE ERROR: ${err.message}`);
     }
   }
 
