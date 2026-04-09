@@ -3109,24 +3109,31 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
     }}>
       
       {/* 🟢 THE BACKGROUND GHOST POSTER (Atmospheric Fill) */}
-      {!isMobile && (
-        <div style={{
-          position: 'absolute',
-          left: '-5%',
-          top: '50%',
-          transform: 'translateY(-50%) rotate(-5deg)',
-          fontFamily: "'Bebas Neue'",
-          fontSize: '12rem',
-          color: primaryColor,
-          opacity: 0.04, // 🟢 Barely visible, just for texture
-          whiteSpace: 'nowrap',
-          pointerEvents: 'none',
-          zIndex: 0,
-          letterSpacing: '-5px'
-        }}>
-          {venueLabel?.toUpperCase()}
-        </div>
-      )}
+{!isMobile && (
+  <div style={{
+    position: 'absolute',
+    left: '-2%',
+    top: '-10%',
+    width: '100%',
+    height: '120%',
+    fontFamily: "'Bebas Neue'",
+    fontSize: '22rem', // Massive size to actually fill the height
+    color: primaryColor,
+    opacity: 0.07, // Slightly more visible
+    whiteSpace: 'nowrap',
+    pointerEvents: 'none',
+    zIndex: 0,
+    letterSpacing: '-12px', // Tight letter spacing for that "Graphic Logo" look
+    lineHeight: 0.8,
+    display: 'flex',
+    alignItems: 'flex-start',
+    // 🟢 This fade makes it disappear before it hits your photos on the right
+    WebkitMaskImage: 'linear-gradient(to right, black 20%, transparent 70%)',
+    maskImage: 'linear-gradient(to right, black 20%, transparent 70%)',
+  }}>
+    {(event.bands?.[0] || event.artist || "LIVE")?.toUpperCase()}
+  </div>
+)}
 
       {/* 🟢 LEFT SECTION: ARCHAEOLOGY INTEL */}
       <div style={{ 
@@ -3173,16 +3180,18 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
         textAlign: isMobile ? 'center' : 'left'
       }}>
         <div style={{ 
-          fontFamily: "'Bebas Neue'", 
-          fontSize: isMobile ? '2rem' : '3.5rem', 
-          lineHeight: 0.9,
-          letterSpacing: '1px',
-          marginBottom: '15px',
-          color: '#fff',
-          textShadow: '0 0 20px rgba(0,0,0,0.5)'
-        }}>
-          {event.bands?.join(' · ').toUpperCase()}
-        </div>
+  fontFamily: "'Bebas Neue'", 
+  fontSize: isMobile ? '2rem' : '3.8rem', // Slightly bigger
+  lineHeight: 0.85,
+  letterSpacing: '1px',
+  marginBottom: '15px',
+  color: '#fff',
+  textShadow: `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`, // Dual glow/shadow
+  position: 'relative',
+  zIndex: 2
+}}>
+  {event.bands?.join(' · ').toUpperCase()}
+</div>
         
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px' }}>
           <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: primaryColor, fontWeight: 900 }}>
