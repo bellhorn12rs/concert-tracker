@@ -3172,25 +3172,68 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
         )}
       </div>
 
-      {/* MIDDLE: THE LINEUP */}
-      <div style={{ 
-        flex: 1, 
-        paddingLeft: isMobile ? '0' : '50px', 
-        zIndex: 2,
-        textAlign: isMobile ? 'center' : 'left'
-      }}>
-        <div style={{ 
-  fontFamily: "'Bebas Neue'", 
-  fontSize: isMobile ? '2rem' : '3.8rem', // Slightly bigger
-  lineHeight: 0.85,
-  letterSpacing: '1px',
-  marginBottom: '15px',
-  color: '#fff',
-  textShadow: `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`, // Dual glow/shadow
-  position: 'relative',
-  zIndex: 2
+      {/* MIDDLE: THE INTERACTIVE LINEUP */}
+<div style={{ 
+  flex: 1, 
+  paddingLeft: isMobile ? '0' : '50px', 
+  zIndex: 2,
+  textAlign: isMobile ? 'center' : 'left'
 }}>
-  {event.bands?.join(' · ').toUpperCase()}
+  <div style={{ 
+    fontFamily: "'Bebas Neue'", 
+    fontSize: isMobile ? '2.2rem' : '3.8rem', 
+    lineHeight: 0.85,
+    letterSpacing: '1px',
+    marginBottom: '15px',
+    color: '#fff',
+    textShadow: `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`,
+    position: 'relative',
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: isMobile ? 'center' : 'flex-start',
+    columnGap: '15px'
+  }}>
+    {/* 🟢 THE MAPPING LOGIC COMES BACK HERE */}
+    {event.bands?.map((band, bIdx) => (
+      <React.Fragment key={`${event.id}-link-${bIdx}`}>
+        <a 
+          href={getSetlistFmUrl(band, event.date)} 
+          target="_blank" rel="noreferrer"
+          style={{ 
+            color: '#fff', 
+            textDecoration: 'none',
+            transition: 'all 0.2s ease',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={e => { 
+            e.target.style.color = C.gold; 
+            e.target.style.textShadow = `0 0 20px ${C.gold}`;
+          }}
+          onMouseLeave={e => { 
+            e.target.style.color = '#fff'; 
+            e.target.style.textShadow = `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`;
+          }}
+        >
+          {band.toUpperCase()}
+        </a>
+        {/* Dot Separator only between names */}
+        {bIdx < event.bands.length - 1 && (
+          <span style={{ color: 'rgba(255,255,255,0.2)', pointerEvents: 'none' }}>·</span>
+        )}
+      </React.Fragment>
+    ))}
+  </div>
+  
+  {/* Metadata Row stays below the names */}
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px' }}>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: primaryColor, fontWeight: 900 }}>
+      {fmtDateShort(event.date)}
+    </div>
+    <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.1)' }} />
+    <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>
+      {event.venue?.toUpperCase()}
+    </div>
+  </div>
 </div>
         
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px' }}>
