@@ -2976,8 +2976,9 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
 // ─── 4. BY DAY TAB (SCRAPBOOK TIMELINE & MULTI-SET LOGIC) ──────────────────
 
 function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
-  
-  // 1. CLUSTER LOGIC: Group linear shows into "Box Sets" (Solo vs Festival Streaks)
+  // 🟢 Mobile Detection
+  const isMobile = window.innerWidth < 768;
+
   const clusters = useMemo(() => {
     const results = [];
     let currentFestKey = null;
@@ -2992,7 +2993,6 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
         currentGroup.push(event);
       } else {
         if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
-        
         if (festKey) {
           currentFestKey = festKey;
           currentGroup = [event];
@@ -3008,10 +3008,9 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
   }, [dayGroups]);
 
   return (
-    <div style={{ padding: '24px 0' }} className="fade-in">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '60px' }}>
+    <div style={{ padding: isMobile ? '10px' : '24px 0' }} className="fade-in">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '30px' : '60px' }}>
         {clusters.map((cluster, ci) => {
-          
           if (cluster.type === 'solo') {
             return (
               <ScrapbookRow 
@@ -3031,23 +3030,35 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
           return (
             <div key={`cluster-${ci}`} style={{ 
               position: 'relative', 
-              padding: '40px', 
+              padding: isMobile ? '20px 15px' : '40px', // 🟢 Tighter padding on mobile
               background: 'rgba(255,255,255,0.01)', 
               border: `1px solid ${hexToRgba(festColor, 0.2)}`, 
-              borderRadius: '24px',
+              borderRadius: isMobile ? '12px' : '24px',
               boxShadow: `inset 0 0 60px ${hexToRgba(festColor, 0.03)}`
             }}>
               {/* SHARED FESTIVAL HEADER AREA */}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '25px', marginBottom: '40px' }}>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '5rem', color: festColor, lineHeight: 1, textShadow: `0 0 30px ${hexToRgba(festColor, 0.3)}` }}>
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: isMobile ? 'column' : 'row', // 🟢 Stack header on mobile
+                alignItems: isMobile ? 'flex-start' : 'baseline', 
+                gap: isMobile ? '5px' : '25px', 
+                marginBottom: isMobile ? '25px' : '40px' 
+              }}>
+                <div style={{ 
+                  fontFamily: "'Bebas Neue'", 
+                  fontSize: isMobile ? '2.5rem' : '5rem', // 🟢 Shrunken font
+                  color: festColor, 
+                  lineHeight: 1, 
+                  textShadow: `0 0 30px ${hexToRgba(festColor, 0.3)}` 
+                }}>
                   {firstEvent.festival_name.toUpperCase()}
                 </div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: C.gray, letterSpacing: '4px', fontWeight: 900 }}>
-                  {new Date(firstEvent.date).getFullYear()} // ARCHIVE: {cluster.events.length} DAYS
+                <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, letterSpacing: '2px', fontWeight: 900 }}>
+                  {new Date(firstEvent.date).getFullYear()} // {cluster.events.length} DAYS
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 {cluster.events.map((event, ei) => (
                   <ScrapbookRow 
                     key={event.id} 
@@ -3074,38 +3085,61 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
 // ─── 🖼️ THE UPDATED ROW COMPONENT (CLICKABLE HEADLINES) ─────────────
 
 function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
-  const venueLabel = event.is_festival ? event.festival_name : event.venue;
+  // 🟢 Dynamic Mobile Check
+  const isMobile = window.innerWidth < 768;
   
+  const venueLabel = event.is_festival ? event.festival_name : event.venue;
   const rawSetlists = (event.image_url || "").split(',').map(u => u.trim()).filter(Boolean);
   const rawPhotos = (event.personal_photo_url || "").split(',').map(u => u.trim()).filter(Boolean);
   const finalPhotos = rawPhotos.filter(url => !rawSetlists.includes(url));
 
   return (
     <div style={{ 
-      display: 'flex', alignItems: 'center', padding: isClustered ? '20px' : '30px',
+      display: 'flex', 
+      // 🟢 Stack vertically on mobile, row on desktop
+      flexDirection: isMobile ? 'column' : 'row', 
+      alignItems: isMobile ? 'stretch' : 'center', 
+      padding: isMobile ? '15px' : isClustered ? '20px' : '30px',
       background: isClustered ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.02)',
-      borderRadius: '16px', border: `1px solid ${isClustered ? hexToRgba(clusterColor, 0.3) : C.border}`,
-      position: 'relative', transition: 'all 0.3s ease', overflow: 'visible'
+      borderRadius: '16px', 
+      border: `1px solid ${isClustered ? hexToRgba(clusterColor, 0.3) : C.border}`,
+      position: 'relative', 
+      transition: 'all 0.3s ease', 
+      overflow: 'visible',
+      gap: isMobile ? '20px' : '0'
     }}>
       
       {/* 1. LEFT: THE ARTIFACT */}
-      <div style={{ flexShrink: 0, width: '300px' }}>
+      <div style={{ 
+        flexShrink: 0, 
+        width: isMobile ? '100%' : '300px',
+        display: 'flex',
+        justifyContent: 'center' 
+      }}>
         {event.is_festival 
           ? <WristbandCard event={event} genreMap={genreMap} compact={true} onEdit={isAdmin ? onEdit : null} /> 
-          : <TicketStubCard event={event} onEdit={isAdmin ? onEdit : null} genreMap={genreMap} stubIdx={idx} />
+          : <div style={{ transform: isMobile ? 'scale(0.9)' : 'none' }}>
+              <TicketStubCard event={event} onEdit={isAdmin ? onEdit : null} genreMap={genreMap} stubIdx={idx} />
+            </div>
         }
       </div>
 
       {/* 2. MIDDLE: THE INTERACTIVE LINEUP */}
-      <div style={{ flex: 1, paddingLeft: '40px', paddingRight: '20px' }}>
+      <div style={{ 
+        flex: 1, 
+        paddingLeft: isMobile ? '0' : '40px', 
+        paddingRight: isMobile ? '0' : '20px',
+        textAlign: isMobile ? 'center' : 'left'
+      }}>
         <div style={{ 
           fontFamily: "'Bebas Neue'", 
-          fontSize: isClustered ? '2rem' : '2.8rem', 
+          fontSize: isMobile ? '1.8rem' : isClustered ? '2rem' : '2.8rem', 
           lineHeight: 1.1,
           letterSpacing: '1px',
           marginBottom: '10px',
           display: 'flex',
           flexWrap: 'wrap',
+          justifyContent: isMobile ? 'center' : 'flex-start',
           columnGap: '12px'
         }}>
           {event.bands?.map((band, bIdx) => (
@@ -3124,7 +3158,6 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
               >
                 {band.toUpperCase()}
               </a>
-              {/* Add the dot separator only between names */}
               {bIdx < event.bands.length - 1 && (
                 <span style={{ color: 'rgba(255,255,255,0.2)', pointerEvents: 'none' }}>·</span>
               )}
@@ -3132,46 +3165,66 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
           ))}
         </div>
         
-        {/* Clean Metadata Row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: clusterColor || C.teal, fontWeight: 900 }}>
+        {/* Metadata Row */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: isMobile ? 'center' : 'flex-start',
+          gap: '12px',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: clusterColor || C.teal, fontWeight: 900 }}>
             {(isClustered && event.festival_day) ? event.festival_day.toUpperCase() : fmtDateShort(event.date)}
           </div>
           <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
-          <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray }}>
             {event.venue?.toUpperCase()}
           </div>
-          {/* 🟢 Click-to-edit hint for admins */}
+          
           {isAdmin && (
-            <>
-              <div style={{ width: 4, height: 4, borderRadius: '50%', background: C.grayDim }} />
-              <button 
-                onClick={() => onEdit(event)}
-                style={{ background: 'none', border: 'none', color: C.teal, fontFamily: "'Space Mono'", fontSize: '10px', cursor: 'pointer', padding: 0, opacity: 0.6 }}
-              >
-                EDIT ARCHIVE
-              </button>
-            </>
+            <button 
+              onClick={() => onEdit(event)}
+              style={{ background: 'rgba(0,229,204,0.1)', border: `1px solid ${C.teal}33`, color: C.teal, fontFamily: "'Space Mono'", fontSize: '9px', cursor: 'pointer', padding: '2px 8px', borderRadius: '4px' }}
+            >
+              EDIT
+            </button>
           )}
         </div>
       </div>
 
       {/* 3. RIGHT: THE MEDIA CLUSTER */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minWidth: '400px', marginLeft: 'auto' }}>
-        {rawSetlists.length > 0 && (
-          <div style={{ display: 'flex' }}>
-            {rawSetlists.map((url, sIdx) => (
-              <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={rawSetlists.length} />
-            ))}
-          </div>
-        )}
-        {finalPhotos.length > 0 && (
-          <div style={{ display: 'flex' }}>
-            {finalPhotos.map((url, pIdx) => (
-              <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
-            ))}
-          </div>
-        )}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: isMobile ? 'center' : 'flex-end', 
+        // 🟢 THE FIX: Remove minWidth on mobile and allow horizontal scroll if it overflows
+        minWidth: isMobile ? '100%' : '400px', 
+        marginLeft: isMobile ? '0' : 'auto',
+        overflowX: isMobile ? 'auto' : 'visible',
+        padding: isMobile ? '10px 0' : '0',
+        WebkitOverflowScrolling: 'touch'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          // 🟢 Scale down photos on mobile to fit the screen better
+          transform: isMobile ? 'scale(0.8)' : 'none',
+          transformOrigin: isMobile ? 'center' : 'right'
+        }}>
+          {rawSetlists.length > 0 && (
+            <div style={{ display: 'flex' }}>
+              {rawSetlists.map((url, sIdx) => (
+                <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={rawSetlists.length} />
+              ))}
+            </div>
+          )}
+          {finalPhotos.length > 0 && (
+            <div style={{ display: 'flex' }}>
+              {finalPhotos.map((url, pIdx) => (
+                <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
