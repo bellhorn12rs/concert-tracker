@@ -613,35 +613,42 @@ const MarqueeStyles = () => (
 
     /* 6. POLAROID PHYSICS (The "Living" Gallery) */
 
-    /* The "Drop & Settle" when the page loads */
-    @keyframes pinSettle {
-      0% { transform: translateY(-30px) rotate(15deg); opacity: 0; }
-      60% { transform: translateY(5px) rotate(calc(var(--rotation) * -0.5)); }
+    /* The "Pin Drop" - Happens once on load */
+    @keyframes pinDropAndSettle {
+      0% { transform: translateY(-100px) rotate(15deg); opacity: 0; }
+      60% { transform: translateY(10px) rotate(calc(var(--rotation) * -0.8)); }
+      80% { transform: translateY(-5px) rotate(calc(var(--rotation) * 1.2)); }
       100% { transform: translateY(0) rotate(var(--rotation)); opacity: 1; }
     }
 
-    /* The "Living" Sway on Hover */
-    @keyframes physicalSway {
-      0%, 100% { transform: scale(1.05) rotate(calc(var(--rotation) - 1.5deg)); }
-      50% { transform: scale(1.05) rotate(calc(var(--rotation) + 1.5deg)); }
+    /* The "Living Sway" - Much heavier movement */
+    @keyframes heavySway {
+      0%, 100% { transform: scale(1.04) rotate(calc(var(--rotation) - 2.2deg)); }
+      50% { transform: scale(1.04) rotate(calc(var(--rotation) + 2.2deg)); }
     }
 
     .polaroid-gravity-swing {
-      transform-origin: top center; /* 🟢 Crucial: Pushes the pivot point to the pin */
-      animation: pinSettle 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
-      --rotation: 0deg; 
+      transform-origin: top center !important; /* 🟢 Pivot point MUST be the pin */
+      transform: rotate(var(--rotation)); /* Apply the random tilt */
+      animation: pinDropAndSettle 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+      will-change: transform;
       position: relative;
     }
 
     .polaroid-gravity-swing:hover {
-      animation: physicalSway 2.5s ease-in-out infinite !important;
-      box-shadow: 0 40px 70px rgba(0,0,0,0.7) !important;
+      animation: heavySway 3.5s ease-in-out infinite !important;
+      box-shadow: 0 45px 80px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.2) !important;
       z-index: 2000 !important;
     }
 
-    /* 🟢 THE CURLED CORNER EFFECT 
-       This adds a secondary shadow to the bottom-right to make 
-       it look like the photo is lifting off the corkboard. */
+    /* Metallic thumbtack depth */
+    .tack-shine {
+      background: radial-gradient(circle at 30% 30%, #fff, transparent 60%);
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    /* 🟢 THE CURLED CORNER EFFECT */
     .polaroid-frame {
       position: relative;
     }
@@ -2897,59 +2904,54 @@ function SetlistPaper({ src, index = 0, total = 1 }) {
   );
 }
 
-// ─── 📸 STACKED POLAROIDS ────────────────────────────────────────────────────
+// ─── 📸 STACKED POLAROIDS (PHYSICS & 3D EDITION) ────────────────────────────────
 function PersonalPolaroid({ src, index = 0, caption, date, venue }) {
   const [isFull, setIsFull] = React.useState(false);
   if (!src) return null;
 
   // 🎨 SHARPIE COLOR ENGINE
-  // Picking a random "Marker" color for each photo
-  const markerColors = ['#1a1a1a', '#2233aa', '#aa2233', '#115533', '#5522aa'];
+  // Picking a random "Marker" color for each photo based on index
+  const markerColors = ['#1a1a1a', '#2140ab', '#b02525', '#1e6337', '#732ba1', '#cc6600'];
   const myColor = markerColors[index % markerColors.length];
 
-  const baseRotation = (index % 2 === 0 ? -2 : 2);
-  
   return (
     <>
       <div 
-        onClick={() => setIsFull(true)}
-        className="polaroid-pin-animation"
+        onClick={(e) => { e.stopPropagation(); setIsFull(true); }}
+        className="polaroid-gravity-swing" // 🟢 Linked to the new CSS Physics
         style={{
-          padding: '12px 12px 65px 12px', // Extra room for Date/Venue
+          padding: '12px 12px 75px 12px', // Room for the handwriting
           background: '#fff', 
+          // Enhanced shadow: includes the base lift and a deeper offset
           boxShadow: '0 20px 50px rgba(0,0,0,0.6), 0 0 5px rgba(0,0,0,0.1), 15px 25px 35px rgba(0,0,0,0.3)',
-          transform: `rotate(${baseRotation}deg)`, 
           width: '320px', 
           border: '1px solid #efefef', 
           zIndex: 10 + index, 
           transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)', 
-          cursor: 'pointer',
+          cursor: 'zoom-in',
           position: 'relative',
-        }}
-        onMouseEnter={e => { 
-          e.currentTarget.style.transform = `rotate(0deg) scale(1.05) translateY(-5px)`; 
-          e.currentTarget.style.zIndex = 1000; 
-        }}
-        onMouseLeave={e => { 
-          e.currentTarget.style.transform = `rotate(${baseRotation}deg)`; 
-          e.currentTarget.style.zIndex = 10 + index; 
+          userSelect: 'none'
         }}
       >
-        {/* 📌 THE THUMB TACK */}
+        {/* 📌 THE THUMB TACK (3D Metallic Style) */}
         <div style={{
           position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
-          width: 18, height: 18, background: '#cc0000', borderRadius: '50%',
-          boxShadow: 'inset -3px -3px 5px rgba(0,0,0,0.4), 2px 5px 10px rgba(0,0,0,0.3)',
-          zIndex: 100
+          width: 20, height: 20, background: '#d11111', borderRadius: '50%',
+          boxShadow: 'inset -4px -4px 6px rgba(0,0,0,0.5), 2px 8px 12px rgba(0,0,0,0.4)',
+          zIndex: 100, border: '1px solid #900'
         }}>
-          <div style={{ width: 4, height: 4, background: 'rgba(255,255,255,0.6)', borderRadius: '50%', margin: '3px 0 0 4px' }} />
+          {/* The needle entry point */}
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 4, height: 4, background: '#400', borderRadius: '50%', opacity: 0.5 }} />
+          {/* The metallic shine */}
+          <div className="tack-shine" style={{ width: 8, height: 8, borderRadius: '50%', margin: '2px 0 0 3px' }} />
         </div>
 
-        {/* PHOTO AREA */}
-        <div style={{ 
+        {/* PHOTO AREA (With Curled Corner Shadow Hook) */}
+        <div className="polaroid-frame" style={{ 
           width: '100%', aspectRatio: '1/1', 
           background: `url(${src}) center/cover no-repeat`,
-          border: '1px solid rgba(0,0,0,0.1)'
+          border: '1px solid rgba(0,0,0,0.1)',
+          pointerEvents: 'none'
         }} />
 
         {/* 🖊️ HANDWRITTEN LABELS (ON THE FRAME) */}
@@ -2957,19 +2959,39 @@ function PersonalPolaroid({ src, index = 0, caption, date, venue }) {
           fontFamily: "'Caveat', cursive", 
           textAlign: 'center', 
           marginTop: '15px', 
-          color: myColor, // Randomized Marker Color
-          pointerEvents: 'none'
+          color: myColor, 
+          pointerEvents: 'none',
+          padding: '0 5px'
         }}>
-          <div style={{ fontSize: '2.2rem', fontWeight: 700, lineHeight: 0.8, transform: 'rotate(-1deg)' }}>
+          <div style={{ 
+            fontSize: '2.4rem', 
+            fontWeight: 700, 
+            lineHeight: 0.8, 
+            transform: 'rotate(-1.5deg)',
+            marginBottom: 8
+          }}>
             {caption}
           </div>
-          <div style={{ fontSize: '1.1rem', marginTop: 8, opacity: 0.9, transform: 'rotate(1deg)' }}>
+          <div style={{ 
+            fontSize: '1.2rem', 
+            opacity: 0.9, 
+            transform: 'rotate(1deg)',
+            fontWeight: 600,
+            letterSpacing: '-0.5px'
+          }}>
             {date ? fmtDateShort(date) : ''} — {venue?.split(',')[0].toUpperCase()}
           </div>
         </div>
       </div>
 
-      {isFull && <Lightbox src={src} caption={caption} onClose={() => setIsFull(false)} type="POLAROID" />}
+      {isFull && (
+        <Lightbox 
+          src={src} 
+          caption={caption} 
+          onClose={() => setIsFull(false)} 
+          type="POLAROID" 
+        />
+      )}
     </>
   );
 }
@@ -4440,7 +4462,7 @@ function ShareCard({ artist, shows, onClose }) {
     </div>
   );
 }
-// photo vault tab
+// --- PHOTO VAULT TAB ---
 function PhotoVaultTab({ concerts }) {
   const safeConcerts = Array.isArray(concerts) ? concerts : [];
 
@@ -4448,11 +4470,13 @@ function PhotoVaultTab({ concerts }) {
     const results = [];
     safeConcerts.forEach(c => {
       if (!c || !c.personal_photo_url) return;
+
       const displayName = c.artist || c.festival_name || (c.bands && c.bands[0]) || 'Unknown Act';
       const urls = String(c.personal_photo_url).split(',').map(u => u.trim()).filter(Boolean);
       
       urls.forEach((url, idx) => {
-        // Random "Starting" rotation for each pinned photo
+        // Generate random "Starting" rotation for each pinned photo
+        // We do this here so it stays consistent for each photo instance
         const startRotation = (Math.random() * 10 - 5).toFixed(2);
 
         results.push({
@@ -4465,69 +4489,86 @@ function PhotoVaultTab({ concerts }) {
         });
       });
     });
+    // Sort by date (descending)
     return results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }, [safeConcerts]);
 
+  // Empty state handler
+  if (safeConcerts.length > 0 && photos.length === 0) {
+    return (
+      <div style={{ padding: 100, textAlign: 'center' }}>
+        <div style={{ fontSize: '3rem', marginBottom: 20 }}>📸</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.grayDim, letterSpacing: 3 }}>DECK EMPTY // AWAITING SIGNAL</div>
+      </div>
+    );
+  }
+
   return (
-  <div style={{ 
-    padding: '60px 0', 
-    overflowX: 'hidden',
-    minHeight: '100vh',
-    position: 'relative',
-    /* 🟢 THE TEXTURE: Adding that dark "felt/cork" surface */
-    backgroundColor: '#0a0a0c',
-    backgroundImage: `url("https://www.transparenttextures.com/patterns/carbon-fibre.png")`, 
-    backgroundAttachment: 'fixed'
-  }} className="fade-in">
-    
-    {/* HEADER SECTION */}
-    <div style={{ textAlign: 'center', marginBottom: 100, position: 'relative', zIndex: 10 }}>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '5rem', color: '#fff', lineHeight: 1 }}>
-        THE <span style={{ color: C.purple }}>POLAROID</span> DECK
-      </div>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.purple, letterSpacing: 5 }}>
-        {photos.length} MEMORIES ARCHIVED // PHYSICAL SIGNAL
-      </div>
-    </div>
-
-    {/* THE PHOTO WALL (GRID) */}
     <div style={{ 
-      display: 'grid', 
-      gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
-      gap: '120px 40px', // Large gap for the gravity swing
-      padding: '0 40px',
-      justifyItems: 'center',
+      padding: '60px 0', 
+      overflowX: 'hidden',
+      minHeight: '100vh',
       position: 'relative',
-      zIndex: 5
-    }}>
-      {photos.map((p, i) => (
-        /* Passing the random rotation as a CSS variable for the animation engine */
-        <div key={p.id} style={{ '--rotation': `${p.rotation}deg` }}>
-           <PersonalPolaroid 
-             src={p.url} 
-             caption={p.artist} 
-             date={p.date} 
-             venue={p.venue} 
-             index={i} 
-           />
+      /* 🟢 THE TEXTURE: Dark felt/corkboard surface */
+      backgroundColor: '#0a0a0c',
+      backgroundImage: `url("https://www.transparenttextures.com/patterns/carbon-fibre.png")`, 
+      backgroundAttachment: 'fixed'
+    }} className="fade-in">
+      
+      {/* HEADER SECTION */}
+      <div style={{ textAlign: 'center', marginBottom: 100, position: 'relative', zIndex: 10 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '5rem', color: '#fff', lineHeight: 1 }}>
+          THE <span style={{ color: C.purple }}>POLAROID</span> DECK
         </div>
-      ))}
-    </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.purple, letterSpacing: 5 }}>
+          {photos.length} MEMORIES ARCHIVED // PHYSICAL SIGNAL
+        </div>
+      </div>
 
-    {/* 🟢 FILM GRAIN OVERLAY: The secret sauce for that "living" archive look */}
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      width: '100%',
-      height: '100%',
-      pointerEvents: 'none',
-      zIndex: 9999,
-      opacity: 0.03, // Keep it barely visible
-      backgroundImage: `url("https://upload.wikimedia.org/wikipedia/commons/7/76/1k_Noise_Condition.png")`,
-      mixBlendMode: 'overlay'
-    }} />
-  </div>
-);
+      {/* THE PHOTO WALL (GRID) */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
+        gap: '120px 40px', // Large gap for the gravity swing
+        padding: '0 40px',
+        justifyItems: 'center',
+        position: 'relative',
+        zIndex: 5
+      }}>
+        {photos.map((p, i) => (
+          /* 🟢 PASSING THE ROTATION: This is what talks to your CSS keyframes */
+          <div 
+            key={p.id} 
+            style={{ 
+              '--rotation': `${p.rotation}deg`, 
+              position: 'relative' 
+            }}
+          >
+             <PersonalPolaroid 
+               src={p.url} 
+               caption={p.artist} 
+               date={p.date} 
+               venue={p.venue} 
+               index={i} 
+             />
+          </div>
+        ))}
+      </div>
+
+      {/* 🟢 FILM GRAIN OVERLAY: Subtle cinematic texture */}
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        zIndex: 9999,
+        opacity: 0.03,
+        backgroundImage: `url("https://upload.wikimedia.org/wikipedia/commons/7/76/1k_Noise_Condition.png")`,
+        mixBlendMode: 'overlay'
+      }} />
+    </div>
+  );
 }
 // ─── THEME SWITCHER ───────────────────────────────────────────────────────────
 function ThemeSwitcher({ isMobile }) {
