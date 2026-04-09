@@ -5000,54 +5000,40 @@ export default function App() {
   }
 
   async function handleSave(id, payload) {
-    // 1. Create a "White-List" based EXACTLY on your Supabase screenshot
-    const dbPayload = {
-      date: payload.date || null,
-      venue: payload.venue || null,
-      city: payload.city || null,
-      state: payload.state || null,
-      artist: payload.artist || null,
-      genre: payload.genre || 'Indie Rock',
-      is_festival: Boolean(payload.is_festival),
-      festival_name: payload.festival_name || null,
-      festival_day: payload.festival_day || null,
-      image_url: payload.setlist_image_url || payload.image_url || null,
-      personal_photo_url: payload.personal_photo_url || null,
-      has_setlist: Boolean(payload.has_setlist)
-    };
+  const bandList = Array.isArray(payload.bands)
+    ? payload.bands
+    : (payload.bands || '').split(',').map(b => b.trim()).filter(Boolean);
 
-    // 2. THE BANDS FIX: Force it to be a STRING (to match the 'abc' icon)
-    if (Array.isArray(payload.bands)) {
-      dbPayload.bands = payload.bands.join(', ');
+  const dbPayload = {
+    date: payload.date || null,
+    bands: bandList,
+    venue: payload.venue || null,
+    city: payload.city || null,
+    state: payload.state || null,
+    genre: payload.genre || null,
+    is_festival: Boolean(payload.is_festival),
+    festival_name: payload.festival_name || null,
+    festival_day: payload.festival_day || null,
+    has_setlist: Boolean(payload.has_setlist_names?.trim()),
+    has_setlist_names: payload.has_setlist_names || null,
+    image_url: payload.image_url || null,
+  };
+
+  try {
+    let result;
+    if (id && id !== 'new') {
+      result = await supabase.from('concerts').update(dbPayload).eq('id', id);
     } else {
-      dbPayload.bands = String(payload.bands || payload.artist || '');
+      result = await supabase.from('concerts').insert([dbPayload]);
     }
-
-    try {
-      let result;
-      if (id && id !== 'new') {
-        // UPDATE
-        result = await supabase
-          .from('concerts')
-          .update(dbPayload)
-          .eq('id', id);
-      } else {
-        // INSERT (Supabase handles ID and created_at automatically)
-        result = await supabase
-          .from('concerts')
-          .insert([dbPayload]);
-      }
-
-      if (result.error) throw result.error;
-
-      console.log("Archive update successful!");
-      await fetchConcerts(); // Refresh the feed
-      setEditTarget(null);   // Close the window
-    } catch (err) {
-      console.error("Database Error:", err);
-      alert(`SAVE FAILED: ${err.message}`);
-    }
+    if (result.error) throw result.error;
+    await fetchConcerts();
+    setEditTarget(null);
+  } catch (err) {
+    console.error('Database Error:', err);
+    alert(`SAVE FAILED: ${err.message}`);
   }
+}
   async function handleDelete(id) {
     if (!id || id === 'new') {
       setEditTarget(null);
