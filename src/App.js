@@ -4528,6 +4528,7 @@ function PhotoVaultTab({ concerts }) {
     }} />
   </div>
 );
+}
 // ─── THEME SWITCHER ───────────────────────────────────────────────────────────
 function ThemeSwitcher({ isMobile }) {
   const { themeId, setThemeId } = useTheme();
