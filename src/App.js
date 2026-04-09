@@ -3082,7 +3082,7 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
 
 // ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With Multi-Artist Setlinks) ─────────────
 
-// ─── 🖼️ THE UPDATED ROW COMPONENT (CLICKABLE HEADLINES) ─────────────
+// ─── 🖼️ THE UPDATED ROW COMPONENT (CLICKABLE HEADLINES & GHOST POSTER) ─────────────
 
 function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
   const isMobile = window.innerWidth < 768;
@@ -3092,6 +3092,9 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
   const rawSetlists = (event.image_url || "").split(',').map(u => u.trim()).filter(Boolean);
   const rawPhotos = (event.personal_photo_url || "").split(',').map(u => u.trim()).filter(Boolean);
   const finalPhotos = rawPhotos.filter(url => !rawSetlists.includes(url));
+
+  // Determine the name to use for the giant background text
+  const headlinerName = (event.bands?.[0] || event.artist || "LIVE")?.toUpperCase();
 
   return (
     <div style={{ 
@@ -3103,37 +3106,36 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
       borderRadius: '24px', 
       border: `1px solid ${isClustered ? hexToRgba(primaryColor, 0.3) : C.border}`,
       position: 'relative', 
-      overflow: 'hidden', // 🟢 Necessary for the Ghost Poster to bleed off the edge
+      overflow: 'hidden', 
       gap: isMobile ? '20px' : '0',
       marginBottom: isMobile ? '10px' : '0'
     }}>
       
-      {/* 🟢 THE BACKGROUND GHOST POSTER (Atmospheric Fill) */}
-{!isMobile && (
-  <div style={{
-    position: 'absolute',
-    left: '-2%',
-    top: '-10%',
-    width: '100%',
-    height: '120%',
-    fontFamily: "'Bebas Neue'",
-    fontSize: '22rem', // Massive size to actually fill the height
-    color: primaryColor,
-    opacity: 0.07, // Slightly more visible
-    whiteSpace: 'nowrap',
-    pointerEvents: 'none',
-    zIndex: 0,
-    letterSpacing: '-12px', // Tight letter spacing for that "Graphic Logo" look
-    lineHeight: 0.8,
-    display: 'flex',
-    alignItems: 'flex-start',
-    // 🟢 This fade makes it disappear before it hits your photos on the right
-    WebkitMaskImage: 'linear-gradient(to right, black 20%, transparent 70%)',
-    maskImage: 'linear-gradient(to right, black 20%, transparent 70%)',
-  }}>
-    {(event.bands?.[0] || event.artist || "LIVE")?.toUpperCase()}
-  </div>
-)}
+      {/* 🟢 THE BACKGROUND GHOST POSTER (Massive Band Name) */}
+      {!isMobile && (
+        <div style={{
+          position: 'absolute',
+          left: '-2%',
+          top: '-10%',
+          width: '100%',
+          height: '120%',
+          fontFamily: "'Bebas Neue'",
+          fontSize: '22rem', 
+          color: primaryColor,
+          opacity: 0.07, 
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+          zIndex: 0,
+          letterSpacing: '-12px', 
+          lineHeight: 0.8,
+          display: 'flex',
+          alignItems: 'flex-start',
+          WebkitMaskImage: 'linear-gradient(to right, black 20%, transparent 70%)',
+          maskImage: 'linear-gradient(to right, black 20%, transparent 70%)',
+        }}>
+          {headlinerName}
+        </div>
+      )}
 
       {/* 🟢 LEFT SECTION: ARCHAEOLOGY INTEL */}
       <div style={{ 
@@ -3154,7 +3156,7 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
           }
         </div>
 
-        {/* 2. Technical Coordinates (The "Map" Vibe) */}
+        {/* 2. Technical Coordinates */}
         {!isMobile && (
           <div style={{ 
             paddingLeft: '10px', 
@@ -3172,78 +3174,74 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
         )}
       </div>
 
-      {/* MIDDLE: THE INTERACTIVE LINEUP */}
-<div style={{ 
-  flex: 1, 
-  paddingLeft: isMobile ? '0' : '50px', 
-  zIndex: 2,
-  textAlign: isMobile ? 'center' : 'left'
-}}>
-  <div style={{ 
-    fontFamily: "'Bebas Neue'", 
-    fontSize: isMobile ? '2.2rem' : '3.8rem', 
-    lineHeight: 0.85,
-    letterSpacing: '1px',
-    marginBottom: '15px',
-    color: '#fff',
-    textShadow: `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`,
-    position: 'relative',
-    display: 'flex',
-    flexWrap: 'wrap',
-    justifyContent: isMobile ? 'center' : 'flex-start',
-    columnGap: '15px'
-  }}>
-    {/* 🟢 THE MAPPING LOGIC COMES BACK HERE */}
-    {event.bands?.map((band, bIdx) => (
-      <React.Fragment key={`${event.id}-link-${bIdx}`}>
-        <a 
-          href={getSetlistFmUrl(band, event.date)} 
-          target="_blank" rel="noreferrer"
-          style={{ 
-            color: '#fff', 
-            textDecoration: 'none',
-            transition: 'all 0.2s ease',
-            cursor: 'pointer'
-          }}
-          onMouseEnter={e => { 
-            e.target.style.color = C.gold; 
-            e.target.style.textShadow = `0 0 20px ${C.gold}`;
-          }}
-          onMouseLeave={e => { 
-            e.target.style.color = '#fff'; 
-            e.target.style.textShadow = `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`;
-          }}
-        >
-          {band.toUpperCase()}
-        </a>
-        {/* Dot Separator only between names */}
-        {bIdx < event.bands.length - 1 && (
-          <span style={{ color: 'rgba(255,255,255,0.2)', pointerEvents: 'none' }}>·</span>
-        )}
-      </React.Fragment>
-    ))}
-  </div>
-  
-  {/* Metadata Row stays below the names */}
-  <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px' }}>
-    <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: primaryColor, fontWeight: 900 }}>
-      {fmtDateShort(event.date)}
-    </div>
-    <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.1)' }} />
-    <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>
-      {event.venue?.toUpperCase()}
-    </div>
-  </div>
-</div>
+      {/* 🟢 MIDDLE: THE INTERACTIVE LINEUP (Restored Links) */}
+      <div style={{ 
+        flex: 1, 
+        paddingLeft: isMobile ? '0' : '50px', 
+        zIndex: 2,
+        textAlign: isMobile ? 'center' : 'left'
+      }}>
+        <div style={{ 
+          fontFamily: "'Bebas Neue'", 
+          fontSize: isMobile ? '2.2rem' : '3.8rem', 
+          lineHeight: 0.85,
+          letterSpacing: '1px',
+          marginBottom: '15px',
+          color: '#fff',
+          textShadow: `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`,
+          position: 'relative',
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: isMobile ? 'center' : 'flex-start',
+          columnGap: '15px'
+        }}>
+          {event.bands?.map((band, bIdx) => (
+            <React.Fragment key={`${event.id}-link-${bIdx}`}>
+              <a 
+                href={getSetlistFmUrl(band, event.date)} 
+                target="_blank" rel="noreferrer"
+                style={{ 
+                  color: '#fff', 
+                  textDecoration: 'none',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={e => { 
+                  e.target.style.color = C.gold; 
+                  e.target.style.textShadow = `0 0 20px ${C.gold}`;
+                }}
+                onMouseLeave={e => { 
+                  e.target.style.color = '#fff'; 
+                  e.target.style.textShadow = `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`;
+                }}
+              >
+                {band.toUpperCase()}
+              </a>
+              {/* Dot Separator between names */}
+              {bIdx < event.bands.length - 1 && (
+                <span style={{ color: 'rgba(255,255,255,0.2)', pointerEvents: 'none' }}>·</span>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
         
+        {/* Metadata Row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px' }}>
           <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: primaryColor, fontWeight: 900 }}>
             {fmtDateShort(event.date)}
           </div>
-          <div style={{ width: 1, height: 12, background: C.border }} />
+          <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.1)' }} />
           <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>
             {event.venue?.toUpperCase()}
           </div>
+          {isAdmin && (
+            <button 
+              onClick={() => onEdit(event)}
+              style={{ background: 'none', border: 'none', color: C.teal, fontFamily: "'Space Mono'", fontSize: '10px', cursor: 'pointer', padding: 0, opacity: 0.6, marginLeft: '10px' }}
+            >
+              [ EDIT ]
+            </button>
+          )}
         </div>
       </div>
 
