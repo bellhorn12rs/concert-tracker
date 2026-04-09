@@ -4310,6 +4310,52 @@ function ShareCard({ artist, shows, onClose }) {
   );
 }
 
+function PhotoVaultTab({ concerts }) {
+  const photos = useMemo(() => {
+    const results = [];
+    concerts.forEach(c => {
+      if (!c.personal_photo_url) return;
+      const urls = c.personal_photo_url.split(',').map(u => u.trim()).filter(Boolean);
+      urls.forEach((url, idx) => {
+        results.push({
+          id: `${c.id}-photo-${idx}`,
+          url,
+          artist: c.artist,
+          date: c.date,
+          venue: c.venue
+        });
+      });
+    });
+    return results.sort((a, b) => b.date.localeCompare(a.date));
+  }, [concerts]);
+
+  return (
+    <div style={{ padding: '40px 0' }} className="fade-in">
+      <div style={{ textAlign: 'center', marginBottom: 60 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: '#fff' }}>THE <span style={{ color: C.purple }}>POLAROID</span> DECK</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, letterSpacing: 4 }}>{photos.length} MEMORIES CAPTURED // FULL SIGNAL</div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '40px' }}>
+        {photos.map((p, i) => (
+          <div key={p.id} style={{ transform: `rotate(${(i % 2 === 0 ? 1 : -1) * (i % 3)}deg)` }}>
+            <PersonalPolaroid 
+              src={p.url} 
+              caption={`${p.artist.toUpperCase()}`} 
+              index={0} 
+              total={1} 
+            />
+            <div style={{ marginTop: 10, textAlign: 'center' }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray }}>{fmtDateShort(p.date)}</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>{p.venue}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── THEME SWITCHER ───────────────────────────────────────────────────────────
 function ThemeSwitcher({ isMobile }) {
   const { themeId, setThemeId } = useTheme();
@@ -4406,6 +4452,7 @@ const TAB_GROUPS = [
     tabs: [
       ['hof', '🏆 HEAVY ROTATION', '#9966ff'],
       ['vault', '📋 ARTIFACTS', '#00cc88'],
+      ['photos', '📸 POLAROIDS', '#9966ff'], // 🟢 Added this line
       ['venues', '📍 STAGE DOOR', '#00cfff'],
     ]
   },
@@ -4487,6 +4534,72 @@ function TrackRecordLogo({ size = 40 }) {
     </svg>
   );
 }
+
+// ─── EDIT MODAL (The Missing Component) ────────────────────────────────────
+function EditModal({ concert, onClose, onSave, onDelete }) {
+  const [form, setForm] = useState({
+    date: '', artist: '', venue: '', city: '', state: '',
+    bands: [], genre: '', is_festival: false, festival_name: '',
+    festival_day: '', image_url: '', personal_photo_url: '', setlist_image_url: '',
+    has_setlist: false, has_setlist_names: ''
+  });
+
+  useEffect(() => {
+    if (concert) {
+      setForm({
+        ...concert,
+        bands: Array.isArray(concert.bands) ? concert.bands : [concert.artist || ''],
+        personal_photo_url: concert.personal_photo_url || '',
+        setlist_image_url: concert.setlist_image_url || concert.image_url || ''
+      });
+    }
+  }, [concert]);
+
+  if (!concert) return null;
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="fade-in" style={{ background: '#111', border: `2px solid ${C.teal}`, borderRadius: 12, padding: 30, width: '90%', maxWidth: 850, maxHeight: '90vh', overflowY: 'auto', boxShadow: `0 0 50px ${hexToRgba(C.teal, 0.2)}` }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
+          <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', margin: 0, letterSpacing: 2 }}>EDIT ARCHIVE ENTRY</h2>
+          <Btn variant="secondary" onClick={onClose}>CLOSE [ESC]</Btn>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30 }}>
+          {/* LEFT: CORE INTEL */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+            <label style={{ fontSize: 9, color: C.teal, fontFamily: "'Space Mono'", letterSpacing: 2 }}>ARTIST / HEADLINER</label>
+            <input style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6 }} value={form.artist} onChange={e => set('artist', e.target.value)} />
+            
+            <label style={{ fontSize: 9, color: C.teal, fontFamily: "'Space Mono'", letterSpacing: 2 }}>DATE</label>
+            <input type="date" style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6, colorScheme: 'dark' }} value={form.date} onChange={e => set('date', e.target.value)} />
+            
+            <label style={{ fontSize: 9, color: C.teal, fontFamily: "'Space Mono'", letterSpacing: 2 }}>VENUE</label>
+            <input style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6 }} value={form.venue} onChange={e => set('venue', e.target.value)} />
+          </div>
+
+          {/* RIGHT: MEDIA VAULT */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+            <label style={{ fontSize: 9, color: C.gold, fontFamily: "'Space Mono'", letterSpacing: 2 }}>PERSONAL PHOTOS (COMMA SEPARATED URLS)</label>
+            <textarea style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6, height: 80 }} value={form.personal_photo_url} onChange={e => set('personal_photo_url', e.target.value)} placeholder="https://image1.jpg, https://image2.jpg" />
+            
+            <label style={{ fontSize: 9, color: C.gold, fontFamily: "'Space Mono'", letterSpacing: 2 }}>SETLIST IMAGES (COMMA SEPARATED URLS)</label>
+            <textarea style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: 12, borderRadius: 6, height: 80 }} value={form.setlist_image_url} onChange={e => set('setlist_image_url', e.target.value)} />
+          </div>
+        </div>
+
+        <div style={{ marginTop: 40, display: 'flex', gap: 15 }}>
+          <Btn style={{ flex: 2, padding: 15 }} onClick={() => onSave(concert.id, form)}>COMMIT TO ARCHIVE</Btn>
+          <Btn variant="danger" style={{ flex: 1 }} onClick={() => onDelete(concert.id)}>DELETE ENTRY</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
@@ -5201,6 +5314,7 @@ export default function App() {
               
               {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
               {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
+              {activeTab === 'photos' && <PhotoVaultTab concerts={concerts} />}
               {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
               {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
               
