@@ -611,29 +611,54 @@ const MarqueeStyles = () => (
       100% { transform: translateY(0) scale(1) rotate(var(--r, 0deg)); opacity: 1; }
     }
 
-    /* 1. The "Drop & Settle" when the page loads */
-@keyframes pinSettle {
-  0% { transform: translateY(-30px) rotate(15deg); opacity: 0; }
-  60% { transform: translateY(5px) rotate(calc(var(--rotation) * -0.5)); }
-  100% { transform: translateY(0) rotate(var(--rotation)); opacity: 1; }
-}
+    /* 6. POLAROID PHYSICS (The "Living" Gallery) */
 
-.polaroid-gravity-swing {
-  transform-origin: top center; /* 🟢 Pivots from the pin! */
-  animation: pinSettle 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
-  --rotation: 0deg; /* Default fallback */
-}
+    /* The "Drop & Settle" when the page loads */
+    @keyframes pinSettle {
+      0% { transform: translateY(-30px) rotate(15deg); opacity: 0; }
+      60% { transform: translateY(5px) rotate(calc(var(--rotation) * -0.5)); }
+      100% { transform: translateY(0) rotate(var(--rotation)); opacity: 1; }
+    }
 
-/* 2. The "Living" Sway on Hover */
-.polaroid-gravity-swing:hover {
-  animation: physicalSway 3s ease-in-out infinite;
-  box-shadow: 0 40px 70px rgba(0,0,0,0.7) !important;
-}
+    /* The "Living" Sway on Hover */
+    @keyframes physicalSway {
+      0%, 100% { transform: scale(1.05) rotate(calc(var(--rotation) - 1.5deg)); }
+      50% { transform: scale(1.05) rotate(calc(var(--rotation) + 1.5deg)); }
+    }
 
-@keyframes physicalSway {
-  0%, 100% { transform: scale(1.03) rotate(calc(var(--rotation) - 1deg)); }
-  50% { transform: scale(1.03) rotate(calc(var(--rotation) + 1deg)); }
-}
+    .polaroid-gravity-swing {
+      transform-origin: top center; /* 🟢 Crucial: Pushes the pivot point to the pin */
+      animation: pinSettle 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+      --rotation: 0deg; 
+      position: relative;
+    }
+
+    .polaroid-gravity-swing:hover {
+      animation: physicalSway 2.5s ease-in-out infinite !important;
+      box-shadow: 0 40px 70px rgba(0,0,0,0.7) !important;
+      z-index: 2000 !important;
+    }
+
+    /* 🟢 THE CURLED CORNER EFFECT 
+       This adds a secondary shadow to the bottom-right to make 
+       it look like the photo is lifting off the corkboard. */
+    .polaroid-frame {
+      position: relative;
+    }
+
+    .polaroid-frame::after {
+      content: "";
+      position: absolute;
+      bottom: 12px;
+      right: 8px;
+      width: 60%;
+      height: 15%;
+      background: transparent;
+      box-shadow: 0 15px 15px rgba(0,0,0,0.7); 
+      transform: rotate(4deg);
+      z-index: -1;
+      pointer-events: none;
+    }
 
     /* ─── CSS CLASSES ─── */
 
@@ -4444,38 +4469,65 @@ function PhotoVaultTab({ concerts }) {
   }, [safeConcerts]);
 
   return (
-    <div style={{ padding: '60px 0', overflowX: 'hidden' }} className="fade-in">
-      <div style={{ textAlign: 'center', marginBottom: 100 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '5rem', color: '#fff', lineHeight: 1 }}>
-          THE <span style={{ color: C.purple }}>POLAROID</span> DECK
-        </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.purple, letterSpacing: 5 }}>
-          {photos.length} MEMORIES ARCHIVED // PHYSICAL SIGNAL
-        </div>
+  <div style={{ 
+    padding: '60px 0', 
+    overflowX: 'hidden',
+    minHeight: '100vh',
+    position: 'relative',
+    /* 🟢 THE TEXTURE: Adding that dark "felt/cork" surface */
+    backgroundColor: '#0a0a0c',
+    backgroundImage: `url("https://www.transparenttextures.com/patterns/carbon-fibre.png")`, 
+    backgroundAttachment: 'fixed'
+  }} className="fade-in">
+    
+    {/* HEADER SECTION */}
+    <div style={{ textAlign: 'center', marginBottom: 100, position: 'relative', zIndex: 10 }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '5rem', color: '#fff', lineHeight: 1 }}>
+        THE <span style={{ color: C.purple }}>POLAROID</span> DECK
       </div>
-
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
-        gap: '120px 40px', // Large gap for swinging
-        padding: '0 40px',
-        justifyItems: 'center'
-      }}>
-        {photos.map((p, i) => (
-          <div key={p.id} style={{ '--rotation': `${p.rotation}deg` }}>
-             <PersonalPolaroid 
-               src={p.url} 
-               caption={p.artist} 
-               date={p.date} 
-               venue={p.venue} 
-               index={i} 
-             />
-          </div>
-        ))}
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.purple, letterSpacing: 5 }}>
+        {photos.length} MEMORIES ARCHIVED // PHYSICAL SIGNAL
       </div>
     </div>
-  );
-}
+
+    {/* THE PHOTO WALL (GRID) */}
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
+      gap: '120px 40px', // Large gap for the gravity swing
+      padding: '0 40px',
+      justifyItems: 'center',
+      position: 'relative',
+      zIndex: 5
+    }}>
+      {photos.map((p, i) => (
+        /* Passing the random rotation as a CSS variable for the animation engine */
+        <div key={p.id} style={{ '--rotation': `${p.rotation}deg` }}>
+           <PersonalPolaroid 
+             src={p.url} 
+             caption={p.artist} 
+             date={p.date} 
+             venue={p.venue} 
+             index={i} 
+           />
+        </div>
+      ))}
+    </div>
+
+    {/* 🟢 FILM GRAIN OVERLAY: The secret sauce for that "living" archive look */}
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      width: '100%',
+      height: '100%',
+      pointerEvents: 'none',
+      zIndex: 9999,
+      opacity: 0.03, // Keep it barely visible
+      backgroundImage: `url("https://upload.wikimedia.org/wikipedia/commons/7/76/1k_Noise_Condition.png")`,
+      mixBlendMode: 'overlay'
+    }} />
+  </div>
+);
 // ─── THEME SWITCHER ───────────────────────────────────────────────────────────
 function ThemeSwitcher({ isMobile }) {
   const { themeId, setThemeId } = useTheme();
