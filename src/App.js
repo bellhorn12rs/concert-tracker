@@ -4636,14 +4636,22 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   };
 
   const handleCommit = () => {
-    // Clean the payload: Ensure artist matches the first band if empty
     const payload = { ...form };
-    if (!payload.artist && payload.bands.length > 0) payload.artist = payload.bands[0];
     
-    // Safety: ensure image_url is also updated if setlist_image_url changed
+    // 1. Sync Artist/Bands
+    // If it's a new entry and they only typed the artist, make sure bands isn't empty
+    if (!payload.artist && payload.bands.length > 0) payload.artist = payload.bands[0];
+    if (payload.artist && (!payload.bands || payload.bands.length === 0)) {
+       payload.bands = [payload.artist];
+    }
+    
+    // 2. Sync Image URL
+    // We map the UI field back to the legacy DB column name
     payload.image_url = payload.setlist_image_url;
 
-    onSave(concert?.id || null, payload);
+    // 3. Trigger Save
+    const targetId = (concert && concert !== 'new') ? concert.id : null;
+    onSave(targetId, payload);
   };
 
   if (!concert) return null;
@@ -4993,17 +5001,65 @@ export default function App() {
   }
 
   async function handleSave(id, payload) {
-    if (id) await supabase.from('concerts').update(payload).eq('id', id);
-    else await supabase.from('concerts').insert([payload]);
-    fetchConcerts();
-    setEditTarget(null);
+    // 1. DATA CLEANING: Remove UI-only fields that aren't in your Supabase table
+    // We map 'setlist_image_url' (from the form) back to 'image_url' (for the DB)
+    const { setlist_image_url, ...dbPayload } = payload; 
+    
+    // Ensure the setlist images are saved to the correct column
+    if (setlist_image_url) {
+      dbPayload.image_url = setlist_image_url;
+    }
+
+    try {
+      let result;
+      if (id && id !== 'new') {
+        // 🟢 UPDATE EXISTING SHOW
+        result = await supabase
+          .from('concerts')
+          .update(dbPayload)
+          .eq('id', id);
+      } else {
+        // 🟢 INSERT NEW SHOW
+        // Ensure we don't send a null or 'new' string as an ID
+        const { id: _, ...newShowPayload } = dbPayload;
+        result = await supabase
+          .from('concerts')
+          .insert([newShowPayload]);
+      }
+
+      if (result.error) throw result.error;
+
+      // 2. REFRESH & CLOSE
+      console.log("Archive updated successfully.");
+      await fetchConcerts(); // Sync local state with DB
+      setEditTarget(null);   // Close the modal
+    } catch (err) {
+      console.error("Database Error:", err);
+      alert(`SAVE FAILED: ${err.message}`);
+    }
   }
 
   async function handleDelete(id) {
-    if (window.confirm('Delete show?')) {
-      await supabase.from('concerts').delete().eq('id', id);
-      fetchConcerts();
+    if (!id || id === 'new') {
       setEditTarget(null);
+      return;
+    }
+
+    if (window.confirm('PERMANENTLY DELETE THIS SHOW FROM ARCHIVE?')) {
+      try {
+        const { error } = await supabase
+          .from('concerts')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+
+        await fetchConcerts();
+        setEditTarget(null);
+      } catch (err) {
+        console.error("Delete Error:", err);
+        alert(`DELETE FAILED: ${err.message}`);
+      }
     }
   }
 
