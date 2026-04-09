@@ -2853,44 +2853,84 @@ function PersonalPolaroid({ src, index = 0, total = 1, caption }) {
   const [isFull, setIsFull] = React.useState(false);
   if (!src) return null;
 
-  const rotation = (index % 2 === 0 ? -3 : 3) + (index * 1.5);
-  const xOffset = index * -20;
+  // We'll keep the base rotation subtle so the grid stays clean
+  const baseRotation = (index % 2 === 0 ? -2 : 2);
   
   return (
     <>
       <div 
-        onClick={() => setIsFull(true)}
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent grid interference
+          setIsFull(true);
+        }}
         style={{
-          padding: '10px 10px 32px 10px', background: '#fff', 
-          boxShadow: '0 8px 25px rgba(0,0,0,0.6)',
-          transform: `rotate(${rotation}deg) translateX(${xOffset}px)`, 
-          width: '160px', flexShrink: 0,
-          border: '1px solid #ddd', zIndex: 10 + index, 
-          transition: 'all 0.4s ease', cursor: 'zoom-in',
-          marginLeft: index === 0 ? '20px' : '0', 
-          marginRight: index === total - 1 ? '0' : '-40px'
+          padding: '12px 12px 45px 12px', // More room at bottom for handwriting
+          background: '#fff', 
+          boxShadow: '0 15px 35px rgba(0,0,0,0.4), 0 0 5px rgba(0,0,0,0.1)',
+          transform: `rotate(${baseRotation}deg)`, 
+          width: '300px', // 🟢 BUMPED SIZE
+          flexShrink: 0,
+          border: '1px solid #efefef', 
+          zIndex: 10 + index, 
+          transition: 'all 0.3s ease-out', // Smoother transition
+          cursor: 'pointer',
+          position: 'relative',
+          userSelect: 'none'
         }}
         onMouseEnter={e => { 
-          e.currentTarget.style.transform = `rotate(0deg) scale(1.15) translateY(-15px)`; 
+          e.currentTarget.style.transform = `rotate(0deg) scale(1.05) translateY(-10px)`; 
           e.currentTarget.style.zIndex = 1000; 
+          e.currentTarget.style.boxShadow = '0 30px 60px rgba(0,0,0,0.6)';
         }}
         onMouseLeave={e => { 
-          e.currentTarget.style.transform = `rotate(${rotation}deg) translateX(${xOffset}px)`; 
+          e.currentTarget.style.transform = `rotate(${baseRotation}deg)`; 
           e.currentTarget.style.zIndex = 10 + index; 
+          e.currentTarget.style.boxShadow = '0 15px 35px rgba(0,0,0,0.4)';
         }}
       >
+        {/* THE PHOTO */}
         <div style={{ 
-          width: '100%', aspectRatio: '1/1', 
-          background: `url(${src}) center/cover no-repeat` 
+          width: '100%', 
+          aspectRatio: '1/1', 
+          background: `url(${src}) center/cover no-repeat`,
+          borderRadius: '1px',
+          pointerEvents: 'none' // Let clicks pass to the parent
         }} />
+
+        {/* 🟢 THE HANDWRITTEN CAPTION (NOW INSIDE THE FRAME) */}
         <div style={{ 
-          fontFamily: "'Space Mono'", fontSize: '8px', color: '#333', 
-          textAlign: 'center', marginTop: '12px', fontWeight: 'bold', opacity: 0.7 
+          fontFamily: "'Caveat', cursive", 
+          fontSize: '1.8rem', // Larger for the bigger frame
+          color: '#1a1a1a', 
+          textAlign: 'center', 
+          marginTop: '18px', 
+          fontWeight: 700,
+          lineHeight: 1,
+          letterSpacing: '-1px',
+          transform: 'rotate(-2deg)', // A bit more "messy" tilt
+          pointerEvents: 'none'
         }}>
           {caption}
         </div>
+
+        {/* Subtle sheen for that photo-paper look */}
+        <div style={{
+          position: 'absolute',
+          inset: '12px 12px 45px 12px',
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%)',
+          pointerEvents: 'none'
+        }} />
       </div>
-      {isFull && <Lightbox src={src} caption={caption} onClose={() => setIsFull(false)} type="POLAROID" />}
+
+      {/* FULL SCREEN LIGHTBOX */}
+      {isFull && (
+        <Lightbox 
+          src={src} 
+          caption={caption} 
+          onClose={() => setIsFull(false)} 
+          type="POLAROID" 
+        />
+      )}
     </>
   );
 }
