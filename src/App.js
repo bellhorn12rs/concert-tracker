@@ -515,6 +515,7 @@ function MasterLanyard({ concerts, artistGenres, genreStats }) {
 const MarqueeStyles = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Monoton&family=Bebas+Neue&family=Space+Mono&family=Caveat:wght@600;700&family=UnifrakturMaguntia&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&display=swap');
 
     body {
       background-color: #050508;
@@ -4367,46 +4368,48 @@ function PhotoVaultTab({ concerts }) {
   const photos = useMemo(() => {
     const results = [];
     safeConcerts.forEach(c => {
-      // 1. Skip if no photo
       if (!c || !c.personal_photo_url) return;
 
-      // 2. Data Detective: Find a name to use for the label
-      // Priority: Main Artist > Festival Name > First Band in List > "Unknown"
       const displayName = c.artist || c.festival_name || (c.bands && c.bands[0]) || 'Unknown Act';
-
-      // 3. Handle multiple photos in one field (split by comma)
       const urls = String(c.personal_photo_url).split(',').map(u => u.trim()).filter(Boolean);
       
       urls.forEach((url, idx) => {
+        // 🟢 THE JITTER ENGINE
+        // We generate these once so the photo stays in its "spot" 
+        const rotation = (Math.random() * 12 - 6).toFixed(2); // -6 to +6 degrees
+        const shiftX = (Math.random() * 30 - 15).toFixed(2);   // -15px to +15px drift
+        const shiftY = (Math.random() * 20 - 10).toFixed(2);   // -10px to +10px drift
+        const zIndex = Math.floor(Math.random() * 10);        // Random stacking order
+
         results.push({
           id: `${c.id}-photo-${idx}`,
           url,
           artist: displayName,
           date: c.date || '',
-          venue: c.venue || c.festival_name || 'Unknown Venue'
+          venue: c.venue || c.festival_name || 'Unknown Venue',
+          // Store the physics in the object
+          scatterStyle: {
+            transform: `rotate(${rotation}deg) translate(${shiftX}px, ${shiftY}px)`,
+            zIndex: zIndex
+          }
         });
       });
     });
-    // Sort Newest to Oldest
     return results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }, [safeConcerts]);
 
-  // Gate for absolute empty state
   if (safeConcerts.length > 0 && photos.length === 0) {
     return (
       <div style={{ padding: 100, textAlign: 'center' }}>
         <div style={{ fontSize: '3rem', marginBottom: 20 }}>📸</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.grayDim, letterSpacing: 3 }}>
-          NO PHOTOS FOUND // CHECK 'PERSONAL_PHOTO_URL' FIELDS IN THE OFFICE
-        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.grayDim, letterSpacing: 3 }}>DECK EMPTY // AWAITING SIGNAL</div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '40px 0' }} className="fade-in">
-      {/* HEADER SECTION */}
-      <div style={{ textAlign: 'center', marginBottom: 60 }}>
+    <div style={{ padding: '40px 0', overflowX: 'hidden' }} className="fade-in">
+      <div style={{ textAlign: 'center', marginBottom: 80 }}>
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: '#fff', lineHeight: 1 }}>
           THE <span style={{ color: C.purple }}>POLAROID</span> DECK
         </div>
@@ -4415,51 +4418,56 @@ function PhotoVaultTab({ concerts }) {
         </div>
       </div>
 
-      {/* PHOTO GRID */}
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', 
-        gap: '60px', 
-        padding: '0 20px' 
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+        gap: '100px 40px', // Increased vertical gap to account for jitter
+        padding: '0 40px',
+        justifyItems: 'center', // 🟢 THE CRITICAL FIX: Snaps elements to center of their cells
+        alignItems: 'center'
       }}>
-        {photos.map((p, i) => {
-          // Add a subtle random-ish rotation for the "tossed on a table" look
-          const rotation = (i % 2 === 0 ? 1 : -1) * (i % 5);
-          
-          return (
-            <div key={p.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ transform: `rotate(${rotation}deg)`, transition: '0.3s ease' }}>
-                <PersonalPolaroid 
-                  src={p.url} 
-                  caption={p.artist.toUpperCase()} 
-                  index={i} 
-                  total={photos.length} 
-                />
+        {photos.map((p) => (
+          <div key={p.id} style={{ 
+            position: 'relative', 
+            ...p.scatterStyle, 
+            transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)' 
+          }}>
+            {/* The Polaroid Container */}
+            <div className="polaroid-frame">
+              <PersonalPolaroid 
+                src={p.url} 
+                caption={p.artist} 
+                index={0} 
+                total={1} 
+              />
+            </div>
+            
+            {/* 🟢 HANDWRITTEN SUB-LABELS */}
+            <div style={{ 
+              marginTop: 15, 
+              textAlign: 'center', 
+              fontFamily: "'Caveat', cursive", 
+              pointerEvents: 'none' 
+            }}>
+              <div style={{ 
+                fontSize: '1.8rem', 
+                color: '#fff', 
+                lineHeight: 0.9,
+                textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
+              }}>
+                {p.artist}
               </div>
-              
-              {/* LEGIBLE SUB-LABELS */}
-              <div style={{ marginTop: 20, textAlign: 'center' }}>
-                <div style={{ 
-                  fontFamily: "'Bebas Neue'", 
-                  fontSize: '1.4rem', 
-                  color: '#fff', 
-                  letterSpacing: '1px', 
-                  marginBottom: 2 
-                }}>
-                  {p.artist}
-                </div>
-                <div style={{ 
-                  fontFamily: "'Space Mono'", 
-                  fontSize: '9px', 
-                  color: C.grayDim, 
-                  textTransform: 'uppercase' 
-                }}>
-                  {p.date ? fmtDateShort(p.date) : 'Date Unknown'} // {p.venue?.split(',')[0]}
-                </div>
+              <div style={{ 
+                fontSize: '1.1rem', 
+                color: C.purple, 
+                marginTop: 5,
+                opacity: 0.8 
+              }}>
+                {p.date ? fmtDateShort(p.date) : '??'} — {p.venue?.split(',')[0]}
               </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );
