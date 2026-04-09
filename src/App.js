@@ -613,65 +613,59 @@ const MarqueeStyles = () => (
 
     /* 6. POLAROID PHYSICS (Glitch-Free "Living" Gallery) */
 
-    /* The "Pin Drop" - Happens once on load */
+    /* 6. POLAROID PHYSICS (Glitch-Killer & Tightened) */
+
     @keyframes pinDropAndSettle {
-      0% { transform: translateY(-100px) rotate(15deg); opacity: 0; }
+      0% { transform: translateY(-80px) rotate(15deg); opacity: 0; }
       60% { transform: translateY(10px) rotate(calc(var(--rotation) * -0.8)); }
-      80% { transform: translateY(-5px) rotate(calc(var(--rotation) * 1.2)); }
       100% { transform: translateY(0) rotate(var(--rotation)); opacity: 1; }
     }
 
-    /* The "Living Sway" - Heavier, physics-based movement */
     @keyframes heavySway {
-      0%, 100% { transform: scale(1.04) rotate(calc(var(--rotation) - 2.5deg)); }
-      50% { transform: scale(1.04) rotate(calc(var(--rotation) + 2.5deg)); }
+      0%, 100% { transform: scale(1.03) rotate(calc(var(--rotation) - 2deg)); }
+      50% { transform: scale(1.03) rotate(calc(var(--rotation) + 2deg)); }
     }
 
-    /* 🟢 THE FIX: The Hitbox wrapper stays still while the photo swings inside it */
     .polaroid-hitbox {
       position: relative;
       width: 320px;
-      height: 480px; /* Covers the full swing area */
+      height: 440px; /* Reduced height to match tightened photo */
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      cursor: pointer;
+      cursor: zoom-in;
       z-index: 10;
+      pointer-events: auto; /* The hitbox is the only thing that sees the mouse */
     }
 
     .polaroid-gravity-swing {
-      transform-origin: top center !important; /* Pivots from the pin */
-      transform: rotate(var(--rotation)); /* Apply the random tilt */
-      animation: pinDropAndSettle 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+      transform-origin: top center !important;
+      transform: rotate(var(--rotation));
+      animation: pinDropAndSettle 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
       will-change: transform;
-      pointer-events: none; /* 🟢 Prevents the photo from "stealing" hover from the hitbox */
       position: relative;
+      pointer-events: none; /* 🟢 CRITICAL: The photo is "ghostly" so it won't flicker the hover */
     }
 
-    /* Trigger the sway when the HITBOX is hovered */
+    /* Stable Hover Trigger */
     .polaroid-hitbox:hover .polaroid-gravity-swing {
-      animation: heavySway 3.5s ease-in-out infinite !important;
+      animation: heavySway 3s ease-in-out infinite !important;
     }
 
-    /* Lift the whole unit when interacting */
     .polaroid-hitbox:hover {
       z-index: 2000 !important;
     }
 
-    /* Metallic thumbtack depth */
     .tack-shine {
       position: absolute;
       inset: 0;
       background: radial-gradient(circle at 30% 30%, #fff, transparent 60%);
       opacity: 0.6;
-      pointer-events: none;
       border-radius: 50%;
     }
 
-    /* 🟢 THE CURLED CORNER EFFECT */
     .polaroid-frame {
       position: relative;
-      pointer-events: auto; /* Re-enable clicks for the actual photo content */
     }
 
     .polaroid-frame::after {
@@ -685,7 +679,6 @@ const MarqueeStyles = () => (
       box-shadow: 0 15px 15px rgba(0,0,0,0.7); 
       transform: rotate(4deg);
       z-index: -1;
-      pointer-events: none;
     }
 
     /* ─── CSS CLASSES ─── */
@@ -2926,64 +2919,55 @@ function SetlistPaper({ src, index = 0, total = 1 }) {
 }
 
 // ─── 📸 STACKED POLAROIDS (PHYSICS & 3D EDITION) ────────────────────────────────
-function PersonalPolaroid({ src, index = 0, caption, date, venue }) {
-  const [isFull, setIsFull] = React.useState(false);
+function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
   if (!src) return null;
 
   const markerColors = ['#1a1a1a', '#2140ab', '#b02525', '#1e6337', '#732ba1', '#cc6600'];
   const myColor = markerColors[index % markerColors.length];
 
   return (
-    <>
-      {/* 🟢 Triggering setIsFull from here via the parent is best, 
-          but we can keep it on the internal div as long as pointer-events are right */}
-      <div 
-        onClick={(e) => { e.stopPropagation(); setIsFull(true); }}
-        className="polaroid-gravity-swing"
-        style={{
-          padding: '12px 12px 75px 12px',
-          background: '#fff', 
-          boxShadow: '0 20px 50px rgba(0,0,0,0.6), 0 0 5px rgba(0,0,0,0.1)',
-          width: '320px', 
-          border: '1px solid #efefef', 
-          position: 'relative',
-          pointerEvents: 'auto', // Re-enable clicks for the actual photo
-        }}
-      >
-        {/* 📌 THE THUMB TACK */}
-        <div style={{
-          position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
-          width: 20, height: 20, background: '#d11111', borderRadius: '50%',
-          boxShadow: 'inset -4px -4px 6px rgba(0,0,0,0.5), 2px 8px 12px rgba(0,0,0,0.4)',
-          zIndex: 100, border: '1px solid #900'
-        }}>
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 4, height: 4, background: '#400', borderRadius: '50%', opacity: 0.5 }} />
-          <div className="tack-shine" style={{ position: 'absolute', inset: 0, borderRadius: '50%' }} />
-        </div>
-
-        {/* PHOTO AREA */}
-        <div className="polaroid-frame" style={{ 
-          width: '100%', aspectRatio: '1/1', 
-          background: `url(${src}) center/cover no-repeat`,
-          border: '1px solid rgba(0,0,0,0.1)'
-        }} />
-
-        {/* 🖊️ HANDWRITTEN LABELS */}
-        <div style={{ 
-          fontFamily: "'Caveat', cursive", textAlign: 'center', 
-          marginTop: '15px', color: myColor, padding: '0 5px'
-        }}>
-          <div style={{ fontSize: '2.4rem', fontWeight: 700, lineHeight: 0.8, transform: 'rotate(-1.5deg)', marginBottom: 8 }}>
-            {caption}
-          </div>
-          <div style={{ fontSize: '1.2rem', opacity: 0.9, transform: 'rotate(1deg)', fontWeight: 600 }}>
-            {date ? fmtDateShort(date) : ''} — {venue?.split(',')[0].toUpperCase()}
-          </div>
-        </div>
+    <div 
+      className="polaroid-gravity-swing"
+      style={{
+        padding: '12px 12px 55px 12px', // 🟢 Tightened bottom (was 75px)
+        background: '#fff', 
+        boxShadow: '0 15px 40px rgba(0,0,0,0.5), 0 0 5px rgba(0,0,0,0.1)',
+        width: '320px', 
+        border: '1px solid #efefef', 
+        position: 'relative'
+      }}
+    >
+      {/* 📌 THE THUMB TACK */}
+      <div style={{
+        position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
+        width: 20, height: 20, background: '#d11111', borderRadius: '50%',
+        boxShadow: 'inset -4px -4px 6px rgba(0,0,0,0.5), 2px 8px 12px rgba(0,0,0,0.4)',
+        zIndex: 100, border: '1px solid #900'
+      }}>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 4, height: 4, background: '#400', borderRadius: '50%', opacity: 0.5 }} />
+        <div className="tack-shine" />
       </div>
 
-      {isFull && <Lightbox src={src} caption={caption} onClose={() => setIsFull(false)} type="POLAROID" />}
-    </>
+      {/* PHOTO AREA */}
+      <div className="polaroid-frame" style={{ 
+        width: '100%', aspectRatio: '1/1', 
+        background: `url(${src}) center/cover no-repeat`,
+        border: '1px solid rgba(0,0,0,0.1)'
+      }} />
+
+      {/* 🖊️ HANDWRITTEN LABELS */}
+      <div style={{ 
+        fontFamily: "'Caveat', cursive", textAlign: 'center', 
+        marginTop: '15px', color: myColor, padding: '0 5px'
+      }}>
+        <div style={{ fontSize: '2.3rem', fontWeight: 700, lineHeight: 0.8, transform: 'rotate(-1.5deg)', marginBottom: 6 }}>
+          {caption}
+        </div>
+        <div style={{ fontSize: '1.1rem', opacity: 0.9, transform: 'rotate(1deg)', fontWeight: 600 }}>
+          {date ? fmtDateShort(date) : ''} — {venue?.split(',')[0].toUpperCase()}
+        </div>
+      </div>
+    </div>
   );
 }
 // ─── 4. BY DAY TAB (SCRAPBOOK EDITION - FULL MULTI-MEDIA) ────────────────────
@@ -4454,8 +4438,12 @@ function ShareCard({ artist, shows, onClose }) {
   );
 }
 // --- PHOTO VAULT TAB ---
+// --- PHOTO VAULT TAB (GLITCH-FREE & REFINED) ---
 function PhotoVaultTab({ concerts }) {
   const safeConcerts = Array.isArray(concerts) ? concerts : [];
+  
+  // Local state to handle the Lightbox since clicks move to the stable hitbox
+  const [activePhoto, setActivePhoto] = React.useState(null);
 
   const photos = useMemo(() => {
     const results = [];
@@ -4467,7 +4455,6 @@ function PhotoVaultTab({ concerts }) {
       
       urls.forEach((url, idx) => {
         // Generate random "Starting" rotation for each pinned photo
-        // We do this here so it stays consistent for each photo instance
         const startRotation = (Math.random() * 10 - 5).toFixed(2);
 
         results.push({
@@ -4500,7 +4487,6 @@ function PhotoVaultTab({ concerts }) {
       overflowX: 'hidden',
       minHeight: '100vh',
       position: 'relative',
-      /* 🟢 THE TEXTURE: Dark felt/corkboard surface */
       backgroundColor: '#0a0a0c',
       backgroundImage: `url("https://www.transparenttextures.com/patterns/carbon-fibre.png")`, 
       backgroundAttachment: 'fixed'
@@ -4520,14 +4506,14 @@ function PhotoVaultTab({ concerts }) {
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
-        gap: '120px 40px', // Large gap for the gravity swing
+        gap: '80px 40px', 
         padding: '0 40px',
         justifyItems: 'center',
         position: 'relative',
         zIndex: 5
       }}>
         {photos.map((p, i) => (
-          /* 🟢 THE FIX: The stationary 'hitbox' wrapper prevents the hover glitch */
+          /* 🟢 THE FIX: The stationary 'hitbox' handles the click and hover trigger */
           <div 
             key={p.id} 
             className="polaroid-hitbox"
@@ -4535,6 +4521,7 @@ function PhotoVaultTab({ concerts }) {
               '--rotation': `${p.rotation}deg`, 
               position: 'relative' 
             }}
+            onClick={() => setActivePhoto(p)}
           >
              <PersonalPolaroid 
                src={p.url} 
@@ -4547,7 +4534,17 @@ function PhotoVaultTab({ concerts }) {
         ))}
       </div>
 
-      {/* 🟢 FILM GRAIN OVERLAY: Subtle cinematic texture */}
+      {/* LIGHTBOX OVERLAY */}
+      {activePhoto && (
+        <Lightbox 
+          src={activePhoto.url} 
+          caption={activePhoto.artist} 
+          onClose={() => setActivePhoto(null)} 
+          type="POLAROID" 
+        />
+      )}
+
+      {/* 🟢 FILM GRAIN OVERLAY */}
       <div style={{
         position: 'fixed',
         inset: 0,
@@ -4555,7 +4552,7 @@ function PhotoVaultTab({ concerts }) {
         height: '100%',
         pointerEvents: 'none',
         zIndex: 9999,
-        opacity: 0.03, // Keep it barely visible
+        opacity: 0.03, 
         backgroundImage: `url("https://upload.wikimedia.org/wikipedia/commons/7/76/1k_Noise_Condition.png")`,
         mixBlendMode: 'overlay'
       }} />
