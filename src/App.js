@@ -4638,18 +4638,17 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   const handleCommit = () => {
     const payload = { ...form };
     
-    // 1. Sync Artist/Bands
-    // If it's a new entry and they only typed the artist, make sure bands isn't empty
-    if (!payload.artist && payload.bands.length > 0) payload.artist = payload.bands[0];
-    if (payload.artist && (!payload.bands || payload.bands.length === 0)) {
-       payload.bands = [payload.artist];
+    // Ensure bands is always an array of strings
+    if (typeof payload.bands === 'string') {
+      // If the user typed a comma-separated list, turn it into an array
+      payload.bands = payload.bands.split(',').map(s => s.trim()).filter(Boolean);
     }
     
-    // 2. Sync Image URL
-    // We map the UI field back to the legacy DB column name
-    payload.image_url = payload.setlist_image_url;
+    // Fallback if bands is empty
+    if ((!payload.bands || payload.bands.length === 0) && payload.artist) {
+      payload.bands = [payload.artist];
+    }
 
-    // 3. Trigger Save
     const targetId = (concert && concert !== 'new') ? concert.id : null;
     onSave(targetId, payload);
   };
@@ -5001,9 +5000,9 @@ export default function App() {
   }
 
   async function handleSave(id, payload) {
-    console.log("Committing to Archive. Testing Band syntax...");
+    console.log("Committing JSON-safe payload...");
 
-    // 1. Map the UI fields to match your DB exactly
+    // 1. Map the standard fields
     const dbPayload = {
       date: payload.date || null,
       venue: payload.venue || null,
@@ -5017,49 +5016,41 @@ export default function App() {
       personal_photo_url: payload.personal_photo_url || null,
     };
 
-    // 2. THE BANDS FIX: 
-    // If your DB is throwing a JSON error, it's because it doesn't like 
-    // the JS Array format []. We will send it as a comma-separated string.
-    // This works whether the column is 'text' or '_text' (array).
-    if (Array.isArray(payload.bands)) {
-      dbPayload.bands = payload.bands.join(', ');
-    } else if (payload.artist) {
-      dbPayload.bands = payload.artist;
+    // 2. THE BANDS JSON FIX
+    // We MUST send an actual Array [] so Supabase can format it as JSON.
+    // We do NOT use .join() here because that creates a plain string.
+    if (Array.isArray(payload.bands) && payload.bands.length > 0) {
+      dbPayload.bands = payload.bands;
+    } else if (dbPayload.artist) {
+      // If bands is empty, take the headliner and wrap it in an array: ["Artist Name"]
+      dbPayload.bands = [dbPayload.artist];
+    } else {
+      dbPayload.bands = [];
     }
 
     try {
       let result;
       if (id && id !== 'new') {
+        // UPDATE
         result = await supabase
           .from('concerts')
           .update(dbPayload)
           .eq('id', id);
       } else {
-        // For new entries, make sure we don't pass an ID
+        // INSERT
         result = await supabase
           .from('concerts')
           .insert([dbPayload]);
       }
 
-      if (result.error) {
-        // If it STILL fails with a JSON error, we try one last trick:
-        // sending 'bands' as null to see if that allows the save.
-        if (result.error.message.includes('json')) {
-           console.warn("JSON error detected. Attempting Band-less save...");
-           delete dbPayload.bands;
-           const retry = await supabase.from('concerts').upsert([dbPayload]);
-           if (retry.error) throw retry.error;
-        } else {
-           throw result.error;
-        }
-      }
+      if (result.error) throw result.error;
 
-      console.log("Archive Synced.");
+      console.log("Archive Synced Successfully.");
       await fetchConcerts(); 
       setEditTarget(null);
     } catch (err) {
-      console.error("Final Sync Error:", err);
-      alert(`SYNC FAILED: ${err.message}\n\nHint: Check if the 'bands' column in Supabase is set to 'text'.`);
+      console.error("Database Error:", err);
+      alert(`SAVE ERROR: ${err.message}\n\nCheck that the 'bands' column in Supabase is either JSON or Text Array.`);
     }
   }
 
