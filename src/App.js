@@ -4593,7 +4593,7 @@ function TrackRecordLogo({ size = 40 }) {
   );
 }
 
-function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
+function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
   const initialState = {
     date: '', artist: '', venue: '', city: '', state: '',
     bands: [], genre: 'Indie Rock', is_festival: false, festival_name: '',
@@ -4608,7 +4608,6 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
       setForm({
         ...initialState,
         ...concert,
-        // Ensure bands is always an array and names are strings
         bands: Array.isArray(concert.bands) ? concert.bands : [concert.artist || ''],
         personal_photo_url: concert.personal_photo_url || '',
         setlist_image_url: concert.setlist_image_url || concert.image_url || ''
@@ -4618,14 +4617,23 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     }
   }, [concert]);
 
+  // All unique artists from existing concerts for autocomplete
+  const knownArtists = useMemo(() =>
+    [...new Set(concerts.flatMap(c => c.bands || []).filter(Boolean))].sort(),
+    [concerts]
+  );
+
+  // All unique venues for autocomplete
+  const knownVenues = useMemo(() =>
+    [...new Set(concerts.map(c => c.venue).filter(Boolean))].sort(),
+    [concerts]
+  );
+
   const set = (k, v) => {
     setForm(prev => {
       const newForm = { ...prev, [k]: v };
-      
-      // 🟢 VENUE PREFILL LOGIC
-      // If user is typing a venue, look for a match in previous concerts
       if (k === 'venue' && v.length > 2) {
-        const match = allConcerts.find(c => c.venue?.toLowerCase() === v.toLowerCase());
+        const match = concerts.find(c => c.venue?.toLowerCase() === v.toLowerCase());
         if (match) {
           newForm.city = match.city || '';
           newForm.state = match.state || '';
@@ -4637,18 +4645,12 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
 
   const handleCommit = () => {
     const payload = { ...form };
-    
-    // Ensure bands is always an array of strings
     if (typeof payload.bands === 'string') {
-      // If the user typed a comma-separated list, turn it into an array
       payload.bands = payload.bands.split(',').map(s => s.trim()).filter(Boolean);
     }
-    
-    // Fallback if bands is empty
     if ((!payload.bands || payload.bands.length === 0) && payload.artist) {
       payload.bands = [payload.artist];
     }
-
     const targetId = (concert && concert !== 'new') ? concert.id : null;
     onSave(targetId, payload);
   };
@@ -4661,7 +4663,15 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="fade-in" style={{ background: '#111', border: `2px solid ${C.teal}`, borderRadius: 12, padding: 30, width: '90%', maxWidth: 800, maxHeight: '90vh', overflowY: 'auto' }}>
-        
+
+        {/* Hidden datalists for browser autocomplete */}
+        <datalist id="artist-suggestions">
+          {knownArtists.map(a => <option key={a} value={a} />)}
+        </datalist>
+        <datalist id="venue-suggestions">
+          {knownVenues.map(v => <option key={v} value={v} />)}
+        </datalist>
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
           <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#fff', margin: 0 }}>{concert === 'new' ? 'CREATE ENTRY' : 'EDIT ARCHIVE'}</h2>
           <Btn variant="secondary" onClick={onClose}>CANCEL</Btn>
@@ -4671,13 +4681,32 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
           {/* COLUMN 1: THE SHOW */}
           <div>
             <label style={labelStyle}>MAIN ARTIST / HEADLINER</label>
-            <input style={inputStyle} value={form.artist} onChange={e => set('artist', e.target.value)} placeholder="Band Name" />
+            <input
+              style={inputStyle}
+              value={form.artist}
+              onChange={e => set('artist', e.target.value)}
+              placeholder="Band Name"
+              list="artist-suggestions"
+              autoComplete="off"
+            />
 
             <label style={labelStyle}>DATE</label>
-            <input type="date" style={{ ...inputStyle, colorScheme: 'dark' }} value={form.date} onChange={e => set('date', e.target.value)} />
+            <input
+              type="date"
+              style={{ ...inputStyle, colorScheme: 'dark' }}
+              value={form.date}
+              onChange={e => set('date', e.target.value)}
+            />
 
             <label style={labelStyle}>VENUE (Autofills City/State on match)</label>
-            <input style={inputStyle} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="Search venues..." />
+            <input
+              style={inputStyle}
+              value={form.venue}
+              onChange={e => set('venue', e.target.value)}
+              placeholder="Search venues..."
+              list="venue-suggestions"
+              autoComplete="off"
+            />
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
               <div>
