@@ -5041,16 +5041,18 @@ export default function App() {
   const [sortDir, setSortDir] = useState('desc');
   const [page, setPage] = useState(1);
 
-  // 🧠 THE BRAIN LOGIC (Consolidated)
-  const user = session && session.user ? session.user : null; [cite: 913, 916]
-  const isAdmin = user?.email === 'bellhorn12rs@gmail.com'; [cite: 916]
+  // 🧠 THE BRAIN LOGIC (Ultra-Stable Version)
+  const user = (session && session.user) ? session.user : null;
+  const isAdmin = (user && user.email === 'bellhorn12rs@gmail.com');
   
-  const userValue = useMemo(() => ({
-    user,
-    session,
-    isAdmin,
-    loading
-  }), [user, session, isAdmin, loading]);
+  const userValue = useMemo(() => {
+    return {
+      user: user,
+      session: session,
+      isAdmin: isAdmin,
+      loading: loading
+    };
+  }, [user, session, isAdmin, loading]);
 
   // Initialize C with current theme data immediately
   const theme = THEMES[themeId] || THEMES['neon-noir']; [cite: 917]
