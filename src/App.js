@@ -5405,7 +5405,6 @@ export default function App() {
 
   return (
     <ThemeContext.Provider value={themeCtx}>
-      <UserContext.Provider value={userValue}>
       {/* ── 1. GLOBAL WRAPPER (Vertical Stack) ── */}
       <div style={{ 
         display: 'flex', 
