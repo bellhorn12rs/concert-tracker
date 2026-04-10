@@ -4432,33 +4432,32 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
 
   const handleSave = async (id, payload) => {
     try {
-      // 🛡️ THE DATA LOCK: Explicitly capture the media fields from the modal's payload
-      const finalData = {
-        ...payload,
-        personal_photo_url: payload.personal_photo_url || '',
-        setlist_image_url: payload.setlist_image_url || '',
-        user_id: session?.user?.id || null
-      };
+      // 🚨 THE LITERAL OVERRIDE
+      // We take the payload EXACTLY as it comes from the Modal.
+      const dataToStamp = { ...payload };
+      
+      // Ensure the user_id is attached for security
+      if (session?.user?.id) {
+        dataToStamp.user_id = session.user.id;
+      }
+
+      console.log("🚀 FINAL ATTEMPT - DATA TO STAMP:", dataToStamp);
 
       let result;
-      if (!id) {
-        // NEW ENTRY
-        result = await supabase.from('concerts').insert([finalData]);
+      if (!id || id === 'new') {
+        result = await supabase.from('concerts').insert([dataToStamp]);
       } else {
-        // UPDATE EXISTING
-        result = await supabase.from('concerts').update(finalData).eq('id', id);
+        result = await supabase.from('concerts').update(dataToStamp).eq('id', id);
       }
 
       if (result.error) throw result.error;
 
-      // 🔄 REFRESH SYSTEM
       setEditTarget(null);
-      await fetchConcerts(); // Wait for fresh data from DB
-      console.log("✅ DATABASE STAMPED SUCCESSFULLY");
+      await fetchConcerts();
       
     } catch (error) {
-      console.error("❌ SAVE ERROR:", error.message);
-      alert('SAVE ERROR: ' + error.message);
+      console.error("DATABASE REJECTED SAVE:", error.message);
+      alert('DATABASE REJECTED SAVE: ' + error.message);
     }
   };
   const lbl = { 
