@@ -4430,34 +4430,37 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
 
-  const handleSave = async () => {
+  const handleSave = async (id, payload) => {
     try {
-      // Capture exactly what is in the form right now
-      const updateData = {
-        ...form,
-        bands: Array.isArray(form.bands) ? form.bands : [form.artist],
-        // Explicitly ensuring these fields aren't dropped
-        personal_photo_url: form.personal_photo_url || '',
-        setlist_image_url: form.setlist_image_url || '',
-        user_id: (session && session.user) ? session.user.id : null
+      // 🛡️ THE DATA LOCK: Explicitly capture the media fields from the modal's payload
+      const finalData = {
+        ...payload,
+        personal_photo_url: payload.personal_photo_url || '',
+        setlist_image_url: payload.setlist_image_url || '',
+        user_id: session?.user?.id || null
       };
 
       let result;
-      if (editTarget === 'new') {
-        result = await supabase.from('concerts').insert([updateData]);
+      if (!id) {
+        // NEW ENTRY
+        result = await supabase.from('concerts').insert([finalData]);
       } else {
-        result = await supabase.from('concerts').update(updateData).eq('id', form.id);
+        // UPDATE EXISTING
+        result = await supabase.from('concerts').update(finalData).eq('id', id);
       }
 
       if (result.error) throw result.error;
 
+      // 🔄 REFRESH SYSTEM
       setEditTarget(null);
-      fetchConcerts(); // Refresh the feed
+      await fetchConcerts(); // Wait for fresh data from DB
+      console.log("✅ DATABASE STAMPED SUCCESSFULLY");
+      
     } catch (error) {
+      console.error("❌ SAVE ERROR:", error.message);
       alert('SAVE ERROR: ' + error.message);
     }
   };
-
   const lbl = { 
     display: 'block', 
     fontFamily: "'Space Mono', monospace", 
