@@ -2354,15 +2354,33 @@ function WristbandCard({ event, genreMap, compact, onEdit }) {
     </div>
   );
 }
-// ─── 2. SETLIST VAULT (BULLSEYE SEARCH & CLEAN LOGIC) ────────────────────────
+// 🛠️ HELPER: Turns "url1, url2" into a clean array [url1, url2]
+const parseMedia = (val) => {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  return val.split(',').map(u => u.trim()).filter(Boolean);
+};
 // ─── 2. SETLIST VAULT (FULL-IMAGE & BULLSEYE SEARCH) ────────────────────────
 function SetlistVaultTab({ concerts, genreMap }) {
   // 1. CRITICAL SAFETY CHECK: Prevent crash if data is missing/loading
   if (!concerts || !Array.isArray(concerts)) {
     return (
-      <div style={{ padding: '80px 0', textAlign: 'center', color: '#8899aa', fontFamily: "'Space Mono'" }}>
-        OPENING THE VAULT...
-      </div>
+      // Inside SetlistVaultTab, find the image container
+<div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+  {parseMedia(c.setlist_image_url).map((url, idx) => (
+    <img 
+      key={idx}
+      src={url} 
+      alt="Setlist" 
+      style={{ 
+        maxWidth: '100%', 
+        height: 'auto', 
+        border: `1px solid ${C.border}`,
+        filter: 'grayscale(1) contrast(1.2)' // Keeps that "Stage Artifact" vibe
+      }} 
+    />
+  ))}
+</div>
     );
   }
 
@@ -4587,11 +4605,11 @@ function ShareCard({ artist, shows, onClose }) {
   );
 }
 // --- PHOTO VAULT TAB ---
-// --- PHOTO VAULT TAB (GLITCH-FREE & REFINED) ---
+// --- PHOTO VAULT TAB (MULTI-MEDIA UPGRADE) ---
 function PhotoVaultTab({ concerts }) {
   const safeConcerts = Array.isArray(concerts) ? concerts : [];
   
-  // Local state to handle the Lightbox since clicks move to the stable hitbox
+  // Local state to handle the Lightbox
   const [activePhoto, setActivePhoto] = React.useState(null);
 
   const photos = useMemo(() => {
@@ -4600,7 +4618,12 @@ function PhotoVaultTab({ concerts }) {
       if (!c || !c.personal_photo_url) return;
 
       const displayName = c.artist || c.festival_name || (c.bands && c.bands[0]) || 'Unknown Act';
-      const urls = String(c.personal_photo_url).split(',').map(u => u.trim()).filter(Boolean);
+      
+      // 🛠️ MULTI-MEDIA PARSER: Handles single URLs, Imgur lists, and Supabase buckets
+      const urls = String(c.personal_photo_url)
+        .split(',')
+        .map(u => u.trim())
+        .filter(Boolean);
       
       urls.forEach((url, idx) => {
         // Generate random "Starting" rotation for each pinned photo
@@ -4662,13 +4685,13 @@ function PhotoVaultTab({ concerts }) {
         zIndex: 5
       }}>
         {photos.map((p, i) => (
-          /* 🟢 THE FIX: The stationary 'hitbox' handles the click and hover trigger */
           <div 
             key={p.id} 
             className="polaroid-hitbox"
             style={{ 
               '--rotation': `${p.rotation}deg`, 
-              position: 'relative' 
+              position: 'relative',
+              cursor: 'pointer'
             }}
             onClick={() => setActivePhoto(p)}
           >
@@ -4693,7 +4716,7 @@ function PhotoVaultTab({ concerts }) {
         />
       )}
 
-      {/* 🟢 FILM GRAIN OVERLAY */}
+      {/* FILM GRAIN OVERLAY */}
       <div style={{
         position: 'fixed',
         inset: 0,
