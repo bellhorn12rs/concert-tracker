@@ -5880,9 +5880,9 @@ export default function App() {
             onDelete={handleUpcomingDelete} 
           />
         )}
-      </div> {/* This closes the main content div */}
-     </div> {/* This closes the flex wrapper */}
-    </div> {/* This closes the root div */}
+      </div> {/* Closes main content div */}
+     </div> {/* Closes flex wrapper */}
+    </div> {/* Closes root div */}
    </UserContext.Provider>
   </ThemeContext.Provider>
  );
@@ -5915,7 +5915,7 @@ function LoginModal({ onClose }) {
       <div style={{ 
         background: '#0a0a0c', border: `1px solid ${C.teal}`, padding: 40, 
         borderRadius: 12, width: '100%', maxWidth: 360, 
-        boxShadow: `0 0 60px 0px rgba(0,242,255,0.2)`,
+        boxShadow: '0 0 60px 0px rgba(0,242,255,0.2)',
         textAlign: 'center'
       }}>
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.teal, marginBottom: 10, letterSpacing: 3 }}>
