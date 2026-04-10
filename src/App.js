@@ -2367,7 +2367,7 @@ function SetlistVaultTab({ concerts, genreMap }) {
           VAULT EMPTY
         </div>
         <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray || '#8899aa', marginTop: '10px' }}>
-          NO STAGE ARTIFACTS ARCHIVED YET.
+          ARCHIVE EMPTY // AWAITING SIGNAL
         </div>
       </div>
     );
@@ -4532,7 +4532,7 @@ function ShareCard({ artist, shows, onClose }) {
     <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,0.9)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20 }} onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="fade-in" style={{ width:'100%',maxWidth:420 }}>
         <div style={{ background:`linear-gradient(135deg,${C.bg},${C.bgCard},${C.bgCardAlt})`,border:`1px solid ${C.teal}`,borderRadius:12,padding:'28px 24px',boxShadow:`0 0 40px ${C.tealGlow}` }}>
-          <div style={{ fontFamily:"'Space Mono',monospace",fontSize:8,letterSpacing:'0.25em',textTransform:'uppercase',color:C.tealDim,marginBottom:8 }}>🎸 Eric's Concert History</div>
+          <div style={{ fontFamily:"'Space Mono',monospace",fontSize:8,letterSpacing:'0.25em',textTransform:'uppercase',color:C.tealDim,marginBottom:8 }}>🎸 CONCERT ARCHIVE // SIGNAL STAMP</div>
           <div style={{ fontFamily:"'Bebas Neue'",fontSize:'clamp(1.8rem,6vw,2.6rem)',color:C.white,lineHeight:1,marginBottom:16 }}>{artist}</div>
           <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16 }}>
             {[[shows.length,'Times Seen'],[festCount,'Festival Sets'],[shows.length-festCount,'Standalone'],[cities.length,cities.length===1?'City':'Cities']].map(([val,label])=>(
