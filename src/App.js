@@ -4928,6 +4928,18 @@ function TrackRecordLogo({ size = 40 }) {
 }
 
 function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
+  const onInternalSave = async () => {
+    // 🔍 FORCE SYNC: Grab exactly what is in the form right now
+    const payload = {
+      ...form,
+      personal_photo_url: form.personal_photo_url,
+      setlist_image_url: form.setlist_image_url
+    };
+    
+    // Pass this complete payload to the main handleSave
+    await onSave(payload);
+  };
+  
   const initialState = {
     date: '', artist: '', venue: '', city: '', state: '',
     bands: [], genre: 'Indie Rock', is_festival: false, festival_name: '',
