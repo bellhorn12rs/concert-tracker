@@ -5041,18 +5041,22 @@ export default function App() {
   const [sortDir, setSortDir] = useState('desc');
   const [page, setPage] = useState(1);
 
-  // 🧠 THE BRAIN LOGIC (Ultra-Stable Version)
-  const user = (session && session.user) ? session.user : null;
-  const isAdmin = (user && user.email === 'bellhorn12rs@gmail.com');
-  
+  // 🧠 THE BRAIN LOGIC (Stealth Version - Bypasses Type Cast Errors)
+  const checkAdminStatus = () => {
+    if (user && user.email === 'bellhorn12rs@gmail.com') {
+      return true;
+    }
+    return false;
+  };
+
   const userValue = useMemo(() => {
     return {
-      user: user,
+      user: session && session.user ? session.user : null,
       session: session,
-      isAdmin: isAdmin,
+      isAdmin: checkAdminStatus(),
       loading: loading
     };
-  }, [user, session, isAdmin, loading]);
+  }, [session, loading]);
 
   // Initialize C with current theme data immediately
   const theme = THEMES[themeId] || THEMES['neon-noir']; [cite: 917]
