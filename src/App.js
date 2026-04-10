@@ -4431,35 +4431,48 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
 
 
   const handleSave = async (id, payload) => {
-    try {
-      // 🚨 THE LITERAL OVERRIDE
-      // We take the payload EXACTLY as it comes from the Modal.
-      const dataToStamp = { ...payload };
-      
-      // Ensure the user_id is attached for security
-      if (session?.user?.id) {
-        dataToStamp.user_id = session.user.id;
-      }
+  try {
+    const bandList = Array.isArray(payload.bands)
+      ? payload.bands
+      : (payload.bands || '').split(',').map(b => b.trim()).filter(Boolean);
 
-      console.log("🚀 FINAL ATTEMPT - DATA TO STAMP:", dataToStamp);
+    const dataToStamp = {
+      date: payload.date || null,
+      bands: bandList,
+      venue: payload.venue || null,
+      city: payload.city || null,
+      state: payload.state || null,
+      genre: payload.genre || null,
+      is_festival: Boolean(payload.is_festival),
+      festival_name: payload.festival_name || null,
+      festival_day: payload.festival_day || null,
+      has_setlist: Boolean(payload.has_setlist_names?.trim()),
+      has_setlist_names: payload.has_setlist_names || null,
+      image_url: payload.image_url || null,
+      personal_photo_url: payload.personal_photo_url || null,
+      setlist_image_url: payload.setlist_image_url || null,
+      user_id: session?.user?.id || null,
+    };
 
-      let result;
-      if (!id || id === 'new') {
-        result = await supabase.from('concerts').insert([dataToStamp]);
-      } else {
-        result = await supabase.from('concerts').update(dataToStamp).eq('id', id);
-      }
+    console.log("🚀 FINAL DATA TO STAMP:", dataToStamp);
 
-      if (result.error) throw result.error;
-
-      setEditTarget(null);
-      await fetchConcerts();
-      
-    } catch (error) {
-      console.error("DATABASE REJECTED SAVE:", error.message);
-      alert('DATABASE REJECTED SAVE: ' + error.message);
+    let result;
+    if (id && id !== 'new') {
+      result = await supabase.from('concerts').update(dataToStamp).eq('id', id);
+    } else {
+      result = await supabase.from('concerts').insert([dataToStamp]);
     }
-  };
+
+    if (result.error) throw result.error;
+
+    setEditTarget(null);
+    await fetchConcerts();
+
+  } catch (error) {
+    console.error("DATABASE REJECTED SAVE:", error.message);
+    alert('DATABASE REJECTED SAVE: ' + error.message);
+  }
+};
   const lbl = { 
     display: 'block', 
     fontFamily: "'Space Mono', monospace", 
@@ -5503,41 +5516,7 @@ export default function App() {
     if (data) setUpcoming(data);
   }
 
-  async function handleSave(id, payload) {
-  const bandList = Array.isArray(payload.bands)
-    ? payload.bands
-    : (payload.bands || '').split(',').map(b => b.trim()).filter(Boolean);
-
-  const dbPayload = {
-    date: payload.date || null,
-    bands: bandList,
-    venue: payload.venue || null,
-    city: payload.city || null,
-    state: payload.state || null,
-    genre: payload.genre || null,
-    is_festival: Boolean(payload.is_festival),
-    festival_name: payload.festival_name || null,
-    festival_day: payload.festival_day || null,
-    has_setlist: Boolean(payload.has_setlist_names?.trim()),
-    has_setlist_names: payload.has_setlist_names || null,
-    image_url: payload.image_url || null,
-  };
-
-  try {
-    let result;
-    if (id && id !== 'new') {
-      result = await supabase.from('concerts').update(dbPayload).eq('id', id);
-    } else {
-      result = await supabase.from('concerts').insert([dbPayload]);
-    }
-    if (result.error) throw result.error;
-    await fetchConcerts();
-    setEditTarget(null);
-  } catch (err) {
-    console.error('Database Error:', err);
-    alert(`SAVE FAILED: ${err.message}`);
-  }
-}
+  
   async function handleDelete(id) {
     if (!id || id === 'new') {
       setEditTarget(null);
