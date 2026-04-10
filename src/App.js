@@ -5873,7 +5873,6 @@ export default function App() {
       </ThemeContext.Provider>
     );
   }
-}
 function LoginModal({ onClose }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
