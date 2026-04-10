@@ -5019,23 +5019,6 @@ export default function App() {
   const [navCollapsed, setNavCollapsed] = useState(window.innerWidth < 768); 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  // 🟢 Dynamic Admin Check: Tied to your verified email
-  // UPGRADED: The Brain Logic
-  const user = session?.user ?? null;
-  const isAdmin = user?.email === 'bellhorn12rs@gmail.com';
-  
-  // This value will be passed down to every component
-  const userValue = useMemo(() => ({
-    user,
-    session,
-    isAdmin,
-    loading
-  }), [user, session, isAdmin, loading]);
-
-  // Initialize C with current theme data immediately
-  const theme = THEMES[themeId] || THEMES['neon-noir'];
-  const C = theme; 
-
   // ── 2. DATA STATE ──
   const [concerts, setConcerts] = useState([]);
   const [artistGenres, setArtistGenres] = useState({});
@@ -5058,11 +5041,10 @@ export default function App() {
   const [sortDir, setSortDir] = useState('desc');
   const [page, setPage] = useState(1);
 
-  // --- THE BRAIN LOGIC ---
-  const user = session?.user ?? null;
-  const isAdmin = user?.email === 'bellhorn12rs@gmail.com';
+  // 🧠 THE BRAIN LOGIC (Consolidated)
+  const user = session?.user ?? null; [cite: 913, 916]
+  const isAdmin = user?.email === 'bellhorn12rs@gmail.com'; [cite: 916]
   
-  // Memoize the user value to prevent unnecessary re-renders
   const userValue = useMemo(() => ({
     user,
     session,
@@ -5070,56 +5052,57 @@ export default function App() {
     loading
   }), [user, session, isAdmin, loading]);
 
+  // Initialize C with current theme data immediately
+  const theme = THEMES[themeId] || THEMES['neon-noir']; [cite: 917]
+  const C = theme; [cite: 917]
+
   // ── 5. SYSTEM HANDLERS & EFFECTS ──
 
   // Global Lifecycle: Auth & Window Resize
   useEffect(() => {
-    // Check for active session on boot
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+      setSession(session); [cite: 925]
     });
 
-    // Listen for Auth changes (Login/Logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+      setSession(session); [cite: 925]
     });
 
     const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (mobile) setNavCollapsed(true); 
+      const mobile = window.innerWidth < 768; [cite: 926]
+      setIsMobile(mobile); [cite: 926]
+      if (mobile) setNavCollapsed(true); [cite: 926]
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize); [cite: 926]
     
     return () => {
-      window.removeEventListener('resize', handleResize);
-      subscription.unsubscribe();
+      window.removeEventListener('resize', handleResize); [cite: 926]
+      subscription.unsubscribe(); [cite: 926]
     };
   }, []);
 
   const setThemeId = (id) => {
     if (THEMES[id]) {
-      Object.assign(C, THEMES[id]);
-      setThemeIdRaw(id);
-      localStorage.setItem('concert-theme', id);
+      Object.assign(C, THEMES[id]); [cite: 927]
+      setThemeIdRaw(id); [cite: 927]
+      localStorage.setItem('concert-theme', id); [cite: 927, 928]
     }
   };
 
-  // Sync colors and fetch data on mount/theme change
   useEffect(() => { 
     if (THEMES[themeId]) {
-      Object.assign(C, THEMES[themeId]); 
+      Object.assign(C, THEMES[themeId]); [cite: 928]
     }
     const init = async () => {
-      setLoading(true);
-      await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]);
-      setLoading(false);
+      setLoading(true); [cite: 928]
+      await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]); [cite: 928]
+      setLoading(false); [cite: 928]
     };
     init();
   }, [themeId]);
 
-  const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
+  const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]); [cite: 929]
 // ── 6. DATA DERIVATION ENGINE ──
   const PER_PAGE = 50; 
 
@@ -5873,6 +5856,7 @@ export default function App() {
       </ThemeContext.Provider>
     );
   }
+}
 function LoginModal({ onClose }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
