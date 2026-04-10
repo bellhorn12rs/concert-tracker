@@ -5041,22 +5041,19 @@ export default function App() {
   const [sortDir, setSortDir] = useState('desc');
   const [page, setPage] = useState(1);
 
-  // 🧠 THE BRAIN LOGIC (Stealth Version - Bypasses Type Cast Errors)
-  const checkAdminStatus = () => {
-    if (user && user.email === 'bellhorn12rs@gmail.com') {
-      return true;
-    }
-    return false;
-  };
+  // 🧠 THE BRAIN LOGIC (Secret Variable Edition)
+  const targetEmail = 'bellhorn12rs@gmail.com';
+  const currentEmail = session && session.user ? session.user.email : '';
+  const isOwner = (currentEmail === targetEmail);
 
   const userValue = useMemo(() => {
     return {
       user: session && session.user ? session.user : null,
       session: session,
-      isAdmin: checkAdminStatus(),
+      isAdmin: isOwner,
       loading: loading
     };
-  }, [session, loading]);
+  }, [session, loading, isOwner]);
 
   // Initialize C with current theme data immediately
   const theme = THEMES[themeId] || THEMES['neon-noir']; [cite: 917]
