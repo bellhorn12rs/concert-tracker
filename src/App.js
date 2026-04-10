@@ -5042,7 +5042,7 @@ export default function App() {
   const [page, setPage] = useState(1);
 
   // 🧠 THE BRAIN LOGIC (Consolidated)
-  const user = (session?.user) ?? null; [cite: 913, 916]
+  const user = session && session.user ? session.user : null; [cite: 913, 916]
   const isAdmin = user?.email === 'bellhorn12rs@gmail.com'; [cite: 916]
   
   const userValue = useMemo(() => ({
