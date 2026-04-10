@@ -192,18 +192,22 @@ const THEME_ORDER = ['neon-noir','vintage-wax','midnight-blue','desert-sun','mon
 // Global mutable C — updated by theme switcher, read by all components
 let C = { ...THEMES['neon-noir'] };
 
-// Theme context
-// NEW: User Context for Multi-User Support
-const UserContext = createContext({
+// --- NEW: AUTH & THEME CONTEXTS ---
+
+// 1. User Context (The Brain)
+const UserContext = React.createContext({
   user: null,
   session: null,
   isAdmin: false,
   loading: true
 });
-const useUser = () => useContext(UserContext);
+const useUser = () => React.useContext(UserContext);
+
+// 2. Theme Context
 const ThemeContext = React.createContext({ themeId:'neon-noir', setThemeId:()=>{} });
 const useTheme = () => React.useContext(ThemeContext);
 
+// --- SETTINGS ---
 const HALL_OF_FAME_MIN = 6;
 const PER_PAGE = 40;
 
@@ -5054,6 +5058,18 @@ export default function App() {
   const [sortDir, setSortDir] = useState('desc');
   const [page, setPage] = useState(1);
 
+  // --- THE BRAIN LOGIC ---
+  const user = session?.user ?? null;
+  const isAdmin = user?.email === 'bellhorn12rs@gmail.com';
+  
+  // Memoize the user value to prevent unnecessary re-renders
+  const userValue = useMemo(() => ({
+    user,
+    session,
+    isAdmin,
+    loading
+  }), [user, session, isAdmin, loading]);
+
   // ── 5. SYSTEM HANDLERS & EFFECTS ──
 
   // Global Lifecycle: Auth & Window Resize
@@ -5854,8 +5870,9 @@ export default function App() {
         )}
       </div>
       </UserContext.Provider>
-    </ThemeContext.Provider>
-  );
+      </ThemeContext.Provider>
+    );
+  }
 }
 function LoginModal({ onClose }) {
   const [email, setEmail] = useState('');
