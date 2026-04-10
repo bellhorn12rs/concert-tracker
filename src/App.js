@@ -5850,6 +5850,7 @@ export default function App() {
     />
   )}
 </main>
+
         {/* ── MODALS LAYER ── */}
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
         
@@ -5880,10 +5881,12 @@ export default function App() {
           />
         )}
       </div>
+     </UserContext.Provider>
     </ThemeContext.Provider>
   );
 }
 
+// ── AUTHENTICATION COMPONENT ──
 function LoginModal({ onClose }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
