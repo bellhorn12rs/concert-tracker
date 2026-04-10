@@ -1386,8 +1386,14 @@ function ArtistInsights({ concerts }) {
     const oneTimers = Object.values(artistDates).filter(d=>d.length===1).length;
     const weekend = concerts.filter(c=>{const d=new Date(c.date+'T12:00:00');return[4,5,6].includes(d.getDay());}).length;
     const uniqueFests = new Set(concerts.filter(c=>c.is_festival&&c.festival_name).map(c=>c.festival_name));
-    const austinShows = concerts.filter(c=>c.city==='Austin').length;
-    const austinPct = Math.round((austinShows/concerts.length)*100);
+    // NEW: Find the user's actual busiest month
+    const monthMap = {};
+    concerts.forEach(c => {
+      const d = new Date(c.date + 'T12:00:00');
+      const m = d.toLocaleString('default', { month: 'long' }).toUpperCase();
+      monthMap[m] = (monthMap[m] || 0) + 1;
+    });
+    const peakMonth = Object.entries(monthMap).sort((a, b) => b[1] - a[1])[0] || ['NONE', 0];
     const avgBands = (allSets.length/concerts.length).toFixed(1);
     const heavy = Object.entries(artistDates).filter(([,d])=>d.length>=10).length;
     return [
@@ -1395,17 +1401,17 @@ function ArtistInsights({ concerts }) {
       { label:'HOME TURF', val:topCity?.[0]?.toUpperCase(), sub:`${topCity?.[1]} shows in your most-visited city.` },
       { label:'FESTIVAL RATIO', val:`${festPct}%`, sub:`${festPct}% of your history happened in a field.` },
       { label:'TOTAL LEGACY', val:concerts.length, sub:`Unique show days logged since you started.` },
-      { label:'JUNE IS YOUR MONTH', val:'JUNE', sub:`76 shows in June — more than any other month by a mile.` },
       { label:'MOST LOYAL STAGE', val:topVenue?.[0], sub:`You've been to ${topVenue?.[0]} ${topVenue?.[1]} times.` },
       { label:'LONGEST STREAK', val:`${maxStreak} YRS`, sub:`${maxStreak} consecutive years without missing a single year.` },
-      { label:'SXSW CHAMPION', val:'9 BANDS', sub:`Your personal record — 9 acts in a single day at SXSW 2008.` },
       { label:'RIDE OR DIE', val:longestRel.artist, sub:`${longestRel.span}-year relationship across ${longestRel.shows} shows.` },
       { label:'UNIQUE ARTISTS', val:uniqueArtists.size, sub:`${oneTimers} of them you've only seen once.` },
       { label:'WEEKEND WARRIOR', val:`${Math.round((weekend/concerts.length)*100)}%`, sub:`${Math.round((weekend/concerts.length)*100)}% of your shows fall on a Friday, Saturday, or Sunday.` },
       { label:'FESTIVAL PASSPORT', val:`${uniqueFests.size} FESTS`, sub:`${uniqueFests.size} unique festivals across ${festDays} total days.` },
-      { label:'AUSTIN DOMINANCE', val:`${austinPct}%`, sub:`${austinShows} of ${concerts.length} shows happened in Austin, TX.` },
       { label:'BANDS PER DAY', val:avgBands, sub:`Average ${avgBands} acts per show day. You never leave early.` },
       { label:'HEAVY ROTATION', val:`${heavy} ARTISTS`, sub:`${heavy} artists you've seen 10 or more times.` },
+      { label:'PEAK MONTH', val:peakMonth[0], sub: `${peakMonth[1]} shows logged in ${peakMonth[0].toLowerCase()} across your history.` },
+      { label:'HOME TURF', val:topCity?.[0]?.toUpperCase() || 'UNKNOWN', sub:`${topCity?.[1] || 0} shows logged in your most-frequented city.` },
+      { label:'VENUE LOYALTY', val:topVenue?.[0]?.toUpperCase() || 'NONE', sub:`You have returned to this stage ${topVenue?.[1] || 0} times.` },
     ];
   }, [concerts]);
 
