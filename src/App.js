@@ -5014,6 +5014,8 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
     }
 
     const targetId = (concert && concert !== 'new') ? concert.id : null;
+
+    console.log('PAYLOAD BEING SENT:', JSON.stringify(payload, null, 2));
     await onSave(targetId, payload);
   };
 
