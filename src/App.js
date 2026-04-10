@@ -187,6 +187,32 @@ const THEMES = {
   },
 };
 
+// 📸 THE GLOBAL UPLOADER
+async function uploadMedia(file, bucket) {
+  try {
+    // Get a clean extension and a random name to avoid collisions
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+    
+    // We use a simplified path to ensure it bypasses folder creation issues
+    const filePath = `${fileName}`;
+
+    let { error: uploadError, data } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    // Get the public link
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath);
+    return urlData.publicUrl;
+  } catch (error) {
+    console.error('Upload Error:', error.message);
+    alert('UPLOAD FAILED: ' + error.message);
+    return null;
+  }
+}
+
 const THEME_ORDER = ['neon-noir','vintage-wax','midnight-blue','desert-sun','monochrome'];
 
 // Global mutable C — updated by theme switcher, read by all components
@@ -4385,26 +4411,6 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-// 📸 NEW: Supabase Storage Uploader
-  async function uploadMedia(file, bucket) {
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${session.user.id}/${fileName}`;
-
-      let { error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
-      return data.publicUrl;
-    } catch (error) {
-      alert('Error uploading: ' + error.message);
-      return null;
-    }
-  }
 
   const handleSave = async (e) => {
     if (e) e.preventDefault();
