@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { supabase } from './supabaseClient';
+// NEW: The User Brain Tools
+import { createContext, useContext } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 // ─── UTILITY ──────────────────────────────────────────────────────────────────
@@ -191,6 +193,14 @@ const THEME_ORDER = ['neon-noir','vintage-wax','midnight-blue','desert-sun','mon
 let C = { ...THEMES['neon-noir'] };
 
 // Theme context
+// NEW: User Context for Multi-User Support
+const UserContext = createContext({
+  user: null,
+  session: null,
+  isAdmin: false,
+  loading: true
+});
+const useUser = () => useContext(UserContext);
 const ThemeContext = React.createContext({ themeId:'neon-noir', setThemeId:()=>{} });
 const useTheme = () => React.useContext(ThemeContext);
 
@@ -5006,7 +5016,17 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   // 🟢 Dynamic Admin Check: Tied to your verified email
-  const isAdmin = session?.user?.email === 'bellhorn12rs@gmail.com';
+  // UPGRADED: The Brain Logic
+  const user = session?.user ?? null;
+  const isAdmin = user?.email === 'bellhorn12rs@gmail.com';
+  
+  // This value will be passed down to every component
+  const userValue = useMemo(() => ({
+    user,
+    session,
+    isAdmin,
+    loading
+  }), [user, session, isAdmin, loading]);
 
   // Initialize C with current theme data immediately
   const theme = THEMES[themeId] || THEMES['neon-noir'];
@@ -5386,6 +5406,7 @@ export default function App() {
 
   return (
     <ThemeContext.Provider value={themeCtx}>
+      <UserContext.Provider value={userValue}>
       {/* ── 1. GLOBAL WRAPPER (Vertical Stack) ── */}
       <div style={{ 
         display: 'flex', 
@@ -5832,6 +5853,7 @@ export default function App() {
           />
         )}
       </div>
+      </UserContext.Provider>
     </ThemeContext.Provider>
   );
 }
