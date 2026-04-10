@@ -5215,7 +5215,7 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
     </div>
   );
 }
-// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   // ── 1. AUTH & SYSTEM STATE ──
