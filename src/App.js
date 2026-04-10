@@ -5883,7 +5883,6 @@ export default function App() {
       </div> {/* Closes main content div */}
      </div> {/* Closes flex wrapper */}
     </div> {/* Closes root div */}
-   </UserContext.Provider>
   </ThemeContext.Provider>
  );
 }
