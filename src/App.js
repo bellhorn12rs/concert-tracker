@@ -5751,63 +5751,6 @@ export default function App() {
                 </div>
               )}
 
-              {/* ── MAIN STAGE CONTENT (Tabs) ── */}
-              {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
-              
-              {/* These views now respect your login status dynamically */}
-              {activeTab === 'byDay' && <ByDayTab dayGroups={dayGroups} onEdit={isAdmin ? setEditTarget : null} genreMap={artistGenres} isAdmin={isAdmin} />}
-              {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={isAdmin} onEdit={isAdmin ? setEditTarget : null} />}
-              
-              {activeTab === 'passport' && (
-                <PassportTab 
-                  passport={passport} 
-                  onNavigateToFest={name => { 
-                    setActiveTab('byFest'); 
-                    setTimeout(() => { 
-                      const el = document.getElementById(`fest-${name.toLowerCase().replace(/\s+/g, '-')}`); 
-                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
-                    }, 450); 
-                  }} 
-                />
-              )}
-              
-              {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
-              {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
-              {activeTab === 'photos' && <PhotoVaultTab concerts={concerts} />}
-              {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
-              {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
-              
-              {/* 🟢 PUBLIC BROWSE: Available to everyone, but editing gated by isAdmin */}
-              {activeTab === 'browse' && (
-                <BrowseTab 
-                  browseView={browseView}
-                  setBrowseView={setBrowseView}
-                  search={search}
-                  setSearch={setSearch}
-                  yearFilter={yearFilter}
-                  setYearFilter={setYearFilter}
-                  festFilter={festFilter}
-                  setFestFilter={setFestFilter}
-                  genreFilter={genreFilter}
-                  setGenreFilter={setGenreFilter}
-                  sortCol={sortCol}
-                  setSortCol={setSortCol}
-                  sortDir={sortDir}
-                  setSortDir={setSortDir}
-                  page={page}
-                  setPage={setPage}
-                  totalPages={totalPages}
-                  paged={paged} 
-                  artistRows={artistRows}
-                  years={years}
-                  onShare={(a, s) => setShareCard({ artist: a, shows: s })}
-                  onEdit={isAdmin ? setEditTarget : null} 
-                  isAdmin={isAdmin}
-                  onSetGenre={handleSetGenre}
-                  genreMap={artistGenres}
-                />
-              )}
-
               {/* 🔴 ADMIN ONLY: The Office */}
               {isAdmin && activeTab === 'manage' && (
                 <ManageTab 
@@ -5833,30 +5776,28 @@ export default function App() {
         )}
         
         {editTarget && (
-  <EditModal 
-    concert={editTarget === 'new' ? 'new' : editTarget} 
-    onClose={() => setEditTarget(null)} 
-    onSave={handleSave} 
-    onDelete={handleDelete} 
-    allConcerts={concerts} // 👈 Add this line to enable prefill
-  />
-)}
+          <EditModal 
+            concert={editTarget === 'new' ? 'new' : editTarget} 
+            onClose={() => setEditTarget(null)} 
+            onSave={handleSave} 
+            onDelete={handleDelete} 
+            allConcerts={concerts}
+          />
+        )}
         
         {upcomingModal !== null && (
           <UpcomingModal 
             show={upcomingModal === 'new' ? null : upcomingModal} 
             onClose={() => setUpcomingModal(null)} 
             onSave={handleUpcomingSave} 
-            // Fixed the variable name for the delete handler below
             onDelete={handleUpcomingDelete} 
           />
         )}
       </div>
-      </UserContext.Provider>
-      </ThemeContext.Provider>
-    );
-  }
+    </ThemeContext.Provider>
+  );
 }
+
 function LoginModal({ onClose }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -5865,7 +5806,6 @@ function LoginModal({ onClose }) {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // This talks to the Supabase Auth you set up in Step 1
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       alert("ACCESS DENIED: " + error.message);
