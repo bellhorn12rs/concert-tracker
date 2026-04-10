@@ -5041,16 +5041,12 @@ export default function App() {
   const [sortDir, setSortDir] = useState('desc');
   const [page, setPage] = useState(1);
 
-  // 🧠 THE BRAIN LOGIC (Stealth Search Edition)
-  const target = 'bellhorn12rs@gmail.com';
-  const current = (session && session.user && session.user.email) ? session.user.email : '';
-  
-  // Using indexOf to avoid '===' syntax issues
-  const isOwner = current.indexOf(target) !== -1 && target.indexOf(current) !== -1;
+  // ── OWNER CHECK ──
+  const isOwner = session?.user?.email === 'bellhorn12rs@gmail.com';
 
   const userValue = useMemo(() => {
     return {
-      user: (session && session.user) ? session.user : null,
+      user: session?.user || null,
       session: session,
       isAdmin: isOwner,
       loading: loading
@@ -5058,56 +5054,55 @@ export default function App() {
   }, [session, loading, isOwner]);
 
   // Initialize C with current theme data immediately
-  const theme = THEMES[themeId] || THEMES['neon-noir']; [cite: 917]
-  const C = theme; [cite: 917]
+  const theme = THEMES[themeId] || THEMES['neon-noir'];
+  const C = theme;
 
   // ── 5. SYSTEM HANDLERS & EFFECTS ──
 
-  // Global Lifecycle: Auth & Window Resize
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session); [cite: 925]
+      setSession(session);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session); [cite: 925]
+      setSession(session);
     });
 
     const handleResize = () => {
-      const mobile = window.innerWidth < 768; [cite: 926]
-      setIsMobile(mobile); [cite: 926]
-      if (mobile) setNavCollapsed(true); [cite: 926]
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) setNavCollapsed(true);
     };
 
-    window.addEventListener('resize', handleResize); [cite: 926]
+    window.addEventListener('resize', handleResize);
     
     return () => {
-      window.removeEventListener('resize', handleResize); [cite: 926]
-      subscription.unsubscribe(); [cite: 926]
+      window.removeEventListener('resize', handleResize);
+      subscription.unsubscribe();
     };
   }, []);
 
   const setThemeId = (id) => {
     if (THEMES[id]) {
-      Object.assign(C, THEMES[id]); [cite: 927]
-      setThemeIdRaw(id); [cite: 927]
-      localStorage.setItem('concert-theme', id); [cite: 927, 928]
+      Object.assign(C, THEMES[id]);
+      setThemeIdRaw(id);
+      localStorage.setItem('concert-theme', id);
     }
   };
 
   useEffect(() => { 
     if (THEMES[themeId]) {
-      Object.assign(C, THEMES[themeId]); [cite: 928]
+      Object.assign(C, THEMES[themeId]);
     }
     const init = async () => {
-      setLoading(true); [cite: 928]
-      await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]); [cite: 928]
-      setLoading(false); [cite: 928]
+      setLoading(true);
+      await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]);
+      setLoading(false);
     };
     init();
   }, [themeId]);
 
-  const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]); [cite: 929]
+  const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
 // ── 6. DATA DERIVATION ENGINE ──
   const PER_PAGE = 50; 
 
