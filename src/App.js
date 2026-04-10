@@ -5697,161 +5697,159 @@ export default function App() {
                 <ThemeSwitcher isMobile={isMobile} />
               </div>
             </header>
-
-            <main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
-              
-              {activeTab === 'dashboard' && (
-                <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                  <OnThisDay concerts={concerts} />
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr', gap: 20 }}>
-                    <ArtistInsights concerts={concerts} />
-                    <TheaterMarquee 
-  upcoming={upcoming} 
-  onAdd={isAdmin ? () => setUpcomingModal('new') : null} 
-  onEdit={isAdmin ? setUpcomingModal : null} 
-/>
-                    <RandomShow concerts={concerts} />
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: 20 }}>
-                    <VenueDonutCard concerts={concerts} onNavigateToVenues={() => setActiveTab('venues')} />
-                    <Card neon>
-                      <CardTitle>Sets Per Year by Venue 📍</CardTitle>
-                      <div style={{ height: 220 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={stackedTimelineData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                            <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
-                            <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
-                            <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10 }} />
-                            {venueKeys.map((v, i) => (
-                              <Bar key={v} dataKey={v} stackId="a" fill={v === 'other' ? '#334' : ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88'][i % 5]} />
-                            ))}
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </Card>
-                  </div>
-
-                  {/* ROW 3: DASHBOARD CORE (Corrected Syntax) */}
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', 
-                    gap: 20,
-                    alignItems: 'stretch',
-                    height: isMobile ? 'auto' : '480px', 
-                    marginBottom: 20
-                  }}>
-                    <Card neon>
-                      <DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} concerts={concerts} />
-                    </Card>
-                    <Card neon>
-                      <CardTitle>Festival Passports</CardTitle>
-                      <TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} />
-                    </Card>
-                    <Card neon>
-                      <CardTitle>By Decade</CardTitle>
-                      <DecadeBlocks sets={allSetsList} headerStats={headerStats} concerts={concerts} />
-                    </Card>
-                  </div>
-
-                  {/* ROW 4: LEADERBOARD & SPOTLIGHT */}
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
-                    <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-  <CardTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-    <span>HEAVY ROTATION 🎸</span>
-    <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, opacity: 0.8 }}>
-      {artistCounts.filter(a => a.count >= 5).length} ACTS QUALIFIED
-    </span>
-  </CardTitle>
+<main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
   
-  <div className="wristband-bin" style={{ 
-    flex: 1, 
-    overflowY: 'auto', 
-    paddingRight: 8, 
-    marginTop: 5,
-    display: 'flex', 
-    flexDirection: 'column', 
-    gap: 12 // Increased gap to prevent crowding
-  }}>
-    {artistCounts.filter(a => a.count >= 5).map((a, i) => {
-      const isTop3 = i < 3;
-      const accentColor = isTop3 ? [C.gold, C.cyan, C.purple][i] : C.tealDim;
-      const percent = (a.count / artistCounts[0].count) * 100;
+  {/* 1. THE DASHBOARD (CENTER STAGE) */}
+  {activeTab === 'dashboard' && (
+    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <OnThisDay concerts={concerts} />
+      
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr', gap: 20 }}>
+        <ArtistInsights concerts={concerts} />
+        <TheaterMarquee 
+          upcoming={upcoming} 
+          onAdd={isAdmin ? () => setUpcomingModal('new') : null} 
+          onEdit={isAdmin ? setUpcomingModal : null} 
+        />
+        <RandomShow concerts={concerts} />
+      </div>
 
-      return (
-        <div key={a.name} onClick={() => { setSearch(a.name); setBrowseView('shows'); setActiveTab('browse'); }}
-          style={{ 
-            position: 'relative', 
-            padding: '12px 16px', // Balanced padding
-            background: 'rgba(255,255,255,0.03)', 
-            border: `1px solid ${isTop3 ? hexToRgba(accentColor, 0.3) : 'rgba(255,255,255,0.05)'}`,
-            borderRadius: 8, 
-            cursor: 'pointer', 
-            overflow: 'hidden',
-            flexShrink: 0,
-            minHeight: '54px' // Ensures consistency
-          }}
-        >
-          {/* Progress Bar Underglow */}
-          <div style={{ position: 'absolute', bottom: 0, left: 0, height: 2, width: `${percent}%`, background: accentColor, boxShadow: `0 0 10px ${accentColor}`, opacity: 0.4 }} />
-          
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: isTop3 ? accentColor : C.grayDim, width: 30, textAlign: 'center' }}>#{i + 1}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <span style={{ 
-                  fontFamily: "'Bebas Neue'", 
-                  fontSize: isTop3 ? '1.3rem' : '1.1rem', 
-                  color: '#fff', 
-                  textTransform: 'uppercase', 
-                  letterSpacing: '1px',
-                  lineHeight: 1.2 
-                }}>
-                  {a.name}
-                </span>
-                <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, marginTop: -2 }}>
-                  {i === 0 ? '🏆 ALL-TIME LEADER' : `${artistCounts[0].count - a.count} BEHIND`}
-                </span>
-              </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: isTop3 ? '2rem' : '1.6rem', color: isTop3 ? accentColor : '#fff', lineHeight: 1 }}>
-                {a.count}
-              </div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.grayDim, marginTop: 2 }}>SETS</div>
-            </div>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: 20 }}>
+        <VenueDonutCard concerts={concerts} onNavigateToVenues={() => setActiveTab('venues')} />
+        <Card neon>
+          <CardTitle>Sets Per Year by Venue </CardTitle>
+          <div style={{ height: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stackedTimelineData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+                <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10 }} />
+                {venueKeys.map((v, i) => (
+                  <Bar key={v} dataKey={v} stackId="a" fill={v === 'other' ? '#334' : ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88'][i % 5]} />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-        </div>
-      );
-    })}
-  </div>
-</Card>
+        </Card>
+      </div>
 
-                    <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column' }}>
-                      <CardTitle>SETLIST SPOTLIGHT 📋</CardTitle>
-                      <div style={{ flex: 1, overflow: 'hidden' }}>
-                        <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
-                      </div>
-                    </Card>
-                  </div>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', 
+        gap: 20,
+        alignItems: 'stretch',
+        height: isMobile ? 'auto' : '480px', 
+        marginBottom: 20
+      }}>
+        <Card neon>
+          <DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} concerts={concerts} />
+        </Card>
+        <Card neon>
+          <CardTitle>Festival Passports</CardTitle>
+          <TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} />
+        </Card>
+        <Card neon>
+          <CardTitle>By Decade</CardTitle>
+          <DecadeBlocks sets={allSetsList} headerStats={headerStats} concerts={concerts} />
+        </Card>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
+        <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <CardTitle>HEAVY ROTATION</CardTitle>
+          <div className="wristband-bin" style={{ flex: 1, overflowY: 'auto', paddingRight: 8 }}>
+            {artistCounts.filter(a => a.count >= 5).map((a, i) => (
+              <div key={a.name} onClick={() => { setSearch(a.name); setBrowseView('shows'); setActiveTab('browse'); }} style={{ padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, marginBottom: 8, cursor: 'pointer' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem' }}>{a.name}</span>
+                  <span style={{ color: C.teal }}>{a.count}×</span>
                 </div>
-              )}
-
-              {/* 🔴 ADMIN ONLY: The Office */}
-              {isAdmin && activeTab === 'manage' && (
-                <ManageTab 
-                  concerts={concerts} 
-                  onEdit={setEditTarget} 
-                  onAdd={() => setEditTarget('new')} 
-                  onDuplicate={handleDuplicate} 
-                />
-              )}
-            </main>
+              </div>
+            ))}
           </div>
-        </div>
+        </Card>
+        <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column' }}>
+          <CardTitle>SETLIST SPOTLIGHT</CardTitle>
+          <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
+        </Card>
+      </div>
+    </div>
+  )}
 
+  {/* 2. CHRONICLE & TOUR BUS TABS */}
+  {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
+  
+  {activeTab === 'byDay' && <ByDayTab dayGroups={dayGroups} onEdit={isAdmin ? setEditTarget : null} genreMap={artistGenres} isAdmin={isAdmin} />}
+  
+  {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={isAdmin} onEdit={isAdmin ? setEditTarget : null} />}
+  
+  {activeTab === 'passport' && (
+    <PassportTab 
+      passport={passport} 
+      onNavigateToFest={name => { 
+        setActiveTab('byFest'); 
+        setTimeout(() => { 
+          const el = document.getElementById(`fest-${name.toLowerCase().replace(/\s+/g, '-')}`); 
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+        }, 450); 
+      }} 
+    />
+  )}
+
+  {/* 3. ARCHIVE TABS */}
+  {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
+  
+  {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
+  
+  {activeTab === 'photos' && <PhotoVaultTab concerts={concerts} />}
+  
+  {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
+  
+  {/* 4. STUDIO TABS */}
+  {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
+
+  {/* 5. THE SEARCH ENGINE (BROWSE) */}
+  {activeTab === 'browse' && (
+    <BrowseTab 
+      browseView={browseView}
+      setBrowseView={setBrowseView}
+      search={search}
+      setSearch={setSearch}
+      yearFilter={yearFilter}
+      setYearFilter={setYearFilter}
+      festFilter={festFilter}
+      setFestFilter={setFestFilter}
+      genreFilter={genreFilter}
+      setGenreFilter={setGenreFilter}
+      sortCol={sortCol}
+      setSortCol={setSortCol}
+      sortDir={sortDir}
+      setSortDir={setSortDir}
+      page={page}
+      setPage={setPage}
+      totalPages={totalPages}
+      paged={paged} 
+      artistRows={artistRows}
+      years={years}
+      onShare={(a, s) => setShareCard({ artist: a, shows: s })}
+      onEdit={isAdmin ? setEditTarget : null} 
+      isAdmin={isAdmin}
+      onSetGenre={handleSetGenre}
+      genreMap={artistGenres}
+    />
+  )}
+
+  {/* 6. ADMIN OFFICE */}
+  {isAdmin && activeTab === 'manage' && (
+    <ManageTab 
+      concerts={concerts} 
+      onEdit={setEditTarget} 
+      onAdd={() => setEditTarget('new')} 
+      onDuplicate={handleDuplicate} 
+    />
+  )}
+</main>
         {/* ── MODALS LAYER ── */}
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
         
