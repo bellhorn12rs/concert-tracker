@@ -4385,6 +4385,27 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+// 📸 NEW: Supabase Storage Uploader
+  async function uploadMedia(file, bucket) {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${session.user.id}/${fileName}`;
+
+      let { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+      return data.publicUrl;
+    } catch (error) {
+      alert('Error uploading: ' + error.message);
+      return null;
+    }
+  }
+
   const handleSave = async (e) => {
     if (e) e.preventDefault();
     if (!form.artist || !form.date) return alert('Artist and date required.');
@@ -4989,13 +5010,74 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
 
           {/* COLUMN 2: MEDIA & METADATA */}
           <div>
-            <label style={{ ...labelStyle, color: C.purple }}>PERSONAL PHOTO URLS (Comma Separated)</label>
-            <textarea style={{ ...inputStyle, height: 80 }} value={form.personal_photo_url} onChange={e => set('personal_photo_url', e.target.value)} placeholder="https://..." />
+            {/* 1. PERSONAL POLAROIDS */}
+            <label style={{ ...labelStyle, color: C.purple }}>PERSONAL PHOTO ARCHIVE (POLAROIDS)</label>
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  const url = await uploadMedia(file, 'polaroids');
+                  if (url) {
+                    const current = form.personal_photo_url ? form.personal_photo_url + ',' : '';
+                    set('personal_photo_url', current + url);
+                  }
+                }
+              }}
+              style={{ ...inputStyle, fontSize: '10px', marginBottom: '5px' }}
+            />
+            <textarea 
+              style={{ ...inputStyle, height: 40, fontSize: '9px' }} 
+              value={form.personal_photo_url} 
+              onChange={e => set('personal_photo_url', e.target.value)} 
+              placeholder="Uploaded polaroid URLs appear here..." 
+            />
 
-            <label style={{ ...labelStyle, color: C.gold }}>SETLIST IMAGE URLS</label>
-            <textarea style={{ ...inputStyle, height: 80 }} value={form.setlist_image_url} onChange={e => set('setlist_image_url', e.target.value)} />
+            {/* 2. SETLISTS & STAGE ARTIFACTS */}
+            <label style={{ ...labelStyle, color: C.gold }}>STAGE ARTIFACTS (SETLISTS)</label>
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  const url = await uploadMedia(file, 'setlists');
+                  if (url) {
+                    const current = form.setlist_image_url ? form.setlist_image_url + ',' : '';
+                    set('setlist_image_url', current + url);
+                  }
+                }
+              }}
+              style={{ ...inputStyle, fontSize: '10px', marginBottom: '5px' }}
+            />
+            <textarea 
+              style={{ ...inputStyle, height: 40, fontSize: '9px' }} 
+              value={form.setlist_image_url} 
+              onChange={e => set('setlist_image_url', e.target.value)} 
+              placeholder="Uploaded setlist URLs appear here..."
+            />
 
-            <div style={{ display: 'flex', gap: 20, marginTop: 10 }}>
+            {/* 3. MEMORABILIA (PICKS, STICKS, POSTERS) */}
+            <label style={{ ...labelStyle, color: C.cyan }}>MUSEUM MEMORABILIA (PICKS/STICKS)</label>
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  const url = await uploadMedia(file, 'memorabilia');
+                  if (url) {
+                    // We'll store memorabilia in the setlist field for now as artifacts
+                    const current = form.setlist_image_url ? form.setlist_image_url + ',' : '';
+                    set('setlist_image_url', current + url);
+                  }
+                }
+              }}
+              style={{ ...inputStyle, fontSize: '10px', marginBottom: '5px' }}
+            />
+
+            <div style={{ display: 'flex', gap: 20, marginTop: 15 }}>
               <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                 <input type="checkbox" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} />
                 FESTIVAL?
