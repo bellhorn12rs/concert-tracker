@@ -4430,15 +4430,32 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
 
-  const handleSave = async (e) => {
-    if (e) e.preventDefault();
-    if (!form.artist || !form.date) return alert('Artist and date required.');
-    
-    setSaving(true);
-    // Note: We pass the ID if editing, null if new
-    await onSave(show?.id || null, form);
-    setSaving(false);
-    onClose();
+  const handleSave = async () => {
+    try {
+      // Capture exactly what is in the form right now
+      const updateData = {
+        ...form,
+        bands: Array.isArray(form.bands) ? form.bands : [form.artist],
+        // Explicitly ensuring these fields aren't dropped
+        personal_photo_url: form.personal_photo_url || '',
+        setlist_image_url: form.setlist_image_url || '',
+        user_id: (session && session.user) ? session.user.id : null
+      };
+
+      let result;
+      if (editTarget === 'new') {
+        result = await supabase.from('concerts').insert([updateData]);
+      } else {
+        result = await supabase.from('concerts').update(updateData).eq('id', form.id);
+      }
+
+      if (result.error) throw result.error;
+
+      setEditTarget(null);
+      fetchConcerts(); // Refresh the feed
+    } catch (error) {
+      alert('SAVE ERROR: ' + error.message);
+    }
   };
 
   const lbl = { 
