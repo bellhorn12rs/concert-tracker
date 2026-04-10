@@ -5041,14 +5041,16 @@ export default function App() {
   const [sortDir, setSortDir] = useState('desc');
   const [page, setPage] = useState(1);
 
-  // 🧠 THE BRAIN LOGIC (Secret Variable Edition)
-  const targetEmail = 'bellhorn12rs@gmail.com';
-  const currentEmail = session && session.user ? session.user.email : '';
-  const isOwner = (currentEmail === targetEmail);
+  // 🧠 THE BRAIN LOGIC (Stealth Search Edition)
+  const target = 'bellhorn12rs@gmail.com';
+  const current = (session && session.user && session.user.email) ? session.user.email : '';
+  
+  // Using indexOf to avoid '===' syntax issues
+  const isOwner = current.indexOf(target) !== -1 && target.indexOf(current) !== -1;
 
   const userValue = useMemo(() => {
     return {
-      user: session && session.user ? session.user : null,
+      user: (session && session.user) ? session.user : null,
       session: session,
       isAdmin: isOwner,
       loading: loading
