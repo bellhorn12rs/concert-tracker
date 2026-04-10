@@ -4928,18 +4928,6 @@ function TrackRecordLogo({ size = 40 }) {
 }
 
 function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
-  const onInternalSave = async () => {
-    // 🔍 FORCE SYNC: Grab exactly what is in the form right now
-    const payload = {
-      ...form,
-      personal_photo_url: form.personal_photo_url,
-      setlist_image_url: form.setlist_image_url
-    };
-    
-    // Pass this complete payload to the main handleSave
-    await onSave(payload);
-  };
-  
   const initialState = {
     date: '', artist: '', venue: '', city: '', state: '',
     bands: [], genre: 'Indie Rock', is_festival: false, festival_name: '',
@@ -4989,16 +4977,27 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
     });
   };
 
-  const handleCommit = () => {
-    const payload = { ...form };
+  // 🛠️ THE UNIFIED SAVE LOGIC: Replaces onInternalSave and handleCommit
+  const handleFinalCommit = async () => {
+    const payload = { 
+      ...form,
+      // Ensure media URLs are grabbed exactly as they appear in the state
+      personal_photo_url: form.personal_photo_url || '',
+      setlist_image_url: form.setlist_image_url || ''
+    };
+
+    // Clean up bands format
     if (typeof payload.bands === 'string') {
       payload.bands = payload.bands.split(',').map(s => s.trim()).filter(Boolean);
     }
     if ((!payload.bands || payload.bands.length === 0) && payload.artist) {
       payload.bands = [payload.artist];
     }
+
     const targetId = (concert && concert !== 'new') ? concert.id : null;
-    onSave(targetId, payload);
+    
+    // Pass everything to the main App.js handleSave
+    await onSave(targetId, payload);
   };
 
   if (!concert) return null;
@@ -5010,7 +5009,6 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="fade-in" style={{ background: '#111', border: `2px solid ${C.teal}`, borderRadius: 12, padding: 30, width: '90%', maxWidth: 800, maxHeight: '90vh', overflowY: 'auto' }}>
 
-        {/* Hidden datalists for browser autocomplete */}
         <datalist id="artist-suggestions">
           {knownArtists.map(a => <option key={a} value={a} />)}
         </datalist>
@@ -5068,7 +5066,6 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
 
           {/* COLUMN 2: MEDIA & METADATA */}
           <div>
-            {/* 1. PERSONAL POLAROIDS */}
             <label style={{ ...labelStyle, color: C.purple }}>PERSONAL PHOTO ARCHIVE (POLAROIDS)</label>
             <input 
               type="file" 
@@ -5092,7 +5089,6 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
               placeholder="Uploaded polaroid URLs appear here..." 
             />
 
-            {/* 2. SETLISTS & STAGE ARTIFACTS */}
             <label style={{ ...labelStyle, color: C.gold }}>STAGE ARTIFACTS (SETLISTS)</label>
             <input 
               type="file" 
@@ -5116,7 +5112,6 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
               placeholder="Uploaded setlist URLs appear here..."
             />
 
-            {/* 3. MEMORABILIA (PICKS, STICKS, POSTERS) */}
             <label style={{ ...labelStyle, color: C.cyan }}>MUSEUM MEMORABILIA (PICKS/STICKS)</label>
             <input 
               type="file" 
@@ -5126,7 +5121,6 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
                 if (file) {
                   const url = await uploadMedia(file, 'memorabilia');
                   if (url) {
-                    // We'll store memorabilia in the setlist field for now as artifacts
                     const current = form.setlist_image_url ? form.setlist_image_url + ',' : '';
                     set('setlist_image_url', current + url);
                   }
@@ -5148,7 +5142,7 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
         </div>
 
         <div style={{ marginTop: 30, display: 'flex', gap: 15 }}>
-          <Btn style={{ flex: 2 }} onClick={handleCommit}>SAVE TO DATABASE</Btn>
+          <Btn style={{ flex: 2 }} onClick={handleFinalCommit}>SAVE TO DATABASE</Btn>
           {concert !== 'new' && <Btn variant="danger" style={{ flex: 1 }} onClick={() => onDelete(concert.id)}>DELETE</Btn>}
         </div>
       </div>
