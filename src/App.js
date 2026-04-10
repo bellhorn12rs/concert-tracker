@@ -5043,6 +5043,7 @@ export default function App() {
 
   // ── OWNER CHECK ──
   const isOwner = session?.user?.email === 'bellhorn12rs@gmail.com';
+  const isAdmin = isOwner; // alias so existing references don't break
 
   const userValue = useMemo(() => {
     return {
