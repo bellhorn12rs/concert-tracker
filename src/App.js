@@ -4938,6 +4938,7 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
   };
 
   const [form, setForm] = useState(initialState);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (concert && concert !== 'new') {
@@ -4953,13 +4954,11 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
     }
   }, [concert]);
 
-  // All unique artists from existing concerts for autocomplete
   const knownArtists = useMemo(() =>
     [...new Set(concerts.flatMap(c => c.bands || []).filter(Boolean))].sort(),
     [concerts]
   );
 
-  // All unique venues for autocomplete
   const knownVenues = useMemo(() =>
     [...new Set(concerts.map(c => c.venue).filter(Boolean))].sort(),
     [concerts]
@@ -4979,16 +4978,34 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
     });
   };
 
-  // 🛠️ THE UNIFIED SAVE LOGIC: Replaces onInternalSave and handleCommit
+  async function uploadMedia(file, bucket) {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const { data: { session } } = await supabase.auth.getSession();
+      const filePath = session?.user?.id ? `${session.user.id}/${fileName}` : fileName;
+
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+      return data.publicUrl;
+    } catch (error) {
+      alert('Error uploading: ' + error.message);
+      return null;
+    }
+  }
+
   const handleFinalCommit = async () => {
     const payload = { 
       ...form,
-      // Ensure media URLs are grabbed exactly as they appear in the state
       personal_photo_url: form.personal_photo_url || '',
       setlist_image_url: form.setlist_image_url || ''
     };
 
-    // Clean up bands format
     if (typeof payload.bands === 'string') {
       payload.bands = payload.bands.split(',').map(s => s.trim()).filter(Boolean);
     }
@@ -4997,8 +5014,6 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
     }
 
     const targetId = (concert && concert !== 'new') ? concert.id : null;
-    
-    // Pass everything to the main App.js handleSave
     await onSave(targetId, payload);
   };
 
@@ -5064,6 +5079,31 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
                 <input style={inputStyle} value={form.state} onChange={e => set('state', e.target.value)} maxLength={2} placeholder="TX" />
               </div>
             </div>
+
+            <label style={labelStyle}>GENRE</label>
+            <select
+              style={{ ...inputStyle, cursor: 'pointer' }}
+              value={form.genre}
+              onChange={e => set('genre', e.target.value)}
+            >
+              {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+
+            <label style={labelStyle}>BANDS (comma separated)</label>
+            <input
+              style={inputStyle}
+              value={Array.isArray(form.bands) ? form.bands.join(', ') : form.bands}
+              onChange={e => set('bands', e.target.value)}
+              placeholder="Band 1, Band 2, Band 3"
+            />
+
+            <label style={labelStyle}>SETLIST BAND NAMES (comma separated)</label>
+            <input
+              style={inputStyle}
+              value={form.has_setlist_names}
+              onChange={e => set('has_setlist_names', e.target.value)}
+              placeholder="Band names with setlists..."
+            />
           </div>
 
           {/* COLUMN 2: MEDIA & METADATA */}
@@ -5071,15 +5111,18 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
             <label style={{ ...labelStyle, color: C.purple }}>PERSONAL PHOTO ARCHIVE (POLAROIDS)</label>
             <input 
               type="file" 
-              accept="image/*" 
+              accept="image/*"
+              disabled={uploading}
               onChange={async (e) => {
                 const file = e.target.files[0];
                 if (file) {
+                  setUploading(true);
                   const url = await uploadMedia(file, 'polaroids');
                   if (url) {
                     const current = form.personal_photo_url ? form.personal_photo_url + ',' : '';
                     set('personal_photo_url', current + url);
                   }
+                  setUploading(false);
                 }
               }}
               style={{ ...inputStyle, fontSize: '10px', marginBottom: '5px' }}
@@ -5094,15 +5137,18 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
             <label style={{ ...labelStyle, color: C.gold }}>STAGE ARTIFACTS (SETLISTS)</label>
             <input 
               type="file" 
-              accept="image/*" 
+              accept="image/*"
+              disabled={uploading}
               onChange={async (e) => {
                 const file = e.target.files[0];
                 if (file) {
+                  setUploading(true);
                   const url = await uploadMedia(file, 'setlists');
                   if (url) {
                     const current = form.setlist_image_url ? form.setlist_image_url + ',' : '';
                     set('setlist_image_url', current + url);
                   }
+                  setUploading(false);
                 }
               }}
               style={{ ...inputStyle, fontSize: '10px', marginBottom: '5px' }}
@@ -5117,19 +5163,28 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
             <label style={{ ...labelStyle, color: C.cyan }}>MUSEUM MEMORABILIA (PICKS/STICKS)</label>
             <input 
               type="file" 
-              accept="image/*" 
+              accept="image/*"
+              disabled={uploading}
               onChange={async (e) => {
                 const file = e.target.files[0];
                 if (file) {
+                  setUploading(true);
                   const url = await uploadMedia(file, 'memorabilia');
                   if (url) {
                     const current = form.setlist_image_url ? form.setlist_image_url + ',' : '';
                     set('setlist_image_url', current + url);
                   }
+                  setUploading(false);
                 }
               }}
               style={{ ...inputStyle, fontSize: '10px', marginBottom: '5px' }}
             />
+
+            {uploading && (
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.teal, marginBottom: 10 }}>
+                ⟳ UPLOADING TO ARCHIVE...
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: 20, marginTop: 15 }}>
               <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
@@ -5140,11 +5195,20 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
                 <input style={{ ...inputStyle, flex: 1, marginBottom: 0 }} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} placeholder="Fest Name" />
               )}
             </div>
+
+            {form.is_festival && (
+              <div style={{ marginTop: 10 }}>
+                <label style={labelStyle}>FESTIVAL DAY</label>
+                <input style={inputStyle} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} placeholder="Day 1, Friday, etc." />
+              </div>
+            )}
           </div>
         </div>
 
         <div style={{ marginTop: 30, display: 'flex', gap: 15 }}>
-          <Btn style={{ flex: 2 }} onClick={handleFinalCommit}>SAVE TO DATABASE</Btn>
+          <Btn style={{ flex: 2 }} onClick={handleFinalCommit} disabled={uploading}>
+            {uploading ? 'UPLOAD IN PROGRESS...' : 'SAVE TO DATABASE'}
+          </Btn>
           {concert !== 'new' && <Btn variant="danger" style={{ flex: 1 }} onClick={() => onDelete(concert.id)}>DELETE</Btn>}
         </div>
       </div>
