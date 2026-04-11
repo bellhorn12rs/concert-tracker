@@ -4454,8 +4454,6 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
       user_id: session?.user?.id || null,
     };
 
-    console.log("🚀 FINAL DATA TO STAMP:", dataToStamp);
-
     let result;
     if (id && id !== 'new') {
       result = await supabase.from('concerts').update(dataToStamp).eq('id', id);
@@ -5516,7 +5514,7 @@ export default function App() {
     if (data) setUpcoming(data);
   }
 
-  
+
   async function handleDelete(id) {
     if (!id || id === 'new') {
       setEditTarget(null);
