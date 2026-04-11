@@ -4430,47 +4430,7 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
 
-  const handleSave = async (id, payload) => {
-  try {
-    const bandList = Array.isArray(payload.bands)
-      ? payload.bands
-      : (payload.bands || '').split(',').map(b => b.trim()).filter(Boolean);
-
-    const dataToStamp = {
-      date: payload.date || null,
-      bands: bandList,
-      venue: payload.venue || null,
-      city: payload.city || null,
-      state: payload.state || null,
-      genre: payload.genre || null,
-      is_festival: Boolean(payload.is_festival),
-      festival_name: payload.festival_name || null,
-      festival_day: payload.festival_day || null,
-      has_setlist: Boolean(payload.has_setlist_names?.trim()),
-      has_setlist_names: payload.has_setlist_names || null,
-      image_url: payload.image_url || null,
-      personal_photo_url: payload.personal_photo_url || null,
-      setlist_image_url: payload.setlist_image_url || null,
-      user_id: session?.user?.id || null,
-    };
-
-    let result;
-    if (id && id !== 'new') {
-      result = await supabase.from('concerts').update(dataToStamp).eq('id', id);
-    } else {
-      result = await supabase.from('concerts').insert([dataToStamp]);
-    }
-
-    if (result.error) throw result.error;
-
-    setEditTarget(null);
-    await fetchConcerts();
-
-  } catch (error) {
-    console.error("DATABASE REJECTED SAVE:", error.message);
-    alert('DATABASE REJECTED SAVE: ' + error.message);
-  }
-};
+  
   const lbl = { 
     display: 'block', 
     fontFamily: "'Space Mono', monospace", 
@@ -5495,6 +5455,48 @@ export default function App() {
     setActiveTab('browse');
   };
   // ── 7. DB ACTIONS ──
+const handleSave = async (id, payload) => {
+  try {
+    const bandList = Array.isArray(payload.bands)
+      ? payload.bands
+      : (payload.bands || '').split(',').map(b => b.trim()).filter(Boolean);
+
+    const dataToStamp = {
+      date: payload.date || null,
+      bands: bandList,
+      venue: payload.venue || null,
+      city: payload.city || null,
+      state: payload.state || null,
+      genre: payload.genre || null,
+      is_festival: Boolean(payload.is_festival),
+      festival_name: payload.festival_name || null,
+      festival_day: payload.festival_day || null,
+      has_setlist: Boolean(payload.has_setlist_names?.trim()),
+      has_setlist_names: payload.has_setlist_names || null,
+      image_url: payload.image_url || null,
+      personal_photo_url: payload.personal_photo_url || null,
+      setlist_image_url: payload.setlist_image_url || null,
+      user_id: session?.user?.id || null,
+    };
+
+    let result;
+    if (id && id !== 'new') {
+      result = await supabase.from('concerts').update(dataToStamp).eq('id', id);
+    } else {
+      result = await supabase.from('concerts').insert([dataToStamp]);
+    }
+
+    if (result.error) throw result.error;
+
+    setEditTarget(null);
+    await fetchConcerts();
+
+  } catch (error) {
+    console.error("DATABASE REJECTED SAVE:", error.message);
+    alert('DATABASE REJECTED SAVE: ' + error.message);
+  }
+};
+
   async function fetchConcerts() {
     const { data } = await supabase.from('concerts').select('*').order('date', { ascending: false });
     if (data) setConcerts(data);
