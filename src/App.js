@@ -4840,8 +4840,10 @@ function TrackRecordLogo({ size = 40 }) {
 }
 
 function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
-  const initialState = {
+  // 🟢 FIXED: isMobile moved outside of the state object
   const isMobile = window.innerWidth < 768;
+
+  const initialState = {
     date: '', artist: '', venue: '', city: '', state: '',
     bands: [], genre: 'Indie Rock', is_festival: false, festival_name: '',
     festival_day: '', image_url: '', personal_photo_url: '', setlist_image_url: '',
@@ -4930,9 +4932,11 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   const labelStyle = { fontSize: 9, color: C.teal, fontFamily: "'Space Mono'", display: 'block', marginBottom: 4, letterSpacing: 1 };
   const inputStyle = { width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '6px', outline: 'none', marginBottom: '10px' };
 
+  if (!concert) return null;
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(15px)' }}>
-      <div className="fade-in" style={{ background: '#0a0a0c', border: `2px solid ${C.teal}`, borderRadius: 16, padding: 40, width: '90%', maxWidth: 600, textAlign: 'center' }}>
+      <div className="fade-in" style={{ background: '#0a0a0c', border: `2px solid ${C.teal}`, borderRadius: 16, padding: 40, width: '90%', maxWidth: 600, textAlign: 'center', maxHeight: '90vh', overflowY: 'auto' }}>
         
         {/* ── STEP 1: THE GATE ── */}
         {entryStep === 'gate' && (
@@ -4977,7 +4981,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
           <div className="fade-in" style={{ textAlign: 'left' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
               <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, margin: 0 }}>
-                {concert === 'new' ? 'INITIALIZE SIGNAL' : 'EDIT ARCHIVE'}
+                {concert === 'new' ? 'SIGNAL LOCKED' : 'EDIT ARCHIVE'}
               </h2>
               <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
             </div>
