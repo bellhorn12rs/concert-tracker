@@ -4841,6 +4841,7 @@ function TrackRecordLogo({ size = 40 }) {
 
 function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   const initialState = {
+  const isMobile = window.innerWidth < 768;
     date: '', artist: '', venue: '', city: '', state: '',
     bands: [], genre: 'Indie Rock', is_festival: false, festival_name: '',
     festival_day: '', image_url: '', personal_photo_url: '', setlist_image_url: '',
