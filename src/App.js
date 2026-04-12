@@ -5080,7 +5080,7 @@ export default function App() {
 
   // 🔍 THE TEMPORAL SCANNER (Post-Show Nudge)
   useEffect(() => {
-    if (upcoming.length > 0 && !loading) {
+    if (upcoming.length > 0 && !loading && isAdmin) {
       const today = new Date().toISOString().split('T')[0];
       // Find the first upcoming show that happened yesterday or earlier
       const staleShow = upcoming.find(s => s.date < today);
@@ -5825,7 +5825,7 @@ const handleReconcile = async (upcomingId, payload) => {
 </main>
 
         {/* ── MODALS LAYER ── */}
-        {nudgeTarget && (
+       {isAdmin && nudgeTarget && (
   <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
     <div style={{ textAlign: 'center', maxWidth: 500, padding: 40 }}>
       <div style={{ fontSize: '4rem', marginBottom: 20, animation: 'pulse 2s infinite' }}>📡</div>
