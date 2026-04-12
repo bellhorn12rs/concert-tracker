@@ -187,43 +187,7 @@ const THEMES = {
   },
 };
 
-// 📸 THE GLOBAL UPLOADER
-// NEW Unified Archive Router
-  async function uploadToArchive(file, type) {
-    if (!file) return null;
-    setUploading(true);
-    
-    // 🛰️ THE PRECISION MAP
-    const bucketMap = {
-      'TICKET': 'Ticket Stubs', 
-      'SETLIST': 'setlists',
-      'POLAROID': 'polaroids',
-      'POSTER': 'posters'
-    };
-    
-    try {
-      const bucket = bucketMap[type];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
-      const { data: { session } } = await supabase.auth.getSession();
-      const filePath = `${session?.user?.id}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
-      setUploading(false);
-      return data.publicUrl;
-    } catch (error) {
-      // 🚨 THIS WAS LIKELY MISSING or INCOMPLETE
-      console.error("Archive Error:", error.message);
-      setUploading(false);
-      return null;
-    }
-  }
 
 const THEME_ORDER = ['neon-noir','vintage-wax','midnight-blue','desert-sun','monochrome'];
 
@@ -4843,6 +4807,44 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
 
   const [form, setForm] = useState(initialState);
   const [uploading, setUploading] = useState(false);
+
+  // 📸 THE GLOBAL UPLOADER
+// NEW Unified Archive Router
+  async function uploadToArchive(file, type) {
+    if (!file) return null;
+    setUploading(true);
+    
+    // 🛰️ THE PRECISION MAP
+    const bucketMap = {
+      'TICKET': 'Ticket Stubs', 
+      'SETLIST': 'setlists',
+      'POLAROID': 'polaroids',
+      'POSTER': 'posters'
+    };
+    
+    try {
+      const bucket = bucketMap[type];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const { data: { session } } = await supabase.auth.getSession();
+      const filePath = `${session?.user?.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+      setUploading(false);
+      return data.publicUrl;
+    } catch (error) {
+      // 🚨 THIS WAS LIKELY MISSING or INCOMPLETE
+      console.error("Archive Error:", error.message);
+      setUploading(false);
+      return null;
+    }
+  }
 
   useEffect(() => {
     if (concert && concert !== 'new') {
