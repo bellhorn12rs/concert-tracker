@@ -2226,25 +2226,92 @@ const PhysicalWristband = ({ color, label, year, size = 'large' }) => {
 function DecorativeTicket({ event, templateIdx }) {
   const tpl = STUB_TEMPLATES[templateIdx % STUB_TEMPLATES.length];
   const bands = event.bands || [];
-  const headliner = bands[0] || 'UNKNOWN ARTIST';
+  const headliner = (bands[0] || 'UNKNOWN ARTIST').toUpperCase();
+  
+  // 🛰️ PRIORITY 1: THE REAL SCAN
+  const hasRealStub = event.image_url && event.image_url.trim() !== "";
+
+  if (hasRealStub) {
+    return (
+      <div style={{ 
+        width: 260, height: 130, background: '#000', borderRadius: 2, 
+        overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', 
+        border: '1px solid rgba(255,255,255,0.1)', transform: 'rotate(-1deg)',
+        position: 'relative', cursor: 'zoom-in'
+      }}>
+        <img src={event.image_url} alt="Stub" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        {/* Physical Paper Overlay */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(45deg, rgba(255,255,255,0.05) 0%, transparent 100%)', pointerEvents: 'none' }} />
+      </div>
+    );
+  }
+
+  // 🛰️ PRIORITY 2: THE HIGH-FIDELITY FAKE
+  // Dynamic font sizing to prevent cut-offs
+  const fontSize = headliner.length > 20 ? '0.7rem' : headliner.length > 12 ? '0.9rem' : '1.1rem';
+
   return (
-    <div style={{ width: 260, flexShrink: 0, background: tpl.bg, borderRadius: 3, overflow: 'hidden', boxShadow: '2px 4px 12px rgba(0,0,0,0.4)', border: `1px solid ${hexToRgba(tpl.ink, 0.2)}`, fontFamily: "'Courier New', Courier, monospace", color: tpl.ink, position: 'relative', transform: 'rotate(-1.5deg)', userSelect: 'none' }}>
-      <div style={{ background: tpl.accent, height: 6 }} />
-      <div style={{ padding: '4px 6px 0', fontSize: 6, fontWeight: 900, color: tpl.accent, textTransform: 'uppercase' }}>{tpl.label}</div>
-      <div style={{ padding: '2px 6px', fontSize: 11, fontWeight: 900, lineHeight: 1.1, textTransform: 'uppercase' }}>{headliner.length > 14 ? headliner.slice(0, 14) + '…' : headliner}</div>
-      <div style={{ padding: '2px 6px', fontSize: 6, opacity: 0.75 }}>
-        <div>{event.venue?.toUpperCase()}</div>
-        <div>{event.city?.toUpperCase()}, {event.state}</div>
-        <div>{fmtDateShort(event.date).toUpperCase()}</div>
+    <div style={{ 
+      width: 280, height: 130, background: tpl.bg, borderRadius: '2px', 
+      display: 'flex', color: tpl.ink, fontFamily: "'Courier New', Courier, monospace",
+      boxShadow: '4px 8px 20px rgba(0,0,0,0.4)', position: 'relative', 
+      overflow: 'hidden', border: `1px solid ${hexToRgba(tpl.ink, 0.1)}`,
+      transform: 'rotate(-1.5deg)', userSelect: 'none'
+    }}>
+      {/* 🎭 Texture Overlay (Dust/Grain) */}
+      <div style={{ position: 'absolute', inset: 0, opacity: 0.03, backgroundImage: `url("https://www.transparenttextures.com/patterns/dust.png")`, pointerEvents: 'none' }} />
+
+      {/* Main Info Section */}
+      <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRight: `1.5px dotted ${hexToRgba(tpl.ink, 0.2)}` }}>
+        <div>
+          <div style={{ fontSize: '6px', fontWeight: 900, color: tpl.accent, letterSpacing: 1, marginBottom: 4 }}>
+            {tpl.label} // ADMIT ONE
+          </div>
+          <div style={{ 
+            fontSize: fontSize, 
+            fontWeight: 900, 
+            lineHeight: 1, 
+            wordBreak: 'break-word',
+            maxHeight: '45px',
+            overflow: 'hidden'
+          }}>
+            {headliner}
+          </div>
+        </div>
+
+        <div style={{ fontSize: '7px', fontWeight: 700, opacity: 0.8, lineHeight: 1.3 }}>
+          <div style={{ color: tpl.accent }}>{event.venue?.toUpperCase()}</div>
+          <div>{event.city?.toUpperCase()}, {event.state}</div>
+          <div style={{ marginTop: 4, borderTop: `1px solid ${hexToRgba(tpl.ink, 0.1)}`, paddingTop: 4 }}>
+            DATE: {fmtDateShort(event.date).toUpperCase()}
+          </div>
+        </div>
       </div>
-      <div style={{ borderTop: `1px dashed ${hexToRgba(tpl.ink, 0.25)}`, margin: '3px 0' }} />
-      <div style={{ padding: '2px 6px 6px', display: 'flex', gap: '1px', justifyContent: 'center' }}>
-        {[2,1,3,1,2,1,4,1,2,3,1,2].map((w, i) => (<div key={i} style={{ width: w, height: 14, background: tpl.ink, opacity: 0.85 }} />))}
+
+      {/* 🧾 The Stub Section (Far Right) */}
+      <div style={{ width: '60px', background: 'rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10px 5px' }}>
+        {/* Vertical Text */}
+        <div style={{ 
+          fontSize: '7px', transform: 'rotate(-90deg)', whiteSpace: 'nowrap', 
+          fontWeight: 900, marginBottom: 10, opacity: 0.5, letterSpacing: 1 
+        }}>
+          SEC: GA | ROW: 01
+        </div>
+        
+        {/* 🔢 Vertical Barcode */}
+        <div style={{ display: 'flex', gap: '1.5px', height: '50px' }}>
+          {[2, 4, 1, 3, 2, 5, 1, 2].map((w, i) => (
+            <div key={i} style={{ width: w, background: tpl.ink, opacity: 0.7, borderRadius: '0.5px' }} />
+          ))}
+        </div>
       </div>
+
+      {/* Top/Bottom Perforation Notches */}
+      <div style={{ position: 'absolute', right: '56px', top: '-6px', width: '12px', height: '12px', borderRadius: '50%', background: '#050508', boxShadow: 'inset 0 -2px 3px rgba(0,0,0,0.3)' }} />
+      <div style={{ position: 'absolute', right: '56px', bottom: '-6px', width: '12px', height: '12px', borderRadius: '50%', background: '#050508', boxShadow: 'inset 0 2px 3px rgba(0,0,0,0.3)' }} />
     </div>
   );
 }
-
 // ─── CLEAN TICKET STUB (No Sidecar) ──────────────────────────────────────────
 function TicketStubCard({ event, onEdit, genreMap, stubIdx }) {
   const gi = getConcertGenreInfo(event, genreMap);
