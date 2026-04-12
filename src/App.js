@@ -4908,40 +4908,7 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
     });
   };
 
-  // NEW Unified Archive Router
-  async function uploadToArchive(file, type) {
-    if (!file) return null;
-    setUploading(true);
-    const bucketMap = {
-      'TICKET': 'tickets',
-      'SETLIST': 'setlists',
-      'POLAROID': 'polaroids',
-      'POSTER': 'posters'
-    };
-    
-    try {
-      const bucket = bucketMap[type];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
-      const { data: { session } } = await supabase.auth.getSession();
-      const filePath = `${session?.user?.id}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
-      setUploading(false);
-      return data.publicUrl;
-    } catch (error) {
-      console.error("Archive Error:", error.message);
-      setUploading(false);
-      return null;
-    }
-  }
-
+  
   const handleFinalCommit = async () => {
   // Ensure we are grabbing every archaeology signal from the state
   const payload = { 
