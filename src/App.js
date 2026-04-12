@@ -4753,7 +4753,6 @@ function ThemeSwitcher({ isMobile }) {
   );
 }
 // ─── TAB CONFIG ───────────────────────────────────────────────────────────────
-// [id, label, group, color]
 const TAB_GROUPS = [
   {
     header: "HEADLINER",
@@ -4766,7 +4765,7 @@ const TAB_GROUPS = [
     header: "CHRONICLE",
     tabs: [
       ['byDay', '📅 PAPER TRAIL', '#00e5cc'],
-      ['browse', '🔍 DIGGING', '#00cfff'], // 🟢 MOVED HERE TO BE PUBLIC
+      ['browse', '🔍 DIGGING', '#00cfff'],
     ]
   },
   {
@@ -4781,7 +4780,7 @@ const TAB_GROUPS = [
     tabs: [
       ['hof', '🏆 HEAVY ROTATION', '#9966ff'],
       ['vault', '📋 ARTIFACTS', '#00cc88'],
-      ['photos', '📸 POLAROIDS', '#9966ff'], // 🟢 Added this line
+      ['photos', '📸 POLAROIDS', '#9966ff'],
       ['venues', '📍 STAGE DOOR', '#00cfff'],
     ]
   },
@@ -4794,7 +4793,7 @@ const TAB_GROUPS = [
 ];
 
 const RIGHT_TABS = [
-  ['manage', '⚙️ THE OFFICE', '#888'], // 🔴 ONLY THE OFFICE REMAINS LOCKED
+  ['manage', '⚙️ THE OFFICE', '#888'],
 ];
 
 function TrackRecordLogo({ size = 40 }) {
@@ -4811,13 +4810,7 @@ function TrackRecordLogo({ size = 40 }) {
   };
 
   return (
-    <svg 
-      width={logoSize} 
-      height={logoSize} 
-      viewBox="0 0 100 100" 
-      fill="none" 
-      style={{ overflow: 'visible' }}
-    >
+    <svg width={logoSize} height={logoSize} viewBox="0 0 100 100" fill="none" style={{ overflow: 'visible' }}>
       <defs>
         <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -4837,28 +4830,10 @@ function TrackRecordLogo({ size = 40 }) {
           `}
         </style>
       </defs>
-
       <circle cx="50" cy="50" r="48" stroke={getAlpha('#ffffff', 0.1)} strokeWidth="0.5" />
       <circle cx="50" cy="50" r="30" stroke={getAlpha('#ffffff', 0.05)} strokeWidth="0.5" />
-
-      <path 
-        d="M15 50L25 45L35 55L45 48L55 52L65 45L75 55L85 50" 
-        stroke={color} 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        filter="url(#neonGlow)" 
-        opacity="0.4" 
-      />
-      <path 
-        className="active-signal" 
-        d="M15 50L25 45L35 55L45 48L55 52L65 45L75 55L85 50" 
-        stroke="#ffffff" 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-      />
-
+      <path d="M15 50L25 45L35 55L45 48L55 52L65 45L75 55L85 50" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" filter="url(#neonGlow)" opacity="0.4" />
+      <path className="active-signal" d="M15 50L25 45L35 55L45 48L55 52L65 45L75 55L85 50" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       <polygon points="50,38 47,32 53,32" fill={color} filter="url(#neonGlow)" />
     </svg>
   );
@@ -4874,12 +4849,13 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
 
   const [form, setForm] = useState(initialState);
   const [uploading, setUploading] = useState(false);
+  
+  // 🛰️ SIGNAL-FIRST STATE: 'gate' (Question), 'type' (Selection), 'form' (Final Form)
+  const [entryStep, setEntryStep] = useState(concert === 'new' ? 'gate' : 'form');
 
-  // 🛰️ THE GLOBAL SETTER
   const set = (k, v) => {
     setForm(prev => {
       const newForm = { ...prev, [k]: v };
-      // Auto-fill City/State if venue is recognized
       if (k === 'venue' && v && v.length > 2) {
         const match = allConcerts.find(c => c.venue?.toLowerCase() === v.toLowerCase());
         if (match) {
@@ -4891,7 +4867,6 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     });
   };
 
-  // 📸 THE GLOBAL UPLOADER (Integrated with EXIF)
   async function uploadToArchive(file, type) {
     if (!file) return null;
     setUploading(true);
@@ -4899,29 +4874,22 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     if (type === 'POLAROID' || type === 'TICKET') {
       try {
         if (typeof EXIF !== 'undefined') {
-          EXIF.getData(file, function() {
-            const rawDate = EXIF.getTag(this, "DateTimeOriginal"); 
-            if (rawDate) {
-              const extractedDate = rawDate.split(' ')[0].replace(/:/g, '-');
-              setForm(prev => {
-                if (!prev.date || prev.date === '') {
-                  console.log("🎯 TEMPORAL SIGNAL DETECTED:", extractedDate);
-                  return { ...prev, date: extractedDate };
-                }
-                return prev;
-              });
-            }
+          await new Promise((resolve) => {
+            EXIF.getData(file, function() {
+              const rawDate = EXIF.getTag(this, "DateTimeOriginal"); 
+              if (rawDate) {
+                const extractedDate = rawDate.split(' ')[0].replace(/:/g, '-');
+                set('date', extractedDate);
+                console.log("🎯 TEMPORAL SIGNAL LOCKED:", extractedDate);
+              }
+              resolve();
+            });
           });
         }
       } catch (e) { console.log("📡 NO EXIF METADATA"); }
     }
 
-    const bucketMap = { 
-      'TICKET': 'Ticket Stubs', 
-      'SETLIST': 'setlists', 
-      'POLAROID': 'polaroids', 
-      'POSTER': 'posters' 
-    };
+    const bucketMap = { 'TICKET': 'Ticket Stubs', 'SETLIST': 'setlists', 'POLAROID': 'polaroids', 'POSTER': 'posters' };
     
     try {
       const bucket = bucketMap[type];
@@ -4935,6 +4903,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
 
       const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
       setUploading(false);
+      setEntryStep('form'); // 🟢 Auto-advance after signal is locked
       return data.publicUrl;
     } catch (error) {
       console.error("Archive Error:", error.message);
@@ -4945,157 +4914,115 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
 
   useEffect(() => {
     if (concert && concert !== 'new') {
-      setForm({
-        ...initialState,
-        ...concert,
-        bands: Array.isArray(concert.bands) ? concert.bands : [concert.artist || ''],
-        personal_photo_url: concert.personal_photo_url || '',
-        setlist_image_url: concert.setlist_image_url || concert.image_url || '',
-        festival_poster_url: concert.festival_poster_url || ''
-      });
+      setForm({ ...initialState, ...concert });
     } else {
       setForm(initialState);
     }
   }, [concert]);
 
-  const handleFinalCommit = async () => {
-    const payload = { 
-      ...form,
-      bands: Array.isArray(form.bands) ? form.bands : String(form.bands).split(',').map(s => s.trim()).filter(Boolean)
-    };
-    const targetId = (concert && concert !== 'new') ? concert.id : null;
-    await onSave(targetId, payload);
-  };
-
-  // --- INTERNAL STYLES ---
-  const uploaderBox = (color) => ({
-    background: 'rgba(0,0,0,0.4)',
-    border: `1px dashed ${hexToRgba(color, 0.3)}`,
-    borderRadius: '8px',
-    padding: '12px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    transition: 'all 0.2s ease'
+  const gateBtn = (color) => ({
+    background: hexToRgba(color, 0.1), border: `1px solid ${color}`, color: '#fff',
+    padding: '30px', borderRadius: '12px', cursor: 'pointer', fontFamily: "'Bebas Neue'",
+    fontSize: '1.5rem', letterSpacing: '2px', transition: '0.2s all'
   });
 
-  const signalLocked = { fontFamily: "'Space Mono'", fontSize: '7px', color: '#00cc88', letterSpacing: '1px', marginTop: '4px', fontWeight: 900 };
   const labelStyle = { fontSize: 9, color: C.teal, fontFamily: "'Space Mono'", display: 'block', marginBottom: 4, letterSpacing: 1 };
   const inputStyle = { width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '6px', outline: 'none', marginBottom: '10px' };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="fade-in" style={{ background: '#111', border: `2px solid ${C.teal}`, borderRadius: 12, padding: 30, width: '90%', maxWidth: 800, maxHeight: '90vh', overflowY: 'auto' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(15px)' }}>
+      <div className="fade-in" style={{ background: '#0a0a0c', border: `2px solid ${C.teal}`, borderRadius: 16, padding: 40, width: '90%', maxWidth: 600, textAlign: 'center' }}>
         
-        {/* 🟢 QUICK START DROP ZONE */}
-        {concert === 'new' && !form.personal_photo_url && !form.image_url && (
-          <div 
-            onClick={() => document.getElementById('quick-start-upload').click()}
-            style={{ background: 'rgba(20, 255, 236, 0.03)', border: `1px dashed ${hexToRgba(C.teal, 0.3)}`, borderRadius: '16px', padding: '60px 20px', textAlign: 'center', marginBottom: '30px', cursor: 'pointer' }}
-          >
-            <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>📸</div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: '#fff', letterSpacing: 2 }}>START WITH AN ARTIFACT</div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.tealDim }}>UPLOAD PHOTO TO AUTO-SYNC DATE</div>
-            <input id="quick-start-upload" type="file" hidden onChange={async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const url = await uploadToArchive(file, 'POLAROID');
-                if (url) set('personal_photo_url', url);
-            }} />
+        {/* ── STEP 1: THE GATE ── */}
+        {entryStep === 'gate' && (
+          <div className="fade-in">
+            <div style={{ fontSize: '3rem', marginBottom: 20 }}>📸</div>
+            <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', marginBottom: 10 }}>DO YOU HAVE A PHOTO FROM THE SHOW?</h2>
+            <p style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.tealDim, marginBottom: 30 }}>WE CAN AUTO-SYNC THE DATE FROM YOUR ARTIFACTS</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <button onClick={() => setEntryStep('type')} style={gateBtn(C.teal)}>YES, I HAVE A PHOTO</button>
+              <button onClick={() => setEntryStep('form')} style={gateBtn(C.grayDim)}>NO, SKIP TO FORM</button>
+            </div>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#444', marginTop: 20, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 }}>ABORT ENTRY</button>
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
-          <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#fff', margin: 0 }}>
-            {concert === 'new' ? 'CREATE ENTRY' : 'EDIT ARCHIVE'}
-          </h2>
-          <Btn variant="secondary" onClick={onClose}>CANCEL</Btn>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30 }}>
-          {/* COLUMN 1 */}
-          <div>
-            <label style={labelStyle}>HEADLINER</label>
-            <input style={inputStyle} value={form.artist} onChange={e => set('artist', e.target.value)} placeholder="Band Name" />
-            
-            <label style={labelStyle}>DATE</label>
-            <input type="date" style={{ ...inputStyle, colorScheme: 'dark' }} value={form.date} onChange={e => set('date', e.target.value)} />
-            
-            <label style={labelStyle}>VENUE</label>
-            <input style={inputStyle} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="Venue..." />
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
-              <div>
-                <label style={labelStyle}>CITY</label>
-                <input style={inputStyle} value={form.city} onChange={e => set('city', e.target.value)} />
+        {/* ── STEP 2: TYPE SELECTION ── */}
+        {entryStep === 'type' && (
+          <div className="fade-in">
+            <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#fff', marginBottom: 30 }}>WHICH TYPE OF ARTIFACT?</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <div onClick={() => document.getElementById('init-stub').click()} style={gateBtn(C.teal)}>
+                TICKET STUB
+                <input id="init-stub" type="file" hidden onChange={async (e) => {
+                  const url = await uploadToArchive(e.target.files[0], 'TICKET');
+                  if (url) set('image_url', url);
+                }} />
               </div>
-              <div>
-                <label style={labelStyle}>STATE</label>
-                <input style={inputStyle} value={form.state} onChange={e => set('state', e.target.value)} maxLength={2} />
+              <div onClick={() => document.getElementById('init-pic').click()} style={gateBtn(C.purple)}>
+                POLAROID / PHOTO
+                <input id="init-pic" type="file" hidden onChange={async (e) => {
+                  const url = await uploadToArchive(e.target.files[0], 'POLAROID');
+                  if (url) set('personal_photo_url', url);
+                }} />
               </div>
             </div>
+            <button onClick={() => setEntryStep('gate')} style={{ background: 'none', border: 'none', color: '#666', marginTop: 20, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 }}>← GO BACK</button>
+          </div>
+        )}
 
-            <div style={{ display: 'flex', gap: 20, marginTop: 15 }}>
-              <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <input type="checkbox" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} />
-                FESTIVAL?
-              </label>
-              {form.is_festival && (
-                <input style={{ ...inputStyle, flex: 1, marginBottom: 0 }} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} placeholder="Fest Name" />
-              )}
+        {/* ── STEP 3: THE ACTUAL FORM ── */}
+        {entryStep === 'form' && (
+          <div className="fade-in" style={{ textAlign: 'left' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
+              <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, margin: 0 }}>
+                {concert === 'new' ? 'INITIALIZE SIGNAL' : 'EDIT ARCHIVE'}
+              </h2>
+              <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 30 }}>
+              <div>
+                <label style={labelStyle}>HEADLINER</label>
+                <input style={inputStyle} value={form.artist} onChange={e => set('artist', e.target.value)} />
+                <label style={labelStyle}>DATE</label>
+                <input type="date" style={{ ...inputStyle, colorScheme: 'dark' }} value={form.date} onChange={e => set('date', e.target.value)} />
+                <label style={labelStyle}>VENUE</label>
+                <input style={inputStyle} value={form.venue} onChange={e => set('venue', e.target.value)} />
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
+                  <input style={inputStyle} value={form.city} onChange={e => set('city', e.target.value)} placeholder="City" />
+                  <input style={inputStyle} value={form.state} onChange={e => set('state', e.target.value)} placeholder="ST" maxLength={2} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+                  <div style={{ background: form.image_url ? '#00cc8822' : '#111', padding: 15, borderRadius: 8, border: `1px solid ${form.image_url ? '#00cc88' : '#222'}`, textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.2rem' }}>{form.image_url ? '✅' : '🎟️'}</div>
+                    <div style={{ fontSize: 7, marginTop: 5, color: '#666', fontFamily: "'Space Mono'" }}>STUB</div>
+                  </div>
+                  <div style={{ background: form.personal_photo_url ? '#00cc8822' : '#111', padding: 15, borderRadius: 8, border: `1px solid ${form.personal_photo_url ? '#00cc88' : '#222'}`, textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.2rem' }}>{form.personal_photo_url ? '✅' : '📸'}</div>
+                    <div style={{ fontSize: 7, marginTop: 5, color: '#666', fontFamily: "'Space Mono'" }}>PHOTO</div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => onSave((concert && concert !== 'new') ? concert.id : null, form)}
+                  disabled={uploading}
+                  style={{ marginTop: 'auto', width: '100%', padding: '20px', background: uploading ? '#222' : C.teal, color: '#000', border: 'none', borderRadius: '8px', fontFamily: "'Bebas Neue'", fontSize: '1.5rem', cursor: uploading ? 'not-allowed' : 'pointer', boxShadow: `0 0 20px ${hexToRgba(C.teal, 0.3)}` }}
+                >
+                  {uploading ? 'SYNCING...' : 'COMMIT TO ARCHIVE'}
+                </button>
+              </div>
             </div>
           </div>
-
-          {/* COLUMN 2 */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-              <div style={uploaderBox(C.teal)}>
-                <label style={labelStyle}>🎟️ STUB</label>
-                <input type="file" style={{ fontSize: '8px' }} onChange={async (e) => {
-                    const url = await uploadToArchive(e.target.files[0], 'TICKET');
-                    if (url) set('image_url', url);
-                }} />
-                {form.image_url && <div style={signalLocked}>STUB LOCKED</div>}
-              </div>
-
-              <div style={uploaderBox(C.gold)}>
-                <label style={labelStyle}>📋 SETLIST</label>
-                <input type="file" style={{ fontSize: '8px' }} onChange={async (e) => {
-                    const url = await uploadToArchive(e.target.files[0], 'SETLIST');
-                    if (url) set('setlist_image_url', url);
-                }} />
-                {form.setlist_image_url && <div style={signalLocked}>SETLIST LOCKED</div>}
-              </div>
-
-              <div style={uploaderBox(C.purple)}>
-                <label style={labelStyle}>📸 PHOTO</label>
-                <input type="file" style={{ fontSize: '8px' }} onChange={async (e) => {
-                    const url = await uploadToArchive(e.target.files[0], 'POLAROID');
-                    if (url) set('personal_photo_url', url);
-                }} />
-                {form.personal_photo_url && <div style={signalLocked}>PHOTO LOCKED</div>}
-              </div>
-
-              <div style={uploaderBox(C.cyan)}>
-                <label style={labelStyle}>🎨 POSTER</label>
-                <input type="file" style={{ fontSize: '8px' }} onChange={async (e) => {
-                    const url = await uploadToArchive(e.target.files[0], 'POSTER');
-                    if (url) set('festival_poster_url', url);
-                }} />
-                {form.festival_poster_url && <div style={signalLocked}>POSTER LOCKED</div>}
-              </div>
-            </div>
-
-            <Btn style={{ marginTop: 'auto', padding: 20 }} onClick={handleFinalCommit} disabled={uploading}>
-              {uploading ? 'SYNCING ARCHIVE...' : 'COMMIT TO DATABASE'}
-            </Btn>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
 }
-// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+// ─── MAIN APP ────────────────────────────────────────────────────
 export default function App() {
   // ── 1. AUTH & SYSTEM STATE ──
   const [session, setSession] = useState(null);
