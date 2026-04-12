@@ -188,12 +188,13 @@ const THEMES = {
 };
 
 // 📸 THE GLOBAL UPLOADER
+// 📡 THE GLOBAL ARCHIVE ROUTER
 async function uploadToArchive(file, type) {
   const bucketMap = {
-    'TICKET': 'tickets',      // Maps to: image_url
-    'SETLIST': 'setlists',    // Maps to: setlist_image_url
-    'POLAROID': 'polaroids',  // Maps to: personal_photo_url
-    'POSTER': 'posters'       // Maps to: festival_poster_url
+    'TICKET': 'tickets',      // Dest: image_url
+    'SETLIST': 'setlists',    // Dest: setlist_image_url
+    'POLAROID': 'polaroids',  // Dest: personal_photo_url
+    'POSTER': 'posters'       // Dest: festival_poster_url
   };
   
   const bucket = bucketMap[type];
@@ -201,10 +202,9 @@ async function uploadToArchive(file, type) {
 
   try {
     const fileExt = file.name.split('.').pop();
-    // Unique fingerprinting for the archive
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     
-    // We use your UUID as the root folder for security & organization
+    // Scoping to your User ID for RLS compliance
     const { data: { session } } = await supabase.auth.getSession();
     const filePath = `${session?.user?.id}/${fileName}`;
 
@@ -4914,7 +4914,7 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
     date: '', artist: '', venue: '', city: '', state: '',
     bands: [], genre: 'Indie Rock', is_festival: false, festival_name: '',
     festival_day: '', image_url: '', personal_photo_url: '', setlist_image_url: '',
-    has_setlist: false, has_setlist_names: ''
+    festival_poster_url: '', has_setlist: false, has_setlist_names: ''
   };
 
   const [form, setForm] = useState(initialState);
@@ -4927,34 +4927,39 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
         ...concert,
         bands: Array.isArray(concert.bands) ? concert.bands : [concert.artist || ''],
         personal_photo_url: concert.personal_photo_url || '',
-        setlist_image_url: concert.setlist_image_url || concert.image_url || ''
+        setlist_image_url: concert.setlist_image_url || concert.image_url || '',
+        festival_poster_url: concert.festival_poster_url || ''
       });
     } else {
       setForm(initialState);
     }
   }, [concert]);
 
+  // --- STYLES ---
   const uploaderBox = (color) => ({
-  background: 'rgba(0,0,0,0.4)',
-  border: `1px dashed ${hexToRgba(color, 0.4)}`,
-  borderRadius: '8px',
-  padding: '12px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '8px',
-  transition: 'all 0.2s ease',
-  position: 'relative'
-});
+    background: 'rgba(0,0,0,0.4)',
+    border: `1px dashed ${hexToRgba(color, 0.3)}`,
+    borderRadius: '8px',
+    padding: '12px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    transition: 'all 0.2s ease'
+  });
 
-const signalFound = {
-  fontFamily: "'Space Mono'",
-  fontSize: '7px',
-  color: C.green,
-  letterSpacing: '1px',
-  marginTop: '4px',
-  fontWeight: 900
-};
+  const signalLocked = {
+    fontFamily: "'Space Mono'",
+    fontSize: '7px',
+    color: '#00cc88',
+    letterSpacing: '1px',
+    marginTop: '4px',
+    fontWeight: 900
+  };
 
+  const inputStyle = { width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '6px', outline: 'none', marginBottom: '10px' };
+  const labelStyle = { fontSize: 9, color: C.teal, fontFamily: "'Space Mono'", display: 'block', marginBottom: 4, letterSpacing: 1 };
+
+  // --- LOGIC ---
   const knownArtists = useMemo(() =>
     [...new Set(concerts.flatMap(c => c.bands || []).filter(Boolean))].sort(),
     [concerts]
@@ -4979,12 +4984,23 @@ const signalFound = {
     });
   };
 
-  async function uploadMedia(file, bucket) {
+  // NEW Unified Archive Router
+  async function uploadToArchive(file, type) {
+    if (!file) return null;
+    setUploading(true);
+    const bucketMap = {
+      'TICKET': 'tickets',
+      'SETLIST': 'setlists',
+      'POLAROID': 'polaroids',
+      'POSTER': 'posters'
+    };
+    
     try {
+      const bucket = bucketMap[type];
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
       const { data: { session } } = await supabase.auth.getSession();
-      const filePath = session?.user?.id ? `${session.user.id}/${fileName}` : fileName;
+      const filePath = `${session?.user?.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from(bucket)
@@ -4993,9 +5009,11 @@ const signalFound = {
       if (uploadError) throw uploadError;
 
       const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+      setUploading(false);
       return data.publicUrl;
     } catch (error) {
-      alert('Error uploading: ' + error.message);
+      console.error("Archive Error:", error.message);
+      setUploading(false);
       return null;
     }
   }
@@ -5003,27 +5021,20 @@ const signalFound = {
   const handleFinalCommit = async () => {
     const payload = { 
       ...form,
-      personal_photo_url: form.personal_photo_url || '',
-      setlist_image_url: form.setlist_image_url || ''
+      // Ensure bands is an array
+      bands: Array.isArray(form.bands) ? form.bands : String(form.bands).split(',').map(s => s.trim()).filter(Boolean)
     };
-
-    if (typeof payload.bands === 'string') {
-      payload.bands = payload.bands.split(',').map(s => s.trim()).filter(Boolean);
-    }
-    if ((!payload.bands || payload.bands.length === 0) && payload.artist) {
+    
+    // Auto-headliner logic if bands array is empty
+    if (payload.bands.length === 0 && payload.artist) {
       payload.bands = [payload.artist];
     }
 
     const targetId = (concert && concert !== 'new') ? concert.id : null;
-
-    console.log('PAYLOAD BEING SENT:', JSON.stringify(payload, null, 2));
     await onSave(targetId, payload);
   };
 
   if (!concert) return null;
-
-  const inputStyle = { width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '6px', outline: 'none', marginBottom: '10px' };
-  const labelStyle = { fontSize: 9, color: C.teal, fontFamily: "'Space Mono'", display: 'block', marginBottom: 4, letterSpacing: 1 };
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
@@ -5042,35 +5053,16 @@ const signalFound = {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30 }}>
-          {/* COLUMN 1: THE SHOW */}
+          {/* COLUMN 1: THE SHOW DATA */}
           <div>
             <label style={labelStyle}>MAIN ARTIST / HEADLINER</label>
-            <input
-              style={inputStyle}
-              value={form.artist}
-              onChange={e => set('artist', e.target.value)}
-              placeholder="Band Name"
-              list="artist-suggestions"
-              autoComplete="off"
-            />
+            <input style={inputStyle} value={form.artist} onChange={e => set('artist', e.target.value)} placeholder="Band Name" list="artist-suggestions" autoComplete="off" />
 
             <label style={labelStyle}>DATE</label>
-            <input
-              type="date"
-              style={{ ...inputStyle, colorScheme: 'dark' }}
-              value={form.date}
-              onChange={e => set('date', e.target.value)}
-            />
+            <input type="date" style={{ ...inputStyle, colorScheme: 'dark' }} value={form.date} onChange={e => set('date', e.target.value)} />
 
-            <label style={labelStyle}>VENUE (Autofills City/State on match)</label>
-            <input
-              style={inputStyle}
-              value={form.venue}
-              onChange={e => set('venue', e.target.value)}
-              placeholder="Search venues..."
-              list="venue-suggestions"
-              autoComplete="off"
-            />
+            <label style={labelStyle}>VENUE</label>
+            <input style={inputStyle} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="Search venues..." list="venue-suggestions" autoComplete="off" />
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
               <div>
@@ -5084,122 +5076,92 @@ const signalFound = {
             </div>
 
             <label style={labelStyle}>GENRE</label>
-            <select
-              style={{ ...inputStyle, cursor: 'pointer' }}
-              value={form.genre}
-              onChange={e => set('genre', e.target.value)}
-            >
+            <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.genre} onChange={e => set('genre', e.target.value)}>
               {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
             </select>
 
             <label style={labelStyle}>BANDS (comma separated)</label>
-            <input
-              style={inputStyle}
-              value={Array.isArray(form.bands) ? form.bands.join(', ') : form.bands}
-              onChange={e => set('bands', e.target.value)}
-              placeholder="Band 1, Band 2, Band 3"
-            />
+            <input style={inputStyle} value={Array.isArray(form.bands) ? form.bands.join(', ') : form.bands} onChange={e => set('bands', e.target.value)} placeholder="Band 1, Band 2, Band 3" />
 
-            <label style={labelStyle}>SETLIST BAND NAMES (comma separated)</label>
-            <input
-              style={inputStyle}
-              value={form.has_setlist_names}
-              onChange={e => set('has_setlist_names', e.target.value)}
-              placeholder="Band names with setlists..."
-            />
+            <label style={labelStyle}>SETLIST BAND NAMES</label>
+            <input style={inputStyle} value={form.has_setlist_names} onChange={e => set('has_setlist_names', e.target.value)} placeholder="Band names with setlists..." />
+            
+            <div style={{ display: 'flex', gap: 20, marginTop: 15 }}>
+              <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} />
+                FESTIVAL?
+              </label>
+              {form.is_festival && (
+                <input style={{ ...inputStyle, flex: 1, marginBottom: 0 }} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} placeholder="Fest Name" />
+              )}
+            </div>
           </div>
 
           {/* COLUMN 2: ARCHAEOLOGY & MEDIA */}
-<div>
-  <label style={{ ...labelStyle, marginBottom: 15, display: 'block', color: C.gray }}>
-    // PHYSICAL ARTIFACT UPLOAD //
-  </label>
-  
-  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-    
-    {/* 1. TICKET STUB (Legacy image_url) */}
-    <div style={uploaderBox(C.teal)}>
-      <label style={labelStyle}>🎟️ TICKET STUB</label>
-      <input 
-        type="file" 
-        style={{ fontSize: '9px', width: '100%' }}
-        onChange={async (e) => {
-          const url = await uploadToArchive(e.target.files[0], 'TICKET');
-          if (url) set('image_url', url);
-        }} 
-      />
-      {form.image_url && <div style={signalFound}>STUB SIGNAL LOCKED</div>}
-    </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <label style={{ ...labelStyle, marginBottom: 5, display: 'block', color: C.grayDim }}>
+              // PHYSICAL ARTIFACT ARCHIVE //
+            </label>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              {/* 1. TICKET STUB */}
+              <div style={uploaderBox(C.teal)}>
+                <label style={labelStyle}>🎟️ TICKET STUB</label>
+                <input type="file" style={{ fontSize: '9px', width: '100%' }} onChange={async (e) => {
+                    const url = await uploadToArchive(e.target.files[0], 'TICKET');
+                    if (url) set('image_url', url);
+                }} />
+                {form.image_url && <div style={signalLocked}>STUB SIGNAL LOCKED</div>}
+              </div>
 
-    {/* 2. STAGE SETLIST (setlist_image_url) */}
-    <div style={uploaderBox(C.gold)}>
-      <label style={labelStyle}>📋 STAGE SETLIST</label>
-      <input 
-        type="file" 
-        style={{ fontSize: '9px', width: '100%' }}
-        onChange={async (e) => {
-          const url = await uploadToArchive(e.target.files[0], 'SETLIST');
-          if (url) {
-            set('setlist_image_url', url);
-            set('has_setlist', true); // Auto-flags setlist status
-          }
-        }} 
-      />
-      {form.setlist_image_url && <div style={signalFound}>SETLIST ARCHIVED</div>}
-    </div>
+              {/* 2. STAGE SETLIST */}
+              <div style={uploaderBox(C.gold)}>
+                <label style={labelStyle}>📋 STAGE SETLIST</label>
+                <input type="file" style={{ fontSize: '9px', width: '100%' }} onChange={async (e) => {
+                    const url = await uploadToArchive(e.target.files[0], 'SETLIST');
+                    if (url) { set('setlist_image_url', url); set('has_setlist', true); }
+                }} />
+                {form.setlist_image_url && <div style={signalLocked}>SETLIST ARCHIVED</div>}
+              </div>
 
-    {/* 3. PERSONAL PHOTO (personal_photo_url) */}
-    <div style={uploaderBox(C.purple)}>
-      <label style={labelStyle}>📸 POLAROID</label>
-      <input 
-        type="file" 
-        style={{ fontSize: '9px', width: '100%' }}
-        onChange={async (e) => {
-          const url = await uploadToArchive(e.target.files[0], 'POLAROID');
-          if (url) set('personal_photo_url', url);
-        }} 
-      />
-      {form.personal_photo_url && <div style={signalFound}>MEMORY CAPTURED</div>}
-    </div>
+              {/* 3. PERSONAL PHOTO */}
+              <div style={uploaderBox(C.purple)}>
+                <label style={labelStyle}>📸 POLAROID</label>
+                <input type="file" style={{ fontSize: '9px', width: '100%' }} onChange={async (e) => {
+                    const url = await uploadToArchive(e.target.files[0], 'POLAROID');
+                    if (url) set('personal_photo_url', url);
+                }} />
+                {form.personal_photo_url && <div style={signalLocked}>MEMORY CAPTURED</div>}
+              </div>
 
-    {/* 4. BOXSET POSTER (festival_poster_url) */}
-    <div style={uploaderBox(form.is_festival ? C.cyan : C.grayDim)}>
-      <label style={labelStyle}>🎨 {form.is_festival ? 'BOXSET POSTER' : 'GIG POSTER'}</label>
-      <input 
-        type="file" 
-        style={{ fontSize: '9px', width: '100%' }}
-        onChange={async (e) => {
-          const url = await uploadToArchive(e.target.files[0], 'POSTER');
-          if (url) set('festival_poster_url', url); 
-        }} 
-      />
-      {form.festival_poster_url && <div style={signalFound}>POSTER LINKED</div>}
-    </div>
-  </div>
+              {/* 4. BOXSET POSTER */}
+              <div style={uploaderBox(form.is_festival ? C.cyan : C.grayDim)}>
+                <label style={labelStyle}>🎨 {form.is_festival ? 'BOXSET POSTER' : 'GIG POSTER'}</label>
+                <input type="file" style={{ fontSize: '9px', width: '100%' }} onChange={async (e) => {
+                    const url = await uploadToArchive(e.target.files[0], 'POSTER');
+                    if (url) set('festival_poster_url', url); 
+                }} />
+                {form.festival_poster_url && <div style={signalLocked}>POSTER LINKED</div>}
+              </div>
+            </div>
 
-  {/* Technical Path Readout (Helps you verify uploads) */}
-  <label style={labelStyle}>DATABASE PATHS // MULTI-SIGNAL</label>
-  <div style={{ 
-    padding: '10px', 
-    background: '#000', 
-    borderRadius: '4px', 
-    fontSize: '7px', 
-    fontFamily: "'Space Mono'", 
-    color: '#444', 
-    lineHeight: 1.5,
-    border: `1px solid ${C.border}`
-  }}>
-    STUB: {form.image_url || 'EMPTY'}<br/>
-    SET: {form.setlist_image_url || 'EMPTY'}<br/>
-    PHOTO: {form.personal_photo_url || 'EMPTY'}<br/>
-    POSTER: {form.festival_poster_url || 'EMPTY'}
-  </div>
-</div>
+            {/* Technical Path Readout */}
+            <div style={{ marginTop: '10px' }}>
+              <label style={labelStyle}>DATABASE PATHS // MULTI-SIGNAL</label>
+              <div style={{ padding: '12px', background: 'rgba(0,0,0,0.6)', borderRadius: '6px', fontSize: '7px', fontFamily: "'Space Mono'", color: '#555', lineHeight: 1.6, border: `1px solid ${C.border}`, letterSpacing: '0.5px' }}>
+                <span style={{ color: form.image_url ? C.teal : '#333' }}>STUB:</span> {form.image_url || 'EMPTY'}<br/>
+                <span style={{ color: form.setlist_image_url ? C.gold : '#333' }}>SETL:</span> {form.setlist_image_url || 'EMPTY'}<br/>
+                <span style={{ color: form.personal_photo_url ? C.purple : '#333' }}>PICS:</span> {form.personal_photo_url || 'EMPTY'}<br/>
+                <span style={{ color: form.festival_poster_url ? C.cyan : '#333' }}>POST:</span> {form.festival_poster_url || 'EMPTY'}
+              </div>
+            </div>
+          </div>
         </div>
 
+        {/* FOOTER ACTIONS */}
         <div style={{ marginTop: 30, display: 'flex', gap: 15 }}>
           <Btn style={{ flex: 2 }} onClick={handleFinalCommit} disabled={uploading}>
-            {uploading ? 'UPLOAD IN PROGRESS...' : 'SAVE TO DATABASE'}
+            {uploading ? 'UPLOADING TO ARCHIVE...' : 'SAVE TO DATABASE'}
           </Btn>
           {concert !== 'new' && <Btn variant="danger" style={{ flex: 1 }} onClick={() => onDelete(concert.id)}>DELETE</Btn>}
         </div>
@@ -5207,7 +5169,6 @@ const signalFound = {
     </div>
   );
 }
-
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   // ── 1. AUTH & SYSTEM STATE ──
