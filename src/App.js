@@ -4875,13 +4875,35 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
   const [form, setForm] = useState(initialState);
   const [uploading, setUploading] = useState(false);
 
-  // 📸 THE GLOBAL UPLOADER
-// NEW Unified Archive Router
+  // 🛰️ THE GLOBAL SETTER
+  const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
+
+  // 📸 THE GLOBAL UPLOADER (Integrated with EXIF)
   async function uploadToArchive(file, type) {
     if (!file) return null;
     setUploading(true);
     
-    // 🛰️ THE PRECISION MAP
+    if (type === 'POLAROID' || type === 'TICKET') {
+      try {
+        const EXIF = require('exif-js');
+        EXIF.getData(file, function() {
+          const rawDate = EXIF.getTag(this, "DateTimeOriginal"); 
+          if (rawDate) {
+            const extractedDate = rawDate.split(' ')[0].replace(/:/g, '-');
+            setForm(prev => {
+              if (!prev.date || prev.date === '') {
+                console.log("🎯 TEMPORAL SIGNAL DETECTED:", extractedDate);
+                return { ...prev, date: extractedDate };
+              }
+              return prev;
+            });
+          }
+        });
+      } catch (e) {
+        console.log("📡 NO EXIF METADATA DETECTED");
+      }
+    }
+
     const bucketMap = {
       'TICKET': 'Ticket Stubs', 
       'SETLIST': 'setlists',
@@ -4906,7 +4928,6 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
       setUploading(false);
       return data.publicUrl;
     } catch (error) {
-      // 🚨 THIS WAS LIKELY MISSING or INCOMPLETE
       console.error("Archive Error:", error.message);
       setUploading(false);
       return null;
@@ -4928,6 +4949,155 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
     }
   }, [concert]);
 
+  const handleFinalCommit = async () => {
+    const payload = { ...form };
+    const targetId = (concert && concert !== 'new') ? concert.id : null;
+    await onSave(targetId, payload);
+  };
+
+  return (
+    <div style={modalOverlayStyle}>
+      <div style={modalContentStyle}>
+        
+        {/* 🟢 QUICK START DROP ZONE */}
+        {concert === 'new' && !form.personal_photo_url && !form.image_url && (
+          <div 
+            onClick={() => document.getElementById('quick-start-upload').click()}
+            style={{
+              background: 'rgba(20, 255, 236, 0.03)',
+              border: `1px dashed ${hexToRgba(C.teal, 0.3)}`,
+              borderRadius: '16px',
+              padding: '60px 20px',
+              textAlign: 'center',
+              marginBottom: '30px',
+              cursor: 'pointer',
+              transition: '0.3s all'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(20, 255, 236, 0.08)';
+              e.currentTarget.style.borderColor = C.teal;
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(20, 255, 236, 0.03)';
+              e.currentTarget.style.borderColor = `${C.teal}44`;
+            }}
+          >
+            <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>📸</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.white, letterSpacing: 2 }}>
+              START WITH AN ARTIFACT
+            </div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.tealDim, marginTop: 10 }}>
+              UPLOAD A POLAROID OR TICKET TO INITIALIZE TEMPORAL COORDS
+            </div>
+            <input 
+              id="quick-start-upload" 
+              type="file" 
+              hidden 
+              onChange={async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const url = await uploadToArchive(file, 'POLAROID');
+                if (url) set('personal_photo_url', url);
+              }} 
+            />
+          </div>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 30 }}>
+          <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.teal }}>
+            {concert === 'new' ? 'INITIALIZE SIGNAL' : 'RE-SYNC ARCHIVE'}
+          </h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 40 }}>
+          
+          {/* COLUMN 1: VITAL STATS */}
+          <div>
+            <div style={inputGroupStyle}>
+              <label style={labelStyle}>DATE</label>
+              <input type="date" value={form.date} onChange={e => set('date', e.target.value)} style={inputStyle} />
+            </div>
+            <div style={inputGroupStyle}>
+              <label style={labelStyle}>HEADLINER</label>
+              <input type="text" value={form.bands[0] || ''} onChange={e => {
+                const newBands = [...form.bands];
+                newBands[0] = e.target.value;
+                set('bands', newBands);
+              }} style={inputStyle} placeholder="BAND NAME..." />
+            </div>
+            <div style={inputGroupStyle}>
+              <label style={labelStyle}>VENUE</label>
+              <input type="text" value={form.venue} onChange={e => set('venue', e.target.value)} style={inputStyle} />
+            </div>
+          </div>
+
+          {/* COLUMN 2: ARCHAEOLOGY GRID */}
+          <div>
+            <h3 style={{ fontFamily: "'Bebas Neue'", color: C.tealDim, fontSize: '1.2rem', marginBottom: 15 }}>ARTIFACTS</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              
+              <ArtifactSlot 
+                label="STUB" 
+                url={form.image_url} 
+                uploading={uploading}
+                onUpload={f => uploadToArchive(f, 'TICKET').then(url => url && set('image_url', url))}
+              />
+
+              <ArtifactSlot 
+                label="POLAROID" 
+                url={form.personal_photo_url} 
+                uploading={uploading}
+                onUpload={f => uploadToArchive(f, 'POLAROID').then(url => url && set('personal_photo_url', url))}
+              />
+
+              <ArtifactSlot 
+                label="SETLIST" 
+                url={form.setlist_image_url} 
+                uploading={uploading}
+                onUpload={f => uploadToArchive(f, 'SETLIST').then(url => url && set('setlist_image_url', url))}
+              />
+
+              <ArtifactSlot 
+                label="POSTER" 
+                url={form.festival_poster_url} 
+                uploading={uploading}
+                onUpload={f => uploadToArchive(f, 'POSTER').then(url => url && set('festival_poster_url', url))}
+              />
+            </div>
+          </div>
+
+          {/* COLUMN 3: FINALIZATION */}
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+            <button 
+              onClick={handleFinalCommit}
+              disabled={uploading}
+              style={{
+                width: '100%',
+                padding: '20px',
+                background: uploading ? '#222' : C.teal,
+                color: uploading ? '#444' : '#000',
+                border: 'none',
+                borderRadius: '8px',
+                fontFamily: "'Bebas Neue'",
+                fontSize: '1.5rem',
+                cursor: uploading ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {uploading ? 'SYNCING...' : 'COMMIT TO ARCHIVE'}
+            </button>
+            {concert !== 'new' && (
+              <button onClick={() => onDelete(concert.id)} style={{ marginTop: 15, background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: '10px' }}>
+                DELETE SIGNAL
+              </button>
+            )}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
   // --- STYLES ---
   const uploaderBox = (color) => ({
     background: 'rgba(0,0,0,0.4)',
