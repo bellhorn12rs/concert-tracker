@@ -4940,20 +4940,34 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
   }
 
   const handleFinalCommit = async () => {
-    const payload = { 
-      ...form,
-      // Ensure bands is an array
-      bands: Array.isArray(form.bands) ? form.bands : String(form.bands).split(',').map(s => s.trim()).filter(Boolean)
-    };
+  // Ensure we are grabbing every archaeology signal from the state
+  const payload = { 
+    ...form,
+    // 🎟️ Ensure the ticket stub URL is included
+    image_url: form.image_url || null, 
+    // 📋 Ensure the setlist URL is included
+    setlist_image_url: form.setlist_image_url || null,
+    // 📸 Ensure the polaroid URL is included
+    personal_photo_url: form.personal_photo_url || null,
+    // 🎨 Ensure the poster URL is included
+    festival_poster_url: form.festival_poster_url || null,
     
-    // Auto-headliner logic if bands array is empty
-    if (payload.bands.length === 0 && payload.artist) {
-      payload.bands = [payload.artist];
-    }
-
-    const targetId = (concert && concert !== 'new') ? concert.id : null;
-    await onSave(targetId, payload);
+    // Ensure bands is an array (Standardizing the signal)
+    bands: Array.isArray(form.bands) 
+      ? form.bands 
+      : String(form.bands).split(',').map(s => s.trim()).filter(Boolean)
   };
+  
+  // Auto-headliner fallback
+  if (payload.bands.length === 0 && payload.artist) {
+    payload.bands = [payload.artist];
+  }
+
+  const targetId = (concert && concert !== 'new') ? concert.id : null;
+  
+  console.log('📡 SENDING SIGNAL TO DATABASE:', payload);
+  await onSave(targetId, payload);
+};
 
   if (!concert) return null;
 
