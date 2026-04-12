@@ -188,27 +188,36 @@ const THEMES = {
 };
 
 // 📸 THE GLOBAL UPLOADER
-async function uploadMedia(file, bucket) {
-  try {
-    // Get a clean extension and a random name to avoid collisions
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-    
-    // We use a simplified path to ensure it bypasses folder creation issues
-    const filePath = `${fileName}`;
+async function uploadToArchive(file, type) {
+  const bucketMap = {
+    'TICKET': 'tickets',      // Maps to: image_url
+    'SETLIST': 'setlists',    // Maps to: setlist_image_url
+    'POLAROID': 'polaroids',  // Maps to: personal_photo_url
+    'POSTER': 'posters'       // Maps to: festival_poster_url
+  };
+  
+  const bucket = bucketMap[type];
+  if (!bucket || !file) return null;
 
-    let { error: uploadError, data } = await supabase.storage
+  try {
+    const fileExt = file.name.split('.').pop();
+    // Unique fingerprinting for the archive
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    
+    // We use your UUID as the root folder for security & organization
+    const { data: { session } } = await supabase.auth.getSession();
+    const filePath = `${session?.user?.id}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
       .from(bucket)
       .upload(filePath, file);
 
     if (uploadError) throw uploadError;
 
-    // Get the public link
-    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath);
-    return urlData.publicUrl;
+    const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+    return data.publicUrl;
   } catch (error) {
-    console.error('Upload Error:', error.message);
-    alert('UPLOAD FAILED: ' + error.message);
+    console.error(`ARC_SIGNAL_LOSS: ${type}`, error.message);
     return null;
   }
 }
@@ -4925,6 +4934,27 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
     }
   }, [concert]);
 
+  const uploaderBox = (color) => ({
+  background: 'rgba(0,0,0,0.4)',
+  border: `1px dashed ${hexToRgba(color, 0.4)}`,
+  borderRadius: '8px',
+  padding: '12px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '8px',
+  transition: 'all 0.2s ease',
+  position: 'relative'
+});
+
+const signalFound = {
+  fontFamily: "'Space Mono'",
+  fontSize: '7px',
+  color: C.green,
+  letterSpacing: '1px',
+  marginTop: '4px',
+  fontWeight: 900
+};
+
   const knownArtists = useMemo(() =>
     [...new Set(concerts.flatMap(c => c.bands || []).filter(Boolean))].sort(),
     [concerts]
@@ -5079,103 +5109,92 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
             />
           </div>
 
-          {/* COLUMN 2: MEDIA & METADATA */}
-          <div>
-            <label style={{ ...labelStyle, color: C.purple }}>PERSONAL PHOTO ARCHIVE (POLAROIDS)</label>
-            <input 
-              type="file" 
-              accept="image/*"
-              disabled={uploading}
-              onChange={async (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                  setUploading(true);
-                  const url = await uploadMedia(file, 'polaroids');
-                  if (url) {
-                    const current = form.personal_photo_url ? form.personal_photo_url + ',' : '';
-                    set('personal_photo_url', current + url);
-                  }
-                  setUploading(false);
-                }
-              }}
-              style={{ ...inputStyle, fontSize: '10px', marginBottom: '5px' }}
-            />
-            <textarea 
-              style={{ ...inputStyle, height: 40, fontSize: '9px' }} 
-              value={form.personal_photo_url} 
-              onChange={e => set('personal_photo_url', e.target.value)} 
-              placeholder="Uploaded polaroid URLs appear here..." 
-            />
+          {/* COLUMN 2: ARCHAEOLOGY & MEDIA */}
+<div>
+  <label style={{ ...labelStyle, marginBottom: 15, display: 'block', color: C.gray }}>
+    // PHYSICAL ARTIFACT UPLOAD //
+  </label>
+  
+  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+    
+    {/* 1. TICKET STUB (Legacy image_url) */}
+    <div style={uploaderBox(C.teal)}>
+      <label style={labelStyle}>🎟️ TICKET STUB</label>
+      <input 
+        type="file" 
+        style={{ fontSize: '9px', width: '100%' }}
+        onChange={async (e) => {
+          const url = await uploadToArchive(e.target.files[0], 'TICKET');
+          if (url) set('image_url', url);
+        }} 
+      />
+      {form.image_url && <div style={signalFound}>STUB SIGNAL LOCKED</div>}
+    </div>
 
-            <label style={{ ...labelStyle, color: C.gold }}>STAGE ARTIFACTS (SETLISTS)</label>
-            <input 
-              type="file" 
-              accept="image/*"
-              disabled={uploading}
-              onChange={async (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                  setUploading(true);
-                  const url = await uploadMedia(file, 'setlists');
-                  if (url) {
-                    const current = form.setlist_image_url ? form.setlist_image_url + ',' : '';
-                    set('setlist_image_url', current + url);
-                  }
-                  setUploading(false);
-                }
-              }}
-              style={{ ...inputStyle, fontSize: '10px', marginBottom: '5px' }}
-            />
-            <textarea 
-              style={{ ...inputStyle, height: 40, fontSize: '9px' }} 
-              value={form.setlist_image_url} 
-              onChange={e => set('setlist_image_url', e.target.value)} 
-              placeholder="Uploaded setlist URLs appear here..."
-            />
+    {/* 2. STAGE SETLIST (setlist_image_url) */}
+    <div style={uploaderBox(C.gold)}>
+      <label style={labelStyle}>📋 STAGE SETLIST</label>
+      <input 
+        type="file" 
+        style={{ fontSize: '9px', width: '100%' }}
+        onChange={async (e) => {
+          const url = await uploadToArchive(e.target.files[0], 'SETLIST');
+          if (url) {
+            set('setlist_image_url', url);
+            set('has_setlist', true); // Auto-flags setlist status
+          }
+        }} 
+      />
+      {form.setlist_image_url && <div style={signalFound}>SETLIST ARCHIVED</div>}
+    </div>
 
-            <label style={{ ...labelStyle, color: C.cyan }}>MUSEUM MEMORABILIA (PICKS/STICKS)</label>
-            <input 
-              type="file" 
-              accept="image/*"
-              disabled={uploading}
-              onChange={async (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                  setUploading(true);
-                  const url = await uploadMedia(file, 'memorabilia');
-                  if (url) {
-                    const current = form.setlist_image_url ? form.setlist_image_url + ',' : '';
-                    set('setlist_image_url', current + url);
-                  }
-                  setUploading(false);
-                }
-              }}
-              style={{ ...inputStyle, fontSize: '10px', marginBottom: '5px' }}
-            />
+    {/* 3. PERSONAL PHOTO (personal_photo_url) */}
+    <div style={uploaderBox(C.purple)}>
+      <label style={labelStyle}>📸 POLAROID</label>
+      <input 
+        type="file" 
+        style={{ fontSize: '9px', width: '100%' }}
+        onChange={async (e) => {
+          const url = await uploadToArchive(e.target.files[0], 'POLAROID');
+          if (url) set('personal_photo_url', url);
+        }} 
+      />
+      {form.personal_photo_url && <div style={signalFound}>MEMORY CAPTURED</div>}
+    </div>
 
-            {uploading && (
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.teal, marginBottom: 10 }}>
-                ⟳ UPLOADING TO ARCHIVE...
-              </div>
-            )}
+    {/* 4. BOXSET POSTER (festival_poster_url) */}
+    <div style={uploaderBox(form.is_festival ? C.cyan : C.grayDim)}>
+      <label style={labelStyle}>🎨 {form.is_festival ? 'BOXSET POSTER' : 'GIG POSTER'}</label>
+      <input 
+        type="file" 
+        style={{ fontSize: '9px', width: '100%' }}
+        onChange={async (e) => {
+          const url = await uploadToArchive(e.target.files[0], 'POSTER');
+          if (url) set('festival_poster_url', url); 
+        }} 
+      />
+      {form.festival_poster_url && <div style={signalFound}>POSTER LINKED</div>}
+    </div>
+  </div>
 
-            <div style={{ display: 'flex', gap: 20, marginTop: 15 }}>
-              <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <input type="checkbox" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} />
-                FESTIVAL?
-              </label>
-              {form.is_festival && (
-                <input style={{ ...inputStyle, flex: 1, marginBottom: 0 }} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} placeholder="Fest Name" />
-              )}
-            </div>
-
-            {form.is_festival && (
-              <div style={{ marginTop: 10 }}>
-                <label style={labelStyle}>FESTIVAL DAY</label>
-                <input style={inputStyle} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} placeholder="Day 1, Friday, etc." />
-              </div>
-            )}
-          </div>
+  {/* Technical Path Readout (Helps you verify uploads) */}
+  <label style={labelStyle}>DATABASE PATHS // MULTI-SIGNAL</label>
+  <div style={{ 
+    padding: '10px', 
+    background: '#000', 
+    borderRadius: '4px', 
+    fontSize: '7px', 
+    fontFamily: "'Space Mono'", 
+    color: '#444', 
+    lineHeight: 1.5,
+    border: `1px solid ${C.border}`
+  }}>
+    STUB: {form.image_url || 'EMPTY'}<br/>
+    SET: {form.setlist_image_url || 'EMPTY'}<br/>
+    PHOTO: {form.personal_photo_url || 'EMPTY'}<br/>
+    POSTER: {form.festival_poster_url || 'EMPTY'}
+  </div>
+</div>
         </div>
 
         <div style={{ marginTop: 30, display: 'flex', gap: 15 }}>
