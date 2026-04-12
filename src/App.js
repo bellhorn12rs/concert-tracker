@@ -195,7 +195,7 @@ const THEMES = {
     
     // 🛰️ THE PRECISION MAP
     const bucketMap = {
-      'TICKET': 'Ticket Stubs', // <--- FIXED: Now matches your actual bucket name
+      'TICKET': 'Ticket Stubs', 
       'SETLIST': 'setlists',
       'POLAROID': 'polaroids',
       'POSTER': 'posters'
@@ -203,30 +203,27 @@ const THEMES = {
     
     try {
       const bucket = bucketMap[type];
-      // ... rest of the upload logic remains the same ...
-  if (!bucket || !file) return null;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const { data: { session } } = await supabase.auth.getSession();
+      const filePath = `${session?.user?.id}/${fileName}`;
 
-  try {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    
-    // Scoping to your User ID for RLS compliance
-    const { data: { session } } = await supabase.auth.getSession();
-    const filePath = `${session?.user?.id}/${fileName}`;
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file);
 
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(filePath, file);
+      if (uploadError) throw uploadError;
 
-    if (uploadError) throw uploadError;
-
-    const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
-    return data.publicUrl;
-  } catch (error) {
-    console.error(`ARC_SIGNAL_LOSS: ${type}`, error.message);
-    return null;
+      const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+      setUploading(false);
+      return data.publicUrl;
+    } catch (error) {
+      // 🚨 THIS WAS LIKELY MISSING or INCOMPLETE
+      console.error("Archive Error:", error.message);
+      setUploading(false);
+      return null;
+    }
   }
-}
 
 const THEME_ORDER = ['neon-noir','vintage-wax','midnight-blue','desert-sun','monochrome'];
 
