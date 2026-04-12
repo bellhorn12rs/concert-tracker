@@ -4876,42 +4876,41 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
   const [form, setForm] = useState(initialState);
   const [uploading, setUploading] = useState(false);
 
-  // 🛰️ THE GLOBAL SETTER
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
-  // 📸 THE GLOBAL UPLOADER (Integrated with EXIF)
   async function uploadToArchive(file, type) {
     if (!file) return null;
     setUploading(true);
-    
+
     // 🛰️ EXIF TEMPORAL SCAN
     if (type === 'POLAROID' || type === 'TICKET') {
       try {
-        EXIF.getData(file, function() {
-          const rawDate = EXIF.getTag(this, "DateTimeOriginal"); 
-          if (rawDate) {
-            const extractedDate = rawDate.split(' ')[0].replace(/:/g, '-');
-            setForm(prev => {
-              if (!prev.date || prev.date === '') {
-                console.log("🎯 TEMPORAL SIGNAL DETECTED:", extractedDate);
-                return { ...prev, date: extractedDate };
-              }
-              return prev;
-            });
-          }
-        });
+        if (typeof EXIF !== 'undefined') {
+          EXIF.getData(file, function() {
+            const rawDate = EXIF.getTag(this, "DateTimeOriginal");
+            if (rawDate) {
+              const extractedDate = rawDate.split(' ')[0].replace(/:/g, '-');
+              setForm(prev => {
+                if (!prev.date || prev.date === '') {
+                  return { ...prev, date: extractedDate };
+                }
+                return prev;
+              });
+            }
+          });
+        }
       } catch (e) {
         console.log("📡 NO EXIF METADATA DETECTED");
       }
     }
 
     const bucketMap = {
-      'TICKET': 'Ticket Stubs', 
+      'TICKET': 'Ticket Stubs',
       'SETLIST': 'setlists',
       'POLAROID': 'polaroids',
       'POSTER': 'posters'
     };
-    
+
     try {
       const bucket = bucketMap[type];
       const fileExt = file.name.split('.').pop();
@@ -4959,10 +4958,10 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
   return (
     <div style={modalOverlayStyle}>
       <div style={modalContentStyle}>
-        
+
         {/* 🟢 QUICK START DROP ZONE */}
         {concert === 'new' && !form.personal_photo_url && !form.image_url && (
-          <div 
+          <div
             onClick={() => document.getElementById('quick-start-upload').click()}
             style={{
               background: 'rgba(20, 255, 236, 0.03)',
@@ -4990,16 +4989,16 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
             <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.tealDim, marginTop: 10 }}>
               UPLOAD A POLAROID OR TICKET TO INITIALIZE TEMPORAL COORDS
             </div>
-            <input 
-              id="quick-start-upload" 
-              type="file" 
-              hidden 
+            <input
+              id="quick-start-upload"
+              type="file"
+              hidden
               onChange={async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
                 const url = await uploadToArchive(file, 'POLAROID');
                 if (url) set('personal_photo_url', url);
-              }} 
+              }}
             />
           </div>
         )}
@@ -5012,7 +5011,7 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 40 }}>
-          
+
           {/* COLUMN 1: VITAL STATS */}
           <div>
             <div style={inputGroupStyle}>
@@ -5037,31 +5036,31 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
           <div>
             <h3 style={{ fontFamily: "'Bebas Neue'", color: C.tealDim, fontSize: '1.2rem', marginBottom: 15 }}>ARTIFACTS</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              
-              <ArtifactSlot 
-                label="STUB" 
-                url={form.image_url} 
+
+              <ArtifactSlot
+                label="STUB"
+                url={form.image_url}
                 uploading={uploading}
                 onUpload={f => uploadToArchive(f, 'TICKET').then(url => url && set('image_url', url))}
               />
 
-              <ArtifactSlot 
-                label="POLAROID" 
-                url={form.personal_photo_url} 
+              <ArtifactSlot
+                label="POLAROID"
+                url={form.personal_photo_url}
                 uploading={uploading}
                 onUpload={f => uploadToArchive(f, 'POLAROID').then(url => url && set('personal_photo_url', url))}
               />
 
-              <ArtifactSlot 
-                label="SETLIST" 
-                url={form.setlist_image_url} 
+              <ArtifactSlot
+                label="SETLIST"
+                url={form.setlist_image_url}
                 uploading={uploading}
                 onUpload={f => uploadToArchive(f, 'SETLIST').then(url => url && set('setlist_image_url', url))}
               />
 
-              <ArtifactSlot 
-                label="POSTER" 
-                url={form.festival_poster_url} 
+              <ArtifactSlot
+                label="POSTER"
+                url={form.festival_poster_url}
                 uploading={uploading}
                 onUpload={f => uploadToArchive(f, 'POSTER').then(url => url && set('festival_poster_url', url))}
               />
@@ -5070,7 +5069,7 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
 
           {/* COLUMN 3: FINALIZATION */}
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-            <button 
+            <button
               onClick={handleFinalCommit}
               disabled={uploading}
               style={{
