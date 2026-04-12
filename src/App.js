@@ -5047,6 +5047,7 @@ export default function App() {
   const [editTarget, setEditTarget] = useState(null);
   const [shareCard, setShareCard] = useState(null);
   const [upcomingModal, setUpcomingModal] = useState(null);
+  const [nudgeTarget, setNudgeTarget] = useState(null);
 
   // ── 4. BROWSER & FILTER STATE ──
   const [search, setSearch] = useState('');
@@ -5077,6 +5078,21 @@ export default function App() {
 
   // ── 5. SYSTEM HANDLERS & EFFECTS ──
 
+  // 🔍 THE TEMPORAL SCANNER (Post-Show Nudge)
+  useEffect(() => {
+    if (upcoming.length > 0 && !loading) {
+      const today = new Date().toISOString().split('T')[0];
+      // Find the first upcoming show that happened yesterday or earlier
+      const staleShow = upcoming.find(s => s.date < today);
+      
+      if (staleShow) {
+        console.log("⚠️ STALE SIGNAL DETECTED:", staleShow.artist);
+        setNudgeTarget(staleShow);
+      }
+    }
+  }, [upcoming, loading]);
+
+  // SYSTEM INIT & AUTH
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -5414,7 +5430,21 @@ const handleSave = async (id, payload) => {
       alert("Save failed: " + err.message);
     }
   };
+const handleReconcile = async (upcomingId, payload) => {
+  // 1. Save to the main Archive (concerts table)
+  await handleSave(null, payload); 
 
+  // 2. Delete from the Upcoming table
+  const { error } = await supabase
+    .from('upcoming_concerts')
+    .delete()
+    .eq('id', upcomingId);
+
+  if (!error) {
+    setNudgeTarget(null);
+    fetchUpcoming(); // Refresh the marquee
+  }
+};
   async function handleUpcomingDelete(id) {
     if (window.confirm('Remove show?')) {
       await supabase.from('upcoming_concerts').delete().eq('id', id);
@@ -5795,6 +5825,38 @@ const handleSave = async (id, payload) => {
 </main>
 
         {/* ── MODALS LAYER ── */}
+        {nudgeTarget && (
+  <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
+    <div style={{ textAlign: 'center', maxWidth: 500, padding: 40 }}>
+      <div style={{ fontSize: '4rem', marginBottom: 20, animation: 'pulse 2s infinite' }}>📡</div>
+      <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: theme.teal, lineHeight: 1 }}>SIGNAL DETECTED</h2>
+      <p style={{ fontFamily: "'Space Mono'", fontSize: 12, color: '#fff', marginBottom: 30 }}>
+        THE ARCHIVE DETECTED A RECENT SHOW: <br/>
+        <span style={{ color: theme.gold, fontSize: '1.5rem' }}>{nudgeTarget.artist.toUpperCase()}</span><br/>
+        WAS AT {nudgeTarget.venue.toUpperCase()} ON {nudgeTarget.date}.
+      </p>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
+        <button 
+          onClick={() => {
+            setEditTarget({ ...nudgeTarget, isNudge: true });
+            setNudgeTarget(null);
+          }}
+          style={{ padding: '20px', background: theme.teal, color: '#000', border: 'none', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}
+        >
+          ARCHIVE NOW
+        </button>
+        <button 
+          onClick={() => setNudgeTarget(null)}
+          style={{ padding: '20px', background: 'transparent', border: `1px solid ${theme.border}`, color: theme.gray, borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}
+        >
+          IGNORE SIGNAL
+        </button>
+      </div>
+      <p style={{ marginTop: 20, fontFamily: "'Space Mono'", fontSize: 8, color: '#444' }}>THE SIGNAL WILL PERSIST UNTIL RECONCILED</p>
+    </div>
+  </div>
+)}
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
         
         {shareCard && (
@@ -5809,7 +5871,7 @@ const handleSave = async (id, payload) => {
           <EditModal 
             concert={editTarget === 'new' ? 'new' : editTarget} 
             onClose={() => setEditTarget(null)} 
-            onSave={handleSave} 
+            onSave={editTarget?.isNudge ? (id, payload) => handleReconcile(editTarget.id, payload) : handleSave}
             onDelete={handleDelete} 
             allConcerts={concerts}
           />
