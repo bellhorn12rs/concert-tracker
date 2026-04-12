@@ -188,16 +188,22 @@ const THEMES = {
 };
 
 // 📸 THE GLOBAL UPLOADER
-// 📡 THE GLOBAL ARCHIVE ROUTER
-async function uploadToArchive(file, type) {
-  const bucketMap = {
-    'TICKET': 'tickets',      // Dest: image_url
-    'SETLIST': 'setlists',    // Dest: setlist_image_url
-    'POLAROID': 'polaroids',  // Dest: personal_photo_url
-    'POSTER': 'posters'       // Dest: festival_poster_url
-  };
-  
-  const bucket = bucketMap[type];
+// NEW Unified Archive Router
+  async function uploadToArchive(file, type) {
+    if (!file) return null;
+    setUploading(true);
+    
+    // 🛰️ THE PRECISION MAP
+    const bucketMap = {
+      'TICKET': 'Ticket Stubs', // <--- FIXED: Now matches your actual bucket name
+      'SETLIST': 'setlists',
+      'POLAROID': 'polaroids',
+      'POSTER': 'posters'
+    };
+    
+    try {
+      const bucket = bucketMap[type];
+      // ... rest of the upload logic remains the same ...
   if (!bucket || !file) return null;
 
   try {
