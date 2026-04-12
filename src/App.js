@@ -3155,7 +3155,7 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
 
 // ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With Multi-Artist Setlinks) ─────────────
 
-/function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
+function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
   const isMobile = window.innerWidth < 768;
   const venueLabel = event.is_festival ? event.festival_name : event.venue;
   const primaryColor = clusterColor || C.teal;
