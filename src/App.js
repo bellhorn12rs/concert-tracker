@@ -3162,163 +3162,29 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
   const venueLabel = event.is_festival ? event.festival_name : event.venue;
   const primaryColor = clusterColor || C.teal;
   
-  const rawSetlists = (event.image_url || "").split(',').map(u => u.trim()).filter(Boolean);
-  const rawPhotos = (event.personal_photo_url || "").split(',').map(u => u.trim()).filter(Boolean);
-  const finalPhotos = rawPhotos.filter(url => !rawSetlists.includes(url));
+  // 🛰️ SIGNAL RECOVERY: Pull from the correct Supabase columns
+  // We parse the comma-separated strings into clean arrays
+  const finalSetlists = (event.setlist_image_url || "")
+    .split(',')
+    .map(u => u.trim())
+    .filter(Boolean);
 
-  // Determine the name to use for the giant background text
+  const finalPhotos = (event.personal_photo_url || "")
+    .split(',')
+    .map(u => u.trim())
+    .filter(Boolean);
+
   const headlinerName = (event.bands?.[0] || event.artist || "LIVE")?.toUpperCase();
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: isMobile ? 'column' : 'row', 
-      alignItems: isMobile ? 'stretch' : 'center', 
-      padding: isMobile ? '15px' : '40px 30px',
-      background: isClustered ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.02)',
-      borderRadius: '24px', 
-      border: `1px solid ${isClustered ? hexToRgba(primaryColor, 0.3) : C.border}`,
-      position: 'relative', 
-      overflow: 'hidden', 
-      gap: isMobile ? '20px' : '0',
-      marginBottom: isMobile ? '10px' : '0'
-    }}>
-      
-      {/* 🟢 THE BACKGROUND GHOST POSTER (Massive Band Name) */}
-      {!isMobile && (
-        <div style={{
-          position: 'absolute',
-          left: '-2%',
-          top: '-10%',
-          width: '100%',
-          height: '120%',
-          fontFamily: "'Bebas Neue'",
-          fontSize: '22rem', 
-          color: primaryColor,
-          opacity: 0.07, 
-          whiteSpace: 'nowrap',
-          pointerEvents: 'none',
-          zIndex: 0,
-          letterSpacing: '-12px', 
-          lineHeight: 0.8,
-          display: 'flex',
-          alignItems: 'flex-start',
-          WebkitMaskImage: 'linear-gradient(to right, black 20%, transparent 70%)',
-          maskImage: 'linear-gradient(to right, black 20%, transparent 70%)',
-        }}>
-          {headlinerName}
-        </div>
-      )}
+    <div style={{ /* ... your existing container styles ... */ }}>
+      {/* ... Ghost Poster background code ... */}
 
-      {/* 🟢 LEFT SECTION: ARCHAEOLOGY INTEL */}
-      <div style={{ 
-        flexShrink: 0, 
-        width: isMobile ? '100%' : '320px',
-        position: 'relative',
-        zIndex: 2,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '15px',
-        alignItems: isMobile ? 'center' : 'flex-start'
-      }}>
-        {/* 1. The Artifact */}
-        <div style={{ transform: isMobile ? 'scale(0.9)' : 'none' }}>
-          {event.is_festival 
-            ? <WristbandCard event={event} genreMap={genreMap} compact={true} onEdit={isAdmin ? onEdit : null} /> 
-            : <TicketStubCard event={event} onEdit={isAdmin ? onEdit : null} genreMap={genreMap} stubIdx={idx} />
-          }
-        </div>
+      {/* ... Left Section (Artifact/Ticket) code ... */}
 
-        {/* 2. Technical Coordinates */}
-        {!isMobile && (
-          <div style={{ 
-            paddingLeft: '10px', 
-            borderLeft: `1px solid ${hexToRgba(primaryColor, 0.3)}`,
-            fontFamily: "'Space Mono'", 
-            fontSize: '8px', 
-            color: C.grayDim,
-            letterSpacing: '2px'
-          }}>
-            <div>LOC_ID: {event.city?.toUpperCase()} // {event.state}</div>
-            <div style={{ marginTop: '4px', opacity: 0.5 }}>
-              GRID_COORD: {event.id?.substring(0, 8).toUpperCase()}
-            </div>
-          </div>
-        )}
-      </div>
+      {/* ... Middle Section (Lineup/Links) code ... */}
 
-      {/* 🟢 MIDDLE: THE INTERACTIVE LINEUP (Restored Links) */}
-      <div style={{ 
-        flex: 1, 
-        paddingLeft: isMobile ? '0' : '50px', 
-        zIndex: 2,
-        textAlign: isMobile ? 'center' : 'left'
-      }}>
-        <div style={{ 
-          fontFamily: "'Bebas Neue'", 
-          fontSize: isMobile ? '2.2rem' : '3.8rem', 
-          lineHeight: 0.85,
-          letterSpacing: '1px',
-          marginBottom: '15px',
-          color: '#fff',
-          textShadow: `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`,
-          position: 'relative',
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: isMobile ? 'center' : 'flex-start',
-          columnGap: '15px'
-        }}>
-          {event.bands?.map((band, bIdx) => (
-            <React.Fragment key={`${event.id}-link-${bIdx}`}>
-              <a 
-                href={getSetlistFmUrl(band, event.date)} 
-                target="_blank" rel="noreferrer"
-                style={{ 
-                  color: '#fff', 
-                  textDecoration: 'none',
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer'
-                }}
-                onMouseEnter={e => { 
-                  e.target.style.color = C.gold; 
-                  e.target.style.textShadow = `0 0 20px ${C.gold}`;
-                }}
-                onMouseLeave={e => { 
-                  e.target.style.color = '#fff'; 
-                  e.target.style.textShadow = `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`;
-                }}
-              >
-                {band.toUpperCase()}
-              </a>
-              {/* Dot Separator between names */}
-              {bIdx < event.bands.length - 1 && (
-                <span style={{ color: 'rgba(255,255,255,0.2)', pointerEvents: 'none' }}>·</span>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-        
-        {/* Metadata Row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px' }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: primaryColor, fontWeight: 900 }}>
-            {fmtDateShort(event.date)}
-          </div>
-          <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.1)' }} />
-          <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>
-            {event.venue?.toUpperCase()}
-          </div>
-          {isAdmin && (
-            <button 
-              onClick={() => onEdit(event)}
-              style={{ background: 'none', border: 'none', color: C.teal, fontFamily: "'Space Mono'", fontSize: '10px', cursor: 'pointer', padding: 0, opacity: 0.6, marginLeft: '10px' }}
-            >
-              [ EDIT ]
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* RIGHT: THE MEDIA CLUSTER */}
+      {/* 📸 RIGHT: THE RESTORED MEDIA CLUSTER */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
@@ -3332,17 +3198,31 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
           transform: isMobile ? 'scale(0.8)' : 'none',
           transformOrigin: isMobile ? 'center' : 'right'
         }}>
-          {rawSetlists.length > 0 && (
+          {/* 📄 THE SETLIST (Taped up to the left) */}
+          {finalSetlists.length > 0 && (
             <div style={{ display: 'flex' }}>
-              {rawSetlists.map((url, sIdx) => (
-                <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={rawSetlists.length} />
+              {finalSetlists.map((url, sIdx) => (
+                <SetlistPaper 
+                  key={`${event.id}-s-${sIdx}`} 
+                  src={url} 
+                  index={sIdx} 
+                  total={finalSetlists.length} 
+                />
               ))}
             </div>
           )}
+          
+          {/* 📸 THE POLAROID (Pinned to the right) */}
           {finalPhotos.length > 0 && (
-            <div style={{ display: 'flex' }}>
+            <div style={{ display: 'flex', marginLeft: '-20px' }}> {/* Negative margin creates the overlap */}
               {finalPhotos.map((url, pIdx) => (
-                <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
+                <PersonalPolaroid 
+                  key={`${event.id}-p-${pIdx}`} 
+                  src={url} 
+                  index={pIdx} 
+                  total={finalPhotos.length} 
+                  caption={venueLabel?.split(',')[0].toUpperCase()} 
+                />
               ))}
             </div>
           )}
