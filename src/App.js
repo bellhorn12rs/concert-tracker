@@ -5372,10 +5372,12 @@ export default function App() {
   // ── 7. DB ACTIONS ──
 const handleSave = async (id, payload) => {
   try {
+    // Standardize band list
     const bandList = Array.isArray(payload.bands)
       ? payload.bands
       : (payload.bands || '').split(',').map(b => b.trim()).filter(Boolean);
 
+    // 📡 THE FINAL HANDSHAKE: Mapping payload to DB columns
     const dataToStamp = {
       date: payload.date || null,
       bands: bandList,
@@ -5386,11 +5388,15 @@ const handleSave = async (id, payload) => {
       is_festival: Boolean(payload.is_festival),
       festival_name: payload.festival_name || null,
       festival_day: payload.festival_day || null,
-      has_setlist: Boolean(payload.has_setlist_names?.trim()),
+      
+      // ARCHEOLOGY MAPPING
+      image_url: payload.image_url || null,           // 🎟️ THE TICKET STUB
+      setlist_image_url: payload.setlist_image_url || null, // 📋 THE SETLIST
+      personal_photo_url: payload.personal_photo_url || null, // 📸 THE POLAROID
+      festival_poster_url: payload.festival_poster_url || null, // 🎨 THE POSTER
+      
+      has_setlist: Boolean(payload.setlist_image_url || payload.has_setlist_names?.trim()),
       has_setlist_names: payload.has_setlist_names || null,
-      image_url: payload.image_url || null,
-      personal_photo_url: payload.personal_photo_url || null,
-      setlist_image_url: payload.setlist_image_url || null,
       user_id: session?.user?.id || null,
     };
 
@@ -5404,7 +5410,7 @@ const handleSave = async (id, payload) => {
     if (result.error) throw result.error;
 
     setEditTarget(null);
-    await fetchConcerts();
+    await fetchConcerts(); // Refresh local signal
 
   } catch (error) {
     console.error("DATABASE REJECTED SAVE:", error.message);
