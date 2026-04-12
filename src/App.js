@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { supabase } from './supabaseClient';
+import EXIF from 'exif-js';
 // NEW: The User Brain Tools
 import { createContext, useContext } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -4883,16 +4884,16 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
     if (!file) return null;
     setUploading(true);
     
+    // 🛰️ EXIF TEMPORAL SCAN
     if (type === 'POLAROID' || type === 'TICKET') {
       try {
-        const EXIF = require('exif-js');
+        // We removed the require() line from here
         EXIF.getData(file, function() {
           const rawDate = EXIF.getTag(this, "DateTimeOriginal"); 
           if (rawDate) {
             const extractedDate = rawDate.split(' ')[0].replace(/:/g, '-');
             setForm(prev => {
               if (!prev.date || prev.date === '') {
-                console.log("🎯 TEMPORAL SIGNAL DETECTED:", extractedDate);
                 return { ...prev, date: extractedDate };
               }
               return prev;
