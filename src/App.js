@@ -3155,77 +3155,134 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
 
 // ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With Multi-Artist Setlinks) ─────────────
 
-// ─── 🖼️ THE UPDATED ROW COMPONENT (CLICKABLE HEADLINES & GHOST POSTER) ─────────────
-
-function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
+/function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
   const isMobile = window.innerWidth < 768;
   const venueLabel = event.is_festival ? event.festival_name : event.venue;
   const primaryColor = clusterColor || C.teal;
   
-  // 🛰️ SIGNAL RECOVERY: Pull from the correct Supabase columns
-  // We parse the comma-separated strings into clean arrays
-  const finalSetlists = (event.setlist_image_url || "")
-    .split(',')
-    .map(u => u.trim())
-    .filter(Boolean);
-
-  const finalPhotos = (event.personal_photo_url || "")
-    .split(',')
-    .map(u => u.trim())
-    .filter(Boolean);
-
-  const headlinerName = (event.bands?.[0] || event.artist || "LIVE")?.toUpperCase();
+  // 🛰️ DATA SCAVENGING
+  const finalSetlists = (event.setlist_image_url || "").split(',').map(u => u.trim()).filter(Boolean);
+  const finalPhotos = (event.personal_photo_url || "").split(',').map(u => u.trim()).filter(Boolean);
+  const bands = Array.isArray(event.bands) ? event.bands : [event.artist].filter(Boolean);
+  const headlinerName = (bands[0] || "LIVE")?.toUpperCase();
 
   return (
-    <div style={{ /* ... your existing container styles ... */ }}>
-      {/* ... Ghost Poster background code ... */}
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: isMobile ? 'column' : 'row', 
+      alignItems: isMobile ? 'stretch' : 'center', 
+      padding: isMobile ? '15px' : '40px 30px',
+      background: isClustered ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.02)',
+      borderRadius: '24px', 
+      border: `1px solid ${isClustered ? hexToRgba(primaryColor, 0.3) : C.border}`,
+      position: 'relative', 
+      overflow: 'hidden', 
+      gap: isMobile ? '20px' : '0',
+      marginBottom: isMobile ? '10px' : '0'
+    }}>
+      
+      {/* 🟢 THE GHOST POSTER (Upgraded with Pulse) */}
+      {!isMobile && (
+        <div style={{
+          position: 'absolute',
+          left: '-2%',
+          top: '-10%',
+          width: '100%',
+          height: '120%',
+          fontFamily: "'Bebas Neue'",
+          fontSize: '22rem', 
+          color: primaryColor,
+          opacity: 0.05, 
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+          zIndex: 0,
+          letterSpacing: '-12px', 
+          lineHeight: 0.8,
+          display: 'flex',
+          alignItems: 'flex-start',
+          WebkitMaskImage: 'linear-gradient(to right, black 20%, transparent 80%)',
+          animation: 'pulse-ghost 4s ease-in-out infinite' // ⚡ THE NEW PULSE
+        }}>
+          {headlinerName}
+        </div>
+      )}
 
-      {/* ... Left Section (Artifact/Ticket) code ... */}
-
-      {/* ... Middle Section (Lineup/Links) code ... */}
-
-      {/* 📸 RIGHT: THE RESTORED MEDIA CLUSTER */}
+      {/* 🟢 LEFT: THE TICKET STUB / WRISTBAND */}
       <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: isMobile ? 'center' : 'flex-end', 
-        minWidth: isMobile ? '100%' : '400px', 
+        flexShrink: 0, 
+        width: isMobile ? '100%' : '320px',
+        position: 'relative',
         zIndex: 2,
-        marginLeft: 'auto'
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '15px',
+        alignItems: isMobile ? 'center' : 'flex-start'
+      }}>
+        <div style={{ transform: isMobile ? 'scale(0.9)' : 'none' }}>
+          {event.is_festival 
+            ? <WristbandCard event={event} genreMap={genreMap} compact={true} onEdit={isAdmin ? onEdit : null} /> 
+            : <TicketStubCard event={event} onEdit={isAdmin ? onEdit : null} genreMap={genreMap} stubIdx={idx} />
+          }
+        </div>
+      </div>
+
+      {/* 🟢 MIDDLE: THE INTERACTIVE LINEUP (Restored Links) */}
+      <div style={{ 
+        flex: 1, 
+        paddingLeft: isMobile ? '0' : '50px', 
+        zIndex: 2,
+        textAlign: isMobile ? 'center' : 'left'
       }}>
         <div style={{ 
-          display: 'flex', 
-          transform: isMobile ? 'scale(0.8)' : 'none',
-          transformOrigin: isMobile ? 'center' : 'right'
+          fontFamily: "'Bebas Neue'", 
+          fontSize: isMobile ? '2.2rem' : '3.8rem', 
+          lineHeight: 0.85,
+          letterSpacing: '1px',
+          marginBottom: '15px',
+          color: '#fff',
+          textShadow: `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`,
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: isMobile ? 'center' : 'flex-start',
+          columnGap: '15px'
         }}>
-          {/* 📄 THE SETLIST (Taped up to the left) */}
-          {finalSetlists.length > 0 && (
-            <div style={{ display: 'flex' }}>
-              {finalSetlists.map((url, sIdx) => (
-                <SetlistPaper 
-                  key={`${event.id}-s-${sIdx}`} 
-                  src={url} 
-                  index={sIdx} 
-                  total={finalSetlists.length} 
-                />
-              ))}
-            </div>
-          )}
-          
-          {/* 📸 THE POLAROID (Pinned to the right) */}
-          {finalPhotos.length > 0 && (
-            <div style={{ display: 'flex', marginLeft: '-20px' }}> {/* Negative margin creates the overlap */}
-              {finalPhotos.map((url, pIdx) => (
-                <PersonalPolaroid 
-                  key={`${event.id}-p-${pIdx}`} 
-                  src={url} 
-                  index={pIdx} 
-                  total={finalPhotos.length} 
-                  caption={venueLabel?.split(',')[0].toUpperCase()} 
-                />
-              ))}
-            </div>
-          )}
+          {bands.map((band, bIdx) => (
+            <React.Fragment key={`${event.id}-link-${bIdx}`}>
+              <a 
+                href={getSetlistFmUrl(band, event.date)} 
+                target="_blank" rel="noreferrer"
+                style={{ color: '#fff', textDecoration: 'none', cursor: 'pointer', transition: '0.2s' }}
+                onMouseEnter={e => { e.target.style.color = C.gold; e.target.style.textShadow = `0 0 20px ${C.gold}`; }}
+                onMouseLeave={e => { e.target.style.color = '#fff'; e.target.style.textShadow = `0 0 30px ${hexToRgba(primaryColor, 0.4)}`; }}
+              >
+                {band.toUpperCase()}
+              </a>
+              {bIdx < bands.length - 1 && <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>}
+            </React.Fragment>
+          ))}
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px' }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: primaryColor, fontWeight: 900 }}>{fmtDateShort(event.date)}</div>
+          <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.1)' }} />
+          <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>{event.venue?.toUpperCase()}</div>
+        </div>
+      </div>
+
+      {/* 🟢 RIGHT: MEDIA CLUSTER (Stacked Look) */}
+      <div style={{ 
+        display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-end', 
+        minWidth: isMobile ? '100%' : '400px', zIndex: 2, marginLeft: 'auto'
+      }}>
+        <div style={{ display: 'flex', transform: isMobile ? 'scale(0.8)' : 'none', transformOrigin: 'right' }}>
+          {finalSetlists.map((url, sIdx) => (
+            <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={finalSetlists.length} />
+          ))}
+          <div style={{ marginLeft: finalSetlists.length > 0 ? '-30px' : '0', display: 'flex' }}>
+            {finalPhotos.map((url, pIdx) => (
+              <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
+            ))}
+          </div>
         </div>
       </div>
     </div>
