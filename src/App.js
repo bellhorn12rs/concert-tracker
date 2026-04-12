@@ -4887,13 +4887,13 @@ function EditModal({ concert, onClose, onSave, onDelete, concerts = [] }) {
     // 🛰️ EXIF TEMPORAL SCAN
     if (type === 'POLAROID' || type === 'TICKET') {
       try {
-        // We removed the require() line from here
         EXIF.getData(file, function() {
           const rawDate = EXIF.getTag(this, "DateTimeOriginal"); 
           if (rawDate) {
             const extractedDate = rawDate.split(' ')[0].replace(/:/g, '-');
             setForm(prev => {
               if (!prev.date || prev.date === '') {
+                console.log("🎯 TEMPORAL SIGNAL DETECTED:", extractedDate);
                 return { ...prev, date: extractedDate };
               }
               return prev;
