@@ -4920,26 +4920,38 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
 
   // 🟢 PRE-FILL LOGIC: Ensures existing bands/genres load correctly on edit
   useEffect(() => {
-    if (concert && concert !== 'new') {
-      // 1. Ensure bands is always an array of objects
-      let loadedBands = Array.isArray(concert.bands) ? [...concert.bands] : [];
-
-      // 2. Fallback: If bands array is empty but we have an 'artist' string (old data)
-      // we auto-generate the first band row so the user doesn't have to re-type it.
-      if (loadedBands.length === 0 && concert.artist) {
-        loadedBands = [{ name: concert.artist, genre: concert.genre || 'Indie Rock' }];
-      }
-
-      setForm({ 
-        ...initialState, 
-        ...concert, 
-        artist: concert.artist || '', // Prefills the Headliner box
-        bands: loadedBands           // Prefills the Lineup list
+  if (concert && concert !== 'new') {
+    
+    // Normalize bands — handle strings, objects, and empty arrays
+    let loadedBands = [];
+    if (Array.isArray(concert.bands) && concert.bands.length > 0) {
+      loadedBands = concert.bands.map(b => {
+        if (typeof b === 'string') {
+          // Legacy string format — convert to object
+          return { name: b, genre: concert.genre || 'Indie Rock' };
+        }
+        if (typeof b === 'object' && b.name) {
+          // Already the new object format
+          return b;
+        }
+        return { name: '', genre: 'Indie Rock' };
       });
-    } else {
-      setForm(initialState);
+    } else if (concert.artist) {
+      // Very old entries with no bands array at all
+      loadedBands = [{ name: concert.artist, genre: concert.genre || 'Indie Rock' }];
     }
-  }, [concert]);
+
+    setForm({
+      ...initialState,
+      ...concert,
+      artist: loadedBands[0]?.name || concert.artist || '',
+      bands: loadedBands
+    });
+
+  } else {
+    setForm(initialState);
+  }
+}, [concert]);
 
   const gateBtn = (color) => ({
     background: hexToRgba(color, 0.1), border: `1px solid ${color}`, color: '#fff',
@@ -5034,7 +5046,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                     <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 30px', gap: 8, marginBottom: 8 }}>
                       <input 
                         style={{ ...inputStyle, marginBottom: 0, fontSize: '11px' }} 
-                        value={b.name} 
+                        value={b.name || ''}
                         placeholder="Band Name"
                         onChange={e => {
                           const updated = [...form.bands];
@@ -5044,7 +5056,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                       />
                       <select 
                         style={{ ...inputStyle, marginBottom: 0, fontSize: '10px' }} 
-                        value={b.genre} 
+                        value={b.genre || ''} 
                         onChange={e => {
                           const updated = [...form.bands];
                           updated[idx].genre = e.target.value;
