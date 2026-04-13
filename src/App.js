@@ -4342,7 +4342,8 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
               <tr key={c.id} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 1 ? C.bgCardAlt : 'transparent' }}>
                 <td style={{ padding: '9px 12px', fontFamily: "'Space Mono',monospace", fontSize: '0.7rem', color: C.gray, whiteSpace: 'nowrap' }}>{fmtDate(c.date)}</td>
                 <td className="row-hover" onClick={() => onEdit(c)} style={{ padding: '9px 12px', color: C.white, fontWeight: 500, cursor: 'pointer' }}>
-                  {(c.bands || []).slice(0, 3).join(', ')}{c.bands?.length > 3 ? ` +${c.bands.length - 3}` : ''}
+                  {(c.bands || []).slice(0, 3).map(b => typeof b === 'string' ? b : b.name).join(', ')}
+{c.bands?.length > 3 ? ` +${c.bands.length - 3}` : ''}
                 </td>
                 <td style={{ padding: '9px 12px', color: C.gray }}>{c.venue || '—'}</td>
                 <td style={{ padding: '9px 12px', color: C.gray }}>{c.city || '—'}</td>
