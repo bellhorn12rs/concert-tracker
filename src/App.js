@@ -4977,52 +4977,108 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
         )}
 
         {/* ── STEP 3: THE ACTUAL FORM ── */}
+        {/* ── STEP 3: THE ACTUAL FORM (RESTORED & EXPANDED) ── */}
         {entryStep === 'form' && (
           <div className="fade-in" style={{ textAlign: 'left' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
               <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, margin: 0 }}>
-                {concert === 'new' ? 'SIGNAL LOCKED' : 'EDIT ARCHIVE'}
+                {concert === 'new' ? 'INITIALIZE SIGNAL' : 'RE-SYNC ARCHIVE'}
               </h2>
-              <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+              <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer', opacity: 0.5 }}>×</button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 30 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: 30 }}>
+              
+              {/* LEFT COLUMN: TEXT DATA */}
               <div>
                 <label style={labelStyle}>HEADLINER</label>
-                <input style={inputStyle} value={form.artist} onChange={e => set('artist', e.target.value)} />
-                <label style={labelStyle}>DATE</label>
-                <input type="date" style={{ ...inputStyle, colorScheme: 'dark' }} value={form.date} onChange={e => set('date', e.target.value)} />
+                <input style={inputStyle} value={form.artist} onChange={e => set('artist', e.target.value)} placeholder="Artist Name" />
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 10 }}>
+                  <div>
+                    <label style={labelStyle}>DATE</label>
+                    <input type="date" style={{ ...inputStyle, colorScheme: 'dark' }} value={form.date} onChange={e => set('date', e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>GENRE</label>
+                    <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.genre} onChange={e => set('genre', e.target.value)}>
+                      {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+                  </div>
+                </div>
+
                 <label style={labelStyle}>VENUE</label>
-                <input style={inputStyle} value={form.venue} onChange={e => set('venue', e.target.value)} />
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
+                <input style={inputStyle} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="Venue Name" />
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1fr', gap: 10 }}>
                   <input style={inputStyle} value={form.city} onChange={e => set('city', e.target.value)} placeholder="City" />
                   <input style={inputStyle} value={form.state} onChange={e => set('state', e.target.value)} placeholder="ST" maxLength={2} />
                 </div>
+
+                <label style={labelStyle}>SUPPORT / OTHER BANDS (COMMA SEPARATED)</label>
+                <input style={inputStyle} value={Array.isArray(form.bands) ? form.bands.join(', ') : form.bands} onChange={e => set('bands', e.target.value.split(',').map(b => b.trim()))} placeholder="Opener 1, Opener 2..." />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
-                  <div style={{ background: form.image_url ? '#00cc8822' : '#111', padding: 15, borderRadius: 8, border: `1px solid ${form.image_url ? '#00cc88' : '#222'}`, textAlign: 'center' }}>
+              {/* RIGHT COLUMN: MEDIA & ACTIONS */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+                <label style={{ ...labelStyle, color: C.grayDim }}>// PHYSICAL ARTIFACTS</label>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {/* Reuse the mini-slots for ongoing uploads */}
+                  <div onClick={() => document.getElementById('edit-stub').click()} style={{ background: form.image_url ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${form.image_url ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
                     <div style={{ fontSize: '1.2rem' }}>{form.image_url ? '✅' : '🎟️'}</div>
                     <div style={{ fontSize: 7, marginTop: 5, color: '#666', fontFamily: "'Space Mono'" }}>STUB</div>
+                    <input id="edit-stub" type="file" hidden onChange={async (e) => { const url = await uploadToArchive(e.target.files[0], 'TICKET'); if (url) set('image_url', url); }} />
                   </div>
-                  <div style={{ background: form.personal_photo_url ? '#00cc8822' : '#111', padding: 15, borderRadius: 8, border: `1px solid ${form.personal_photo_url ? '#00cc88' : '#222'}`, textAlign: 'center' }}>
+
+                  <div onClick={() => document.getElementById('edit-pic').click()} style={{ background: form.personal_photo_url ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${form.personal_photo_url ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
                     <div style={{ fontSize: '1.2rem' }}>{form.personal_photo_url ? '✅' : '📸'}</div>
                     <div style={{ fontSize: 7, marginTop: 5, color: '#666', fontFamily: "'Space Mono'" }}>PHOTO</div>
+                    <input id="edit-pic" type="file" hidden onChange={async (e) => { const url = await uploadToArchive(e.target.files[0], 'POLAROID'); if (url) set('personal_photo_url', url); }} />
+                  </div>
+
+                  <div onClick={() => document.getElementById('edit-set').click()} style={{ background: form.setlist_image_url ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${form.setlist_image_url ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
+                    <div style={{ fontSize: '1.2rem' }}>{form.setlist_image_url ? '✅' : '📋'}</div>
+                    <div style={{ fontSize: 7, marginTop: 5, color: '#666', fontFamily: "'Space Mono'" }}>SETLIST</div>
+                    <input id="edit-set" type="file" hidden onChange={async (e) => { const url = await uploadToArchive(e.target.files[0], 'SETLIST'); if (url) set('setlist_image_url', url); }} />
+                  </div>
+
+                  <div onClick={() => document.getElementById('edit-post').click()} style={{ background: form.festival_poster_url ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${form.festival_poster_url ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
+                    <div style={{ fontSize: '1.2rem' }}>{form.festival_poster_url ? '✅' : '🎨'}</div>
+                    <div style={{ fontSize: 7, marginTop: 5, color: '#666', fontFamily: "'Space Mono'" }}>POSTER</div>
+                    <input id="edit-post" type="file" hidden onChange={async (e) => { const url = await uploadToArchive(e.target.files[0], 'POSTER'); if (url) set('festival_poster_url', url); }} />
                   </div>
                 </div>
 
-                <button 
-                  onClick={() => onSave((concert && concert !== 'new') ? concert.id : null, form)}
-                  disabled={uploading}
-                  style={{ marginTop: 'auto', width: '100%', padding: '20px', background: uploading ? '#222' : C.teal, color: '#000', border: 'none', borderRadius: '8px', fontFamily: "'Bebas Neue'", fontSize: '1.5rem', cursor: uploading ? 'not-allowed' : 'pointer', boxShadow: `0 0 20px ${hexToRgba(C.teal, 0.3)}` }}
-                >
-                  {uploading ? 'SYNCING...' : 'COMMIT TO ARCHIVE'}
-                </button>
+                <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <button 
+                    onClick={() => onSave((concert && concert !== 'new') ? concert.id : null, form)}
+                    disabled={uploading}
+                    style={{ width: '100%', padding: '18px', background: uploading ? '#222' : C.teal, color: '#000', border: 'none', borderRadius: '8px', fontFamily: "'Bebas Neue'", fontSize: '1.5rem', cursor: uploading ? 'not-allowed' : 'pointer', boxShadow: `0 0 20px ${hexToRgba(C.teal, 0.3)}` }}
+                  >
+                    {uploading ? 'SYNCING...' : 'COMMIT TO ARCHIVE'}
+                  </button>
+
+                  {/* 🟢 THE RESTORED DELETE BUTTON */}
+                  {concert !== 'new' && (
+                    <button 
+                      onClick={() => onDelete(concert.id)}
+                      style={{ background: 'none', border: '1px solid #441111', color: '#ff4444', padding: '10px', borderRadius: '6px', fontFamily: "'Space Mono'", fontSize: '9px', letterSpacing: '1px', cursor: 'pointer', transition: '0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#44111133'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                    >
+                      DELETE SIGNAL PERMANENTLY
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
       </div>
     </div>
   );
