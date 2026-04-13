@@ -4840,7 +4840,6 @@ function TrackRecordLogo({ size = 40 }) {
 }
 
 function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
-  // 🟢 FIXED: isMobile moved outside of the state object
   const isMobile = window.innerWidth < 768;
 
   const initialState = {
@@ -4849,8 +4848,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     venue: '', 
     city: '', 
     state: '',
-    // 🟢 CRITICAL: This must be an empty array, not an empty string or null
-    bands: [], 
+    bands: [], // Array of objects: [{name: '', genre: ''}]
     is_festival: false, 
     festival_name: '',
     image_url: '', 
@@ -4861,8 +4859,6 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
 
   const [form, setForm] = useState(initialState);
   const [uploading, setUploading] = useState(false);
-  
-  // 🛰️ SIGNAL-FIRST STATE: 'gate' (Question), 'type' (Selection), 'form' (Final Form)
   const [entryStep, setEntryStep] = useState(concert === 'new' ? 'gate' : 'form');
 
   const set = (k, v) => {
@@ -4892,13 +4888,12 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
               if (rawDate) {
                 const extractedDate = rawDate.split(' ')[0].replace(/:/g, '-');
                 set('date', extractedDate);
-                console.log("🎯 TEMPORAL SIGNAL LOCKED:", extractedDate);
               }
               resolve();
             });
           });
         }
-      } catch (e) { console.log("📡 NO EXIF METADATA"); }
+      } catch (e) { console.log("📡 NO EXIF"); }
     }
 
     const bucketMap = { 'TICKET': 'Ticket Stubs', 'SETLIST': 'setlists', 'POLAROID': 'polaroids', 'POSTER': 'posters' };
@@ -4915,10 +4910,9 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
 
       const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
       setUploading(false);
-      setEntryStep('form'); // 🟢 Auto-advance after signal is locked
+      setEntryStep('form'); 
       return data.publicUrl;
     } catch (error) {
-      console.error("Archive Error:", error.message);
       setUploading(false);
       return null;
     }
@@ -4926,7 +4920,9 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
 
   useEffect(() => {
     if (concert && concert !== 'new') {
-      setForm({ ...initialState, ...concert });
+      // Ensure bands is always an array for the .map() function
+      const loadedBands = Array.isArray(concert.bands) ? concert.bands : [];
+      setForm({ ...initialState, ...concert, bands: loadedBands });
     } else {
       setForm(initialState);
     }
@@ -4935,7 +4931,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   const gateBtn = (color) => ({
     background: hexToRgba(color, 0.1), border: `1px solid ${color}`, color: '#fff',
     padding: '30px', borderRadius: '12px', cursor: 'pointer', fontFamily: "'Bebas Neue'",
-    fontSize: '1.5rem', letterSpacing: '2px', transition: '0.2s all'
+    fontSize: '1.5rem', letterSpacing: '2px'
   });
 
   const labelStyle = { fontSize: 9, color: C.teal, fontFamily: "'Space Mono'", display: 'block', marginBottom: 4, letterSpacing: 1 };
@@ -4945,26 +4941,22 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(15px)' }}>
-      <div className="fade-in" style={{ background: '#0a0a0c', border: `2px solid ${C.teal}`, borderRadius: 16, padding: 40, width: '90%', maxWidth: 600, textAlign: 'center', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div className="fade-in" style={{ background: '#0a0a0c', border: `2px solid ${C.teal}`, borderRadius: 16, padding: isMobile ? 20 : 40, width: '95%', maxWidth: 750, maxHeight: '95vh', overflowY: 'auto' }}>
         
-        {/* ── STEP 1: THE GATE ── */}
         {entryStep === 'gate' && (
-          <div className="fade-in">
+          <div className="fade-in" style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '3rem', marginBottom: 20 }}>📸</div>
-            <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', marginBottom: 10 }}>DO YOU HAVE A PHOTO FROM THE SHOW?</h2>
-            <p style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.tealDim, marginBottom: 30 }}>WE CAN AUTO-SYNC THE DATE FROM YOUR ARTIFACTS</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-              <button onClick={() => setEntryStep('type')} style={gateBtn(C.teal)}>YES, I HAVE A PHOTO</button>
-              <button onClick={() => setEntryStep('form')} style={gateBtn(C.grayDim)}>NO, SKIP TO FORM</button>
+            <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff' }}>DO YOU HAVE A PHOTO?</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 30 }}>
+              <button onClick={() => setEntryStep('type')} style={gateBtn(C.teal)}>YES</button>
+              <button onClick={() => setEntryStep('form')} style={gateBtn(C.grayDim)}>NO, SKIP</button>
             </div>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#444', marginTop: 20, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 }}>ABORT ENTRY</button>
           </div>
         )}
 
-        {/* ── STEP 2: TYPE SELECTION ── */}
         {entryStep === 'type' && (
-          <div className="fade-in">
-            <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#fff', marginBottom: 30 }}>WHICH TYPE OF ARTIFACT?</h2>
+          <div className="fade-in" style={{ textAlign: 'center' }}>
+            <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#fff', marginBottom: 30 }}>SELECT ARTIFACT</h2>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
               <div onClick={() => document.getElementById('init-stub').click()} style={gateBtn(C.teal)}>
                 TICKET STUB
@@ -4974,108 +4966,103 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                 }} />
               </div>
               <div onClick={() => document.getElementById('init-pic').click()} style={gateBtn(C.purple)}>
-                POLAROID / PHOTO
+                PHOTO
                 <input id="init-pic" type="file" hidden onChange={async (e) => {
                   const url = await uploadToArchive(e.target.files[0], 'POLAROID');
                   if (url) set('personal_photo_url', url);
                 }} />
               </div>
             </div>
-            <button onClick={() => setEntryStep('gate')} style={{ background: 'none', border: 'none', color: '#666', marginTop: 20, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 }}>← GO BACK</button>
           </div>
         )}
 
-        {/* ── STEP 3: THE ACTUAL FORM ── */}
-        {/* ── STEP 3: THE ACTUAL FORM (RESTORED & EXPANDED) ── */}
         {entryStep === 'form' && (
-          <div className="fade-in" style={{ textAlign: 'left' }}>
+          <div className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
-              <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, margin: 0 }}>
+              <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal }}>
                 {concert === 'new' ? 'INITIALIZE SIGNAL' : 'RE-SYNC ARCHIVE'}
               </h2>
-              <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer', opacity: 0.5 }}>×</button>
+              <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: 30 }}>
               
               {/* LEFT COLUMN: TEXT DATA */}
               <div>
-                <label style={labelStyle}>HEADLINER</label>
-                <input style={inputStyle} value={form.artist} onChange={e => set('artist', e.target.value)} placeholder="Artist Name" />
-                
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 15 }}>
+                  <label style={labelStyle}>FESTIVAL MODE</label>
+                  <input type="checkbox" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} style={{ accentColor: C.teal }} />
+                </div>
+
+                <label style={labelStyle}>{form.is_festival ? 'FESTIVAL NAME' : 'HEADLINER'}</label>
+                <input style={inputStyle} value={form.is_festival ? form.festival_name : form.artist} onChange={e => set(form.is_festival ? 'festival_name' : 'artist', e.target.value)} />
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 10 }}>
                   <div>
                     <label style={labelStyle}>DATE</label>
                     <input type="date" style={{ ...inputStyle, colorScheme: 'dark' }} value={form.date} onChange={e => set('date', e.target.value)} />
                   </div>
                   <div>
-                    <label style={labelStyle}>GENRE</label>
-                    <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.genre} onChange={e => set('genre', e.target.value)}>
-                      {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
-                    </select>
+                    <label style={labelStyle}>VENUE</label>
+                    <input style={inputStyle} value={form.venue} onChange={e => set('venue', e.target.value)} />
                   </div>
                 </div>
 
-                <label style={labelStyle}>VENUE</label>
-                <input style={inputStyle} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="Venue Name" />
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1fr', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
                   <input style={inputStyle} value={form.city} onChange={e => set('city', e.target.value)} placeholder="City" />
                   <input style={inputStyle} value={form.state} onChange={e => set('state', e.target.value)} placeholder="ST" maxLength={2} />
                 </div>
 
-                <label style={labelStyle}>SUPPORT / OTHER BANDS (COMMA SEPARATED)</label>
-                <input style={inputStyle} value={Array.isArray(form.bands) ? form.bands.join(', ') : form.bands} onChange={e => set('bands', e.target.value.split(',').map(b => b.trim()))} placeholder="Opener 1, Opener 2..." />
+                <label style={{ ...labelStyle, color: C.teal, marginTop: 10 }}>LINEUP & GENRES</label>
+                <div style={{ background: '#000', border: '1px solid #222', borderRadius: 8, padding: 12 }}>
+                  {form.bands.map((b, idx) => (
+                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 30px', gap: 8, marginBottom: 8 }}>
+                      <input 
+                        style={{ ...inputStyle, marginBottom: 0, fontSize: '11px' }} 
+                        value={b.name} 
+                        onChange={e => {
+                          const updated = [...form.bands];
+                          updated[idx].name = e.target.value;
+                          set('bands', updated);
+                        }}
+                      />
+                      <select 
+                        style={{ ...inputStyle, marginBottom: 0, fontSize: '10px' }} 
+                        value={b.genre} 
+                        onChange={e => {
+                          const updated = [...form.bands];
+                          updated[idx].genre = e.target.value;
+                          set('bands', updated);
+                        }}
+                      >
+                        {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                      <button onClick={() => set('bands', form.bands.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', color: '#ff4444' }}>×</button>
+                    </div>
+                  ))}
+                  <button onClick={() => set('bands', [...form.bands, { name: '', genre: 'Jam' }])} style={{ width: '100%', padding: '8px', background: '#0a0a0a', color: C.teal, border: '1px dashed #333', borderRadius: 4, fontSize: 9 }}>+ ADD BAND</button>
+                </div>
               </div>
 
-              {/* RIGHT COLUMN: MEDIA & ACTIONS */}
+              {/* RIGHT COLUMN: ARTIFACTS */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
-                <label style={{ ...labelStyle, color: C.grayDim }}>// PHYSICAL ARTIFACTS</label>
-                
+                <label style={labelStyle}>// PHYSICAL ARTIFACTS</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  {/* Reuse the mini-slots for ongoing uploads */}
-                  <div onClick={() => document.getElementById('edit-stub').click()} style={{ background: form.image_url ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${form.image_url ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
-                    <div style={{ fontSize: '1.2rem' }}>{form.image_url ? '✅' : '🎟️'}</div>
-                    <div style={{ fontSize: 7, marginTop: 5, color: '#666', fontFamily: "'Space Mono'" }}>STUB</div>
-                    <input id="edit-stub" type="file" hidden onChange={async (e) => { const url = await uploadToArchive(e.target.files[0], 'TICKET'); if (url) set('image_url', url); }} />
-                  </div>
-
-                  <div onClick={() => document.getElementById('edit-pic').click()} style={{ background: form.personal_photo_url ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${form.personal_photo_url ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
-                    <div style={{ fontSize: '1.2rem' }}>{form.personal_photo_url ? '✅' : '📸'}</div>
-                    <div style={{ fontSize: 7, marginTop: 5, color: '#666', fontFamily: "'Space Mono'" }}>PHOTO</div>
-                    <input id="edit-pic" type="file" hidden onChange={async (e) => { const url = await uploadToArchive(e.target.files[0], 'POLAROID'); if (url) set('personal_photo_url', url); }} />
-                  </div>
-
-                  <div onClick={() => document.getElementById('edit-set').click()} style={{ background: form.setlist_image_url ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${form.setlist_image_url ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
-                    <div style={{ fontSize: '1.2rem' }}>{form.setlist_image_url ? '✅' : '📋'}</div>
-                    <div style={{ fontSize: 7, marginTop: 5, color: '#666', fontFamily: "'Space Mono'" }}>SETLIST</div>
-                    <input id="edit-set" type="file" hidden onChange={async (e) => { const url = await uploadToArchive(e.target.files[0], 'SETLIST'); if (url) set('setlist_image_url', url); }} />
-                  </div>
-
-                  <div onClick={() => document.getElementById('edit-post').click()} style={{ background: form.festival_poster_url ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${form.festival_poster_url ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
-                    <div style={{ fontSize: '1.2rem' }}>{form.festival_poster_url ? '✅' : '🎨'}</div>
-                    <div style={{ fontSize: 7, marginTop: 5, color: '#666', fontFamily: "'Space Mono'" }}>POSTER</div>
-                    <input id="edit-post" type="file" hidden onChange={async (e) => { const url = await uploadToArchive(e.target.files[0], 'POSTER'); if (url) set('festival_poster_url', url); }} />
-                  </div>
+                  {[ {k:'image_url', l:'STUB', i:'🎟️', id:'e-stub', t:'TICKET'}, {k:'personal_photo_url', l:'PHOTO', i:'📸', id:'e-pic', t:'POLAROID'}, {k:'setlist_image_url', l:'SETLIST', i:'📋', id:'e-set', t:'SETLIST'}, {k:'festival_poster_url', l:'POSTER', i:'🎨', id:'e-post', t:'POSTER'} ].map(item => (
+                    <div key={item.k} onClick={() => document.getElementById(item.id).click()} style={{ background: form[item.k] ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${form[item.k] ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
+                      <div style={{ fontSize: '1.2rem' }}>{form[item.k] ? '✅' : item.i}</div>
+                      <div style={{ fontSize: 7, marginTop: 5, color: '#666' }}>{item.l}</div>
+                      <input id={item.id} type="file" hidden onChange={async (e) => { const url = await uploadToArchive(e.target.files[0], item.t); if (url) set(item.k, url); }} />
+                    </div>
+                  ))}
                 </div>
 
                 <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <button 
-                    onClick={() => onSave((concert && concert !== 'new') ? concert.id : null, form)}
-                    disabled={uploading}
-                    style={{ width: '100%', padding: '18px', background: uploading ? '#222' : C.teal, color: '#000', border: 'none', borderRadius: '8px', fontFamily: "'Bebas Neue'", fontSize: '1.5rem', cursor: uploading ? 'not-allowed' : 'pointer', boxShadow: `0 0 20px ${hexToRgba(C.teal, 0.3)}` }}
-                  >
+                  <button onClick={() => onSave((concert && concert !== 'new') ? concert.id : null, form)} disabled={uploading} style={{ width: '100%', padding: '18px', background: uploading ? '#222' : C.teal, color: '#000', borderRadius: '8px', fontFamily: "'Bebas Neue'", fontSize: '1.5rem' }}>
                     {uploading ? 'SYNCING...' : 'COMMIT TO ARCHIVE'}
                   </button>
-
-                  {/* 🟢 THE RESTORED DELETE BUTTON */}
                   {concert !== 'new' && (
-                    <button 
-                      onClick={() => onDelete(concert.id)}
-                      style={{ background: 'none', border: '1px solid #441111', color: '#ff4444', padding: '10px', borderRadius: '6px', fontFamily: "'Space Mono'", fontSize: '9px', letterSpacing: '1px', cursor: 'pointer', transition: '0.2s' }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#44111133'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                    >
+                    <button onClick={() => onDelete(concert.id)} style={{ background: 'none', border: '1px solid #441111', color: '#ff4444', padding: '10px', borderRadius: '6px', fontSize: '9px' }}>
                       DELETE SIGNAL PERMANENTLY
                     </button>
                   )}
@@ -5088,7 +5075,6 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     </div>
   );
 }
- 
 // ─── MAIN APP ────────────────────────────────────────────────────
 export default function App() {
   // ── 1. AUTH & SYSTEM STATE ──
