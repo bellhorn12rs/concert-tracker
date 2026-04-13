@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient';
 import { createContext, useContext } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
+const getBandName = (b) => typeof b === 'string' ? b : (b?.name || '');
 // ─── UTILITY ──────────────────────────────────────────────────────────────────
 function hexToRgba(hex, alpha) {
   if (!hex || typeof hex !== 'string') return `rgba(255,255,255,${alpha})`;
@@ -1016,8 +1017,7 @@ function NewsTicker({ concerts, artistCounts, genreStats }) {
     if (genreStats[0]) bits.push(`🧬 DOMINANT GENRE: ${genreStats[0].name.toUpperCase()} WITH ${genreStats[0].count} SETS`);
     
     concerts.slice(0,3).forEach(c => {
-        const bands = Array.isArray(c.bands) ? c.bands.join(', ') : (c.artist || 'UNKNOWN');
-        bits.push(`⚡ RECENTLY ATTENDED: ${bands.toUpperCase()} — ${fmtDateShort(c.date).toUpperCase()}`);
+const bands = Array.isArray(c.bands) ? c.bands.map(getBandName).join(', ') : (c.artist || 'UNKNOWN');        bits.push(`⚡ RECENTLY ATTENDED: ${bands.toUpperCase()} — ${fmtDateShort(c.date).toUpperCase()}`);
     });
 
     bits.push(`📍 ${new Set(concerts.map(c=>c.state).filter(Boolean)).size} STATES CONQUERED`);
@@ -1084,7 +1084,7 @@ function OnThisDay({ concerts }) {
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, margin:'16px 0' }}>
       <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.3em', textTransform:'uppercase', color:C.tealDim }}>📅 On This Day — {dateLabel}</div>
       {matches.map(ev => {
-        const bands = (ev.bands||[]).join(', ');
+        const bands = (ev.bands||[]).map(getBandName).join(', ');
         const location = [ev.venue, ev.city, ev.state].filter(Boolean).join(', ');
         const year = getYear(ev.date);
         const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${bands} ${ev.venue||ev.city} ${year} live`)}`;
@@ -1586,8 +1586,7 @@ function RandomShow({ concerts }) {
                 borderLeft: `2px solid ${show.is_festival ? C.gold : C.purple}`,
                 paddingLeft: '8px'
               }}>
-                const bandName = typeof b === 'string' ? b : b.name;
-bandName.toUpperCase()
+                {getBandName(b).toUpperCase()}
               </div>
             ))}
           </div>
@@ -2335,8 +2334,7 @@ function WristbandCard({ event, genreMap, compact, onEdit }) {
   
   // Logic to handle the lineup display
   const bands = event.bands || [];
-  const lineup = bands.join(' · ').toUpperCase();
-
+  const lineup = bands.map(getBandName).join(' · ').toUpperCase();
   return (
     <div 
       onClick={onEdit ? () => onEdit(event) : null}
@@ -2602,7 +2600,7 @@ function TimelineDot({ item, onTeleport, genreMap, xPos }) {
   
   // 🟢 Logic to join all bands for the display title
   const bands = item.bands || [];
-  const lineupTitle = bands.length > 0 ? bands.join(' · ').toUpperCase() : 'UNKNOWN ARTIST';
+  const lineupTitle = bands.length > 0 ? bands.map(getBandName).join(' · ').toUpperCase() : 'UNKNOWN ARTIST';
 
   return (
     <div
@@ -3199,8 +3197,7 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
   const finalSetlists = (event.setlist_image_url || "").split(',').map(u => u.trim()).filter(Boolean);
   const finalPhotos = (event.personal_photo_url || "").split(',').map(u => u.trim()).filter(Boolean);
   const bands = Array.isArray(event.bands) ? event.bands : [event.artist].filter(Boolean);
-  const headlinerName = (bands[0] || "LIVE")?.toUpperCase();
-
+  const headlinerName = (getBandName(bands[0]) || "LIVE").toUpperCase();
   return (
     <div style={{ 
       display: 'flex', 
@@ -3436,7 +3433,8 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: dayColor, lineHeight: 1 }}>{show.festival_day?.toUpperCase() || `DAY ${idx + 1}`}</div>
                                 <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: '5px' }}>{fmtDateShort(show.date)}</div>
-                                <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: '#fff', lineHeight: 1.5, borderTop: `1px solid ${hexToRgba(dayColor, 0.2)}`, marginTop: '15px', paddingTop: '10px' }}>{show.bands?.join(' · ').toUpperCase()}</div>
+                                <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: '#fff', lineHeight: 1.5, borderTop: `1px solid ${hexToRgba(dayColor, 0.2)}`, marginTop: '15px', paddingTop: '10px' }}>
+                                  {show.bands?.map(getBandName).join(' · ').toUpperCase()}</div>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', marginLeft: '30px' }}>
                                 {setlists.length > 0 && <div style={{ display: 'flex' }}>{setlists.map((url, sIdx) => <SetlistPaper key={`${show.id}-s-${sIdx}`} src={url} index={sIdx} />)}</div>}
@@ -4297,7 +4295,7 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
     if (!search) return concerts;
     const q = search.toLowerCase();
     return concerts.filter(c => 
-      (c.bands || []).some(b => b.toLowerCase().includes(q)) ||
+      (c.bands || []).some(b => getBandName(b).toLowerCase().includes(q)) ||
       (c.venue || '').toLowerCase().includes(q) ||
       (c.city || '').toLowerCase().includes(q) ||
       (c.festival_name || '').toLowerCase().includes(q)
