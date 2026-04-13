@@ -5398,16 +5398,10 @@ export default function App() {
   const handleSave = async (id, payload) => {
     if (!isAdmin) return;
     try {
-      // 🟢 SMART BILL LOGIC: 
-      // If it's a concert (not a fest), the first band in the list IS the headliner 'artist'.
-      // If it's a fest, 'artist' stores the Festival Name for high-level sorting.
-      const headliner = payload.is_festival ? (payload.festival_name || '') : (payload.bands[0]?.name || payload.artist || '');
-
       // 📡 THE FINAL HANDSHAKE: Mapping payload to DB columns
       const dataToStamp = {
-        artist: headliner,
         date: payload.date || null,
-        bands: Array.isArray(payload.bands) ? payload.bands : [], // Stores [{name, genre}, ...]
+        bands: Array.isArray(payload.bands) ? payload.bands : [],
         venue: payload.venue || null,
         city: payload.city || null,
         state: payload.state || null,
@@ -5417,10 +5411,10 @@ export default function App() {
         festival_day: payload.festival_day || null,
         
         // ARCHAEOLOGY MAPPING
-        image_url: payload.image_url || null,           // 🎟️ THE TICKET STUB
-        setlist_image_url: payload.setlist_image_url || null, // 📋 THE SETLIST
-        personal_photo_url: payload.personal_photo_url || null, // 📸 THE POLAROID
-        festival_poster_url: payload.festival_poster_url || null, // 🎨 THE POSTER
+        image_url: payload.image_url || null,
+        setlist_image_url: payload.setlist_image_url || null,
+        personal_photo_url: payload.personal_photo_url || null,
+        festival_poster_url: payload.festival_poster_url || null,
         
         has_setlist: Boolean(payload.setlist_image_url || payload.has_setlist_names?.trim()),
         has_setlist_names: payload.has_setlist_names || null,
@@ -5445,7 +5439,6 @@ export default function App() {
       alert('DATABASE REJECTED SAVE: ' + error.message);
     }
   };
-
   async function fetchConcerts() {
     const { data } = await supabase.from('concerts').select('*').order('date', { ascending: false });
     if (data) setConcerts(data);
