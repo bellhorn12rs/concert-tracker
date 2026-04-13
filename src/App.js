@@ -4921,8 +4921,21 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   // 🟢 PRE-FILL LOGIC: Ensures existing bands/genres load correctly on edit
   useEffect(() => {
     if (concert && concert !== 'new') {
-      const loadedBands = Array.isArray(concert.bands) ? concert.bands : [];
-      setForm({ ...initialState, ...concert, bands: loadedBands });
+      // 1. Ensure bands is always an array of objects
+      let loadedBands = Array.isArray(concert.bands) ? [...concert.bands] : [];
+
+      // 2. Fallback: If bands array is empty but we have an 'artist' string (old data)
+      // we auto-generate the first band row so the user doesn't have to re-type it.
+      if (loadedBands.length === 0 && concert.artist) {
+        loadedBands = [{ name: concert.artist, genre: concert.genre || 'Indie Rock' }];
+      }
+
+      setForm({ 
+        ...initialState, 
+        ...concert, 
+        artist: concert.artist || '', // Prefills the Headliner box
+        bands: loadedBands           // Prefills the Lineup list
+      });
     } else {
       setForm(initialState);
     }
