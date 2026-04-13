@@ -2226,7 +2226,7 @@ const PhysicalWristband = ({ color, label, year, size = 'large' }) => {
 function DecorativeTicket({ event, templateIdx }) {
   const tpl = STUB_TEMPLATES[templateIdx % STUB_TEMPLATES.length];
   const bands = event.bands || [];
-  const headliner = (bands[0] || 'UNKNOWN ARTIST').toUpperCase();
+  const headliner = (getBandName(bands[0]) || 'UNKNOWN ARTIST').toUpperCase();
   
   // 🛰️ PRIORITY 1: THE REAL SCAN
   const hasRealStub = event.image_url && event.image_url.trim() !== "";
