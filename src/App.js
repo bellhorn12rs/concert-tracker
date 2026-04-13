@@ -3281,13 +3281,13 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
           {bands.map((band, bIdx) => (
             <React.Fragment key={`${event.id}-link-${bIdx}`}>
               <a 
-                href={getSetlistFmUrl(band, event.date)} 
+                href={getSetlistFmUrl(getBandName(band), event.date)} 
                 target="_blank" rel="noreferrer"
                 style={{ color: '#fff', textDecoration: 'none', cursor: 'pointer', transition: '0.2s' }}
                 onMouseEnter={e => { e.target.style.color = C.gold; e.target.style.textShadow = `0 0 20px ${C.gold}`; }}
                 onMouseLeave={e => { e.target.style.color = '#fff'; e.target.style.textShadow = `0 0 30px ${hexToRgba(primaryColor, 0.4)}`; }}
               >
-                {band.toUpperCase()}
+                {getBandName(band).toUpperCase()}
               </a>
               {bIdx < bands.length - 1 && <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>}
             </React.Fragment>
