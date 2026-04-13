@@ -1586,7 +1586,8 @@ function RandomShow({ concerts }) {
                 borderLeft: `2px solid ${show.is_festival ? C.gold : C.purple}`,
                 paddingLeft: '8px'
               }}>
-                {b.toUpperCase()}
+                const bandName = typeof b === 'string' ? b : b.name;
+bandName.toUpperCase()
               </div>
             ))}
           </div>
