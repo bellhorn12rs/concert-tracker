@@ -4844,10 +4844,19 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   const isMobile = window.innerWidth < 768;
 
   const initialState = {
-    date: '', artist: '', venue: '', city: '', state: '',
-    bands: [], genre: 'Indie Rock', is_festival: false, festival_name: '',
-    festival_day: '', image_url: '', personal_photo_url: '', setlist_image_url: '',
-    festival_poster_url: '', has_setlist: false, has_setlist_names: ''
+    date: '', 
+    artist: '', 
+    venue: '', 
+    city: '', 
+    state: '',
+    // 🟢 CRITICAL: This must be an empty array, not an empty string or null
+    bands: [], 
+    is_festival: false, 
+    festival_name: '',
+    image_url: '', 
+    personal_photo_url: '', 
+    setlist_image_url: '', 
+    festival_poster_url: ''
   };
 
   const [form, setForm] = useState(initialState);
@@ -5361,54 +5370,57 @@ export default function App() {
     setBrowseView('artists');
     setActiveTab('browse');
   };
-  // ── 7. DB ACTIONS ──
-const handleSave = async (id, payload) => {
-  try {
-    // Standardize band list
-    const bandList = Array.isArray(payload.bands)
-      ? payload.bands
-      : (payload.bands || '').split(',').map(b => b.trim()).filter(Boolean);
+// ── 7. DB ACTIONS ──
+  const handleSave = async (id, payload) => {
+    if (!isAdmin) return;
+    try {
+      // 🟢 SMART BILL LOGIC: 
+      // If it's a concert (not a fest), the first band in the list IS the headliner 'artist'.
+      // If it's a fest, 'artist' stores the Festival Name for high-level sorting.
+      const headliner = payload.is_festival ? (payload.festival_name || '') : (payload.bands[0]?.name || payload.artist || '');
 
-    // 📡 THE FINAL HANDSHAKE: Mapping payload to DB columns
-    const dataToStamp = {
-      date: payload.date || null,
-      bands: bandList,
-      venue: payload.venue || null,
-      city: payload.city || null,
-      state: payload.state || null,
-      genre: payload.genre || null,
-      is_festival: Boolean(payload.is_festival),
-      festival_name: payload.festival_name || null,
-      festival_day: payload.festival_day || null,
-      
-      // ARCHEOLOGY MAPPING
-      image_url: payload.image_url || null,           // 🎟️ THE TICKET STUB
-      setlist_image_url: payload.setlist_image_url || null, // 📋 THE SETLIST
-      personal_photo_url: payload.personal_photo_url || null, // 📸 THE POLAROID
-      festival_poster_url: payload.festival_poster_url || null, // 🎨 THE POSTER
-      
-      has_setlist: Boolean(payload.setlist_image_url || payload.has_setlist_names?.trim()),
-      has_setlist_names: payload.has_setlist_names || null,
-      user_id: session?.user?.id || null,
-    };
+      // 📡 THE FINAL HANDSHAKE: Mapping payload to DB columns
+      const dataToStamp = {
+        artist: headliner,
+        date: payload.date || null,
+        bands: Array.isArray(payload.bands) ? payload.bands : [], // Stores [{name, genre}, ...]
+        venue: payload.venue || null,
+        city: payload.city || null,
+        state: payload.state || null,
+        genre: payload.is_festival ? 'Festival' : (payload.bands[0]?.genre || payload.genre || 'Indie Rock'),
+        is_festival: Boolean(payload.is_festival),
+        festival_name: payload.festival_name || null,
+        festival_day: payload.festival_day || null,
+        
+        // ARCHAEOLOGY MAPPING
+        image_url: payload.image_url || null,           // 🎟️ THE TICKET STUB
+        setlist_image_url: payload.setlist_image_url || null, // 📋 THE SETLIST
+        personal_photo_url: payload.personal_photo_url || null, // 📸 THE POLAROID
+        festival_poster_url: payload.festival_poster_url || null, // 🎨 THE POSTER
+        
+        has_setlist: Boolean(payload.setlist_image_url || payload.has_setlist_names?.trim()),
+        has_setlist_names: payload.has_setlist_names || null,
+        user_id: session?.user?.id || null,
+        updated_at: new Date().toISOString()
+      };
 
-    let result;
-    if (id && id !== 'new') {
-      result = await supabase.from('concerts').update(dataToStamp).eq('id', id);
-    } else {
-      result = await supabase.from('concerts').insert([dataToStamp]);
+      let result;
+      if (id && id !== 'new') {
+        result = await supabase.from('concerts').update(dataToStamp).eq('id', id);
+      } else {
+        result = await supabase.from('concerts').insert([dataToStamp]);
+      }
+
+      if (result.error) throw result.error;
+
+      setEditTarget(null);
+      await fetchConcerts(); 
+
+    } catch (error) {
+      console.error("DATABASE REJECTED SAVE:", error.message);
+      alert('DATABASE REJECTED SAVE: ' + error.message);
     }
-
-    if (result.error) throw result.error;
-
-    setEditTarget(null);
-    await fetchConcerts(); // Refresh local signal
-
-  } catch (error) {
-    console.error("DATABASE REJECTED SAVE:", error.message);
-    alert('DATABASE REJECTED SAVE: ' + error.message);
-  }
-};
+  };
 
   async function fetchConcerts() {
     const { data } = await supabase.from('concerts').select('*').order('date', { ascending: false });
@@ -5428,7 +5440,6 @@ const handleSave = async (id, payload) => {
     const { data } = await supabase.from('upcoming_concerts').select('*').order('date', { ascending: true });
     if (data) setUpcoming(data);
   }
-
 
   async function handleDelete(id) {
     if (!id || id === 'new') {
@@ -5463,41 +5474,37 @@ const handleSave = async (id, payload) => {
   const handleUpcomingSave = async (id, formData) => {
     try {
       if (id) {
-        // UPDATE EXISTING
         const { error } = await supabase
           .from('upcoming_concerts')
           .update(formData)
           .eq('id', id);
         if (error) throw error;
       } else {
-        // INSERT NEW
         const { error } = await supabase
           .from('upcoming_concerts')
           .insert([formData]);
         if (error) throw error;
       }
-      // Refresh the local data
       await fetchUpcoming();
-      setUpcomingModal(null); // Close modal
+      setUpcomingModal(null);
     } catch (err) {
       alert("Save failed: " + err.message);
     }
   };
-const handleReconcile = async (upcomingId, payload) => {
-  // 1. Save to the main Archive (concerts table)
-  await handleSave(null, payload); 
 
-  // 2. Delete from the Upcoming table
-  const { error } = await supabase
-    .from('upcoming_concerts')
-    .delete()
-    .eq('id', upcomingId);
+  const handleReconcile = async (upcomingId, payload) => {
+    await handleSave(null, payload); 
+    const { error } = await supabase
+      .from('upcoming_concerts')
+      .delete()
+      .eq('id', upcomingId);
 
-  if (!error) {
-    setNudgeTarget(null);
-    fetchUpcoming(); // Refresh the marquee
-  }
-};
+    if (!error) {
+      setNudgeTarget(null);
+      fetchUpcoming();
+    }
+  };
+
   async function handleUpcomingDelete(id) {
     if (window.confirm('Remove show?')) {
       await supabase.from('upcoming_concerts').delete().eq('id', id);
