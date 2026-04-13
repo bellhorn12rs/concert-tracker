@@ -5419,7 +5419,6 @@ export default function App() {
         has_setlist: Boolean(payload.setlist_image_url || payload.has_setlist_names?.trim()),
         has_setlist_names: payload.has_setlist_names || null,
         user_id: session?.user?.id || null,
-        updated_at: new Date().toISOString()
       };
 
       let result;
