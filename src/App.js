@@ -4848,7 +4848,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     venue: '', 
     city: '', 
     state: '',
-    bands: [], // Array of objects: [{name: '', genre: ''}]
+    bands: [], // Array of objects: [{name: '', genre: 'Jam'}]
     is_festival: false, 
     festival_name: '',
     image_url: '', 
@@ -4918,9 +4918,9 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     }
   }
 
+  // 🟢 PRE-FILL LOGIC: Ensures existing bands/genres load correctly on edit
   useEffect(() => {
     if (concert && concert !== 'new') {
-      // Ensure bands is always an array for the .map() function
       const loadedBands = Array.isArray(concert.bands) ? concert.bands : [];
       setForm({ ...initialState, ...concert, bands: loadedBands });
     } else {
@@ -4935,7 +4935,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   });
 
   const labelStyle = { fontSize: 9, color: C.teal, fontFamily: "'Space Mono'", display: 'block', marginBottom: 4, letterSpacing: 1 };
-  const inputStyle = { width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '6px', outline: 'none', marginBottom: '10px' };
+  const inputStyle = { width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '6px', outline: 'none', marginBottom: '10px', fontFamily: "'Space Mono'", fontSize: '12px' };
 
   if (!concert) return null;
 
@@ -4973,6 +4973,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                 }} />
               </div>
             </div>
+            <button onClick={() => setEntryStep('gate')} style={{ background: 'none', border: 'none', color: '#666', marginTop: 20, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 }}>← GO BACK</button>
           </div>
         )}
 
@@ -4987,7 +4988,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: 30 }}>
               
-              {/* LEFT COLUMN: TEXT DATA */}
+              {/* LEFT COLUMN: INTEL */}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 15 }}>
                   <label style={labelStyle}>FESTIVAL MODE</label>
@@ -4995,7 +4996,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                 </div>
 
                 <label style={labelStyle}>{form.is_festival ? 'FESTIVAL NAME' : 'HEADLINER'}</label>
-                <input style={inputStyle} value={form.is_festival ? form.festival_name : form.artist} onChange={e => set(form.is_festival ? 'festival_name' : 'artist', e.target.value)} />
+                <input style={inputStyle} value={form.is_festival ? form.festival_name : form.artist} onChange={e => set(form.is_festival ? 'festival_name' : 'artist', e.target.value)} placeholder="e.g. Eggy" />
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 10 }}>
                   <div>
@@ -5004,7 +5005,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                   </div>
                   <div>
                     <label style={labelStyle}>VENUE</label>
-                    <input style={inputStyle} value={form.venue} onChange={e => set('venue', e.target.value)} />
+                    <input style={inputStyle} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="Aladdin Theater" />
                   </div>
                 </div>
 
@@ -5013,6 +5014,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                   <input style={inputStyle} value={form.state} onChange={e => set('state', e.target.value)} placeholder="ST" maxLength={2} />
                 </div>
 
+                {/* 🎸 SMART BILL LINEUP */}
                 <label style={{ ...labelStyle, color: C.teal, marginTop: 10 }}>LINEUP & GENRES</label>
                 <div style={{ background: '#000', border: '1px solid #222', borderRadius: 8, padding: 12 }}>
                   {form.bands.map((b, idx) => (
@@ -5020,10 +5022,11 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                       <input 
                         style={{ ...inputStyle, marginBottom: 0, fontSize: '11px' }} 
                         value={b.name} 
+                        placeholder="Band Name"
                         onChange={e => {
                           const updated = [...form.bands];
                           updated[idx].name = e.target.value;
-                          set('bands', updated);
+                          setForm(prev => ({ ...prev, bands: updated }));
                         }}
                       />
                       <select 
@@ -5032,15 +5035,20 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                         onChange={e => {
                           const updated = [...form.bands];
                           updated[idx].genre = e.target.value;
-                          set('bands', updated);
+                          setForm(prev => ({ ...prev, bands: updated }));
                         }}
                       >
                         {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
                       </select>
-                      <button onClick={() => set('bands', form.bands.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', color: '#ff4444' }}>×</button>
+                      <button onClick={() => set('bands', form.bands.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', color: '#ff4444', cursor: 'pointer' }}>×</button>
                     </div>
                   ))}
-                  <button onClick={() => set('bands', [...form.bands, { name: '', genre: 'Jam' }])} style={{ width: '100%', padding: '8px', background: '#0a0a0a', color: C.teal, border: '1px dashed #333', borderRadius: 4, fontSize: 9 }}>+ ADD BAND</button>
+                  <button 
+                    onClick={() => set('bands', [...form.bands, { name: '', genre: 'Jam' }])} 
+                    style={{ width: '100%', padding: '8px', background: '#0a0a0a', color: C.teal, border: '1px dashed #333', borderRadius: 4, fontSize: 9, cursor: 'pointer' }}
+                  >
+                    + ADD BAND TO BILL
+                  </button>
                 </div>
               </div>
 
@@ -5048,7 +5056,12 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
                 <label style={labelStyle}>// PHYSICAL ARTIFACTS</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  {[ {k:'image_url', l:'STUB', i:'🎟️', id:'e-stub', t:'TICKET'}, {k:'personal_photo_url', l:'PHOTO', i:'📸', id:'e-pic', t:'POLAROID'}, {k:'setlist_image_url', l:'SETLIST', i:'📋', id:'e-set', t:'SETLIST'}, {k:'festival_poster_url', l:'POSTER', i:'🎨', id:'e-post', t:'POSTER'} ].map(item => (
+                  {[ 
+                    {k:'image_url', l:'STUB', i:'🎟️', id:'e-stub', t:'TICKET'}, 
+                    {k:'personal_photo_url', l:'PHOTO', i:'📸', id:'e-pic', t:'POLAROID'}, 
+                    {k:'setlist_image_url', l:'SETLIST', i:'📋', id:'e-set', t:'SETLIST'}, 
+                    {k:'festival_poster_url', l:'POSTER', i:'🎨', id:'e-post', t:'POSTER'} 
+                  ].map(item => (
                     <div key={item.k} onClick={() => document.getElementById(item.id).click()} style={{ background: form[item.k] ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${form[item.k] ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
                       <div style={{ fontSize: '1.2rem' }}>{form[item.k] ? '✅' : item.i}</div>
                       <div style={{ fontSize: 7, marginTop: 5, color: '#666' }}>{item.l}</div>
@@ -5058,11 +5071,11 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                 </div>
 
                 <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <button onClick={() => onSave((concert && concert !== 'new') ? concert.id : null, form)} disabled={uploading} style={{ width: '100%', padding: '18px', background: uploading ? '#222' : C.teal, color: '#000', borderRadius: '8px', fontFamily: "'Bebas Neue'", fontSize: '1.5rem' }}>
+                  <button onClick={() => onSave((concert && concert !== 'new') ? concert.id : null, form)} disabled={uploading} style={{ width: '100%', padding: '18px', background: uploading ? '#222' : C.teal, color: '#000', borderRadius: '8px', fontFamily: "'Bebas Neue'", fontSize: '1.5rem', cursor: 'pointer' }}>
                     {uploading ? 'SYNCING...' : 'COMMIT TO ARCHIVE'}
                   </button>
                   {concert !== 'new' && (
-                    <button onClick={() => onDelete(concert.id)} style={{ background: 'none', border: '1px solid #441111', color: '#ff4444', padding: '10px', borderRadius: '6px', fontSize: '9px' }}>
+                    <button onClick={() => onDelete(concert.id)} style={{ background: 'none', border: '1px solid #441111', color: '#ff4444', padding: '10px', borderRadius: '6px', fontSize: '9px', cursor: 'pointer' }}>
                       DELETE SIGNAL PERMANENTLY
                     </button>
                   )}
