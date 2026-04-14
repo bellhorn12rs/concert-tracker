@@ -5497,15 +5497,21 @@ useEffect(() => {
   }
 
   async function fetchGenres() {
-  const { data, error } = await supabase.from('artist_genres').select('*');
-  if (error) {
-    console.error('fetchGenres error:', error);
-    return;
-  }
-  if (data) {
-    const gMap = {};
-    data.forEach(row => { gMap[row.artist_name] = row.genre; });
-    setArtistGenres(gMap);
+  try {
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
+    const query = supabase.from('artist_genres').select('*');
+    const { data, error } = await Promise.race([query, timeout]);
+    if (error) {
+      console.error('fetchGenres error:', error);
+      return;
+    }
+    if (data) {
+      const gMap = {};
+      data.forEach(row => { gMap[row.artist_name] = row.genre; });
+      setArtistGenres(gMap);
+    }
+  } catch (e) {
+    console.error('fetchGenres failed:', e.message);
   }
 }
 
