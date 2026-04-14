@@ -4572,10 +4572,6 @@ function PhotoVaultTab({ concerts }) {
     const results = [];
     safeConcerts.forEach(c => {
       if (!c || !c.personal_photo_url) return;
-
-      bands.forEach(band => { 
-        const name = getBandName(band);
-        if (name) r.push({ ...c, artist: name }); 
       });
       
       // 🛠️ MULTI-MEDIA PARSER: Handles single URLs, Imgur lists, and Supabase buckets
@@ -4591,7 +4587,7 @@ function PhotoVaultTab({ concerts }) {
         results.push({
           id: `${c.id}-photo-${idx}`,
           url,
-          artist: displayName,
+artist: getBandName(c.bands?.[0]) || c.festival_name || 'UNKNOWN',
           date: c.date,
           venue: c.venue || c.festival_name,
           rotation: startRotation
@@ -5163,10 +5159,6 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
       loading: loading
     };
   }, [session, loading, isOwner]);
-
-  // Initialize C with current theme data immediately
-  const theme = THEMES[themeId] || THEMES['neon-noir'];
-  const C = theme;
 
   // ── 5. SYSTEM HANDLERS & EFFECTS ──
 
@@ -5972,10 +5964,10 @@ if (loading) return (
   <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
     <div style={{ textAlign: 'center', maxWidth: 500, padding: 40 }}>
       <div style={{ fontSize: '4rem', marginBottom: 20, animation: 'pulse 2s infinite' }}>📡</div>
-      <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: theme.teal, lineHeight: 1 }}>SIGNAL DETECTED</h2>
+      <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: C.teal, lineHeight: 1 }}>SIGNAL DETECTED</h2>
       <p style={{ fontFamily: "'Space Mono'", fontSize: 12, color: '#fff', marginBottom: 30 }}>
         THE ARCHIVE DETECTED A RECENT SHOW: <br/>
-        <span style={{ color: theme.gold, fontSize: '1.5rem' }}>{nudgeTarget.artist.toUpperCase()}</span><br/>
+        <span style={{ color: C.gold, fontSize: '1.5rem' }}>{nudgeTarget.artist.toUpperCase()}</span><br/>
         WAS AT {nudgeTarget.venue.toUpperCase()} ON {nudgeTarget.date}.
       </p>
       
@@ -5985,13 +5977,13 @@ if (loading) return (
             setEditTarget({ ...nudgeTarget, isNudge: true });
             setNudgeTarget(null);
           }}
-          style={{ padding: '20px', background: theme.teal, color: '#000', border: 'none', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}
+          style={{ padding: '20px', background: C.teal, color: '#000', border: 'none', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}
         >
           ARCHIVE NOW
         </button>
         <button 
           onClick={() => setNudgeTarget(null)}
-          style={{ padding: '20px', background: 'transparent', border: `1px solid ${theme.border}`, color: theme.gray, borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}
+          style={{ padding: '20px', background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}
         >
           IGNORE SIGNAL
         </button>
