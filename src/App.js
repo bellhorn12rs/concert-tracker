@@ -5189,10 +5189,33 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
       setSession(session);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+  setSession(session);
+  
+  if (session?.user?.id) {
+    // Get their most recent show for last_artist
+    const { data: recentShow } = await supabase
+      .from('concerts')
+      .select('bands, venue')
+      .eq('user_id', session.user.id)
+      .order('date', { ascending: false })
+      .limit(1)
+      .single();
 
+    const lastArtist = recentShow
+      ? (typeof recentShow.bands?.[0] === 'string' ? recentShow.bands[0] : recentShow.bands?.[0]?.name || '')
+      : '';
+
+    await supabase
+      .from('profiles')
+      .update({
+        last_seen: new Date().toISOString(),
+        last_artist: lastArtist,
+        last_venue: recentShow?.venue || ''
+      })
+      .eq('user_id', session.user.id);
+  }
+});
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
