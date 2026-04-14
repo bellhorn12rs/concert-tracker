@@ -5540,7 +5540,7 @@ export default function App() {
     await supabase.from('concerts').insert([{ ...rest, date: '', festival_day: '' }]);
     fetchConcerts();
   }
-i// Hash routing for public profiles
+// Hash routing for public profiles
 const hash = window.location.hash;
 const profileMatch = hash.match(/^#\/u\/(.+)$/);
 if (profileMatch) {
