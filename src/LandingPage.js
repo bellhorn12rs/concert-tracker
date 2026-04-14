@@ -24,14 +24,12 @@ const GENRE_COLORS = {
   'Pop':'#00e5ff','Hip Hop':'#a2ff00','Punk':'#ff3300','R&B':'#ff66cc',
   'Country':'#cc8800','Metal':'#888888','Other':'#334455','Festival':'#ffcc00',
 };
-
 export default function LandingPage() {
   useEffect(() => {
-    useEffect(() => {
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session) window.location.href = 'https://concert-tracker-eight.vercel.app';
-  });
-}, []);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) window.location.href = 'https://concert-tracker-eight.vercel.app';
+    });
+  }, []);
 
   const [mode, setMode] = useState(null);
   const [email, setEmail] = useState('');
