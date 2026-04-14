@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { supabase } from './supabaseClient';
 // NEW: The User Brain Tools
 import { createContext, useContext } from 'react';
+import LandingPage from './LandingPage';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const getBandName = (b) => typeof b === 'string' ? b : (b?.name || '');
@@ -5538,7 +5539,7 @@ export default function App() {
     await supabase.from('concerts').insert([{ ...rest, date: '', festival_day: '' }]);
     fetchConcerts();
   }
-
+if (!session && !loading) return <LandingPage concerts={concerts} />;
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
