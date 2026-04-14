@@ -5959,7 +5959,7 @@ if (loading) return (
   )}
 </main>
 
-        {/* ── MODALS LAYER ── */}
+        {/* ── MODALS LAYER -── */}
        {isAdmin && nudgeTarget && (
   <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
     <div style={{ textAlign: 'center', maxWidth: 500, padding: 40 }}>
