@@ -2747,7 +2747,7 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
       const side = i % 2 === 0 ? 'up' : 'down';
       for (let l=0; l<4; l++) {
         if (s.xPos - laneLastX[side][l] > MIN_GAP) {
-          highlights.push({ label: (s.bands||[''])[0], x: s.xPos, date: s.date, color: getConcertGenreInfo(s, genreMap).color || C.teal, side, lane: l });
+          highlights.push({ label: getBandName((s.bands||[''])[0]), x: s.xPos, date: s.date, color: getConcertGenreInfo(s, genreMap).color || C.teal, side, lane: l });
           laneLastX[side][l] = s.xPos; break;
         }
       }
