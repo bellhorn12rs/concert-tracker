@@ -25,7 +25,7 @@ const GENRE_COLORS = {
   'Country':'#cc8800','Metal':'#888888','Other':'#334455','Festival':'#ffcc00',
 };
 
-export default function LandingPage({ concerts = [] }) {
+export default function LandingPage() {
   const [mode, setMode] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,6 +35,15 @@ export default function LandingPage({ concerts = [] }) {
   const [featuredIdx, setFeaturedIdx] = useState(0);
   const [tickerPaused, setTickerPaused] = useState(false);
   const [recentUsers, setRecentUsers] = useState([]);
+  const [concerts, setConcerts] = useState([]);
+
+  useEffect(() => {
+    const fetchPublicConcerts = async () => {
+      const { data } = await supabase.from('concerts').select('*').order('date', { ascending: false });
+      if (data) setConcerts(data);
+    };
+    fetchPublicConcerts();
+  }, []);
 
   useEffect(() => {
     const fetchRecentUsers = async () => {

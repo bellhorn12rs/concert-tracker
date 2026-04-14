@@ -5551,7 +5551,7 @@ if (profileMatch) {
   return <PublicProfile username={username} currentSession={session} />;
 }
 
-if (!session && !loading) return <LandingPage concerts={concerts} />;
+if (!session && !loading) return <LandingPage />;
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
