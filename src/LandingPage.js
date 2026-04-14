@@ -377,12 +377,47 @@ export default function LandingPage({ concerts = [] }) {
   </div>
 
   {/* CTAs */}
-  <div className="fade-in" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
-    <button className="cta-primary" onClick={() => setMode('signup')}>INITIALIZE ARCHIVE</button>
-    <button className="cta-secondary" onClick={() => setMode('login')}>ACCESS YOUR COLLECTION</button>
-  </div>
-
-</div> {/* closes hero section */}
+<div className="fade-in" style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center', position: 'relative', zIndex: 1, marginTop: 40 }}>
+  <button
+    onClick={() => setMode('signup')}
+    style={{
+      background: TEAL,
+      color: '#000',
+      border: 'none',
+      padding: isMobile ? '18px 40px' : '24px 64px',
+      fontFamily: "'Bebas Neue'",
+      fontSize: isMobile ? '1.4rem' : '2rem',
+      letterSpacing: 5,
+      cursor: 'pointer',
+      borderRadius: 4,
+      transition: 'all 0.3s',
+      boxShadow: `0 0 40px rgba(0,229,204,0.4), 0 10px 40px rgba(0,0,0,0.4)`,
+    }}
+    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05) translateY(-3px)'; e.currentTarget.style.boxShadow = `0 0 70px rgba(0,229,204,0.7), 0 20px 60px rgba(0,0,0,0.5)`; }}
+    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1) translateY(0)'; e.currentTarget.style.boxShadow = `0 0 40px rgba(0,229,204,0.4), 0 10px 40px rgba(0,0,0,0.4)`; }}
+  >
+    INITIALIZE ARCHIVE
+  </button>
+  <button
+    onClick={() => setMode('login')}
+    style={{
+      background: 'transparent',
+      color: TEAL,
+      border: `2px solid ${TEAL}`,
+      padding: isMobile ? '18px 40px' : '24px 64px',
+      fontFamily: "'Bebas Neue'",
+      fontSize: isMobile ? '1.4rem' : '2rem',
+      letterSpacing: 5,
+      cursor: 'pointer',
+      borderRadius: 4,
+      transition: 'all 0.3s',
+    }}
+    onMouseEnter={e => { e.currentTarget.style.background = `${TEAL}15`; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 0 30px ${TEAL}33`; }}
+    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+  >
+    ACCESS YOUR COLLECTION
+  </button>
+</div>
       {/* ── SECTION 1: TEMPORAL DRIFT ── */}
 <div style={{ padding: isMobile ? '60px 20px' : '80px 40px', background: '#050508', borderTop: '1px solid #111', borderBottom: '1px solid #111', position: 'relative', overflow: 'hidden' }}>
 
@@ -535,7 +570,7 @@ export default function LandingPage({ concerts = [] }) {
 </div>
 
       {/* ── SECTION 2: THE PHYSICAL ARCHIVE ── */}
-<div style={{ padding: isMobile ? '80px 20px' : '120px 40px', background: '#000', position: 'relative', overflow: 'hidden' }}>
+<div style={{ padding: isMobile ? '80px 20px' : '80px 40px', background: '#000', position: 'relative', overflow: 'hidden' }}>
 
   {/* Big background watermark */}
   {!isMobile && (
@@ -609,7 +644,8 @@ export default function LandingPage({ concerts = [] }) {
       const typeColors = { STUB: TEAL, POLAROID: PURPLE, SETLIST: GOLD, POSTER: '#ff4466' };
       const rotations = [-3, 1.5, -1, 2.5, -2, 3, -1.5, 2, -2.5, 1];
       const tapeColors = [TEAL, GOLD, PURPLE, '#ff4466', '#00cfff'];
-      const displayed = allArtifacts.slice(0, isMobile ? 6 : 10);
+      const shuffled = [...allArtifacts].sort(() => 0.5 - Math.random());
+const displayed = shuffled.slice(0, isMobile ? 6 : 10);
 
       return (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(5, 1fr)', gap: isMobile ? 20 : 28, alignItems: 'start' }}>
@@ -701,7 +737,7 @@ export default function LandingPage({ concerts = [] }) {
   </div>
 </div>
       {/* ── WHAT'S INSIDE ── */}
-<div style={{ padding: isMobile ? '80px 20px' : '120px 40px', background: '#000', position: 'relative', overflow: 'hidden' }}>
+<div style={{ padding: isMobile ? '80px 20px' : '80px 40px', background: '#000', position: 'relative', overflow: 'hidden' }}>
   
   {/* Side quotes */}
   {!isMobile && (
@@ -797,7 +833,7 @@ export default function LandingPage({ concerts = [] }) {
 </div>
 
 {/* ── PULSING MANIFESTO CARD ── */}
-<div style={{ padding: isMobile ? '60px 20px' : '80px 40px', background: '#050508', borderTop: '1px solid #111' }}>
+<div style={{ padding: isMobile ? '60px 20px' : '60px 40px', background: '#050508', borderTop: '1px solid #111' }}>
   <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
     <style>{`
       @keyframes speaker-pulse {
@@ -848,7 +884,7 @@ export default function LandingPage({ concerts = [] }) {
 </div>
 
 {/* ── FINAL CTA ── */}
-<div style={{ padding: isMobile ? '100px 20px' : '160px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#000' }}>
+<div style={{ padding: isMobile ? '100px 20px' : '100px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#000' }}>
 
   {/* Radial glow */}
   <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 900, height: 900, background: 'radial-gradient(circle, rgba(0,229,204,0.07) 0%, rgba(153,102,255,0.04) 35%, transparent 65%)', pointerEvents: 'none' }} />
