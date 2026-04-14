@@ -300,7 +300,7 @@ const [sessionChecked, setSessionChecked] = useState(false);
     <div style={{ position: 'absolute', top: 20, right: isMobile ? 16 : 40, zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
       <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, letterSpacing: 3, marginBottom: 4 }}>// ACTIVE ARCHIVISTS</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {recentUsers.slice(0, 5).map(u => (
+        {sessionChecked && recentUsers.slice(0, 5).map(u => (
           <button
             key={u.username}
             onClick={() => {
