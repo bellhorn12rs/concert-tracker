@@ -5224,8 +5224,9 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
       await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]);
       setLoading(false);
     };
-    init();
-  }, [themeId]);
+    if (session?.user?.id) init();
+    else setLoading(false);
+  }, [themeId, session]);
 
   const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
 // ── 6. DATA DERIVATION ENGINE ──
