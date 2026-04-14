@@ -136,7 +136,7 @@ export default function PublicProfile({ username, currentSession }) {
     <div style={{ minHeight: '100vh', background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: '#fff', letterSpacing: 4 }}>SIGNAL NOT FOUND</div>
       <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: GRAY, letterSpacing: 2 }}>NO ARCHIVE EXISTS FOR @{username}</div>
-      onClick={() => { window.location.hash = ''; window.location.reload(); }} style={{ background: TEAL, color: '#000', border: 'none', padding: '12px 28px', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 3, cursor: 'pointer', borderRadius: 4, marginTop: 20 }}>
+      <button onClick={() => { window.location.hash = ''; window.location.reload(); }} style={{ background: TEAL, color: '#000', border: 'none', padding: '12px 28px', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 3, cursor: 'pointer', borderRadius: 4, marginTop: 20 }}>
         RETURN TO TRACKRECORD
       </button>
     </div>
