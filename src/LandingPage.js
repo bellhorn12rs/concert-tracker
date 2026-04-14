@@ -141,13 +141,17 @@ const [sessionChecked, setSessionChecked] = useState(false);
   }, [concerts]);
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage('');
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setMessage('ACCESS DENIED: ' + error.message);
+  e.preventDefault();
+  setLoading(true);
+  setMessage('');
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    setMessage('ACCESS DENIED: ' + error.message);
     setLoading(false);
-  };
+  } else {
+    window.location.href = 'https://concert-tracker-eight.vercel.app';
+  }
+};
 
   const handleSignup = async (e) => {
     e.preventDefault();
