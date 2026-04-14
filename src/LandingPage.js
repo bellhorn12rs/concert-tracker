@@ -184,7 +184,7 @@ export default function LandingPage({ concerts = [] }) {
           0%, 100% { transform: scale(1); opacity: 0.8; }
           50% { transform: scale(1.4); opacity: 1; }
         }
-        .ticker-scroll { display: inline-block; animation: ticker-scroll 80s linear infinite; white-space: nowrap; }
+        .ticker-scroll { display: inline-block; animation: ticker-scroll 120s linear infinite; white-space: nowrap; }
         .artifact-drift { animation: drift 6s ease-in-out infinite; }
         .fade-in { animation: fade-in 0.6s ease both; }
 
@@ -271,128 +271,118 @@ export default function LandingPage({ concerts = [] }) {
         </div>
       </div>
 
-      {/* ── HERO ── */}
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 80, paddingBottom: 60, position: 'relative', padding: isMobile ? '80px 20px 60px' : '80px 40px 60px' }}>
+     {/* ── HERO ── */}
+<div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', padding: isMobile ? '80px 20px 60px' : '80px 40px 60px' }}>
 
-        <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%, -50%)', width: 600, height: 600, background: `radial-gradient(circle, rgba(0,229,204,0.06) 0%, transparent 70%)`, pointerEvents: 'none' }} />
+  {/* Background glow */}
+  <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%, -50%)', width: 600, height: 600, background: `radial-gradient(circle, rgba(0,229,204,0.06) 0%, transparent 70%)`, pointerEvents: 'none' }} />
 
-        {/* Wordmark */}
-        <div className="fade-in" style={{ textAlign: 'center', marginBottom: 48, position: 'relative', zIndex: 1 }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '3.5rem' : 'clamp(3rem, 8vw, 6rem)', letterSpacing: 8, color: '#fff', lineHeight: 0.9, textShadow: `0 0 40px rgba(0,229,204,0.3)` }}>
-            TRACK<span style={{ color: TEAL }}>RECORD</span>
-          </div>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 4, marginTop: 12 }}>
-            YOUR CONCERT HISTORY. MUSEUM GRADE.
+  {/* Active Archivists — top right */}
+  {recentUsers.length > 0 && (
+    <div style={{ position: 'absolute', top: 20, right: isMobile ? 16 : 40, zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, letterSpacing: 3, marginBottom: 4 }}>// ACTIVE ARCHIVISTS</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {recentUsers.slice(0, 5).map(u => (
+          <button
+            key={u.username}
+            onClick={() => { window.location.hash = `#/u/${u.username}`; window.location.reload(); }}
+            style={{ background: '#0a0a0a', border: `1px solid ${u.avatar_color || TEAL}44`, borderRadius: 6, padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = u.avatar_color || TEAL; e.currentTarget.style.background = `${u.avatar_color || TEAL}11`; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = `${u.avatar_color || TEAL}44`; e.currentTarget.style.background = '#0a0a0a'; }}
+          >
+            <div style={{ width: 20, height: 20, borderRadius: '50%', background: `${u.avatar_color || TEAL}22`, border: `1px solid ${u.avatar_color || TEAL}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: u.avatar_color || TEAL, flexShrink: 0 }}>
+              {u.username[0].toUpperCase()}
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff', letterSpacing: 1 }}>@{u.username}</div>
+              {u.last_artist && (
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: GRAY, marginTop: 1 }}>
+                  {u.last_artist.slice(0, 18)}
+                </div>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
+
+  {/* Wordmark */}
+  <div className="fade-in" style={{ textAlign: 'center', marginBottom: 48, position: 'relative', zIndex: 1 }}>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '3.5rem' : 'clamp(3rem, 8vw, 6rem)', letterSpacing: 8, color: '#fff', lineHeight: 0.9, textShadow: `0 0 40px rgba(0,229,204,0.3)` }}>
+      TRACK<span style={{ color: TEAL }}>RECORD</span>
+    </div>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 4, marginTop: 12 }}>
+      YOUR CONCERT HISTORY. MUSEUM GRADE.
+    </div>
+  </div>
+
+  {/* Hero grid */}
+  <div className="hero-grid fade-in" style={{ display: 'flex', gap: 60, alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: 900, position: 'relative', zIndex: 1, marginBottom: 48 }}
+    onMouseEnter={() => setTickerPaused(true)}
+    onMouseLeave={() => setTickerPaused(false)}
+  >
+    {/* Artifact */}
+    {featuredImg && (
+      <div className="artifact-drift" style={{ flexShrink: 0 }}>
+        <div style={{ background: '#fff', padding: '10px 10px 50px 10px', boxShadow: '0 30px 80px rgba(0,0,0,0.8), 0 0 40px rgba(0,229,204,0.2)', borderRadius: 2, position: 'relative', width: isMobile ? 220 : 260 }}>
+          <img src={featuredImg} alt={featuredBand} style={{ width: '100%', height: isMobile ? 160 : 200, objectFit: 'cover', display: 'block' }} />
+          <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, textAlign: 'center', fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#111', letterSpacing: 2 }}>
+            {featuredBand.toUpperCase()}
           </div>
         </div>
-
-        {/* Hero grid — artifact + stats side by side on desktop */}
-        <div className="hero-grid fade-in" style={{ display: 'flex', gap: 60, alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: 900, position: 'relative', zIndex: 1, marginBottom: 48 }}
-          onMouseEnter={() => setTickerPaused(true)}
-          onMouseLeave={() => setTickerPaused(false)}
-        >
-          {/* Artifact */}
-          {featuredImg && (
-            <div className="artifact-drift" style={{ flexShrink: 0 }}>
-              <div style={{ background: '#fff', padding: '10px 10px 50px 10px', boxShadow: '0 30px 80px rgba(0,0,0,0.8), 0 0 40px rgba(0,229,204,0.2)', borderRadius: 2, position: 'relative', width: isMobile ? 220 : 260 }}>
-                <img src={featuredImg} alt={featuredBand} style={{ width: '100%', height: isMobile ? 160 : 200, objectFit: 'cover', display: 'block' }} />
-                <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, textAlign: 'center', fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#111', letterSpacing: 2 }}>
-                  {featuredBand.toUpperCase()}
-                </div>
-              </div>
-              {/* Readout */}
-              <div style={{ marginTop: 12, background: '#0a0a0a', border: `1px solid ${TEAL}33`, borderRadius: 4, padding: '8px 12px', display: 'flex', gap: 16, justifyContent: 'center' }}>
-                {[['DATE', fmtDateShort(featured?.date)], ['VENUE', (featured?.venue || 'UNKNOWN').slice(0, 18)], ['GRADE', 'MUSEUM']].map(([l, v]) => (
-                  <div key={l} style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 7, color: TEAL, letterSpacing: 2, marginBottom: 2 }}>{l}</div>
-                    <div style={{ fontSize: 8, color: '#fff', letterSpacing: 1 }}>{v?.toUpperCase()}</div>
-                  </div>
-                ))}
-              </div>
-              {/* Dots */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
-                {artifacts.slice(0, 8).map((_, i) => (
-                  <div key={i} onClick={() => setFeaturedIdx(i)} style={{ width: i === featuredIdx ? 16 : 6, height: 6, borderRadius: 3, background: i === featuredIdx ? TEAL : '#333', cursor: 'pointer', transition: 'all 0.3s' }} />
-                ))}
-              </div>
+        {/* Readout */}
+        <div style={{ marginTop: 12, background: '#0a0a0a', border: `1px solid ${TEAL}33`, borderRadius: 4, padding: '8px 12px', display: 'flex', gap: 16, justifyContent: 'center' }}>
+          {[['DATE', fmtDateShort(featured?.date)], ['VENUE', (featured?.venue || 'UNKNOWN').slice(0, 18)], ['GRADE', 'MUSEUM']].map(([l, v]) => (
+            <div key={l} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 7, color: TEAL, letterSpacing: 2, marginBottom: 2 }}>{l}</div>
+              <div style={{ fontSize: 8, color: '#fff', letterSpacing: 1 }}>{v?.toUpperCase()}</div>
             </div>
-          )}
-
-          {/* Right side — stats + one liner */}
-          <div style={{ flex: 1, textAlign: isMobile ? 'center' : 'left' }}>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1rem' : '1.2rem', color: GRAY, letterSpacing: 4, marginBottom: 24 }}>
-              THE ARCHIVE // LIVE READOUT
-            </div>
-            <div className="stats-row" style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start', marginBottom: 32 }}>
-              {[
-                [concerts.length, 'SHOWS'],
-                [uniqueArtists, 'ARTISTS'],
-                [new Set(concerts.map(c => c.venue).filter(Boolean)).size, 'VENUES'],
-                [new Set(concerts.map(c => c.state).filter(Boolean)).size, 'STATES'],
-              ].map(([val, label]) => (
-                <div key={label} style={{ textAlign: 'center' }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '3rem', color: TEAL, lineHeight: 1, textShadow: `0 0 20px rgba(0,229,204,0.4)` }}>{val}</div>
-                  <div style={{ fontSize: 7, color: GRAY, letterSpacing: 2, marginTop: 4 }}>{label}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.4rem' : '2rem', color: '#fff', lineHeight: 1.2, marginBottom: 8, opacity: 0.9 }}>
-              {concerts.length} SHOWS.<br />
-              {uniqueArtists} ARTISTS.<br />
-              {new Set(concerts.map(c => c.state).filter(Boolean)).size} STATES.<br />
-              <span style={{ color: TEAL }}>ONE ARCHIVE.</span>
-            </div>
-          </div>
+          ))}
         </div>
-
-        {/* CTAs */}
-        <div className="fade-in" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
-          <button className="cta-primary" onClick={() => setMode('signup')}>INITIALIZE ARCHIVE</button>
-          <button className="cta-secondary" onClick={() => setMode('login')}>ACCESS YOUR COLLECTION</button>
+        {/* Dots */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
+          {artifacts.slice(0, 8).map((_, i) => (
+            <div key={i} onClick={() => setFeaturedIdx(i)} style={{ width: i === featuredIdx ? 16 : 6, height: 6, borderRadius: 3, background: i === featuredIdx ? TEAL : '#333', cursor: 'pointer', transition: 'all 0.3s' }} />
+          ))}
         </div>
-        {/* ── RECENT ARCHIVISTS ── */}
-      {recentUsers.length > 0 && (
-        <div style={{ width: '100%', maxWidth: 900, margin: '40px auto 0', padding: isMobile ? '0 20px' : '0' }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GRAY, letterSpacing: 3, marginBottom: 16, textAlign: 'center' }}>
-            // ACTIVE ARCHIVISTS
-          </div>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {recentUsers.map(u => (
-              <button
-                key={u.username}
-                onClick={() => { window.location.hash = `#/u/${u.username}`; window.location.reload(); }}
-                style={{
-                  background: '#0a0a0a',
-                  border: `1px solid ${u.avatar_color || TEAL}44`,
-                  borderRadius: 6,
-                  padding: '10px 16px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = u.avatar_color || TEAL; e.currentTarget.style.background = `${u.avatar_color || TEAL}11`; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = `${u.avatar_color || TEAL}44`; e.currentTarget.style.background = '#0a0a0a'; }}
-              >
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: `${u.avatar_color || TEAL}22`, border: `1px solid ${u.avatar_color || TEAL}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Bebas Neue'", fontSize: '1rem', color: u.avatar_color || TEAL, flexShrink: 0 }}>
-                  {u.username[0].toUpperCase()}
-                </div>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#fff', letterSpacing: 1 }}>@{u.username}</div>
-                  {u.last_artist && (
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, marginTop: 2 }}>
-                      Last: {u.last_artist.slice(0, 20)}
-                    </div>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      </div> {/* closes hero section */}
+      </div>
+    )}
 
+    {/* Right side — stats + one liner */}
+    <div style={{ flex: 1, textAlign: isMobile ? 'center' : 'left' }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1rem' : '1.2rem', color: GRAY, letterSpacing: 4, marginBottom: 24 }}>
+        THE ARCHIVE // LIVE READOUT
+      </div>
+      <div className="stats-row" style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start', marginBottom: 32 }}>
+        {[
+          [concerts.length, 'SHOWS'],
+          [uniqueArtists, 'ARTISTS'],
+          [new Set(concerts.map(c => c.venue).filter(Boolean)).size, 'VENUES'],
+          [new Set(concerts.map(c => c.state).filter(Boolean)).size, 'STATES'],
+        ].map(([val, label]) => (
+          <div key={label} style={{ textAlign: 'center' }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '3rem', color: TEAL, lineHeight: 1, textShadow: `0 0 20px rgba(0,229,204,0.4)` }}>{val}</div>
+            <div style={{ fontSize: 7, color: GRAY, letterSpacing: 2, marginTop: 4 }}>{label}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.4rem' : '2rem', color: '#fff', lineHeight: 1.2, marginBottom: 8, opacity: 0.9 }}>
+        {concerts.length} SHOWS.<br />
+        {uniqueArtists} ARTISTS.<br />
+        {new Set(concerts.map(c => c.state).filter(Boolean)).size} STATES.<br />
+        <span style={{ color: TEAL }}>ONE ARCHIVE.</span>
+      </div>
+    </div>
+  </div>
+
+  {/* CTAs */}
+  <div className="fade-in" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+    <button className="cta-primary" onClick={() => setMode('signup')}>INITIALIZE ARCHIVE</button>
+    <button className="cta-secondary" onClick={() => setMode('login')}>ACCESS YOUR COLLECTION</button>
+  </div>
+
+</div> {/* closes hero section */}
       {/* ── SECTION 1: TEMPORAL DRIFT ── */}
 <div style={{ padding: isMobile ? '60px 20px' : '80px 40px', background: '#050508', borderTop: '1px solid #111', borderBottom: '1px solid #111', position: 'relative', overflow: 'hidden' }}>
 
