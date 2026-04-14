@@ -5497,14 +5497,17 @@ useEffect(() => {
   }
 
   async function fetchGenres() {
-    if (!session?.user?.id) return;
-    const { data } = await supabase.from('artist_genres').select('*').eq('user_id', session.user.id);
-    if (data) {
-      const gMap = {};
-      data.forEach(row => { gMap[row.artist_name] = row.genre; });
-      setArtistGenres(gMap);
-    }
+  const { data, error } = await supabase.from('artist_genres').select('*');
+  if (error) {
+    console.error('fetchGenres error:', error);
+    return;
   }
+  if (data) {
+    const gMap = {};
+    data.forEach(row => { gMap[row.artist_name] = row.genre; });
+    setArtistGenres(gMap);
+  }
+}
 
   async function fetchUpcoming() {
     if (!session?.user?.id) return;
