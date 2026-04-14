@@ -5132,6 +5132,7 @@ export default function App() {
   const [artistGenres, setArtistGenres] = useState({});
   const [upcoming, setUpcoming] = useState([]);
   const [loading, setLoading] = useState(true);
+const [authLoading, setAuthLoading] = useState(true);
   
   // ── 3. UI & NAVIGATION STATE ──
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -5186,8 +5187,9 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
   // SYSTEM INIT & AUTH
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
+  setSession(session);
+  setAuthLoading(false);
+});
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
   setSession(session);
@@ -5575,7 +5577,8 @@ if (profileMatch) {
   return <PublicProfile username={username} currentSession={session} />;
 }
 
-if (!session && !loading) return <LandingPage />;
+if (authLoading) return null;
+if (!session) return <LandingPage />;
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
