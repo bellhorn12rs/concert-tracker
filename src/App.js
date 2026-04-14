@@ -4571,7 +4571,10 @@ function PhotoVaultTab({ concerts }) {
     safeConcerts.forEach(c => {
       if (!c || !c.personal_photo_url) return;
 
-      const displayName = c.artist || c.festival_name || (c.bands && getBandName(c.bands[0])) || 'Unknown Act';
+      bands.forEach(band => { 
+        const name = getBandName(band);
+        if (name) r.push({ ...c, artist: name }); 
+      });
       
       // 🛠️ MULTI-MEDIA PARSER: Handles single URLs, Imgur lists, and Supabase buckets
       const urls = String(c.personal_photo_url)
