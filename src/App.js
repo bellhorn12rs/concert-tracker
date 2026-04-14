@@ -5240,6 +5240,8 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
       localStorage.setItem('concert-theme', id);
     }
   };
+const initRan = useRef(false);
+
 useEffect(() => { 
   if (THEMES[themeId]) {
     Object.assign(C, THEMES[themeId]);
@@ -5262,8 +5264,14 @@ useEffect(() => {
     setLoading(false);
   }
 };
-  if (session?.user?.id) init();
-  else setLoading(false);
+  if (session?.user?.id) {
+    if (!initRan.current) {
+      initRan.current = true;
+      init();
+    }
+  } else {
+    setLoading(false);
+  }
 }, [themeId, session]);
   const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
 // ── 6. DATA DERIVATION ENGINE ──
