@@ -136,7 +136,7 @@ export default function PublicProfile({ username, currentSession }) {
     <div style={{ minHeight: '100vh', background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: '#fff', letterSpacing: 4 }}>SIGNAL NOT FOUND</div>
       <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: GRAY, letterSpacing: 2 }}>NO ARCHIVE EXISTS FOR @{username}</div>
-      <button onClick={() => { window.location.hash = ''; }} style={{ background: TEAL, color: '#000', border: 'none', padding: '12px 28px', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 3, cursor: 'pointer', borderRadius: 4, marginTop: 20 }}>
+      onClick={() => { window.location.hash = ''; window.location.reload(); }} style={{ background: TEAL, color: '#000', border: 'none', padding: '12px 28px', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 3, cursor: 'pointer', borderRadius: 4, marginTop: 20 }}>
         RETURN TO TRACKRECORD
       </button>
     </div>
@@ -163,7 +163,7 @@ export default function PublicProfile({ username, currentSession }) {
       }}>
         {/* Back to landing */}
         <button
-          onClick={() => { window.location.hash = ''; }}
+          onClick={() => { window.location.hash = ''; window.location.reload(); }}
           style={{ background: 'none', border: 'none', color: TEAL, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.1rem', letterSpacing: 3, display: 'flex', alignItems: 'center', gap: 8 }}
         >
           ← TRACKRECORD
@@ -187,7 +187,7 @@ export default function PublicProfile({ username, currentSession }) {
         {/* Owner indicator */}
         {isOwner && (
           <button
-            onClick={() => { window.location.hash = ''; }}
+            onClick={() => { window.location.hash = ''; window.location.reload(); }}
             style={{ background: 'rgba(0,229,204,0.15)', color: TEAL, border: `1px solid ${TEAL}44`, padding: '6px 16px', fontFamily: "'Bebas Neue'", fontSize: '0.9rem', letterSpacing: 2, cursor: 'pointer', borderRadius: 3 }}
           >
             ← MY ARCHIVE
