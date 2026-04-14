@@ -325,11 +325,6 @@ const [sessionChecked, setSessionChecked] = useState(false);
     {u.last_artist.slice(0, 18)}
   </div>
 )}
-              {u.last_artist && (
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: GRAY, marginTop: 1 }}>
-                  {u.last_artist.slice(0, 18)}
-                </div>
-              )}
             </div>
           </button>
         ))}
