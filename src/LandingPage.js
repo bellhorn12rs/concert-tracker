@@ -743,20 +743,262 @@ export default function LandingPage({ concerts = [] }) {
     </div>
   </div>
 </div>
-      {/* ── FINAL CTA ── */}
-      <div style={{ padding: isMobile ? '60px 20px' : '100px 40px', textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '3rem', color: '#fff', marginBottom: 8, letterSpacing: 3 }}>
-          YOUR HISTORY IS WAITING.
-        </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 3, marginBottom: 40 }}>
-          START YOUR ARCHIVE TODAY. IT'S FREE.
-        </div>
-        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button className="cta-primary" onClick={() => setMode('signup')}>INITIALIZE ARCHIVE</button>
-          <button className="cta-secondary" onClick={() => setMode('login')}>ACCESS YOUR COLLECTION</button>
-        </div>
-      </div>
+      {/* ── WHAT'S INSIDE ── */}
+<div style={{ padding: isMobile ? '80px 20px' : '120px 40px', background: '#000', position: 'relative', overflow: 'hidden' }}>
+  
+  {/* Side quotes */}
+  {!isMobile && (
+    <div style={{ position: 'absolute', left: -50, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#ff4466', letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+      WHAT LIVES INSIDE
+    </div>
+  )}
+  {!isMobile && (
+    <div style={{ position: 'absolute', right: -60, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#00cfff', letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+      YOUR MUSEUM AWAITS
+    </div>
+  )}
 
+  <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+    <div style={{ textAlign: 'center', marginBottom: 64 }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#ff4466', letterSpacing: 4, marginBottom: 12 }}>// INSIDE THE ARCHIVE</div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff', letterSpacing: 2 }}>
+        BUILT FOR PEOPLE WHO <span style={{ color: '#ff4466' }}>FEEL</span> MUSIC
+      </div>
+    </div>
+
+    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? 24 : 32 }}>
+      {[
+        {
+          icon: '⏳',
+          color: TEAL,
+          title: 'TIME MACHINE',
+          sub: 'A panoramic timeline of every show you\'ve ever seen. Colored by genre. Spanning decades.',
+          stat: `${concerts.length} SHOWS MAPPED`,
+        },
+        {
+          icon: '🧬',
+          color: GOLD,
+          title: 'SONIC DNA',
+          sub: 'Your genre fingerprint. See exactly what kind of music person you are — in a single glance.',
+          stat: `${new Set(concerts.map(c => c.genre).filter(Boolean)).size} GENRES PROFILED`,
+        },
+        {
+          icon: '🎟️',
+          color: PURPLE,
+          title: 'ARTIFACT VAULT',
+          sub: 'Ticket stubs. Setlists. Polaroids. Festival posters. All in one physical archive.',
+          stat: `${concerts.filter(c => c.image_url || c.personal_photo_url).length} ARTIFACTS STORED`,
+        },
+      ].map((item, i) => (
+        <div
+          key={i}
+          style={{
+            background: `linear-gradient(135deg, #0a0a0a, #050508)`,
+            border: `1px solid ${item.color}33`,
+            borderRadius: 12,
+            padding: '36px 28px',
+            position: 'relative',
+            overflow: 'hidden',
+            transition: 'all 0.4s ease',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.borderColor = item.color;
+            e.currentTarget.style.transform = 'translateY(-8px)';
+            e.currentTarget.style.boxShadow = `0 30px 80px ${item.color}22`;
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.borderColor = `${item.color}33`;
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
+          {/* Background watermark */}
+          <div style={{ position: 'absolute', bottom: -20, right: -10, fontFamily: "'Bebas Neue'", fontSize: '8rem', color: item.color, opacity: 0.04, pointerEvents: 'none', lineHeight: 1 }}>
+            {item.icon}
+          </div>
+
+          {/* Top accent */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, transparent, ${item.color}, transparent)`, boxShadow: `0 0 10px ${item.color}` }} />
+
+          <div style={{ fontSize: '2.5rem', marginBottom: 20 }}>{item.icon}</div>
+          
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: '#fff', letterSpacing: 2, marginBottom: 12, lineHeight: 1 }}>
+            {item.title}
+          </div>
+          
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, lineHeight: 1.8, marginBottom: 24 }}>
+            {item.sub}
+          </div>
+
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: item.color, letterSpacing: 2, padding: '8px 12px', background: `${item.color}11`, border: `1px solid ${item.color}33`, borderRadius: 4, display: 'inline-block' }}>
+            {item.stat}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+{/* ── PULSING MANIFESTO CARD ── */}
+<div style={{ padding: isMobile ? '60px 20px' : '80px 40px', background: '#050508', borderTop: '1px solid #111' }}>
+  <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
+    <style>{`
+      @keyframes speaker-pulse {
+        0%, 100% { 
+          box-shadow: 0 0 20px ${PURPLE}33, 0 0 60px ${PURPLE}11, inset 0 0 20px ${PURPLE}08;
+          transform: scale(1);
+        }
+        50% { 
+          box-shadow: 0 0 60px ${PURPLE}66, 0 0 120px ${PURPLE}22, inset 0 0 40px ${PURPLE}15;
+          transform: scale(1.01);
+        }
+      }
+      @keyframes text-breathe {
+        0%, 100% { opacity: 0.7; letter-spacing: 4px; }
+        50% { opacity: 1; letter-spacing: 6px; }
+      }
+      .manifesto-card {
+        animation: speaker-pulse 3s ease-in-out infinite;
+      }
+      .manifesto-text {
+        animation: text-breathe 3s ease-in-out infinite;
+      }
+    `}</style>
+    <div
+      className="manifesto-card"
+      style={{
+        border: `1px solid ${PURPLE}44`,
+        borderRadius: 16,
+        padding: isMobile ? '40px 24px' : '60px 48px',
+        background: `linear-gradient(135deg, #0a0008, #08000f, #0a0008)`,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Corner accents */}
+      {[['0','0'], ['0','auto'], ['auto','0'], ['auto','auto']].map(([t, b], i) => (
+        <div key={i} style={{ position: 'absolute', top: t === '0' ? 12 : 'auto', bottom: b === '0' ? 12 : 'auto', left: i < 2 ? 12 : 'auto', right: i >= 2 ? 12 : 'auto', width: 20, height: 20, borderTop: i < 2 ? `2px solid ${PURPLE}` : 'none', borderBottom: i >= 2 ? `2px solid ${PURPLE}` : 'none', borderLeft: i % 2 === 0 ? `2px solid ${PURPLE}` : 'none', borderRight: i % 2 === 1 ? `2px solid ${PURPLE}` : 'none', opacity: 0.6 }} />
+      ))}
+
+      <div className="manifesto-text" style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.1rem' : '1.5rem', color: PURPLE, letterSpacing: 4, lineHeight: 2.2, marginBottom: 16 }}>
+        RELIVE YOUR LIVE MUSIC JOURNEY
+      </div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 8 : 10, color: '#fff', letterSpacing: 3, lineHeight: 2, opacity: 0.7 }}>
+        EVERY SHOW. EVERY STUB. EVERY MEMORY.
+      </div>
+    </div>
+  </div>
+</div>
+
+{/* ── FINAL CTA ── */}
+<div style={{ padding: isMobile ? '100px 20px' : '160px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#000' }}>
+
+  {/* Radial glow */}
+  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 900, height: 900, background: 'radial-gradient(circle, rgba(0,229,204,0.07) 0%, rgba(153,102,255,0.04) 35%, transparent 65%)', pointerEvents: 'none' }} />
+
+  {/* Top line */}
+  <div style={{ position: 'absolute', top: 0, left: '5%', right: '5%', height: 1, background: `linear-gradient(90deg, transparent, ${TEAL}88, ${PURPLE}88, transparent)`, boxShadow: `0 0 20px ${TEAL}44` }} />
+
+  {/* Side quotes */}
+  {!isMobile && (
+    <div style={{ position: 'absolute', left: -40, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: TEAL, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+      CURATE YOUR COLLECTION
+    </div>
+  )}
+  {!isMobile && (
+    <div style={{ position: 'absolute', right: -60, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: PURPLE, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+      YOUR MUSIC. YOUR LEGACY.
+    </div>
+  )}
+
+  <div style={{ position: 'relative', zIndex: 1 }}>
+
+    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: TEAL, letterSpacing: 6, marginBottom: 32, opacity: 0.8 }}>
+      // THE ARCHIVE AWAITS
+    </div>
+
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '4rem' : '9rem', color: '#fff', lineHeight: 0.85, letterSpacing: isMobile ? 2 : 6, marginBottom: 32, textShadow: `0 0 100px rgba(0,229,204,0.15)` }}>
+      YOUR<br />
+      HISTORY<br />
+      <span style={{ color: TEAL, textShadow: `0 0 60px rgba(0,229,204,0.8)` }}>IS WAITING.</span>
+    </div>
+
+    <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 9 : 12, color: GRAY, letterSpacing: 5, marginBottom: 20, lineHeight: 2.5 }}>
+      START YOUR ARCHIVE TODAY. IT'S FREE.<br />
+      <span style={{ color: PURPLE }}>NO SHOEBOX REQUIRED.</span>
+    </div>
+
+    {/* Divider */}
+    <div style={{ width: 80, height: 2, background: `linear-gradient(90deg, ${TEAL}, ${PURPLE})`, margin: '0 auto 60px', boxShadow: `0 0 15px ${TEAL}88` }} />
+
+    {/* Buttons */}
+    <div style={{ display: 'flex', gap: isMobile ? 16 : 24, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 80 }}>
+      <button
+        onClick={() => setMode('signup')}
+        style={{
+          background: TEAL,
+          color: '#000',
+          border: 'none',
+          padding: isMobile ? '20px 40px' : '28px 72px',
+          fontFamily: "'Bebas Neue'",
+          fontSize: isMobile ? '1.4rem' : '2rem',
+          letterSpacing: 5,
+          cursor: 'pointer',
+          borderRadius: 4,
+          transition: 'all 0.3s',
+          boxShadow: `0 0 40px rgba(0,229,204,0.5), 0 20px 60px rgba(0,0,0,0.5)`,
+        }}
+        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06) translateY(-4px)'; e.currentTarget.style.boxShadow = `0 0 80px rgba(0,229,204,0.8), 0 30px 80px rgba(0,0,0,0.6)`; }}
+        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1) translateY(0)'; e.currentTarget.style.boxShadow = `0 0 40px rgba(0,229,204,0.5), 0 20px 60px rgba(0,0,0,0.5)`; }}
+      >
+        INITIALIZE ARCHIVE
+      </button>
+      <button
+        onClick={() => setMode('login')}
+        style={{
+          background: 'transparent',
+          color: TEAL,
+          border: `2px solid ${TEAL}`,
+          padding: isMobile ? '20px 40px' : '28px 72px',
+          fontFamily: "'Bebas Neue'",
+          fontSize: isMobile ? '1.4rem' : '2rem',
+          letterSpacing: 5,
+          cursor: 'pointer',
+          borderRadius: 4,
+          transition: 'all 0.3s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = `${TEAL}15`; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 0 30px ${TEAL}33`; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+      >
+        ACCESS YOUR COLLECTION
+      </button>
+    </div>
+
+    {/* Stat strip */}
+    <div style={{ display: 'flex', gap: isMobile ? 24 : 80, justifyContent: 'center', flexWrap: 'wrap', padding: '40px 0', borderTop: `1px solid #111`, borderBottom: `1px solid #111`, marginBottom: 48 }}>
+      {[
+        [concerts.length, 'SHOWS', TEAL],
+        [new Set(concerts.flatMap(c => (c.bands || []).map(getBandName)).filter(Boolean)).size, 'ARTISTS', GOLD],
+        [new Set(concerts.map(c => c.venue).filter(Boolean)).size, 'VENUES', PURPLE],
+        [new Set(concerts.map(c => c.state).filter(Boolean)).size, 'STATES', '#ff4466'],
+      ].map(([val, label, color]) => (
+        <div key={label} style={{ textAlign: 'center' }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '3rem' : '5rem', color, lineHeight: 1, textShadow: `0 0 30px ${color}88` }}>{val}</div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, letterSpacing: 4, marginTop: 8 }}>{label}</div>
+        </div>
+      ))}
+    </div>
+
+    {/* Bottom manifesto */}
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '0.9rem' : '1.1rem', color: GRAY, letterSpacing: 6, lineHeight: 2.5, opacity: 0.5 }}>
+      TRACKRECORD // MUSEUM OF SOUND // EST. 2024<br />
+      <span style={{ fontSize: '0.85rem', letterSpacing: 4 }}>EVERY SHOW. EVERY STUB. EVERY MEMORY.</span>
+    </div>
+  </div>
+
+  {/* Bottom line */}
+  <div style={{ position: 'absolute', bottom: 0, left: '5%', right: '5%', height: 1, background: `linear-gradient(90deg, transparent, ${PURPLE}88, ${TEAL}88, transparent)` }} />
+</div>
       {/* ── BOTTOM TICKER ── */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000, background: '#000', borderTop: `1px solid ${TEAL}22`, height: 28, display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
         <div style={{ background: '#111', color: GOLD, fontFamily: "'Bebas Neue'", fontSize: 10, letterSpacing: 2, padding: '0 12px', height: '100%', display: 'flex', alignItems: 'center', flexShrink: 0, borderRight: `1px solid ${GOLD}33` }}>
