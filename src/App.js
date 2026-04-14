@@ -5245,15 +5245,23 @@ useEffect(() => {
     Object.assign(C, THEMES[themeId]);
   }
   const init = async () => {
-    setLoading(true);
-    try {
-      await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]);
-    } catch (e) {
-      console.error('Init error:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  setLoading(true);
+  console.log('init started, session:', session?.user?.id);
+  try {
+    console.log('fetching concerts...');
+    await fetchConcerts();
+    console.log('concerts done, fetching upcoming...');
+    await fetchUpcoming();
+    console.log('upcoming done, fetching genres...');
+    await fetchGenres();
+    console.log('all done');
+  } catch (e) {
+    console.error('Init error:', e);
+  } finally {
+    console.log('setting loading false');
+    setLoading(false);
+  }
+};
   if (session?.user?.id) init();
   else setLoading(false);
 }, [themeId, session]);
