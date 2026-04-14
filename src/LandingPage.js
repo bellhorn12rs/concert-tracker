@@ -26,10 +26,12 @@ const GENRE_COLORS = {
 };
 export default function LandingPage() {
   const [currentSession, setCurrentSession] = useState(null);
+const [sessionChecked, setSessionChecked] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setCurrentSession(session);
+      setSessionChecked(true);
     });
   }, []);
 
@@ -301,7 +303,14 @@ export default function LandingPage() {
         {recentUsers.slice(0, 5).map(u => (
           <button
             key={u.username}
-            onClick={() => { window.location.hash = `#/u/${u.username}`; window.location.reload(); }}
+            onClick={() => {
+  if (currentSession) {
+    window.location.href = `https://concert-tracker-eight.vercel.app/#/u/${u.username}`;
+  } else {
+    window.location.hash = `#/u/${u.username}`;
+    window.location.reload();
+  }
+}}
             style={{ background: '#0a0a0a', border: `1px solid ${u.avatar_color || TEAL}44`, borderRadius: 6, padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = u.avatar_color || TEAL; e.currentTarget.style.background = `${u.avatar_color || TEAL}11`; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = `${u.avatar_color || TEAL}44`; e.currentTarget.style.background = '#0a0a0a'; }}
@@ -311,7 +320,7 @@ export default function LandingPage() {
             </div>
             <div style={{ textAlign: 'left' }}>
               <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff', letterSpacing: 1 }}>@{u.username}</div>
-{currentSession && u.last_artist && (
+{sessionChecked && currentSession && u.last_artist && (
   <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: GRAY, marginTop: 1 }}>
     {u.last_artist.slice(0, 18)}
   </div>
