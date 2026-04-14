@@ -149,7 +149,9 @@ const [sessionChecked, setSessionChecked] = useState(false);
     setMessage('ACCESS DENIED: ' + error.message);
     setLoading(false);
   } else {
-    window.location.href = 'https://concert-tracker-eight.vercel.app';
+    setTimeout(() => {
+      window.location.href = 'https://concert-tracker-eight.vercel.app';
+    }, 500);
   }
 };
 
