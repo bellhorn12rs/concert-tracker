@@ -143,7 +143,7 @@ export default function LandingPage({ concerts = [] }) {
 
         .ticker-scroll {
           display: inline-block;
-          animation: ticker-scroll 40s linear infinite;
+          animation: ticker-scroll 80s linear infinite;
           white-space: nowrap;
         }
 
@@ -434,7 +434,7 @@ export default function LandingPage({ concerts = [] }) {
         }}>
           {[
             [concerts.length, 'SHOWS ARCHIVED'],
-            [new Set(concerts.map(c => getBandName(c.bands?.[0])).filter(Boolean)).size, 'UNIQUE ARTISTS'],
+            [new Set(concerts.flatMap(c => (c.bands || []).map(getBandName)).filter(Boolean)).size, 'UNIQUE ARTISTS'],
             [new Set(concerts.map(c => c.venue).filter(Boolean)).size, 'VENUES LOGGED'],
           ].map(([val, label]) => (
             <div key={label} style={{ textAlign: 'center' }}>
