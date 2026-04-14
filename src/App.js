@@ -5236,6 +5236,7 @@ export default function App() {
     if (!concerts || !Array.isArray(concerts)) return [];
     concerts.forEach(c => { 
       if (!c) return; 
+      const bands = Array.isArray(c.bands) ? c.bands : [c.artist].filter(Boolean);
       bands.forEach(band => { 
         const name = getBandName(band);
         if (name) r.push({ ...c, artist: name }); 
