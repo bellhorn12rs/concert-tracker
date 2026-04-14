@@ -5193,6 +5193,7 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
   setSession(session);
+  setAuthLoading(false);  // add this line
   
   if (session?.user?.id) {
     // Get their most recent show for last_artist
