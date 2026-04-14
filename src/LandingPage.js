@@ -391,7 +391,7 @@ export default function LandingPage({ concerts = [] }) {
           </div>
         </div>
       )}
-      </div>
+      </div> {/* closes hero section */}
 
       {/* ── SECTION 1: TEMPORAL DRIFT ── */}
       <div style={{ padding: isMobile ? '60px 20px' : '80px 40px', background: '#050508', borderTop: '1px solid #111', borderBottom: '1px solid #111' }}>
