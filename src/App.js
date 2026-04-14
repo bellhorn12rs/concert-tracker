@@ -3910,8 +3910,8 @@ function VenuesTab({ concerts }) {
                 }}>
                    {v.shows.map((show, idx) => {
                      const bands = Array.isArray(show.bands) ? show.bands : [];
-                     const headliner = bands[0] || 'UNKNOWN ARTIST';
-                     const support = bands.slice(1);
+                     const headliner = getBandName(bands[0]) || 'UNKNOWN ARTIST';
+                     const support = bands.slice(1).map(b => getBandName(b)).filter(Boolean);
                      const hasImg = show.image_url && show.image_url.trim() !== "";
 
                      return (
@@ -3941,7 +3941,6 @@ function VenuesTab({ concerts }) {
     transform: 'rotate(-0.5deg)', 
     border: '1px solid #ddd' 
   }}>
-    {/* Black Inner Frame ensures the white border looks consistent if the image is narrow */}
     <div style={{ 
       background: '#000', 
       width: '100%', 
@@ -3956,8 +3955,8 @@ function VenuesTab({ concerts }) {
         style={{ 
           width: '100%', 
           height: 'auto', 
-          maxHeight: '220px', // Increased height for better visibility
-          objectFit: 'contain', // <── THE FIX: Ensures whole image is shown
+          maxHeight: '220px',
+          objectFit: 'contain',
           display: 'block'
         }} 
       />
@@ -3993,7 +3992,7 @@ function VenuesTab({ concerts }) {
                                <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim }}>
                                  {show.is_festival ? fmtDateShort(show.date) : show.venue?.toUpperCase()}
                                </span>
-                               {show.personal_photo_url && <span style={{ fontSize: 10 }} title="Photo Archied">📸</span>}
+                               {show.personal_photo_url && <span style={{ fontSize: 10 }} title="Photo Archived">📸</span>}
                             </div>
                          </div>
                        </div>
