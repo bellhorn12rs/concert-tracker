@@ -3437,6 +3437,7 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
                                 <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: '5px' }}>{fmtDateShort(show.date)}</div>
                                 <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: '#fff', lineHeight: 1.5, borderTop: `1px solid ${hexToRgba(dayColor, 0.2)}`, marginTop: '15px', paddingTop: '10px' }}>
                                   {(show.bands || []).map(b => getBandName(b)).filter(Boolean).join(' · ').toUpperCase()}
+                                </div>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', marginLeft: '30px' }}>
                                 {setlists.length > 0 && <div style={{ display: 'flex' }}>{setlists.map((url, sIdx) => <SetlistPaper key={`${show.id}-s-${sIdx}`} src={url} index={sIdx} />)}</div>}
