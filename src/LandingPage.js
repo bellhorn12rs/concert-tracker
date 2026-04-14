@@ -398,14 +398,14 @@ export default function LandingPage({ concerts = [] }) {
 
   {/* Side quote — left */}
   {!isMobile && (
-    <div style={{ position: 'absolute', left: -60, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: TEAL, letterSpacing: 8, opacity: 0.15, whiteSpace: 'nowrap' }}>
+    <div style={{ position: 'absolute', left: -60, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: TEAL, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
       EVERY SHOW TELLS A STORY
     </div>
   )}
 
   {/* Side quote — right */}
   {!isMobile && (
-    <div style={{ position: 'absolute', right: -80, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: PURPLE, letterSpacing: 8, opacity: 0.15, whiteSpace: 'nowrap' }}>
+    <div style={{ position: 'absolute', right: -80, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: PURPLE, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
       20 YEARS IN 2 SECONDS
     </div>
   )}
