@@ -144,14 +144,13 @@ const [sessionChecked, setSessionChecked] = useState(false);
   e.preventDefault();
   setLoading(true);
   setMessage('');
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
     setMessage('ACCESS DENIED: ' + error.message);
     setLoading(false);
-  } else {
-    setTimeout(() => {
-      window.location.href = 'https://concert-tracker-eight.vercel.app';
-    }, 500);
+  } else if (data?.session) {
+    await supabase.auth.setSession(data.session);
+    window.location.href = 'https://concert-tracker-eight.vercel.app';
   }
 };
 
