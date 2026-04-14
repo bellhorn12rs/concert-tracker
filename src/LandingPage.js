@@ -731,16 +731,6 @@ export default function LandingPage({ concerts = [] }) {
         );
       })}
     </div>
-
-    {/* Bottom manifesto line */}
-    <div style={{ textAlign: 'center', marginTop: 60 }}>
-      <div style={{ display: 'inline-block', border: `1px solid ${PURPLE}44`, borderRadius: 4, padding: '16px 32px', background: `${PURPLE}08` }}>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: PURPLE, letterSpacing: 4, lineHeight: 2 }}>
-          RELIVE YOUR LIVE MUSIC JOURNEY<br />
-          <span style={{ color: GRAY, fontSize: 8 }}>EVERY SHOW. EVERY STUB. EVERY MEMORY.</span>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
       {/* ── WHAT'S INSIDE ── */}
