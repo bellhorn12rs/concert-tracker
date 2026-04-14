@@ -1019,7 +1019,7 @@ function NewsTicker({ concerts, artistCounts, genreStats }) {
     if (genreStats[0]) bits.push(`🧬 DOMINANT GENRE: ${genreStats[0].name.toUpperCase()} WITH ${genreStats[0].count} SETS`);
     
     concerts.slice(0,3).forEach(c => {
-const bands = Array.isArray(c.bands) ? c.bands.map(getBandName).join(', ') : (c.artist || 'UNKNOWN');        bits.push(`⚡ RECENTLY ATTENDED: ${bands.toUpperCase()} — ${fmtDateShort(c.date).toUpperCase()}`);
+const bands = Array.isArray(c.bands) ? c.bands.map(b => getBandName(b)).filter(Boolean).join(', ') : (c.artist || 'UNKNOWN');        bits.push(`⚡ RECENTLY ATTENDED: ${bands.toUpperCase()} — ${fmtDateShort(c.date).toUpperCase()}`);
     });
 
     bits.push(`📍 ${new Set(concerts.map(c=>c.state).filter(Boolean)).size} STATES CONQUERED`);
@@ -1086,7 +1086,7 @@ function OnThisDay({ concerts }) {
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, margin:'16px 0' }}>
       <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.3em', textTransform:'uppercase', color:C.tealDim }}>📅 On This Day — {dateLabel}</div>
       {matches.map(ev => {
-        const bands = (ev.bands||[]).map(getBandName).join(', ');
+        const bands = (ev.bands||[]).map(b => getBandName(b)).filter(Boolean).join(', ');
         const location = [ev.venue, ev.city, ev.state].filter(Boolean).join(', ');
         const year = getYear(ev.date);
         const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${bands} ${ev.venue||ev.city} ${year} live`)}`;
@@ -2336,7 +2336,7 @@ function WristbandCard({ event, genreMap, compact, onEdit }) {
   
   // Logic to handle the lineup display
   const bands = event.bands || [];
-  const lineup = bands.map(getBandName).join(' · ').toUpperCase();
+  const lineup = bands.map(b => getBandName(b)).filter(Boolean).join(' · ').toUpperCase();
   return (
     <div 
       onClick={onEdit ? () => onEdit(event) : null}
@@ -2602,7 +2602,7 @@ function TimelineDot({ item, onTeleport, genreMap, xPos }) {
   
   // 🟢 Logic to join all bands for the display title
   const bands = item.bands || [];
-  const lineupTitle = bands.length > 0 ? bands.map(getBandName).join(' · ').toUpperCase() : 'UNKNOWN ARTIST';
+  const lineupTitle = bands.length > 0 ? bands.map(b => getBandName(b)).filter(Boolean).join(' · ').toUpperCase() : 'UNKNOWN ARTIST';
 
   return (
     <div
