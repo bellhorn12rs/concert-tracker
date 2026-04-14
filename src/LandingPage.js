@@ -26,6 +26,12 @@ const GENRE_COLORS = {
 };
 
 export default function LandingPage() {
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) window.location.reload();
+    });
+  }, []);
+
   const [mode, setMode] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
