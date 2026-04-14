@@ -25,9 +25,11 @@ const GENRE_COLORS = {
   'Country':'#cc8800','Metal':'#888888','Other':'#334455','Festival':'#ffcc00',
 };
 export default function LandingPage() {
+  const [currentSession, setCurrentSession] = useState(null);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) window.location.href = 'https://concert-tracker-eight.vercel.app';
+      setCurrentSession(session);
     });
   }, []);
 
@@ -309,6 +311,11 @@ export default function LandingPage() {
             </div>
             <div style={{ textAlign: 'left' }}>
               <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff', letterSpacing: 1 }}>@{u.username}</div>
+{currentSession && u.last_artist && (
+  <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: GRAY, marginTop: 1 }}>
+    {u.last_artist.slice(0, 18)}
+  </div>
+)}
               {u.last_artist && (
                 <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: GRAY, marginTop: 1 }}>
                   {u.last_artist.slice(0, 18)}
@@ -413,7 +420,10 @@ export default function LandingPage() {
     INITIALIZE ARCHIVE
   </button>
   <button
-    onClick={() => setMode('login')}
+    onClick={() => {
+  if (currentSession) window.location.href = 'https://concert-tracker-eight.vercel.app';
+  else setMode('login');
+}}
     style={{
       background: 'transparent',
       color: TEAL,
@@ -963,7 +973,10 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
         INITIALIZE ARCHIVE
       </button>
       <button
-        onClick={() => setMode('login')}
+        onClick={() => {
+  if (currentSession) window.location.href = 'https://concert-tracker-eight.vercel.app';
+  else setMode('login');
+}}
         style={{
           background: 'transparent',
           color: TEAL,

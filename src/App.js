@@ -5577,7 +5577,6 @@ if (profileMatch) {
   return <PublicProfile username={username} currentSession={session} />;
 }
 
-if (authLoading) return null;
 if (!session) return <LandingPage />;
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
