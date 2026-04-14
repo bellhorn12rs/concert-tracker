@@ -177,7 +177,7 @@ export default function PublicProfile({ username, currentSession }) {
         {/* CTA for visitors */}
         {!currentSession && (
           <button
-            onClick={() => { window.location.hash = ''; setTimeout(() => { window.dispatchEvent(new CustomEvent('openSignup')); }, 100); }}
+            onClick={() => { window.location.hash = ''; window.location.reload(); }}
             style={{ background: TEAL, color: '#000', border: 'none', padding: '6px 16px', fontFamily: "'Bebas Neue'", fontSize: '0.9rem', letterSpacing: 2, cursor: 'pointer', borderRadius: 3 }}
           >
             START YOUR ARCHIVE
