@@ -5152,7 +5152,7 @@ export default function App() {
 
   // ── OWNER CHECK ──
   const isOwner = session?.user?.email === 'bellhorn12rs@gmail.com';
-  const isAdmin = isOwner; // alias so existing references don't break
+const isAdmin = !!session?.user; // any logged-in user can edit their own data
 
   const userValue = useMemo(() => {
     return {
@@ -5445,12 +5445,14 @@ export default function App() {
     }
   };
   async function fetchConcerts() {
-    const { data } = await supabase.from('concerts').select('*').order('date', { ascending: false });
+    if (!session?.user?.id) return;
+    const { data } = await supabase.from('concerts').select('*').eq('user_id', session.user.id).order('date', { ascending: false });
     if (data) setConcerts(data);
   }
 
   async function fetchGenres() {
-    const { data } = await supabase.from('artist_genres').select('*');
+    if (!session?.user?.id) return;
+    const { data } = await supabase.from('artist_genres').select('*').eq('user_id', session.user.id);
     if (data) {
       const gMap = {};
       data.forEach(row => { gMap[row.artist_name] = row.genre; });
@@ -5459,7 +5461,8 @@ export default function App() {
   }
 
   async function fetchUpcoming() {
-    const { data } = await supabase.from('upcoming_concerts').select('*').order('date', { ascending: true });
+    if (!session?.user?.id) return;
+    const { data } = await supabase.from('upcoming_concerts').select('*').eq('user_id', session.user.id).order('date', { ascending: true });
     if (data) setUpcoming(data);
   }
 
