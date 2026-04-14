@@ -545,95 +545,204 @@ export default function LandingPage({ concerts = [] }) {
 </div>
 
       {/* ── SECTION 2: ARTIFACT SCRUB ── */}
-      <div style={{ padding: isMobile ? '60px 20px' : '80px 40px' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GOLD, letterSpacing: 4, marginBottom: 8 }}>🎟️ FEATURE 02</div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '3.5rem', color: '#fff', letterSpacing: 2 }}>THE ARTIFACT VAULT</div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, marginTop: 8, letterSpacing: 2 }}>HOVER TO DEVELOP // EVERY SHOW LEAVES A MARK</div>
-          </div>
+<div style={{ padding: isMobile ? '60px 20px' : '80px 40px', position: 'relative', overflow: 'hidden', background: '#000' }}>
 
-          <div className="scrub-row" style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {scrubArtifacts.map((c, i) => {
-              const img = c.image_url?.split(',')[0] || c.personal_photo_url?.split(',')[0];
-              const band = getBandName(c.bands?.[0]) || c.festival_name || 'UNKNOWN';
-              const isHovered = hoveredArtifact === i;
-              return (
-                <div
-                  key={c.id || i}
-                  className="scrub-artifact"
-                  onMouseEnter={() => setHoveredArtifact(i)}
-                  onMouseLeave={() => setHoveredArtifact(null)}
-                  style={{ width: isMobile ? '45%' : 150, borderRadius: 4, overflow: 'hidden', position: 'relative', border: `1px solid ${isHovered ? GOLD : '#222'}`, transition: 'border-color 0.3s', boxShadow: isHovered ? `0 0 20px rgba(255,204,0,0.3)` : 'none' }}
-                >
-                  {img ? (
-                    <img src={img} alt={band} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block', filter: isHovered ? 'none' : 'blur(8px) brightness(0.3)', transition: 'filter 0.5s ease' }} />
-                  ) : (
-                    <div style={{ width: '100%', height: 180, background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontSize: '2rem' }}>🎫</span>
-                    </div>
-                  )}
-                  {!isHovered && (
-                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GOLD, letterSpacing: 2, textAlign: 'center' }}>SIGNAL_ENCRYPTED</div>
-                      <div style={{ width: 30, height: 30, border: `1px solid ${GOLD}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: GOLD }}>⊕</div>
-                    </div>
-                  )}
-                  {isHovered && (
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.9))', padding: '20px 10px 10px' }}>
-                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#fff', letterSpacing: 1 }}>{band.toUpperCase()}</div>
-                      <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GOLD }}>{fmtDateShort(c.date)}</div>
-                    </div>
-                  )}
+  {/* Big background text watermark */}
+  {!isMobile && (
+    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontFamily: "'Bebas Neue'", fontSize: '18rem', color: GOLD, opacity: 0.03, pointerEvents: 'none', whiteSpace: 'nowrap', letterSpacing: -10, userSelect: 'none' }}>
+      ARTIFACTS
+    </div>
+  )}
+
+  {/* Side quote left */}
+  {!isMobile && (
+    <div style={{ position: 'absolute', left: -50, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: GOLD, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+      THE SHOEBOX DIGITIZED
+    </div>
+  )}
+
+  {/* Side quote right */}
+  {!isMobile && (
+    <div style={{ position: 'absolute', right: -70, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: GOLD, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+      HOVER TO DEVELOP
+    </div>
+  )}
+
+  <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+    <div style={{ textAlign: 'center', marginBottom: 48 }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GOLD, letterSpacing: 4, marginBottom: 8 }}>🎟️ FEATURE 02</div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff', letterSpacing: 2, lineHeight: 0.9 }}>
+        THE ARTIFACT <span style={{ color: GOLD }}>VAULT</span>
+      </div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, marginTop: 12, letterSpacing: 2 }}>
+        HOVER TO DEVELOP // EVERY SHOW LEAVES A MARK
+      </div>
+    </div>
+
+    <div className="scrub-row" style={{ display: 'flex', gap: isMobile ? 12 : 20, justifyContent: 'center', flexWrap: 'wrap' }}>
+      {scrubArtifacts.map((c, i) => {
+        const img = c.image_url?.split(',')[0] || c.personal_photo_url?.split(',')[0];
+        const band = getBandName(c.bands?.[0]) || c.festival_name || 'UNKNOWN';
+        const isHovered = hoveredArtifact === i;
+        const accentColors = [GOLD, TEAL, PURPLE, '#ff4466', '#00cfff'];
+        const accent = accentColors[i % accentColors.length];
+        return (
+          <div
+            key={c.id || i}
+            onMouseEnter={() => setHoveredArtifact(i)}
+            onMouseLeave={() => setHoveredArtifact(null)}
+            style={{
+              width: isMobile ? '45%' : 160,
+              borderRadius: 4,
+              overflow: 'hidden',
+              position: 'relative',
+              border: `1px solid ${isHovered ? accent : '#1a1a1a'}`,
+              transition: 'all 0.4s ease',
+              boxShadow: isHovered ? `0 0 30px ${accent}66, 0 20px 60px rgba(0,0,0,0.8)` : '0 4px 20px rgba(0,0,0,0.5)',
+              transform: isHovered ? 'translateY(-8px) scale(1.02)' : 'translateY(0) scale(1)',
+              cursor: 'crosshair'
+            }}
+          >
+            {img ? (
+              <img
+                src={img}
+                alt={band}
+                style={{
+                  width: '100%',
+                  height: 200,
+                  objectFit: 'cover',
+                  display: 'block',
+                  filter: isHovered ? 'none' : 'blur(10px) brightness(0.2) saturate(0)',
+                  transition: 'filter 0.6s ease'
+                }}
+              />
+            ) : (
+              <div style={{ width: '100%', height: 200, background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: '3rem' }}>🎫</span>
+              </div>
+            )}
+
+            {/* Encrypted overlay */}
+            {!isHovered && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: 'rgba(0,0,0,0.3)' }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: accent, letterSpacing: 3, textAlign: 'center', lineHeight: 1.8 }}>
+                  SIGNAL_ENCRYPTED<br/>
+                  <span style={{ opacity: 0.5 }}>////////////////////</span>
                 </div>
-              );
-            })}
+                <div style={{ width: 36, height: 36, border: `1px solid ${accent}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: accent, boxShadow: `0 0 15px ${accent}44` }}>⊕</div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: accent, opacity: 0.4, letterSpacing: 2 }}>HOVER TO REVEAL</div>
+              </div>
+            )}
+
+            {/* Revealed overlay */}
+            {isHovered && (
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: `linear-gradient(transparent, rgba(0,0,0,0.95))`, padding: '30px 12px 12px' }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', letterSpacing: 1 }}>{band.toUpperCase()}</div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: accent, marginTop: 3 }}>{fmtDateShort(c.date)}</div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: GRAY, marginTop: 2 }}>{c.venue?.slice(0, 22)}</div>
+              </div>
+            )}
+
+            {/* Top accent bar */}
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: accent, opacity: isHovered ? 1 : 0.3, transition: 'opacity 0.4s', boxShadow: `0 0 10px ${accent}` }} />
           </div>
+        );
+      })}
+    </div>
+  </div>
+</div>
+
+{/* ── SECTION 3: THE PERMANENT RECORD ── */}
+<div style={{ padding: isMobile ? '60px 20px' : '100px 40px', background: '#050508', borderTop: '1px solid #111', borderBottom: '1px solid #111', position: 'relative', overflow: 'hidden' }}>
+
+  {/* Massive background quote */}
+  {!isMobile && (
+    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontFamily: "'Bebas Neue'", fontSize: '12rem', color: PURPLE, opacity: 0.04, pointerEvents: 'none', whiteSpace: 'nowrap', letterSpacing: -5, userSelect: 'none', lineHeight: 1 }}>
+      FOREVER
+    </div>
+  )}
+
+  {/* Side quote left */}
+  {!isMobile && (
+    <div style={{ position: 'absolute', left: -60, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: PURPLE, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+      MORE THAN STATS
+    </div>
+  )}
+
+  {/* Side quote right */}
+  {!isMobile && (
+    <div style={{ position: 'absolute', right: -80, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: PURPLE, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+      MUSEUM OF SOUND
+    </div>
+  )}
+
+  <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+
+    {/* Header */}
+    <div style={{ textAlign: 'center', marginBottom: 20 }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: PURPLE, letterSpacing: 4, marginBottom: 8 }}>🏛️ FEATURE 03</div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4.5rem', color: '#fff', letterSpacing: 2, lineHeight: 0.85 }}>
+        THE PERMANENT <span style={{ color: PURPLE }}>RECORD</span>
+      </div>
+    </div>
+
+    {/* Emotional copy */}
+    <div style={{ textAlign: 'center', marginBottom: 60 }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.3rem' : '2.2rem', color: GRAY, letterSpacing: 3, lineHeight: 1.4, marginBottom: 16 }}>
+        Social media feeds disappear.
+      </div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.8rem' : '3rem', color: '#fff', letterSpacing: 3, lineHeight: 1, textShadow: `0 0 30px rgba(153,102,255,0.4)` }}>
+        THE ARCHIVE IS <span style={{ color: PURPLE }}>FOREVER.</span>
+      </div>
+      <div style={{ width: 60, height: 2, background: PURPLE, margin: '24px auto 0', boxShadow: `0 0 10px ${PURPLE}` }} />
+    </div>
+
+    {/* Polaroid grid */}
+    <div className="permanent-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? 20 : 32, alignItems: 'start' }}>
+      {permanentRecord.map((c, i) => {
+        const img = c.image_url?.split(',')[0];
+        const band = getBandName(c.bands?.[0]) || c.festival_name || 'UNKNOWN';
+        const rotations = [-3, 2, -1.5, 3];
+        const tapeColors = [TEAL, GOLD, PURPLE, '#ff4466'];
+        return (
+          <div
+            key={c.id || i}
+            style={{ transform: `rotate(${rotations[i]}deg)`, transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)', position: 'relative' }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'rotate(0deg) scale(1.08) translateY(-8px)'; e.currentTarget.style.zIndex = 10; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = `rotate(${rotations[i]}deg)`; e.currentTarget.style.zIndex = 1; }}
+          >
+            {/* Tape */}
+            <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', width: 50, height: 16, background: tapeColors[i], opacity: 0.75, borderRadius: 1, zIndex: 20, boxShadow: `0 2px 8px rgba(0,0,0,0.3)` }} />
+
+            <div style={{ background: '#fff', padding: '10px 10px 44px 10px', boxShadow: '0 20px 60px rgba(0,0,0,0.8)', borderRadius: 2, position: 'relative' }}>
+              {img ? (
+                <img src={img} alt={band} style={{ width: '100%', height: isMobile ? 110 : 150, objectFit: 'cover', display: 'block', filter: 'contrast(1.05) saturate(0.95)' }} />
+              ) : (
+                <div style={{ width: '100%', height: isMobile ? 110 : 150, background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🎫</div>
+              )}
+              <div style={{ textAlign: 'center', marginTop: 10, fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#111', letterSpacing: 2 }}>
+                {band.slice(0, 14).toUpperCase()}
+              </div>
+              <div style={{ textAlign: 'center', fontFamily: "'Space Mono'", fontSize: 7, color: '#666', marginTop: 2 }}>
+                {getYear(c.date)}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    {/* Bottom manifesto line */}
+    <div style={{ textAlign: 'center', marginTop: 60 }}>
+      <div style={{ display: 'inline-block', border: `1px solid ${PURPLE}44`, borderRadius: 4, padding: '16px 32px', background: `${PURPLE}08` }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: PURPLE, letterSpacing: 4, lineHeight: 2 }}>
+          RELIVE YOUR LIVE MUSIC JOURNEY<br />
+          <span style={{ color: GRAY, fontSize: 8 }}>EVERY SHOW. EVERY STUB. EVERY MEMORY.</span>
         </div>
       </div>
-
-      {/* ── SECTION 3: THE PERMANENT RECORD ── */}
-      <div style={{ padding: isMobile ? '60px 20px' : '80px 40px', background: '#050508', borderTop: '1px solid #111', borderBottom: '1px solid #111' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: PURPLE, letterSpacing: 4, marginBottom: 8 }}>🏛️ FEATURE 03</div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '3.5rem', color: '#fff', letterSpacing: 2 }}>THE PERMANENT RECORD</div>
-          </div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.2rem' : '1.8rem', color: GRAY, textAlign: 'center', marginBottom: 48, letterSpacing: 2, lineHeight: 1.4 }}>
-            Social media feeds disappear.<br />
-            <span style={{ color: '#fff' }}>The Archive is forever.</span>
-          </div>
-
-          <div className="permanent-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? 16 : 24 }}>
-            {permanentRecord.map((c, i) => {
-              const img = c.image_url?.split(',')[0];
-              const band = getBandName(c.bands?.[0]) || c.festival_name || 'UNKNOWN';
-              const rotations = [-2, 1.5, -1, 2.5];
-              return (
-                <div key={c.id || i} style={{ transform: `rotate(${rotations[i]}deg)`, transition: 'transform 0.3s' }}
-                  onMouseEnter={e => e.currentTarget.style.transform = 'rotate(0deg) scale(1.05)'}
-                  onMouseLeave={e => e.currentTarget.style.transform = `rotate(${rotations[i]}deg)`}
-                >
-                  <div style={{ background: '#fff', padding: '8px 8px 36px 8px', boxShadow: '0 15px 40px rgba(0,0,0,0.7)', borderRadius: 2 }}>
-                    {img ? (
-                      <img src={img} alt={band} style={{ width: '100%', height: isMobile ? 100 : 140, objectFit: 'cover', display: 'block' }} />
-                    ) : (
-                      <div style={{ width: '100%', height: isMobile ? 100 : 140, background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>🎫</div>
-                    )}
-                    <div style={{ textAlign: 'center', marginTop: 6, fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: '#111', letterSpacing: 1 }}>
-                      {band.slice(0, 14).toUpperCase()}
-                    </div>
-                    <div style={{ textAlign: 'center', fontFamily: "'Space Mono'", fontSize: 6, color: '#888' }}>
-                      {getYear(c.date)}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
+    </div>
+  </div>
+</div>
       {/* ── FINAL CTA ── */}
       <div style={{ padding: isMobile ? '60px 20px' : '100px 40px', textAlign: 'center' }}>
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '3rem', color: '#fff', marginBottom: 8, letterSpacing: 3 }}>
