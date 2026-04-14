@@ -238,7 +238,10 @@ function buildGenreMap(concerts) {
 function getConcertGenreInfo(concert, genreMap) {
   const bands = Array.isArray(concert.bands) ? concert.bands : [];
   if (concert.genre) return { genre: concert.genre, color: GENRE_COLORS[concert.genre] || GENRE_COLORS['Other'], mixed: false };
-  const genres = [...new Set(bands.map(b => genreMap[b]).filter(Boolean))];
+  const genres = [...new Set(bands.map(b => {
+    const name = getBandName(b);
+    return b?.genre || genreMap[name] || null;
+  }).filter(Boolean))];
   if (!genres.length) return { genre: null, color: GENRE_COLORS['Other'], mixed: false };
   if (genres.length === 1) return { genre: genres[0], color: GENRE_COLORS[genres[0]] || GENRE_COLORS['Other'], mixed: false };
   return { genre: 'Mixed', color: null, mixed: true, genres };
