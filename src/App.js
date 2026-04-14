@@ -5248,19 +5248,13 @@ useEffect(() => {
   }
   const init = async () => {
   setLoading(true);
-  console.log('init started, session:', session?.user?.id);
   try {
-    console.log('fetching concerts...');
     await fetchConcerts();
-    console.log('concerts done, fetching upcoming...');
     await fetchUpcoming();
-    console.log('upcoming done, fetching genres...');
     await fetchGenres();
-    console.log('all done');
   } catch (e) {
     console.error('Init error:', e);
   } finally {
-    console.log('setting loading false');
     setLoading(false);
   }
 };
@@ -5269,10 +5263,10 @@ useEffect(() => {
       initRan.current = true;
       init();
     }
-  } else {
+  } else if (!authLoading) {
     setLoading(false);
   }
-}, [themeId, session]);
+}, [themeId, session, authLoading]);
   const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
 // ── 6. DATA DERIVATION ENGINE ──
   const PER_PAGE = 50; 
