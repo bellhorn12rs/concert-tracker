@@ -4572,32 +4572,26 @@ function PhotoVaultTab({ concerts }) {
     const results = [];
     safeConcerts.forEach(c => {
       if (!c || !c.personal_photo_url) return;
-      });
       
-      // 🛠️ MULTI-MEDIA PARSER: Handles single URLs, Imgur lists, and Supabase buckets
       const urls = String(c.personal_photo_url)
         .split(',')
         .map(u => u.trim())
         .filter(Boolean);
       
       urls.forEach((url, idx) => {
-        // Generate random "Starting" rotation for each pinned photo
         const startRotation = (Math.random() * 10 - 5).toFixed(2);
-
         results.push({
           id: `${c.id}-photo-${idx}`,
           url,
-artist: getBandName(c.bands?.[0]) || c.festival_name || 'UNKNOWN',
+          artist: getBandName(c.bands?.[0]) || c.festival_name || 'UNKNOWN',
           date: c.date,
           venue: c.venue || c.festival_name,
           rotation: startRotation
         });
       });
     });
-    // Sort by date (descending)
     return results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }, [safeConcerts]);
-
   // Empty state handler
   if (safeConcerts.length > 0 && photos.length === 0) {
     return (
