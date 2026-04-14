@@ -3,7 +3,6 @@ import { supabase } from './supabaseClient';
 // NEW: The User Brain Tools
 import { createContext, useContext } from 'react';
 import LandingPage from './LandingPage';
-import LandingPage from './LandingPage';
 import PublicProfile from './PublicProfile';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
