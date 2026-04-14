@@ -394,71 +394,155 @@ export default function LandingPage({ concerts = [] }) {
       </div> {/* closes hero section */}
 
       {/* ── SECTION 1: TEMPORAL DRIFT ── */}
-      <div style={{ padding: isMobile ? '60px 20px' : '80px 40px', background: '#050508', borderTop: '1px solid #111', borderBottom: '1px solid #111' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: TEAL, letterSpacing: 4, marginBottom: 8 }}>⏳ FEATURE 01</div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '3.5rem', color: '#fff', letterSpacing: 2 }}>TEMPORAL DRIFT</div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, marginTop: 8, letterSpacing: 2 }}>DRAG TO TRAVEL THROUGH YOUR HISTORY</div>
-          </div>
+<div style={{ padding: isMobile ? '60px 20px' : '80px 40px', background: '#050508', borderTop: '1px solid #111', borderBottom: '1px solid #111', position: 'relative', overflow: 'hidden' }}>
 
-          {/* Year display */}
-          <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '5rem' : '8rem', color: TEAL, lineHeight: 1, textShadow: `0 0 40px rgba(0,229,204,0.3)`, transition: 'all 0.3s' }}>
-              {sliderYear}
-            </div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 2 }}>
-              {sliderConcerts.length} SHOWS THIS YEAR
-            </div>
-          </div>
+  {/* Side quote — left */}
+  {!isMobile && (
+    <div style={{ position: 'absolute', left: -60, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: TEAL, letterSpacing: 8, opacity: 0.15, whiteSpace: 'nowrap' }}>
+      EVERY SHOW TELLS A STORY
+    </div>
+  )}
 
-          {/* Slider */}
-          <div style={{ padding: '0 20px', marginBottom: 32 }}>
-            <input
-              type="range"
-              min={minYear}
-              max={maxYear}
-              value={sliderYear || maxYear}
-              onChange={e => setSliderYear(Number(e.target.value))}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-              <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GRAY }}>{minYear}</span>
-              <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GRAY }}>{maxYear}</span>
-            </div>
-          </div>
+  {/* Side quote — right */}
+  {!isMobile && (
+    <div style={{ position: 'absolute', right: -80, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: PURPLE, letterSpacing: 8, opacity: 0.15, whiteSpace: 'nowrap' }}>
+      20 YEARS IN 2 SECONDS
+    </div>
+  )}
 
-          {/* Year artifact + show list */}
-          <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {sliderImg && (
-              <div style={{ background: '#fff', padding: '8px 8px 40px 8px', boxShadow: '0 20px 60px rgba(0,0,0,0.8)', borderRadius: 2, width: isMobile ? 160 : 200, flexShrink: 0, transform: 'rotate(-1.5deg)', transition: 'all 0.5s' }}>
-                <img src={sliderImg} alt={sliderBand} style={{ width: '100%', height: isMobile ? 120 : 150, objectFit: 'cover', display: 'block' }} />
-                <div style={{ position: 'absolute', bottom: 8, left: 0, right: 0, textAlign: 'center', fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#111' }}>
-                  {sliderBand.toUpperCase()}
+  <div style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ textAlign: 'center', marginBottom: 40 }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: TEAL, letterSpacing: 4, marginBottom: 8 }}>⏳ FEATURE 01</div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '3.5rem', color: '#fff', letterSpacing: 2 }}>TEMPORAL DRIFT</div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, marginTop: 8, letterSpacing: 2 }}>DRAG TO TRAVEL THROUGH YOUR HISTORY</div>
+    </div>
+
+    {/* Year display */}
+    <div style={{ textAlign: 'center', marginBottom: 24 }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '5rem' : '8rem', color: TEAL, lineHeight: 1, textShadow: `0 0 40px rgba(0,229,204,0.3)`, transition: 'all 0.3s' }}>
+        {sliderYear}
+      </div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 2 }}>
+        {sliderConcerts.length} SHOWS THIS YEAR
+      </div>
+    </div>
+
+    {/* Slider */}
+    <div style={{ padding: '0 20px', marginBottom: 48 }}>
+      <input
+        type="range"
+        min={minYear}
+        max={maxYear}
+        value={sliderYear || maxYear}
+        onChange={e => setSliderYear(Number(e.target.value))}
+      />
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+        <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GRAY }}>{minYear}</span>
+        <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GRAY }}>{maxYear}</span>
+      </div>
+    </div>
+
+    {/* ── MINI PANORAMIC TIMELINE ── */}
+    <div style={{ position: 'relative', height: 200, marginBottom: 48, overflowX: 'auto', overflowY: 'visible' }}>
+      {/* Center line */}
+      <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${TEAL}66, ${PURPLE}66, transparent)`, transform: 'translateY(-50%)', zIndex: 1 }} />
+
+      {/* Dots + labels */}
+      <div style={{ position: 'relative', height: '100%', minWidth: isMobile ? 600 : '100%' }}>
+        {sliderConcerts.slice(0, 12).map((c, i) => {
+          const band = getBandName(c.bands?.[0]) || c.festival_name || '?';
+          const color = GENRE_COLORS[c.genre] || TEAL;
+          const isUp = i % 2 === 0;
+          const leftPct = ((i + 0.5) / Math.max(sliderConcerts.slice(0, 12).length, 1)) * 100;
+
+          return (
+            <div key={c.id || i} style={{ position: 'absolute', left: `${leftPct}%`, top: '50%', transform: 'translate(-50%, -50%)', zIndex: 10 }}>
+              {/* Line going up or down */}
+              <div style={{
+                position: 'absolute',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: 1,
+                height: 60,
+                background: `linear-gradient(${isUp ? 'to top' : 'to bottom'}, ${color}, transparent)`,
+                [isUp ? 'bottom' : 'top']: '100%',
+                opacity: 0.7
+              }} />
+
+              {/* Label */}
+              <div style={{
+                position: 'absolute',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                [isUp ? 'bottom' : 'top']: 'calc(100% + 65px)',
+                whiteSpace: 'nowrap',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.75rem', color: '#fff', letterSpacing: 1 }}>
+                  {band.slice(0, 12).toUpperCase()}
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: color }}>
+                  {fmtDateShort(c.date)}
                 </div>
               </div>
-            )}
-            <div style={{ flex: 1, minWidth: 200 }}>
-              {sliderConcerts.slice(0, 6).map((c, i) => {
-                const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
-                const color = GENRE_COLORS[c.genre] || TEAL;
-                return (
-                  <div key={c.id || i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid #111' }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0, boxShadow: `0 0 6px ${color}` }} />
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', flex: 1 }}>{band.toUpperCase()}</div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GRAY }}>{c.venue?.slice(0, 20)}</div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: color }}>{fmtDateShort(c.date)}</div>
-                  </div>
-                );
-              })}
-              {sliderConcerts.length > 6 && (
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GRAY, marginTop: 8, letterSpacing: 2 }}>
-                  + {sliderConcerts.length - 6} MORE SIGNALS THIS YEAR
-                </div>
-              )}
+
+              {/* Dot */}
+              <div style={{
+                width: c.is_festival ? 12 : 8,
+                height: c.is_festival ? 12 : 8,
+                borderRadius: '50%',
+                background: color,
+                border: `2px solid ${c.is_festival ? GOLD : color}`,
+                boxShadow: `0 0 10px ${color}`,
+                position: 'relative',
+                zIndex: 2,
+                transition: 'all 0.2s'
+              }} />
             </div>
+          );
+        })}
+
+        {sliderConcerts.length === 0 && (
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 2 }}>
+            NO SIGNALS THIS YEAR
+          </div>
+        )}
+      </div>
+    </div>
+
+    {/* Show list below timeline */}
+    <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'center' }}>
+      {sliderImg && (
+        <div style={{ position: 'relative', background: '#fff', padding: '8px 8px 40px 8px', boxShadow: '0 20px 60px rgba(0,0,0,0.8)', borderRadius: 2, width: isMobile ? 140 : 180, flexShrink: 0, transform: 'rotate(-1.5deg)', transition: 'all 0.5s' }}>
+          <img src={sliderImg} alt={sliderBand} style={{ width: '100%', height: isMobile ? 100 : 130, objectFit: 'cover', display: 'block' }} />
+          <div style={{ position: 'absolute', bottom: 8, left: 0, right: 0, textAlign: 'center', fontFamily: "'Bebas Neue'", fontSize: '0.85rem', color: '#111' }}>
+            {sliderBand.toUpperCase()}
           </div>
         </div>
+      )}
+
+      <div style={{ flex: 1, minWidth: 200 }}>
+        {sliderConcerts.slice(0, 6).map((c, i) => {
+          const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
+          const color = GENRE_COLORS[c.genre] || TEAL;
+          return (
+            <div key={c.id || i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #111' }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0, boxShadow: `0 0 6px ${color}` }} />
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', flex: 1 }}>{band.toUpperCase()}</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GRAY, display: isMobile ? 'none' : 'block' }}>{c.venue?.slice(0, 18)}</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: color, flexShrink: 0 }}>{fmtDateShort(c.date)}</div>
+            </div>
+          );
+        })}
+        {sliderConcerts.length > 6 && (
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GRAY, marginTop: 10, letterSpacing: 2 }}>
+            + {sliderConcerts.length - 6} MORE SIGNALS THIS YEAR
+          </div>
+        )}
       </div>
+    </div>
+  </div>
+</div>
 
       {/* ── SECTION 2: ARTIFACT SCRUB ── */}
       <div style={{ padding: isMobile ? '60px 20px' : '80px 40px' }}>
