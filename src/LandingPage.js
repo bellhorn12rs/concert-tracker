@@ -34,6 +34,19 @@ export default function LandingPage({ concerts = [] }) {
   const [message, setMessage] = useState('');
   const [featuredIdx, setFeaturedIdx] = useState(0);
   const [tickerPaused, setTickerPaused] = useState(false);
+  const [recentUsers, setRecentUsers] = useState([]);
+
+  useEffect(() => {
+    const fetchRecentUsers = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('username, avatar_color, last_seen, last_artist, last_venue')
+        .order('last_seen', { ascending: false })
+        .limit(10);
+      if (data) setRecentUsers(data);
+    };
+    fetchRecentUsers();
+  }, []);
   const [sliderYear, setSliderYear] = useState(null);
   const [hoveredArtifact, setHoveredArtifact] = useState(null);
   const isMobile = window.innerWidth < 768;
@@ -337,6 +350,47 @@ export default function LandingPage({ concerts = [] }) {
           <button className="cta-primary" onClick={() => setMode('signup')}>INITIALIZE ARCHIVE</button>
           <button className="cta-secondary" onClick={() => setMode('login')}>ACCESS YOUR COLLECTION</button>
         </div>
+        {/* ── RECENT ARCHIVISTS ── */}
+      {recentUsers.length > 0 && (
+        <div style={{ width: '100%', maxWidth: 900, margin: '40px auto 0', padding: isMobile ? '0 20px' : '0' }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GRAY, letterSpacing: 3, marginBottom: 16, textAlign: 'center' }}>
+            // ACTIVE ARCHIVISTS
+          </div>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {recentUsers.map(u => (
+              <button
+                key={u.username}
+                onClick={() => { window.location.hash = `#/u/${u.username}`; window.location.reload(); }}
+                style={{
+                  background: '#0a0a0a',
+                  border: `1px solid ${u.avatar_color || TEAL}44`,
+                  borderRadius: 6,
+                  padding: '10px 16px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = u.avatar_color || TEAL; e.currentTarget.style.background = `${u.avatar_color || TEAL}11`; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = `${u.avatar_color || TEAL}44`; e.currentTarget.style.background = '#0a0a0a'; }}
+              >
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: `${u.avatar_color || TEAL}22`, border: `1px solid ${u.avatar_color || TEAL}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Bebas Neue'", fontSize: '1rem', color: u.avatar_color || TEAL, flexShrink: 0 }}>
+                  {u.username[0].toUpperCase()}
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#fff', letterSpacing: 1 }}>@{u.username}</div>
+                  {u.last_artist && (
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, marginTop: 2 }}>
+                      Last: {u.last_artist.slice(0, 20)}
+                    </div>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       </div>
 
       {/* ── SECTION 1: TEMPORAL DRIFT ── */}

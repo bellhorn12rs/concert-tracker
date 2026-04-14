@@ -3,6 +3,8 @@ import { supabase } from './supabaseClient';
 // NEW: The User Brain Tools
 import { createContext, useContext } from 'react';
 import LandingPage from './LandingPage';
+import LandingPage from './LandingPage';
+import PublicProfile from './PublicProfile';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const getBandName = (b) => typeof b === 'string' ? b : (b?.name || '');
@@ -5539,6 +5541,14 @@ export default function App() {
     await supabase.from('concerts').insert([{ ...rest, date: '', festival_day: '' }]);
     fetchConcerts();
   }
+i// Hash routing for public profiles
+const hash = window.location.hash;
+const profileMatch = hash.match(/^#\/u\/(.+)$/);
+if (profileMatch) {
+  const username = profileMatch[1];
+  return <PublicProfile username={username} currentSession={session} />;
+}
+
 if (!session && !loading) return <LandingPage concerts={concerts} />;
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
