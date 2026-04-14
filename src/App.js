@@ -5240,20 +5240,23 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
       localStorage.setItem('concert-theme', id);
     }
   };
-
-  useEffect(() => { 
-    if (THEMES[themeId]) {
-      Object.assign(C, THEMES[themeId]);
-    }
-    const init = async () => {
-      setLoading(true);
+useEffect(() => { 
+  if (THEMES[themeId]) {
+    Object.assign(C, THEMES[themeId]);
+  }
+  const init = async () => {
+    setLoading(true);
+    try {
       await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]);
+    } catch (e) {
+      console.error('Init error:', e);
+    } finally {
       setLoading(false);
-    };
-    if (session?.user?.id) init();
-    else setLoading(false);
-  }, [themeId, session]);
-
+    }
+  };
+  if (session?.user?.id) init();
+  else setLoading(false);
+}, [themeId, session]);
   const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
 // ── 6. DATA DERIVATION ENGINE ──
   const PER_PAGE = 50; 
@@ -5578,8 +5581,9 @@ if (profileMatch) {
   return <PublicProfile username={username} currentSession={session} />;
 }
 
+if (authLoading) return null;
 if (!session) return <LandingPage />;
-  if (loading) return (
+if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
     </div>
