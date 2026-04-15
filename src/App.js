@@ -3117,79 +3117,91 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
     if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
     return results;
   }, [dayGroups]);
+{/* ── PAPER TRAIL LIST ── */}
+<div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+  {concerts.map((c, i) => {
+    const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
+    const allBands = (c.bands || []).map(getBandName).filter(Boolean);
+    const color = GENRE_COLORS[c.genre] || TEAL;
+    const img = c.image_url?.split(',')[0] || c.personal_photo_url?.split(',')[0];
+    
+    return (
+      <div 
+        key={c.id || i} 
+        className="show-row" 
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 16, 
+          padding: '12px 16px', 
+          background: '#050505', 
+          borderRadius: 6, 
+          border: `1px solid #111`, 
+          transition: 'background 0.2s',
+          position: 'relative'
+        }}
+      >
+        {/* Artifact Thumbnail */}
+        {img ? (
+          <img src={img} alt={band} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 3, flexShrink: 0 }} />
+        ) : (
+          <div style={{ width: 48, height: 48, background: `${color}22`, borderRadius: 3, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+          </div>
+        )}
 
-  return (
-    <div style={{ padding: isMobile ? '10px' : '24px 0' }} className="fade-in">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '30px' : '60px' }}>
-        {clusters.map((cluster, ci) => {
-          if (cluster.type === 'solo') {
-            return (
-              <ScrapbookRow 
-                key={cluster.event.id} 
-                event={cluster.event} 
-                idx={ci} 
-                isAdmin={isAdmin} 
-                onEdit={onEdit} 
-                genreMap={genreMap} 
-              />
-            );
-          }
+        {/* Show Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', lineHeight: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {allBands.length > 1 ? allBands.join(' · ').toUpperCase() : band.toUpperCase()}
+          </div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, marginTop: 3 }}>
+            {c.venue} {c.city ? `· ${c.city}` : ''}
+          </div>
+        </div>
 
-          const firstEvent = cluster.events[0];
-          const festColor = GENRE_COLORS[genreMap[firstEvent.bands?.[0]]] || C.teal;
+        {/* Actions & Date */}
+        <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: color }}>{fmtDateShort(c.date)}</div>
+          
+          {/* 🟢 THE "I WAS THERE" BUTTON: Only shows if you are visiting another user */}
+          {viewingUser && viewingUser !== session?.user?.id && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleIWasThere(c);
+              }}
+              style={{
+                background: 'transparent',
+                border: `1px solid ${TEAL}`,
+                color: TEAL,
+                padding: '4px 8px',
+                fontFamily: "'Space Mono'",
+                fontSize: 7,
+                cursor: 'pointer',
+                borderRadius: 3,
+                transition: 'all 0.2s',
+                letterSpacing: 1
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = TEAL; e.currentTarget.style.color = '#000'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = TEAL; }}
+            >
+              + I WAS THERE
+            </button>
+          )}
 
-          return (
-            <div key={`cluster-${ci}`} style={{ 
-              position: 'relative', 
-              padding: isMobile ? '20px 15px' : '40px', // 🟢 Tighter padding on mobile
-              background: 'rgba(255,255,255,0.01)', 
-              border: `1px solid ${hexToRgba(festColor, 0.2)}`, 
-              borderRadius: isMobile ? '12px' : '24px',
-              boxShadow: `inset 0 0 60px ${hexToRgba(festColor, 0.03)}`
-            }}>
-              {/* SHARED FESTIVAL HEADER AREA */}
-              <div style={{ 
-                display: 'flex', 
-                flexDirection: isMobile ? 'column' : 'row', // 🟢 Stack header on mobile
-                alignItems: isMobile ? 'flex-start' : 'baseline', 
-                gap: isMobile ? '5px' : '25px', 
-                marginBottom: isMobile ? '25px' : '40px' 
-              }}>
-                <div style={{ 
-                  fontFamily: "'Bebas Neue'", 
-                  fontSize: isMobile ? '2.5rem' : '5rem', // 🟢 Shrunken font
-                  color: festColor, 
-                  lineHeight: 1, 
-                  textShadow: `0 0 30px ${hexToRgba(festColor, 0.3)}` 
-                }}>
-                  {firstEvent.festival_name.toUpperCase()}
-                </div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, letterSpacing: '2px', fontWeight: 900 }}>
-                  {new Date(firstEvent.date).getFullYear()} // {cluster.events.length} DAYS
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                {cluster.events.map((event, ei) => (
-                  <ScrapbookRow 
-                    key={event.id} 
-                    event={event} 
-                    idx={ei} 
-                    isAdmin={isAdmin} 
-                    onEdit={onEdit} 
-                    genreMap={genreMap} 
-                    isClustered={true}
-                    clusterColor={festColor}
-                  />
-                ))}
-              </div>
+          {/* Edit/Duplicate for Owners */}
+          {!viewingUser && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => handleDuplicate(c)} style={{ background: 'none', border: 'none', color: GRAY, fontSize: 10, cursor: 'pointer' }}>❐</button>
+              <button onClick={() => setEditTarget(c)} style={{ background: 'none', border: 'none', color: TEAL, fontSize: 10, cursor: 'pointer' }}>✎</button>
             </div>
-          );
-        })}
+          )}
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  })}
+</div>
 
 // ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With Multi-Artist Setlinks) ─────────────
 
@@ -5329,7 +5341,7 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
       fetchUpcoming();
     }
   }, [viewingUser, session]);
-  
+
   // 🔍 THE TEMPORAL SCANNER (Post-Show Nudge)
   useEffect(() => {
     if (upcoming.length > 0 && !loading && isAdmin) {
@@ -5606,6 +5618,30 @@ useEffect(() => {
     allSetsList.forEach(s => { const y = getYear(s.date); if (y) m[y] = (m[y] || 0) + 1; });
     return Object.entries(m).sort((a, b) => +a[0] - +b[0]).map(([year, count]) => ({ year: String(year).slice(2), count, fullYear: +year }));
   }, [allSetsList]);
+
+  const handleIWasThere = async (concert) => {
+    if (!session) return alert("LOGIN REQUIRED TO ARCHIVE SIGNALS");
+
+    // 1. Prepare the clone (Remove their ID, add your ID)
+    const { id, created_at, user_id, ...clonedData } = concert;
+    
+    const newRecord = {
+      ...clonedData,
+      user_id: session.user.id, // 🟢 THE PIVOT: Now it belongs to you
+      is_public: true, // Default to public
+      date_added: new Date().toISOString()
+    };
+
+    try {
+      const { error } = await supabase.from('concerts').insert([newRecord]);
+      if (error) throw error;
+      
+      // 🟢 SUCCESS FEEDBACK: Maybe a temporary toast or a simple alert
+      alert(`SIGNAL CLONED: ${getBandName(concert.bands?.[0])} added to your archive!`);
+    } catch (err) {
+      console.error("Cloning failed:", err);
+    }
+  };
 
   const handleGenreClick = (genre) => {
     setGenreFilter(genre);
