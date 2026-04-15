@@ -5972,12 +5972,10 @@ if (loading) return (
   {/* 1. THE DASHBOARD (CENTER STAGE) */}
 
   {activeTab === 'community' && (
-  <CommunityTab 
-    onEnterMuseum={(username) => {
-      window.location.hash = `#/u/${username}`;
-    }} 
-  />
-)}
+    <CommunityTab 
+      onEnterMuseum={handleNavigateToUser} 
+    />
+  )}
   {activeTab === 'dashboard' && (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <OnThisDay concerts={concerts} />
