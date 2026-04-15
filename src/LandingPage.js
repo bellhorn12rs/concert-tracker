@@ -294,191 +294,164 @@ const [sessionChecked, setSessionChecked] = useState(false);
         </div>
       </div>
 
-   {/* ── HERO ── */}
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', padding: isMobile ? '80px 20px 60px' : '80px 40px 60px' }}>
+     {/* ── HERO ── */}
+<div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', padding: isMobile ? '80px 20px 60px' : '80px 40px 60px' }}>
 
-        {/* Background glow */}
-        <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%, -50%)', width: 600, height: 600, background: `radial-gradient(circle, rgba(0,229,204,0.06) 0%, transparent 70%)`, pointerEvents: 'none' }} />
+  {/* Background glow */}
+  <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%, -50%)', width: 600, height: 600, background: `radial-gradient(circle, rgba(0,229,204,0.06) 0%, transparent 70%)`, pointerEvents: 'none' }} />
 
-        {/* Active Archivists — top right */}
-        {recentUsers.length > 0 && (
-          <div style={{ position: 'absolute', top: 20, right: isMobile ? 16 : 40, zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, letterSpacing: 3, marginBottom: 4 }}>// ACTIVE ARCHIVISTS</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {sessionChecked && recentUsers.slice(0, 5).map(u => (
-                <button
-                  key={u.username}
-                  onClick={() => {
-                    // 🟢 THE BRIDGE: Tell App.js to handle the navigation via hash router
-                    if (props.onNavigateToUser) {
-                      props.onNavigateToUser(u.username);
-                    }
-                  }}
-                  style={{ 
-                    background: '#0a0a0a', 
-                    border: `1px solid ${u.avatar_color || TEAL}44`, 
-                    borderRadius: 6, 
-                    padding: '6px 12px', 
-                    cursor: 'pointer', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 8, 
-                    transition: 'all 0.2s' 
-                  }}
-                  onMouseEnter={e => { 
-                    e.currentTarget.style.borderColor = u.avatar_color || TEAL; 
-                    e.currentTarget.style.background = `${u.avatar_color || TEAL}11`; 
-                  }}
-                  onMouseLeave={e => { 
-                    e.currentTarget.style.borderColor = `${u.avatar_color || TEAL}44`; 
-                    e.currentTarget.style.background = '#0a0a0a'; 
-                  }}
-                >
-                  <div style={{ 
-                    width: 20, height: 20, borderRadius: '50%', 
-                    background: `${u.avatar_color || TEAL}22`, 
-                    border: `1px solid ${u.avatar_color || TEAL}`, 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                    fontFamily: "'Bebas Neue'", fontSize: '0.8rem', 
-                    color: u.avatar_color || TEAL, flexShrink: 0 
-                  }}>
-                    {u.username[0].toUpperCase()}
-                  </div>
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff', letterSpacing: 1 }}>
-                      @{u.username}
-                    </div>
-                    {/* 🟢 Visual Archaeology Signal: Shows their latest discovery metadata */}
-                    {u.last_artist && (
-                      <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: GRAY, marginTop: 1 }}>
-                        {u.last_artist.slice(0, 18).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Wordmark */}
-        <div className="fade-in" style={{ textAlign: 'center', marginBottom: 48, position: 'relative', zIndex: 1 }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '3.5rem' : 'clamp(3rem, 8vw, 6rem)', letterSpacing: 8, color: '#fff', lineHeight: 0.9, textShadow: `0 0 40px rgba(0,229,204,0.3)` }}>
-            TRACK<span style={{ color: TEAL }}>RECORD</span>
-          </div>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 4, marginTop: 12 }}>
-            YOUR CONCERT HISTORY. MUSEUM GRADE.
-          </div>
-        </div>
-
-        {/* Hero grid */}
-        <div className="hero-grid fade-in" style={{ display: 'flex', gap: 60, alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: 900, position: 'relative', zIndex: 1, marginBottom: 48 }}
-          onMouseEnter={() => setTickerPaused(true)}
-          onMouseLeave={() => setTickerPaused(false)}
-        >
-          {/* Artifact */}
-          {featuredImg && (
-            <div className="artifact-drift" style={{ flexShrink: 0 }}>
-              <div style={{ background: '#fff', padding: '10px 10px 50px 10px', boxShadow: '0 30px 80px rgba(0,0,0,0.8), 0 0 40px rgba(0,229,204,0.2)', borderRadius: 2, position: 'relative', width: isMobile ? 220 : 260 }}>
-                <img src={featuredImg} alt={featuredBand} style={{ width: '100%', height: isMobile ? 160 : 200, objectFit: 'cover', display: 'block' }} />
-                <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, textAlign: 'center', fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#111', letterSpacing: 2 }}>
-                  {featuredBand.toUpperCase()}
-                </div>
-              </div>
-              {/* Readout */}
-              <div style={{ marginTop: 12, background: '#0a0a0a', border: `1px solid ${TEAL}33`, borderRadius: 4, padding: '8px 12px', display: 'flex', gap: 16, justifyContent: 'center' }}>
-                {[['DATE', fmtDateShort(featured?.date)], ['VENUE', (featured?.venue || 'UNKNOWN').slice(0, 18)], ['GRADE', 'MUSEUM']].map(([l, v]) => (
-                  <div key={l} style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 7, color: TEAL, letterSpacing: 2, marginBottom: 2 }}>{l}</div>
-                    <div style={{ fontSize: 8, color: '#fff', letterSpacing: 1 }}>{v?.toUpperCase()}</div>
-                  </div>
-                ))}
-              </div>
-              {/* Dots */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
-                {artifacts.slice(0, 8).map((_, i) => (
-                  <div key={i} onClick={() => setFeaturedIdx(i)} style={{ width: i === featuredIdx ? 16 : 6, height: 6, borderRadius: 3, background: i === featuredIdx ? TEAL : '#333', cursor: 'pointer', transition: 'all 0.3s' }} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Right side — stats + one liner */}
-          <div style={{ flex: 1, textAlign: isMobile ? 'center' : 'left' }}>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1rem' : '1.2rem', color: GRAY, letterSpacing: 4, marginBottom: 24 }}>
-              THE ARCHIVE // LIVE READOUT
-            </div>
-            <div className="stats-row" style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start', marginBottom: 32 }}>
-              {[
-                [concerts.length, 'SHOWS'],
-                [uniqueArtists, 'ARTISTS'],
-                [new Set(concerts.map(c => c.venue).filter(Boolean)).size, 'VENUES'],
-                [new Set(concerts.map(c => c.state).filter(Boolean)).size, 'STATES'],
-              ].map(([val, label]) => (
-                <div key={label} style={{ textAlign: 'center' }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '3rem', color: TEAL, lineHeight: 1, textShadow: `0 0 20px rgba(0,229,204,0.4)` }}>{val}</div>
-                  <div style={{ fontSize: 7, color: GRAY, letterSpacing: 2, marginTop: 4 }}>{label}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.4rem' : '2rem', color: '#fff', lineHeight: 1.2, marginBottom: 8, opacity: 0.9 }}>
-              {concerts.length} SHOWS.<br />
-              {uniqueArtists} ARTISTS.<br />
-              {new Set(concerts.map(c => c.state).filter(Boolean)).size} STATES.<br />
-              <span style={{ color: TEAL }}>ONE ARCHIVE.</span>
-            </div>
-          </div>
-        </div>
-
-        {/* CTAs */}
-        <div className="fade-in" style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center', position: 'relative', zIndex: 1, marginTop: 40 }}>
+  {/* Active Archivists — top right */}
+  {recentUsers.length > 0 && (
+    <div style={{ position: 'absolute', top: 20, right: isMobile ? 16 : 40, zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, letterSpacing: 3, marginBottom: 4 }}>// ACTIVE ARCHIVISTS</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {sessionChecked && recentUsers.slice(0, 5).map(u => (
           <button
-            onClick={() => setMode('signup')}
-            style={{
-              background: TEAL,
-              color: '#000',
-              border: 'none',
-              padding: isMobile ? '18px 40px' : '24px 64px',
-              fontFamily: "'Bebas Neue'",
-              fontSize: isMobile ? '1.4rem' : '2rem',
-              letterSpacing: 5,
-              cursor: 'pointer',
-              borderRadius: 4,
-              transition: 'all 0.3s',
-              boxShadow: `0 0 40px rgba(0,229,204,0.4), 0 10px 40px rgba(0,0,0,0.4)`,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05) translateY(-3px)'; e.currentTarget.style.boxShadow = `0 0 70px rgba(0,229,204,0.7), 0 20px 60px rgba(0,0,0,0.5)`; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1) translateY(0)'; e.currentTarget.style.boxShadow = `0 0 40px rgba(0,229,204,0.4), 0 10px 40px rgba(0,0,0,0.4)`; }}
-          >
-            INITIALIZE ARCHIVE
-          </button>
-          <button
+            key={u.username}
             onClick={() => {
-              if (currentSession) {
-                if (props.onEnterArchive) props.onEnterArchive();
-              } else {
-                setMode('login');
-              }
-            }}
-            style={{
-              background: 'transparent',
-              color: TEAL,
-              border: `2px solid ${TEAL}`,
-              padding: isMobile ? '18px 40px' : '24px 64px',
-              fontFamily: "'Bebas Neue'",
-              fontSize: isMobile ? '1.4rem' : '2rem',
-              letterSpacing: 5,
-              cursor: 'pointer',
-              borderRadius: 4,
-              transition: 'all 0.3s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = `${TEAL}15`; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 0 30px ${TEAL}33`; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+  if (currentSession) {
+    window.location.href = `https://concert-tracker-eight.vercel.app/#/u/${u.username}`;
+  } else {
+    window.location.hash = `#/u/${u.username}`;
+    window.location.reload();
+  }
+}}
+            style={{ background: '#0a0a0a', border: `1px solid ${u.avatar_color || TEAL}44`, borderRadius: 6, padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = u.avatar_color || TEAL; e.currentTarget.style.background = `${u.avatar_color || TEAL}11`; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = `${u.avatar_color || TEAL}44`; e.currentTarget.style.background = '#0a0a0a'; }}
           >
-            ACCESS YOUR COLLECTION
+            <div style={{ width: 20, height: 20, borderRadius: '50%', background: `${u.avatar_color || TEAL}22`, border: `1px solid ${u.avatar_color || TEAL}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: u.avatar_color || TEAL, flexShrink: 0 }}>
+              {u.username[0].toUpperCase()}
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff', letterSpacing: 1 }}>@{u.username}</div>
+{sessionChecked && currentSession && u.last_artist && (
+  <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: GRAY, marginTop: 1 }}>
+    {u.last_artist.slice(0, 18)}
+  </div>
+)}
+            </div>
           </button>
+        ))}
+      </div>
+    </div>
+  )}
+
+  {/* Wordmark */}
+  <div className="fade-in" style={{ textAlign: 'center', marginBottom: 48, position: 'relative', zIndex: 1 }}>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '3.5rem' : 'clamp(3rem, 8vw, 6rem)', letterSpacing: 8, color: '#fff', lineHeight: 0.9, textShadow: `0 0 40px rgba(0,229,204,0.3)` }}>
+      TRACK<span style={{ color: TEAL }}>RECORD</span>
+    </div>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 4, marginTop: 12 }}>
+      YOUR CONCERT HISTORY. MUSEUM GRADE.
+    </div>
+  </div>
+
+  {/* Hero grid */}
+  <div className="hero-grid fade-in" style={{ display: 'flex', gap: 60, alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: 900, position: 'relative', zIndex: 1, marginBottom: 48 }}
+    onMouseEnter={() => setTickerPaused(true)}
+    onMouseLeave={() => setTickerPaused(false)}
+  >
+    {/* Artifact */}
+    {featuredImg && (
+      <div className="artifact-drift" style={{ flexShrink: 0 }}>
+        <div style={{ background: '#fff', padding: '10px 10px 50px 10px', boxShadow: '0 30px 80px rgba(0,0,0,0.8), 0 0 40px rgba(0,229,204,0.2)', borderRadius: 2, position: 'relative', width: isMobile ? 220 : 260 }}>
+          <img src={featuredImg} alt={featuredBand} style={{ width: '100%', height: isMobile ? 160 : 200, objectFit: 'cover', display: 'block' }} />
+          <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, textAlign: 'center', fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#111', letterSpacing: 2 }}>
+            {featuredBand.toUpperCase()}
+          </div>
         </div>
-      </div> {/* closes hero section */}
+        {/* Readout */}
+        <div style={{ marginTop: 12, background: '#0a0a0a', border: `1px solid ${TEAL}33`, borderRadius: 4, padding: '8px 12px', display: 'flex', gap: 16, justifyContent: 'center' }}>
+          {[['DATE', fmtDateShort(featured?.date)], ['VENUE', (featured?.venue || 'UNKNOWN').slice(0, 18)], ['GRADE', 'MUSEUM']].map(([l, v]) => (
+            <div key={l} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 7, color: TEAL, letterSpacing: 2, marginBottom: 2 }}>{l}</div>
+              <div style={{ fontSize: 8, color: '#fff', letterSpacing: 1 }}>{v?.toUpperCase()}</div>
+            </div>
+          ))}
+        </div>
+        {/* Dots */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
+          {artifacts.slice(0, 8).map((_, i) => (
+            <div key={i} onClick={() => setFeaturedIdx(i)} style={{ width: i === featuredIdx ? 16 : 6, height: 6, borderRadius: 3, background: i === featuredIdx ? TEAL : '#333', cursor: 'pointer', transition: 'all 0.3s' }} />
+          ))}
+        </div>
+      </div>
+    )}
+
+    {/* Right side — stats + one liner */}
+    <div style={{ flex: 1, textAlign: isMobile ? 'center' : 'left' }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1rem' : '1.2rem', color: GRAY, letterSpacing: 4, marginBottom: 24 }}>
+        THE ARCHIVE // LIVE READOUT
+      </div>
+      <div className="stats-row" style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start', marginBottom: 32 }}>
+        {[
+          [concerts.length, 'SHOWS'],
+          [uniqueArtists, 'ARTISTS'],
+          [new Set(concerts.map(c => c.venue).filter(Boolean)).size, 'VENUES'],
+          [new Set(concerts.map(c => c.state).filter(Boolean)).size, 'STATES'],
+        ].map(([val, label]) => (
+          <div key={label} style={{ textAlign: 'center' }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '3rem', color: TEAL, lineHeight: 1, textShadow: `0 0 20px rgba(0,229,204,0.4)` }}>{val}</div>
+            <div style={{ fontSize: 7, color: GRAY, letterSpacing: 2, marginTop: 4 }}>{label}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.4rem' : '2rem', color: '#fff', lineHeight: 1.2, marginBottom: 8, opacity: 0.9 }}>
+        {concerts.length} SHOWS.<br />
+        {uniqueArtists} ARTISTS.<br />
+        {new Set(concerts.map(c => c.state).filter(Boolean)).size} STATES.<br />
+        <span style={{ color: TEAL }}>ONE ARCHIVE.</span>
+      </div>
+    </div>
+  </div>
+
+  {/* CTAs */}
+<div className="fade-in" style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center', position: 'relative', zIndex: 1, marginTop: 40 }}>
+  <button
+    onClick={() => setMode('signup')}
+    style={{
+      background: TEAL,
+      color: '#000',
+      border: 'none',
+      padding: isMobile ? '18px 40px' : '24px 64px',
+      fontFamily: "'Bebas Neue'",
+      fontSize: isMobile ? '1.4rem' : '2rem',
+      letterSpacing: 5,
+      cursor: 'pointer',
+      borderRadius: 4,
+      transition: 'all 0.3s',
+      boxShadow: `0 0 40px rgba(0,229,204,0.4), 0 10px 40px rgba(0,0,0,0.4)`,
+    }}
+    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05) translateY(-3px)'; e.currentTarget.style.boxShadow = `0 0 70px rgba(0,229,204,0.7), 0 20px 60px rgba(0,0,0,0.5)`; }}
+    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1) translateY(0)'; e.currentTarget.style.boxShadow = `0 0 40px rgba(0,229,204,0.4), 0 10px 40px rgba(0,0,0,0.4)`; }}
+  >
+    INITIALIZE ARCHIVE
+  </button>
+  <button
+    onClick={() => {
+  if (currentSession) window.location.href = 'https://concert-tracker-eight.vercel.app';
+  else setMode('login');
+}}
+    style={{
+      background: 'transparent',
+      color: TEAL,
+      border: `2px solid ${TEAL}`,
+      padding: isMobile ? '18px 40px' : '24px 64px',
+      fontFamily: "'Bebas Neue'",
+      fontSize: isMobile ? '1.4rem' : '2rem',
+      letterSpacing: 5,
+      cursor: 'pointer',
+      borderRadius: 4,
+      transition: 'all 0.3s',
+    }}
+    onMouseEnter={e => { e.currentTarget.style.background = `${TEAL}15`; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 0 30px ${TEAL}33`; }}
+    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+  >
+    ACCESS YOUR COLLECTION
+  </button>
+</div>
+</div> {/* closes hero section */}
 
       {/* ── SECTION 1: TEMPORAL DRIFT ── */}
 <div style={{ padding: isMobile ? '60px 20px' : '80px 40px', background: '#050508', borderTop: '1px solid #111', borderBottom: '1px solid #111', position: 'relative', overflow: 'hidden' }}>
@@ -946,126 +919,170 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
 </div>
 
 {/* ── FINAL CTA ── */}
-      <div style={{ padding: isMobile ? '100px 20px' : '100px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#000' }}>
-        {/* Radial glow */}
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 900, height: 900, background: 'radial-gradient(circle, rgba(0,229,204,0.07) 0%, rgba(153,102,255,0.04) 35%, transparent 65%)', pointerEvents: 'none' }} />
+<div style={{ padding: isMobile ? '100px 20px' : '100px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#000' }}>
 
-        {/* Top line */}
-        <div style={{ position: 'absolute', top: 0, left: '5%', right: '5%', height: 1, background: `linear-gradient(90deg, transparent, ${TEAL}88, ${PURPLE}88, transparent)`, boxShadow: `0 0 20px ${TEAL}44` }} />
+  {/* Radial glow */}
+  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 900, height: 900, background: 'radial-gradient(circle, rgba(0,229,204,0.07) 0%, rgba(153,102,255,0.04) 35%, transparent 65%)', pointerEvents: 'none' }} />
 
-        {/* Side quotes */}
-        {!isMobile && (
-          <>
-            <div style={{ position: 'absolute', left: -40, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: TEAL, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
-              CURATE YOUR COLLECTION
-            </div>
-            <div style={{ position: 'absolute', right: -60, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: PURPLE, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
-              YOUR MUSIC. YOUR LEGACY.
-            </div>
-          </>
-        )}
+  {/* Top line */}
+  <div style={{ position: 'absolute', top: 0, left: '5%', right: '5%', height: 1, background: `linear-gradient(90deg, transparent, ${TEAL}88, ${PURPLE}88, transparent)`, boxShadow: `0 0 20px ${TEAL}44` }} />
 
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: TEAL, letterSpacing: 6, marginBottom: 32, opacity: 0.8 }}>
-            // THE ARCHIVE AWAITS
-          </div>
+  {/* Side quotes */}
+  {!isMobile && (
+    <div style={{ position: 'absolute', left: -40, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: TEAL, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+      CURATE YOUR COLLECTION
+    </div>
+  )}
+  {!isMobile && (
+    <div style={{ position: 'absolute', right: -60, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: PURPLE, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+      YOUR MUSIC. YOUR LEGACY.
+    </div>
+  )}
 
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '4rem' : '9rem', color: '#fff', lineHeight: 0.85, letterSpacing: isMobile ? 2 : 6, marginBottom: 32, textShadow: `0 0 100px rgba(0,229,204,0.15)` }}>
-            YOUR<br />
-            HISTORY<br />
-            <span style={{ color: TEAL, textShadow: `0 0 60px rgba(0,229,204,0.8)` }}>IS WAITING.</span>
-          </div>
+  <div style={{ position: 'relative', zIndex: 1 }}>
 
-          <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 9 : 12, color: GRAY, letterSpacing: 5, marginBottom: 20, lineHeight: 2.5 }}>
-            START YOUR ARCHIVE TODAY. IT'S FREE.<br />
-            <span style={{ color: PURPLE }}>NO SHOEBOX REQUIRED.</span>
-          </div>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: TEAL, letterSpacing: 6, marginBottom: 32, opacity: 0.8 }}>
+      // THE ARCHIVE AWAITS
+    </div>
 
-          <div style={{ width: 80, height: 2, background: `linear-gradient(90deg, ${TEAL}, ${PURPLE})`, margin: '0 auto 60px', boxShadow: `0 0 15px ${TEAL}88` }} />
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '4rem' : '9rem', color: '#fff', lineHeight: 0.85, letterSpacing: isMobile ? 2 : 6, marginBottom: 32, textShadow: `0 0 100px rgba(0,229,204,0.15)` }}>
+      YOUR<br />
+      HISTORY<br />
+      <span style={{ color: TEAL, textShadow: `0 0 60px rgba(0,229,204,0.8)` }}>IS WAITING.</span>
+    </div>
 
-          {/* Bridged Buttons */}
-          <div style={{ display: 'flex', gap: isMobile ? 16 : 24, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 80 }}>
-            <button
-              onClick={() => setMode('signup')}
-              style={{
-                background: TEAL, color: '#000', border: 'none', padding: isMobile ? '20px 40px' : '28px 72px',
-                fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.4rem' : '2rem', letterSpacing: 5,
-                cursor: 'pointer', borderRadius: 4, transition: 'all 0.3s',
-                boxShadow: `0 0 40px rgba(0,229,204,0.5), 0 20px 60px rgba(0,0,0,0.5)`,
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06) translateY(-4px)'; e.currentTarget.style.boxShadow = `0 0 80px rgba(0,229,204,0.8), 0 30px 80px rgba(0,0,0,0.6)`; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1) translateY(0)'; e.currentTarget.style.boxShadow = `0 0 40px rgba(0,229,204,0.5), 0 20px 60px rgba(0,0,0,0.5)`; }}
-            >
-              INITIALIZE ARCHIVE
-            </button>
-            <button
-              onClick={() => {
-                if (currentSession) {
-                  if (props.onEnterArchive) props.onEnterArchive(); 
-                } else {
-                  setMode('login');
-                }
-              }}
-              style={{
-                background: 'transparent', color: TEAL, border: `2px solid ${TEAL}`,
-                padding: isMobile ? '20px 40px' : '28px 72px', fontFamily: "'Bebas Neue'",
-                fontSize: isMobile ? '1.4rem' : '2rem', letterSpacing: 5, cursor: 'pointer',
-                borderRadius: 4, transition: 'all 0.3s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = `${TEAL}15`; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 0 30px ${TEAL}33`; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              ACCESS YOUR COLLECTION
-            </button>
-          </div>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 9 : 12, color: GRAY, letterSpacing: 5, marginBottom: 20, lineHeight: 2.5 }}>
+      START YOUR ARCHIVE TODAY. IT'S FREE.<br />
+      <span style={{ color: PURPLE }}>NO SHOEBOX REQUIRED.</span>
+    </div>
 
-          <div style={{ display: 'flex', gap: isMobile ? 24 : 80, justifyContent: 'center', flexWrap: 'wrap', padding: '40px 0', borderTop: `1px solid #111`, borderBottom: `1px solid #111`, marginBottom: 48 }}>
-            {[
-              [concerts.length, 'SHOWS', TEAL],
-              [new Set(concerts.flatMap(c => (c.bands || []).map(getBandName)).filter(Boolean)).size, 'ARTISTS', GOLD],
-              [new Set(concerts.map(c => c.venue).filter(Boolean)).size, 'VENUES', PURPLE],
-              [new Set(concerts.map(c => c.state).filter(Boolean)).size, 'STATES', '#ff4466'],
-            ].map(([val, label, color]) => (
-              <div key={label} style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '3rem' : '5rem', color, lineHeight: 1, textShadow: `0 0 30px ${color}88` }}>{val}</div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, letterSpacing: 4, marginTop: 8 }}>{label}</div>
-              </div>
-            ))}
-          </div>
+    {/* Divider */}
+    <div style={{ width: 80, height: 2, background: `linear-gradient(90deg, ${TEAL}, ${PURPLE})`, margin: '0 auto 60px', boxShadow: `0 0 15px ${TEAL}88` }} />
 
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '0.9rem' : '1.1rem', color: GRAY, letterSpacing: 6, lineHeight: 2.5, opacity: 0.5 }}>
-            TRACKRECORD // MUSEUM OF SOUND // EST. 2024<br />
-            <span style={{ fontSize: '0.85rem', letterSpacing: 4 }}>EVERY SHOW. EVERY STUB. EVERY MEMORY.</span>
-          </div>
+    {/* Buttons */}
+    <div style={{ display: 'flex', gap: isMobile ? 16 : 24, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 80 }}>
+      <button
+        onClick={() => setMode('signup')}
+        style={{
+          background: TEAL,
+          color: '#000',
+          border: 'none',
+          padding: isMobile ? '20px 40px' : '28px 72px',
+          fontFamily: "'Bebas Neue'",
+          fontSize: isMobile ? '1.4rem' : '2rem',
+          letterSpacing: 5,
+          cursor: 'pointer',
+          borderRadius: 4,
+          transition: 'all 0.3s',
+          boxShadow: `0 0 40px rgba(0,229,204,0.5), 0 20px 60px rgba(0,0,0,0.5)`,
+        }}
+        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06) translateY(-4px)'; e.currentTarget.style.boxShadow = `0 0 80px rgba(0,229,204,0.8), 0 30px 80px rgba(0,0,0,0.6)`; }}
+        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1) translateY(0)'; e.currentTarget.style.boxShadow = `0 0 40px rgba(0,229,204,0.5), 0 20px 60px rgba(0,0,0,0.5)`; }}
+      >
+        INITIALIZE ARCHIVE
+      </button>
+      <button
+        onClick={() => {
+  if (currentSession) window.location.href = 'https://concert-tracker-eight.vercel.app';
+  else setMode('login');
+}}
+        style={{
+          background: 'transparent',
+          color: TEAL,
+          border: `2px solid ${TEAL}`,
+          padding: isMobile ? '20px 40px' : '28px 72px',
+          fontFamily: "'Bebas Neue'",
+          fontSize: isMobile ? '1.4rem' : '2rem',
+          letterSpacing: 5,
+          cursor: 'pointer',
+          borderRadius: 4,
+          transition: 'all 0.3s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = `${TEAL}15`; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 0 30px ${TEAL}33`; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+      >
+        ACCESS YOUR COLLECTION
+      </button>
+    </div>
+
+    {/* Stat strip */}
+    <div style={{ display: 'flex', gap: isMobile ? 24 : 80, justifyContent: 'center', flexWrap: 'wrap', padding: '40px 0', borderTop: `1px solid #111`, borderBottom: `1px solid #111`, marginBottom: 48 }}>
+      {[
+        [concerts.length, 'SHOWS', TEAL],
+        [new Set(concerts.flatMap(c => (c.bands || []).map(getBandName)).filter(Boolean)).size, 'ARTISTS', GOLD],
+        [new Set(concerts.map(c => c.venue).filter(Boolean)).size, 'VENUES', PURPLE],
+        [new Set(concerts.map(c => c.state).filter(Boolean)).size, 'STATES', '#ff4466'],
+      ].map(([val, label, color]) => (
+        <div key={label} style={{ textAlign: 'center' }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '3rem' : '5rem', color, lineHeight: 1, textShadow: `0 0 30px ${color}88` }}>{val}</div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, letterSpacing: 4, marginTop: 8 }}>{label}</div>
         </div>
-        <div style={{ position: 'absolute', bottom: 0, left: '5%', right: '5%', height: 1, background: `linear-gradient(90deg, transparent, ${PURPLE}88, ${TEAL}88, transparent)` }} />
-      </div>
+      ))}
+    </div>
 
+    {/* Bottom manifesto */}
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '0.9rem' : '1.1rem', color: GRAY, letterSpacing: 6, lineHeight: 2.5, opacity: 0.5 }}>
+      TRACKRECORD // MUSEUM OF SOUND // EST. 2024<br />
+      <span style={{ fontSize: '0.85rem', letterSpacing: 4 }}>EVERY SHOW. EVERY STUB. EVERY MEMORY.</span>
+    </div>
+  </div>
+
+  {/* Bottom line */}
+  <div style={{ position: 'absolute', bottom: 0, left: '5%', right: '5%', height: 1, background: `linear-gradient(90deg, transparent, ${PURPLE}88, ${TEAL}88, transparent)` }} />
+</div>
       {/* ── BOTTOM TICKER ── */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000, background: '#000', borderTop: `1px solid ${TEAL}22`, height: 28, display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
-        <div style={{ background: '#111', color: GOLD, fontFamily: "'Bebas Neue'", fontSize: 10, letterSpacing: 2, padding: '0 12px', height: '100%', display: 'flex', alignItems: 'center', flexShrink: 0, borderRight: `1px solid ${GOLD}33` }}>SYS</div>
+        <div style={{ background: '#111', color: GOLD, fontFamily: "'Bebas Neue'", fontSize: 10, letterSpacing: 2, padding: '0 12px', height: '100%', display: 'flex', alignItems: 'center', flexShrink: 0, borderRight: `1px solid ${GOLD}33` }}>
+          SYS
+        </div>
         <div style={{ overflow: 'hidden', flex: 1 }}>
           <div className="ticker-scroll" style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GOLD, paddingLeft: 20, letterSpacing: 1, opacity: 0.6, animationDuration: '60s' }}>
-            {`ARCHIVE STATUS: ACTIVE /// TOTAL SIGNALS: ${concerts.length} /// SYSTEM: NOMINAL /// `.repeat(3)}
+            {`ARCHIVE STATUS: ACTIVE /// TOTAL SIGNALS: ${concerts.length} /// GENRES MAPPED: ${new Set(concerts.map(c => c.genre).filter(Boolean)).size} /// STATES COVERED: ${new Set(concerts.map(c => c.state).filter(Boolean)).size} /// ARTIFACTS STORED: ${concerts.filter(c => c.image_url || c.personal_photo_url).length} /// SYSTEM: NOMINAL /// `.repeat(3)}
           </div>
         </div>
       </div>
 
       {/* ── AUTH MODAL ── */}
       {mode && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(12px)' }} onClick={e => e.target === e.currentTarget && setMode(null)}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(12px)' }}
+          onClick={e => e.target === e.currentTarget && setMode(null)}
+        >
           <div className="fade-in" style={{ background: '#0a0a0c', border: `1px solid ${TEAL}`, borderRadius: 12, padding: 40, width: '100%', maxWidth: 400, boxShadow: `0 0 60px rgba(0,229,204,0.2)` }}>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: TEAL, marginBottom: 6, letterSpacing: 3 }}>{mode === 'login' ? 'ACCESS YOUR COLLECTION' : 'INITIALIZE ARCHIVE'}</div>
-            {message && <div style={{ background: message.includes('SENT') ? 'rgba(0,229,204,0.1)' : 'rgba(255,68,68,0.1)', border: `1px solid ${message.includes('SENT') ? TEAL : '#ff4466'}`, borderRadius: 4, padding: '10px 14px', fontSize: 9, color: message.includes('SENT') ? TEAL : '#ff4466', marginBottom: 20 }}>{message}</div>}
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: TEAL, marginBottom: 6, letterSpacing: 3 }}>
+              {mode === 'login' ? 'ACCESS YOUR COLLECTION' : 'INITIALIZE ARCHIVE'}
+            </div>
+            <div style={{ fontSize: 8, color: GRAY, marginBottom: 28, letterSpacing: 2 }}>
+              {mode === 'login' ? 'ENTER YOUR CREDENTIALS TO CONTINUE' : 'CREATE YOUR ACCOUNT TO START ARCHIVING'}
+            </div>
+
+            {message && (
+              <div style={{ background: message.includes('SENT') ? 'rgba(0,229,204,0.1)' : 'rgba(255,68,68,0.1)', border: `1px solid ${message.includes('SENT') ? TEAL : '#ff4466'}`, borderRadius: 4, padding: '10px 14px', fontSize: 9, color: message.includes('SENT') ? TEAL : '#ff4466', marginBottom: 20, letterSpacing: 1, lineHeight: 1.6 }}>
+                {message}
+              </div>
+            )}
+
             <form onSubmit={mode === 'login' ? handleLogin : handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {mode === 'signup' && <input className="modal-input" placeholder="USERNAME" value={username} onChange={e => setUsername(e.target.value)} required />}
+              {mode === 'signup' && (
+                <input className="modal-input" placeholder="USERNAME" value={username} onChange={e => setUsername(e.target.value)} required />
+              )}
               <input className="modal-input" type="email" placeholder="EMAIL" value={email} onChange={e => setEmail(e.target.value)} required />
               <input className="modal-input" type="password" placeholder="PASSWORD" value={password} onChange={e => setPassword(e.target.value)} required />
+
               <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                <button type="button" onClick={() => { setMode(null); setMessage(''); }} style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: GRAY, padding: '12px', cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.1rem', borderRadius: 4 }}>CANCEL</button>
-                <button type="submit" disabled={loading} style={{ flex: 2, background: loading ? '#222' : TEAL, border: 'none', color: '#000', padding: '12px', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', fontWeight: 900, borderRadius: 4, letterSpacing: 2 }}>{loading ? '...' : mode === 'login' ? 'ENTER' : 'CREATE ARCHIVE'}</button>
+                <button type="button" onClick={() => { setMode(null); setMessage(''); }} style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: GRAY, padding: '12px', cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.1rem', borderRadius: 4 }}>
+                  CANCEL
+                </button>
+                <button type="submit" disabled={loading} style={{ flex: 2, background: loading ? '#222' : TEAL, border: 'none', color: '#000', padding: '12px', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', fontWeight: 900, borderRadius: 4, letterSpacing: 2 }}>
+                  {loading ? '...' : mode === 'login' ? 'ENTER' : 'CREATE ARCHIVE'}
+                </button>
               </div>
             </form>
+
+            <div style={{ marginTop: 20, textAlign: 'center' }}>
+              <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMessage(''); }} style={{ background: 'none', border: 'none', color: GRAY, fontSize: 9, cursor: 'pointer', letterSpacing: 1, textDecoration: 'underline' }}>
+                {mode === 'login' ? 'NO ACCOUNT? INITIALIZE ARCHIVE' : 'ALREADY HAVE AN ACCOUNT? ACCESS YOUR COLLECTION'}
+              </button>
+            </div>
           </div>
         </div>
       )}
