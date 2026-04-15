@@ -3,8 +3,14 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = 'https://pirqtmtzearmugvzhmgl.supabase.co';
 const supabaseKey = 'sb_publishable_Wn9i-ouR1VUqbaUrLzzNSw_913vjWVL';
 
-// This creates the connection to your database
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'trackrecord-auth',
+  }
+});
 
 /**
  * ADMIN LOGIN HELPER
@@ -23,7 +29,5 @@ export const adminLogin = async (email, password) => {
   } else {
     alert("Logged in successfully! You can now save edits.");
     console.log("Session started for:", data.user.email);
-    // This reloads the page to ensure the app picks up the new 'logged in' status
-    window.location.reload();
   }
 };
