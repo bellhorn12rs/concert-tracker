@@ -5763,23 +5763,17 @@ useEffect(() => {
   // Condition: Show if no session OR if we are explicitly in "Landing" mode
   if (!session || onLanding) {
     return (
-      if (!session || onLanding) {
-  return (
-    <LandingPage 
-      currentSession={session}
-      onEnterArchive={() => setOnLanding(false)}
-      onNavigateToUser={handleNavigateToUser}
-      // 🟢 ENSURE THIS LINE IS HERE
-      onLogout={async () => {
-        await supabase.auth.signOut();
-        window.location.reload();
-      }}
-    />
-  );
-}
+      <LandingPage 
+        currentSession={session}
+        onEnterArchive={() => setOnLanding(false)}
+        onNavigateToUser={handleNavigateToUser}
+        onLogout={async () => {
+          await supabase.auth.signOut();
+          window.location.reload(); // Hard reset to clear any stuck state
+        }}
+      />
     );
   }
-
   // Gate D: Data Synchronization (Interior)
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
