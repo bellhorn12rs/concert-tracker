@@ -4894,7 +4894,6 @@ const TAB_GROUPS = [
     tabs: [
       ['passport', '🗺️ STAMP BOOK', '#ffcc00'],
       ['byFest', '🎪 BOX SETS', '#ffcc00'],
-      
     ]
   },
   {
@@ -4911,7 +4910,7 @@ const TAB_GROUPS = [
     tabs: [
       ['community', '🌐 CRATE DIGGING', '#ffcc00'],
     ]
-  }
+  }, // 🟢 Added missing comma here
   {
     header: "STUDIO",
     tabs: [
