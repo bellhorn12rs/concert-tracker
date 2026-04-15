@@ -5245,6 +5245,7 @@ export default function App() {
   // ── 1. AUTH & SYSTEM STATE ──
   const [session, setSession] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
+  const [onLanding, setOnLanding] = useState(true);
   const [themeId, setThemeIdRaw] = useState(() => localStorage.getItem('concert-theme') || 'neon-noir');
   const [navCollapsed, setNavCollapsed] = useState(window.innerWidth < 768); 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -5325,7 +5326,6 @@ useEffect(() => {
       // If we just signed in or recovered a session from another tab
       if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         initRan.current = false; // Reset gate to ensure data is fetched
-        updateProfilePulse(session); // Archaeology metadata update
       }
     } else if (event === 'SIGNED_OUT') {
       setConcerts([]); // Clear history on logout
