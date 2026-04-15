@@ -24,16 +24,14 @@ const GENRE_COLORS = {
   'Pop':'#00e5ff','Hip Hop':'#a2ff00','Punk':'#ff3300','R&B':'#ff66cc',
   'Country':'#cc8800','Metal':'#888888','Other':'#334455','Festival':'#ffcc00',
 };
-export default function LandingPage() {
-  const [currentSession, setCurrentSession] = useState(null);
-const [sessionChecked, setSessionChecked] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setCurrentSession(session);
-      setSessionChecked(true);
-    });
-  }, []);
+export default function LandingPage({ 
+  currentSession, 
+  onEnterArchive, 
+  onNavigateToUser, 
+  onLogout 
+}) {
+  // 🟢 Removed internal session state because it now comes from App.js as a prop
+  const sessionChecked = true; 
 
   const [mode, setMode] = useState(null);
   const [email, setEmail] = useState('');
@@ -65,6 +63,7 @@ const [sessionChecked, setSessionChecked] = useState(false);
     };
     fetchRecentUsers();
   }, []);
+
   const [sliderYear, setSliderYear] = useState(null);
   const [hoveredArtifact, setHoveredArtifact] = useState(null);
   const isMobile = window.innerWidth < 768;
@@ -125,7 +124,6 @@ const [sessionChecked, setSessionChecked] = useState(false);
     return txt + txt;
   }, [concerts]);
 
-  // Permanent record — pick 4 shows with real stubs
   const permanentRecord = useMemo(() => {
     return concerts
       .filter(c => c.image_url)
@@ -133,7 +131,6 @@ const [sessionChecked, setSessionChecked] = useState(false);
       .slice(0, 4);
   }, [concerts]);
 
-  // Artifact scrub — pick 5 shows with images
   const scrubArtifacts = useMemo(() => {
     return concerts
       .filter(c => c.image_url || c.personal_photo_url)
@@ -141,19 +138,19 @@ const [sessionChecked, setSessionChecked] = useState(false);
   }, [concerts]);
 
   const handleLogin = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setMessage('');
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) {
-    setMessage('ACCESS DENIED: ' + error.message);
-    setLoading(false);
-  } else if (data?.session) {
-    await supabase.auth.setSession(data.session);
-    window.location.href = 'https://concert-tracker-eight.vercel.app';
-  }
-};
-
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setMessage('ACCESS DENIED: ' + error.message);
+      setLoading(false);
+    } else if (data?.session) {
+      // 🟢 The "Teleport" logic: Tell App.js to move to the interior
+      onEnterArchive(); 
+    }
+  };
+  
   const handleSignup = async (e) => {
     e.preventDefault();
     setLoading(true);

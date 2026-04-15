@@ -5763,18 +5763,20 @@ useEffect(() => {
   // Condition: Show if no session OR if we are explicitly in "Landing" mode
   if (!session || onLanding) {
     return (
-      <LandingPage 
-        currentSession={session}
-        onEnterArchive={() => setOnLanding(false)} // Breaks the loop to show your dashboard
-        onLogout={async () => {
-          await supabase.auth.signOut();
-          window.location.reload(); // Hard reset for the "bricked" state
-        }}
-        onNavigateToUser={(target) => {
-          window.location.hash = `#/u/${target}`;
-          window.dispatchEvent(new HashChangeEvent('hashchange'));
-        }}
-      />
+      if (!session || onLanding) {
+  return (
+    <LandingPage 
+      currentSession={session}
+      onEnterArchive={() => setOnLanding(false)}
+      onNavigateToUser={handleNavigateToUser}
+      // 🟢 ENSURE THIS LINE IS HERE
+      onLogout={async () => {
+        await supabase.auth.signOut();
+        window.location.reload();
+      }}
+    />
+  );
+}
     );
   }
 
