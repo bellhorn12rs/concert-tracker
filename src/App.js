@@ -6187,7 +6187,8 @@ export default function App() {
 }
 
 // ── AUTHENTICATION COMPONENT ──
-function LoginModal({ onClose }) {
+// 🟢 Added 'C' to props to prevent ReferenceErrors
+function LoginModal({ onClose, C }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -6211,15 +6212,15 @@ function LoginModal({ onClose }) {
       justifyContent: 'center', backdropFilter: 'blur(12px)' 
     }}>
       <div style={{ 
-        background: '#0a0a0c', border: `1px solid ${C.teal}`, padding: 40, 
+        background: '#0a0a0c', border: `1px solid ${C?.teal || '#00e5cc'}`, padding: 40, 
         borderRadius: 12, width: '100%', maxWidth: 360, 
-        boxShadow: '0 0 60px 0px rgba(0,242,255,0.2)',
+        boxShadow: `0 0 60px 0px ${hexToRgba(C?.teal || '#00e5cc', 0.2)}`,
         textAlign: 'center'
       }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.teal, marginBottom: 10, letterSpacing: 3 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C?.teal || '#00e5cc', marginBottom: 6, letterSpacing: 3 }}>
           ADMIN LOGIN
         </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#555', marginBottom: 25, textTransform: 'uppercase' }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#555', marginBottom: 25, textTransform: 'uppercase', letterSpacing: 1 }}>
           Authorized Personnel Only // System Override Active
         </div>
         
@@ -6229,7 +6230,8 @@ function LoginModal({ onClose }) {
             onChange={e => setEmail(e.target.value)}
             style={{ 
               background: '#000', border: '1px solid #222', color: '#fff', 
-              padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none' 
+              padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none',
+              borderRadius: '4px'
             }}
           />
           <input 
@@ -6237,19 +6239,20 @@ function LoginModal({ onClose }) {
             onChange={e => setPassword(e.target.value)}
             style={{ 
               background: '#000', border: '1px solid #222', color: '#fff', 
-              padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none' 
+              padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none',
+              borderRadius: '4px'
             }}
           />
           <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
             <button 
               type="button" onClick={onClose}
-              style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: '#666', padding: '12px', cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: '10px' }}
+              style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: '#666', padding: '12px', cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: '10px', borderRadius: '4px' }}
             >
               ABORT
             </button>
             <button 
               type="submit" disabled={loading}
-              style={{ flex: 2, background: C.teal, border: 'none', color: '#000', padding: '12px', cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', fontWeight: 900 }}
+              style={{ flex: 2, background: C?.teal || '#00e5cc', border: 'none', color: '#000', padding: '12px', cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', fontWeight: 900, borderRadius: '4px' }}
             >
               {loading ? 'VERIFYING...' : 'INITIALIZE'}
             </button>
