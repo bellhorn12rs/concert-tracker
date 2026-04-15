@@ -5249,6 +5249,8 @@ export default function App() {
   const [themeId, setThemeIdRaw] = useState(() => localStorage.getItem('concert-theme') || 'neon-noir');
   const [navCollapsed, setNavCollapsed] = useState(window.innerWidth < 768); 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [viewingUser, setViewingUser] = useState(null); // The UUID of the person we are visiting
+  const [viewingUsername, setViewingUsername] = useState(null); // Their handle
 
   // ── 2. DATA STATE ──
   const [concerts, setConcerts] = useState([]);
@@ -5288,6 +5290,31 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
   }, [session, loading, isOwner]);
 
   // ── 5. SYSTEM HANDLERS & EFFECTS ──
+
+  useEffect(() => {
+  const checkUrl = async () => {
+    const hash = window.location.hash;
+    const match = hash.match(/^#\/u\/(.+)$/);
+    
+    if (match) {
+      const username = match[1];
+      // Find their ID
+      const { data } = await supabase.from('profiles').select('id').eq('username', username).single();
+      if (data) {
+        setViewingUser(data.id);
+        setViewingUsername(username);
+        setOnLanding(false); // Move past landing if they linked directly
+      }
+    } else {
+      setViewingUser(null);
+      setViewingUsername(null);
+    }
+  };
+
+  checkUrl();
+  window.addEventListener('hashchange', checkUrl);
+  return () => window.removeEventListener('hashchange', checkUrl);
+}, []);
 
   // 🔍 THE TEMPORAL SCANNER (Post-Show Nudge)
   useEffect(() => {
@@ -5636,14 +5663,16 @@ useEffect(() => {
     }
   };
   async function fetchConcerts() {
-  if (!session?.user?.id) return;
+  // 🟢 THE PIVOT: Use viewingUser if it exists, otherwise use your session ID
+  const targetId = viewingUser || session?.user?.id;
+  if (!targetId) return;
+
   const { data, error } = await supabase
     .from('concerts')
     .select('*')
-    .eq('user_id', session.user.id) // 🔒 RLS Double-check
+    .eq('user_id', targetId) 
     .order('date', { ascending: false });
     
-  if (error) console.error("FETCH ERROR:", error);
   if (data) setConcerts(data);
 }
 
