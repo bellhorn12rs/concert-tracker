@@ -5235,15 +5235,19 @@ useEffect(() => {
     Object.assign(C, THEMES[themeId]);
   }
   const init = async () => {
-    setLoading(true);
-    try {
-      await Promise.all([fetchConcerts(), fetchUpcoming(), fetchGenres()]);
-    } catch (e) {
-      console.error('Init error:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  setLoading(true);
+  try {
+    await Promise.all([
+      fetchConcerts(),
+      fetchUpcoming(),
+      fetchGenres().catch(e => console.warn('Genres failed silently:', e))
+    ]);
+  } catch (e) {
+    console.error('Init error:', e);
+  } finally {
+    setLoading(false);
+  }
+};
   if (session?.user?.id) {
     if (!initRan.current) {
       initRan.current = true;
@@ -5494,6 +5498,7 @@ useEffect(() => {
     }
   } catch (e) {
     console.error('fetchGenres failed:', e.message);
+    return; // never throw, always resolve
   }
 }
 
