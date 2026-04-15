@@ -54,15 +54,12 @@ export default function PublicProfile({ username, currentSession }) {
       setProfile(profileData);
 
       // Fetch their concerts
-      const { data: concertData } = await supabase
-        .from('concerts')
-        .select('*')
-        .eq('user_id', profileData.user_id)
-        .order('date', { ascending: false });
-
-      setConcerts(concertData || []);
-      setLoading(false);
-    };
+      // Inside PublicProfile's fetch logic
+const { data, error } = await supabase
+  .from('concerts')
+  .select('*') // Ensure we get EVERYTHING (images, setlists, etc.)
+  .eq('user_id', targetUserId)
+  .order('date', { ascending: false });
 
     load();
   }, [username]);

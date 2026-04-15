@@ -5572,6 +5572,16 @@ useEffect(() => {
     setActiveTab('browse');
   };
 // ── 7. DB ACTIONS ──
+// ── URL WATCHER: Detects when we click a curator card ──
+  useEffect(() => {
+    const handleHashChange = () => {
+      // Force a re-render when the URL hash changes
+      setSession(prev => ({ ...prev })); 
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
 // ── THE TELEPORT BRIDGE ──
   const handleNavigateToUser = (targetUsername) => {
     // 1. Update the URL to the user's museum path
