@@ -5255,6 +5255,7 @@ useEffect(() => {
     setLoading(false);
   }
 }, [themeId, session, authLoading]);
+
   const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
 // ── 6. DATA DERIVATION ENGINE ──
   const PER_PAGE = 50; 
