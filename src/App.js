@@ -5749,7 +5749,7 @@ if (loading) return (
       
       {/* Logout functionality tucked into the bottom of the Booth */}
       <button 
-        onClick={() => { if(window.confirm("TERMINATE SESSION?")) supabase.auth.signOut(); }}
+        onClick={async () => { if(window.confirm("TERMINATE SESSION?")) await supabase.auth.signOut(); }}
         style={{
           marginTop: 10, padding: '10px 18px', background: 'rgba(255, 68, 68, 0.05)', 
           border: 'none', borderLeft: '3px solid #ff4444', color: '#ff4444', 
