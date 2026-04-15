@@ -289,15 +289,18 @@ export default function PublicProfile({ username, currentSession }) {
                 })}
               </div>
             </div>
-            {stats.peakYear && (
-              <div style={{ background: '#0a0a0a', border: `1px solid ${avatarColor}22`, borderRadius: 8, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 24 }}>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: avatarColor, lineHeight: 1 }}>{stats.peakYear}</div>
-                <div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 2 }}>PEAK YEAR</div>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff' }}>{peakYearCount} SHOWS LOGGED</div>
-                </div>
-              </div>
-            )}
+            {/* Peak year - Corrected variable path */}
+{stats.peakYear && (
+  <div style={{ background: '#0a0a0a', border: `1px solid ${avatarColor}22`, borderRadius: 8, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 24 }}>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: avatarColor, lineHeight: 1 }}>{stats.peakYear}</div>
+    <div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 2 }}>PEAK YEAR</div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff' }}>
+        {stats.peakYearCount} SHOWS LOGGED
+      </div>
+    </div>
+  </div>
+)}
           </div>
         )}
 
