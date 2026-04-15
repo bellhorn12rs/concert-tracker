@@ -300,6 +300,31 @@ const [sessionChecked, setSessionChecked] = useState(false);
   {/* Background glow */}
   <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%, -50%)', width: 600, height: 600, background: `radial-gradient(circle, rgba(0,229,204,0.06) 0%, transparent 70%)`, pointerEvents: 'none' }} />
 
+{/* ── EMERGENCY LOGOUT (Landing Page) ── */}
+{currentSession && (
+  <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 100 }}>
+    <button
+      onClick={onLogout}
+      style={{
+        background: 'rgba(255, 68, 68, 0.1)',
+        border: '1px solid #ff4466',
+        color: '#ff4466',
+        padding: '6px 12px',
+        fontFamily: "'Space Mono'",
+        fontSize: 8,
+        borderRadius: 4,
+        cursor: 'pointer',
+        letterSpacing: 2,
+        transition: 'all 0.2s'
+      }}
+      onMouseEnter={e => { e.currentTarget.style.background = '#ff4466'; e.currentTarget.style.color = '#000'; }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 68, 68, 0.1)'; e.currentTarget.style.color = '#ff4466'; }}
+    >
+      ⏻ TERMINATE SESSION
+    </button>
+  </div>
+)}
+
   {/* Active Archivists — top right */}
   {recentUsers.length > 0 && (
     <div style={{ position: 'absolute', top: 20, right: isMobile ? 16 : 40, zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>

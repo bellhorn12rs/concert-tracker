@@ -5742,23 +5742,46 @@ useEffect(() => {
     await supabase.from('concerts').insert([{ ...rest, date: '', festival_day: '' }]);
     fetchConcerts();
   }
-// Hash routing for public profiles
-const hash = window.location.hash;
-const profileMatch = hash.match(/^#\/u\/(.+)$/);
-if (profileMatch) {
-  const username = profileMatch[1];
-  return <PublicProfile username={username} currentSession={session} />;
-}
+// ── 7. NAVIGATION GATES ──
 
-if (authLoading) return (
-  <div style={{ background: '#050508', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#00e5cc', letterSpacing: '0.15em' }}>LOADING...</div>
-  </div>
-);
-if (!session) return <LandingPage />;
-if (loading) return (
+  // Gate A: Public Profiles (Highest priority)
+  const hash = window.location.hash;
+  const profileMatch = hash.match(/^#\/u\/(.+)$/);
+  if (profileMatch) {
+    const targetUsername = profileMatch[1];
+    return <PublicProfile username={targetUsername} currentSession={session} />;
+  }
+
+  // Gate B: Auth Bootup
+  if (authLoading) return (
+    <div style={{ background: '#050508', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#00e5cc', letterSpacing: '0.15em' }}>RECOVERING SIGNAL...</div>
+    </div>
+  );
+
+  // Gate C: The Entry Hall (Landing Page)
+  // Condition: Show if no session OR if we are explicitly in "Landing" mode
+  if (!session || onLanding) {
+    return (
+      <LandingPage 
+        currentSession={session}
+        onEnterArchive={() => setOnLanding(false)} // Breaks the loop to show your dashboard
+        onLogout={async () => {
+          await supabase.auth.signOut();
+          window.location.reload(); // Hard reset for the "bricked" state
+        }}
+        onNavigateToUser={(target) => {
+          window.location.hash = `#/u/${target}`;
+          window.dispatchEvent(new HashChangeEvent('hashchange'));
+        }}
+      />
+    );
+  }
+
+  // Gate D: Data Synchronization (Interior)
+  if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>SYNCHRONIZING ARCHIVE...</div>
     </div>
   );
 
@@ -5773,7 +5796,6 @@ if (loading) return (
         background: C.bg, 
         overflow: 'hidden' 
       }}>
-        
         {/* ── 2. GLOBAL NEWS TICKER (Absolute Top) ── */}
         <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
 
