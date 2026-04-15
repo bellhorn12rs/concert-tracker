@@ -5662,49 +5662,62 @@ useEffect(() => {
       alert('DATABASE REJECTED SAVE: ' + error.message);
     }
   };
+  // ── 1. MAIN DATA FETCH (THE PIVOT) ──
   async function fetchConcerts() {
-  // 🟢 THE PIVOT: Use viewingUser if it exists, otherwise use your session ID
-  const targetId = viewingUser || session?.user?.id;
-  if (!targetId) return;
+    // 🟢 Use viewingUser (Tara) if it exists, otherwise use your ID (Eric)
+    const targetId = viewingUser || session?.user?.id;
+    if (!targetId) return;
 
-  const { data, error } = await supabase
-    .from('concerts')
-    .select('*')
-    .eq('user_id', targetId) 
-    .order('date', { ascending: false });
+    const { data, error } = await supabase
+      .from('concerts')
+      .select('*')
+      .eq('user_id', targetId) 
+      .order('date', { ascending: false });
     
-  if (data) setConcerts(data);
-}
+    if (data) setConcerts(data);
+  }
 
   async function fetchGenres() {
-  try {
-    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
-    const query = supabase.from('artist_genres').select('*');
-    const { data, error } = await Promise.race([query, timeout]);
-    if (error) {
-      console.error('fetchGenres error:', error);
-      return;
+    try {
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
+      const query = supabase.from('artist_genres').select('*');
+      const { data, error } = await Promise.race([query, timeout]);
+      if (error) {
+        console.error('fetchGenres error:', error);
+        return;
+      }
+      if (data) {
+        const gMap = {};
+        data.forEach(row => { gMap[row.artist_name] = row.genre; });
+        setArtistGenres(gMap);
+      }
+    } catch (e) {
+      console.error('fetchGenres failed:', e.message);
+      return; 
     }
-    if (data) {
-      const gMap = {};
-      data.forEach(row => { gMap[row.artist_name] = row.genre; });
-      setArtistGenres(gMap);
-    }
-  } catch (e) {
-    console.error('fetchGenres failed:', e.message);
-    return; // never throw, always resolve
   }
-}
 
   async function fetchUpcoming() {
-  if (!session?.user?.id) { console.log('fetchUpcoming: no user id'); return; }
-  console.log('fetchUpcoming: starting');
-  const { data } = await supabase.from('upcoming_concerts').select('*').eq('user_id', session.user.id).order('date', { ascending: true });
-  console.log('fetchUpcoming: done', data?.length);
-  if (data) setUpcoming(data);
-}
+    // 🟢 Pivot check for Upcoming shows as well
+    const targetId = viewingUser || session?.user?.id;
+    if (!targetId) { console.log('fetchUpcoming: no target id'); return; }
+    
+    console.log('fetchUpcoming: starting');
+    const { data } = await supabase
+      .from('upcoming_concerts')
+      .select('*')
+      .eq('user_id', targetId) // 🟢 Pivoted
+      .order('date', { ascending: true });
+      
+    console.log('fetchUpcoming: done', data?.length);
+    if (data) setUpcoming(data);
+  }
 
+  // ── 2. MODIFICATION HANDLERS (ADMIN ONLY) ──
   async function handleDelete(id) {
+    // 🛡️ SECURITY: Don't let someone delete while viewing another museum
+    if (viewingUser) return; 
+    
     if (!id || id === 'new') {
       setEditTarget(null);
       return;
@@ -5735,6 +5748,7 @@ useEffect(() => {
   }
 
   const handleUpcomingSave = async (id, formData) => {
+    if (viewingUser) return; // 🛡️ Stay in spectator mode
     try {
       if (id) {
         const { error } = await supabase
@@ -5756,6 +5770,7 @@ useEffect(() => {
   };
 
   const handleReconcile = async (upcomingId, payload) => {
+    if (viewingUser) return;
     await handleSave(null, payload); 
     const { error } = await supabase
       .from('upcoming_concerts')
@@ -5769,6 +5784,7 @@ useEffect(() => {
   };
 
   async function handleUpcomingDelete(id) {
+    if (viewingUser) return;
     if (window.confirm('Remove show?')) {
       await supabase.from('upcoming_concerts').delete().eq('id', id);
       fetchUpcoming();
@@ -5777,20 +5793,14 @@ useEffect(() => {
   }
 
   async function handleDuplicate(concert) {
+    if (viewingUser) return;
     const { id, created_at, ...rest } = concert;
     await supabase.from('concerts').insert([{ ...rest, date: '', festival_day: '' }]);
     fetchConcerts();
   }
 // ── 7. NAVIGATION GATES ──
 
-  // Gate A: Public Profiles (Highest priority)
-  const hash = window.location.hash;
-  const profileMatch = hash.match(/^#\/u\/(.+)$/);
-  if (profileMatch) {
-    const targetUsername = profileMatch[1];
-    return <PublicProfile username={targetUsername} currentSession={session} />;
-  }
-
+  
   // Gate B: Auth Bootup
   if (authLoading) return (
     <div style={{ background: '#050508', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
