@@ -5178,14 +5178,16 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
 // --- START OF UNIFIED SYSTEM BLOCK ---
 
   // 1. HARDWARE & AUTH HEARTBEAT
+// --- START OF UNIFIED SYSTEM BLOCK ---
+  // 1. HARDWARE & AUTH HEARTBEAT
   useEffect(() => {
-    // Initial Handshake
+    // Check for active session on boot
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setAuthLoading(false);
     });
 
-    // Listener for Tab Sync & Logins
+    // Listen for Auth changes (Handles new tabs & logins)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setAuthLoading(false);
@@ -5249,12 +5251,12 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
           Promise.all([
             fetchConcerts(),
             fetchUpcoming(),
-            fetchGenres().catch(e => console.warn('Genres failed:', e))
+            fetchGenres().catch(e => console.warn('Genres failed silently:', e))
           ]),
           timeout
         ]);
       } catch (e) {
-        console.error('ARCHIVE ERROR:', e);
+        console.error('ARCHIVE ERROR // SIGNAL LOST:', e);
       } finally {
         setLoading(false);
       }
@@ -5271,9 +5273,7 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
     }
   }, [themeId, session, authLoading]);
 
-  // 3. THEME & CONTEXT MAPPING
-  const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
-
+  // 3. THEME & CONTEXT SETUP
   const setThemeId = (id) => {
     if (THEMES[id]) {
       Object.assign(C, THEMES[id]);
@@ -5281,6 +5281,8 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
       localStorage.setItem('concert-theme', id);
     }
   };
+
+  const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
   // --- END OF UNIFIED SYSTEM BLOCK ---
 // ── 6. DATA DERIVATION ENGINE ──
   const PER_PAGE = 50; 
