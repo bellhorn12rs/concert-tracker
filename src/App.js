@@ -4010,6 +4010,129 @@ function VenuesTab({ concerts }) {
     </div>
   );
 }
+// ─── COMMUNITY / CRATE DIGGING HUB ───────────────────────────────────────────
+function CommunityTab({ onEnterMuseum }) {
+  const [curators, setCurators] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCurators() {
+      // 📡 Signal Scan: Fetching all public curators from the profiles table
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username, avatar_color, last_seen, last_artist, last_venue')
+        .order('last_seen', { ascending: false });
+
+      if (data) setCurators(data);
+      setLoading(false);
+    }
+    fetchCurators();
+  }, []);
+
+  if (loading) return (
+    <div style={{ padding: 60, textAlign: 'center' }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, letterSpacing: 4 }}>SCANNING NETWORK...</div>
+    </div>
+  );
+
+  return (
+    <div className="fade-in" style={{ padding: '20px 0' }}>
+      <div style={{ textAlign: 'center', marginBottom: 60 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: '#fff', lineHeight: 1 }}>
+          THE <span style={{ color: C.gold }}>NETWORK</span>
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.grayDim, letterSpacing: 4, marginTop: 10 }}>
+          EXPLORE THE ARCHIVES OF OTHER CURATORS // LIVE FEED ACTIVE
+        </div>
+      </div>
+
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
+        gap: 30,
+        padding: '0 10px'
+      }}>
+        {curators.map(u => {
+          const userColor = u.avatar_color || C.teal;
+          return (
+            <div 
+              key={u.username}
+              onClick={() => onEnterMuseum(u.username)}
+              style={{
+                background: `linear-gradient(135deg, ${C.bgCard}, #050508)`,
+                border: `1px solid ${hexToRgba(userColor, 0.3)}`,
+                borderRadius: 16,
+                padding: 30,
+                cursor: 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-10px)';
+                e.currentTarget.style.borderColor = userColor;
+                e.currentTarget.style.boxShadow = `0 20px 40px ${hexToRgba(userColor, 0.15)}`;
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.borderColor = hexToRgba(userColor, 0.3);
+                e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+              }}
+            >
+              {/* Header: Identity */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 15, marginBottom: 25 }}>
+                <div style={{ 
+                  width: 55, height: 55, borderRadius: '50%', 
+                  background: hexToRgba(userColor, 0.1),
+                  border: `2px solid ${userColor}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: userColor,
+                  boxShadow: `0 0 15px ${hexToRgba(userColor, 0.3)}`
+                }}>
+                  {u.username[0].toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#fff', lineHeight: 1 }}>
+                    @{u.username.toUpperCase()}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 5, letterSpacing: 1 }}>
+                    CURATOR ARCHETYPE: <span style={{ color: userColor }}>ANALOG</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Latest Intel */}
+              <div style={{ 
+                background: 'rgba(0,0,0,0.4)', 
+                borderRadius: 8, padding: 20, 
+                borderLeft: `4px solid ${userColor}` 
+              }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: userColor, letterSpacing: 2, marginBottom: 8, fontWeight: 900 }}>
+                  LATEST SIGNAL DETECTED
+                </div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', letterSpacing: 1, lineHeight: 1.1 }}>
+                  {u.last_artist?.toUpperCase() || 'INITIALIZING...'}
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, marginTop: 4 }}>
+                  {u.last_venue?.toUpperCase() || 'UNKNOWN STAGE'}
+                </div>
+              </div>
+
+              <div style={{ marginTop: 25, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg, ${hexToRgba(userColor, 0.2)}, transparent)` }} />
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: userColor, letterSpacing: 2, marginLeft: 15 }}>
+                  VIEW ARCHIVE ↗
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── POSTER GENERATOR ─────────────────────────────────────────────────────────
 const POSTER_TEMPLATES = [
   { id:0, name:'COACHELLA GRID', bg:'#f5f0e8', accent:'#1a1a2e', accent2:'#8b0000', font:'Bebas Neue', style:'grid', dark:false },
@@ -4767,10 +4890,11 @@ const TAB_GROUPS = [
     ]
   },
   {
-    header: "TOUR BUS",
+    header: "Festival Season",
     tabs: [
-      ['byFest', '🎪 BOX SETS', '#ffcc00'],
       ['passport', '🗺️ STAMP BOOK', '#ffcc00'],
+      ['byFest', '🎪 BOX SETS', '#ffcc00'],
+      
     ]
   },
   {
@@ -4782,6 +4906,12 @@ const TAB_GROUPS = [
       ['venues', '📍 STAGE DOOR', '#00cfff'],
     ]
   },
+  {
+    header: "Hitting the Road",
+    tabs: [
+      ['community', '🌐 CRATE DIGGING', '#ffcc00'],
+    ]
+  }
   {
     header: "STUDIO",
     tabs: [
@@ -5831,6 +5961,14 @@ if (loading) return (
 <main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
   
   {/* 1. THE DASHBOARD (CENTER STAGE) */}
+
+  {activeTab === 'community' && (
+  <CommunityTab 
+    onEnterMuseum={(username) => {
+      window.location.hash = `#/u/${username}`;
+    }} 
+  />
+)}
   {activeTab === 'dashboard' && (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <OnThisDay concerts={concerts} />
