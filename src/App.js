@@ -5174,39 +5174,66 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
   }, [upcoming, loading]);
 
   // SYSTEM INIT & AUTH
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-  setSession(session);
-  setAuthLoading(false);
-});
+useEffect(() => {
+  // 1. Initial Session Check
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    setSession(session);
+    if (session?.user) {
+      setUser(session.user);
+      // Logic for first-load data fetch can go here
+    }
+    setAuthLoading(false);
+  });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-  setSession(session);
-  setAuthLoading(false);
-  
-  if (session?.user?.id && _event === 'SIGNED_IN') {
-    const { data: recentShow } = await supabase
-      .from('concerts')
-      .select('bands, venue')
-      .eq('user_id', session.user.id)
-      .order('date', { ascending: false })
-      .limit(1)
-      .single();
+  // 2. Listen for Auth State Changes (Handles new tabs, logins, logouts)
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    console.log(`AUTH EVENT: ${event}`);
+    setSession(session);
+    setAuthLoading(false);
 
-    const lastArtist = recentShow
-      ? (typeof recentShow.bands?.[0] === 'string' ? recentShow.bands[0] : recentShow.bands?.[0]?.name || '')
-      : '';
+    if (session?.user) {
+      setUser(session.user);
 
-    await supabase
-      .from('profiles')
-      .update({
-        last_seen: new Date().toISOString(),
-        last_artist: lastArtist,
-        last_venue: recentShow?.venue || ''
-      })
-      .eq('user_id', session.user.id);
-  }
-});
+      // Only run the "Visual Archaeology" profile update on SIGNED_IN or INITIAL_SESSION
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        try {
+          // Fetch the most recent artifact for the profile snapshot
+          const { data: recentShow } = await supabase
+            .from('concerts')
+            .select('bands, venue')
+            .eq('user_id', session.user.id)
+            .order('date', { ascending: false })
+            .limit(1)
+            .single();
+
+          const lastArtist = recentShow
+            ? (typeof recentShow.bands?.[0] === 'string' 
+                ? recentShow.bands[0] 
+                : recentShow.bands?.[0]?.name || '')
+            : '';
+
+          // Update the "Last Seen" pulse in the profiles table
+          await supabase
+            .from('profiles')
+            .update({
+              last_seen: new Date().toISOString(),
+              last_artist: lastArtist,
+              last_venue: recentShow?.venue || ''
+            })
+            .eq('user_id', session.user.id);
+            
+          console.log("PROFILE PULSE UPDATED // SIGNAL STABLE");
+        } catch (error) {
+          console.error("PROFILE UPDATE FAILED:", error);
+        }
+      }
+    } else {
+      setUser(null);
+    }
+  });
+
+  return () => subscription.unsubscribe();
+}, []);
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
