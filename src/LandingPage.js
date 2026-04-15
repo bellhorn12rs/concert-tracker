@@ -306,32 +306,57 @@ const [sessionChecked, setSessionChecked] = useState(false);
       <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, letterSpacing: 3, marginBottom: 4 }}>// ACTIVE ARCHIVISTS</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {sessionChecked && recentUsers.slice(0, 5).map(u => (
-          <button
-            key={u.username}
-            onClick={() => {
-  if (currentSession) {
-    window.location.href = `https://concert-tracker-eight.vercel.app/#/u/${u.username}`;
-  } else {
-    window.location.hash = `#/u/${u.username}`;
-    window.location.reload();
-  }
-}}
-            style={{ background: '#0a0a0a', border: `1px solid ${u.avatar_color || TEAL}44`, borderRadius: 6, padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = u.avatar_color || TEAL; e.currentTarget.style.background = `${u.avatar_color || TEAL}11`; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = `${u.avatar_color || TEAL}44`; e.currentTarget.style.background = '#0a0a0a'; }}
-          >
-            <div style={{ width: 20, height: 20, borderRadius: '50%', background: `${u.avatar_color || TEAL}22`, border: `1px solid ${u.avatar_color || TEAL}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: u.avatar_color || TEAL, flexShrink: 0 }}>
-              {u.username[0].toUpperCase()}
-            </div>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff', letterSpacing: 1 }}>@{u.username}</div>
-{sessionChecked && currentSession && u.last_artist && (
-  <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: GRAY, marginTop: 1 }}>
-    {u.last_artist.slice(0, 18)}
-  </div>
-)}
-            </div>
-          </button>
+  <button
+    key={u.username}
+    onClick={() => {
+      // 🟢 THE BRIDGE: Tell App.js to handle the navigation
+      if (props.onNavigateToUser) {
+        props.onNavigateToUser(u.username);
+      }
+    }}
+    style={{ 
+      background: '#0a0a0a', 
+      border: `1px solid ${u.avatar_color || TEAL}44`, 
+      borderRadius: 6, 
+      padding: '6px 12px', 
+      cursor: 'pointer', 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: 8, 
+      transition: 'all 0.2s' 
+    }}
+    onMouseEnter={e => { 
+      e.currentTarget.style.borderColor = u.avatar_color || TEAL; 
+      e.currentTarget.style.background = `${u.avatar_color || TEAL}11`; 
+    }}
+    onMouseLeave={e => { 
+      e.currentTarget.style.borderColor = `${u.avatar_color || TEAL}44`; 
+      e.currentTarget.style.background = '#0a0a0a'; 
+    }}
+  >
+    <div style={{ 
+      width: 20, height: 20, borderRadius: '50%', 
+      background: `${u.avatar_color || TEAL}22`, 
+      border: `1px solid ${u.avatar_color || TEAL}`, 
+      display: 'flex', alignItems: 'center', justifyContent: 'center', 
+      fontFamily: "'Bebas Neue'", fontSize: '0.8rem', 
+      color: u.avatar_color || TEAL, flexShrink: 0 
+    }}>
+      {u.username[0].toUpperCase()}
+    </div>
+    <div style={{ textAlign: 'left' }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff', letterSpacing: 1 }}>
+        @{u.username}
+      </div>
+      {/* 🟢 Keep the "Visual Archaeology" signal showing their latest discovery */}
+      {u.last_artist && (
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: GRAY, marginTop: 1 }}>
+          {u.last_artist.slice(0, 18).toUpperCase()}
+        </div>
+      )}
+    </div>
+  </button>
+))}
         ))}
       </div>
     </div>
@@ -982,28 +1007,31 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
         INITIALIZE ARCHIVE
       </button>
       <button
-        onClick={() => {
-  if (currentSession) window.location.href = 'https://concert-tracker-eight.vercel.app';
-  else setMode('login');
-}}
-        style={{
-          background: 'transparent',
-          color: TEAL,
-          border: `2px solid ${TEAL}`,
-          padding: isMobile ? '20px 40px' : '28px 72px',
-          fontFamily: "'Bebas Neue'",
-          fontSize: isMobile ? '1.4rem' : '2rem',
-          letterSpacing: 5,
-          cursor: 'pointer',
-          borderRadius: 4,
-          transition: 'all 0.3s',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = `${TEAL}15`; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 0 30px ${TEAL}33`; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-      >
-        ACCESS YOUR COLLECTION
-      </button>
-    </div>
+  onClick={() => {
+    if (currentSession) {
+      // Signal to App.js to drop the landing page and show the dashboard
+      if (props.onEnterArchive) props.onEnterArchive(); 
+    } else {
+      setMode('login');
+    }
+  }}
+  style={{
+    background: 'transparent',
+    color: TEAL,
+    border: `2px solid ${TEAL}`,
+    padding: isMobile ? '20px 40px' : '28px 72px',
+    fontFamily: "'Bebas Neue'",
+    fontSize: isMobile ? '1.4rem' : '2rem',
+    letterSpacing: 5,
+    cursor: 'pointer',
+    borderRadius: 4,
+    transition: 'all 0.3s',
+  }}
+  onMouseEnter={e => { e.currentTarget.style.background = `${TEAL}15`; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 0 30px ${TEAL}33`; }}
+  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+>
+  ACCESS YOUR COLLECTION
+</button>
 
     {/* Stat strip */}
     <div style={{ display: 'flex', gap: isMobile ? 24 : 80, justifyContent: 'center', flexWrap: 'wrap', padding: '40px 0', borderTop: `1px solid #111`, borderBottom: `1px solid #111`, marginBottom: 48 }}>

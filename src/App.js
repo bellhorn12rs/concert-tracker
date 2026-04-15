@@ -5603,7 +5603,7 @@ useEffect(() => {
     await supabase.from('concerts').insert([{ ...rest, date: '', festival_day: '' }]);
     fetchConcerts();
   }
-// Hash routing for public profiles
+// 1. Hash routing for public profiles (Always accessible)
 const hash = window.location.hash;
 const profileMatch = hash.match(/^#\/u\/(.+)$/);
 if (profileMatch) {
@@ -5611,19 +5611,42 @@ if (profileMatch) {
   return <PublicProfile username={username} currentSession={session} />;
 }
 
+// 2. Initial Auth Gate
 if (authLoading) return (
   <div style={{ background: '#050508', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
     <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#00e5cc', letterSpacing: '0.15em' }}>LOADING...</div>
   </div>
 );
-if (!session) return <LandingPage />;
-if (loading) return (
-    <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
-    </div>
-  );
 
+// 3. Landing Page Logic (Modified to allow entry if logged in)
+// We only show the Landing Page if:
+// - There is no session
+// - OR we are explicitly told to show login
+// - OR we haven't clicked "Access Collection" yet (controlled by a local state if you want)
+if (!session || showLogin) {
   return (
+    <LandingPage 
+      currentSession={session}
+      onEnterArchive={() => {
+        setShowLogin(false);
+        setActiveTab('dashboard'); // Force navigation to dashboard
+      }}
+      onNavigateToUser={(targetUser) => {
+        window.location.hash = `#/u/${targetUser}`;
+      }}
+    />
+  );
+}
+
+// 4. Data Loading Gate (Only for logged-in users entering their own archive)
+if (loading) return (
+  <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
+  </div>
+);
+
+return (
+  // ... your full ThemeContext.Provider and main app layout
     <ThemeContext.Provider value={themeCtx}>
       {/* ── 1. GLOBAL WRAPPER (Vertical Stack) ── */}
       <div style={{ 
