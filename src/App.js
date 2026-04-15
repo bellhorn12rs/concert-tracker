@@ -5174,105 +5174,91 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
   }, [upcoming, loading]);
 
  // --- START OF UNIFIED SYSTEM BLOCK ---
-  
-// --- START OF UNIFIED SYSTEM BLOCK ---
+// --- START OF REPAIRED SYSTEM BLOCK ---
 
-  // 1. HARDWARE & AUTH HEARTBEAT
-// --- START OF UNIFIED SYSTEM BLOCK ---
-  // 1. HARDWARE & AUTH HEARTBEAT
-  useEffect(() => {
-    // Check for active session on boot
-    supabase.auth.getSession().then(({ data: { session } }) => {
+// 1. HARDWARE & AUTH HEARTBEAT
+useEffect(() => {
+  // Check for active session on boot
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
       setSession(session);
-      setAuthLoading(false);
-    });
-
-    // Listen for Auth changes (Handles new tabs & logins)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session);
-      setAuthLoading(false);
-      
-      if (session?.user?.id && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
-        try {
-          const { data: recentShow } = await supabase
-            .from('concerts')
-            .select('bands, venue')
-            .eq('user_id', session.user.id)
-            .order('date', { ascending: false })
-            .limit(1)
-            .single();
-
-          const lastArtist = recentShow
-            ? (typeof recentShow.bands?.[0] === 'string' ? recentShow.bands[0] : recentShow.bands?.[0]?.name || '')
-            : '';
-
-          await supabase
-            .from('profiles')
-            .update({
-              last_seen: new Date().toISOString(),
-              last_artist: lastArtist,
-              last_venue: recentShow?.venue || ''
-            })
-            .eq('user_id', session.user.id);
-        } catch (err) {
-          console.warn("Archaeology Pulse Skipped:", err);
-        }
-      }
-    });
-
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (mobile) setNavCollapsed(true);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  // 2. DATA SYNCHRONIZATION
-  const initRan = useRef(false);
-
-  useEffect(() => { 
-    if (THEMES[themeId]) {
-      Object.assign(C, THEMES[themeId]);
+      // 🔥 CRITICAL: Don't just set loading false; trigger data check
     }
+    setAuthLoading(false);
+  });
 
-    const init = async () => {
-      setLoading(true);
-      try {
-        const timeout = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Signal Timeout')), 8000)
-        );
-        await Promise.race([
-          Promise.all([
-            fetchConcerts(),
-            fetchUpcoming(),
-            fetchGenres().catch(e => console.warn('Genres failed silently:', e))
-          ]),
-          timeout
-        ]);
-      } catch (e) {
-        console.error('ARCHIVE ERROR // SIGNAL LOST:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    console.log("SIGNAL EVENT:", event);
+    setSession(session);
+    setAuthLoading(false);
+    
     if (session?.user?.id) {
-      if (!initRan.current) {
-        initRan.current = true;
-        init();
+      // If we just signed in or recovered a session from another tab
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        initRan.current = false; // Reset gate to ensure data is fetched
+        updateProfilePulse(session); // Archaeology metadata update
       }
-    } else if (!authLoading) {
+    } else if (event === 'SIGNED_OUT') {
+      setConcerts([]); // Clear history on logout
       initRan.current = false;
+    }
+  });
+
+  const handleResize = () => {
+    const mobile = window.innerWidth < 768;
+    setIsMobile(mobile);
+    if (mobile) setNavCollapsed(true);
+  };
+
+  window.addEventListener('resize', handleResize);
+  return () => {
+    window.removeEventListener('resize', handleResize);
+    subscription.unsubscribe();
+  };
+}, []);
+
+// 2. DATA SYNCHRONIZATION
+const initRan = useRef(false);
+
+useEffect(() => { 
+  if (THEMES[themeId]) Object.assign(C, THEMES[themeId]);
+
+  const init = async () => {
+    // If we have no session, don't try to fetch user-specific data
+    if (!session?.user?.id) return;
+
+    setLoading(true);
+    console.log("DATABASE FETCH: Initializing for user", session.user.id);
+    
+    try {
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Signal Timeout')), 8000)
+      );
+      
+      // Promise.all ensures we don't resolve until we actually have the data
+      await Promise.race([
+        Promise.all([
+          fetchConcerts(),
+          fetchUpcoming(),
+          fetchGenres().catch(e => console.warn('Genres failed silently:', e))
+        ]),
+        timeout
+      ]);
+    } catch (e) {
+      console.error('ARCHIVE ERROR:', e);
+    } finally {
       setLoading(false);
     }
-  }, [themeId, session, authLoading]);
+  };
 
+  // 🔥 THE FIX: If we have a user and haven't run init yet, run it.
+  if (session?.user?.id && !initRan.current && !authLoading) {
+    initRan.current = true;
+    init();
+  }
+}, [session, authLoading, themeId]);
+
+// --- END OF REPAIRED SYSTEM BLOCK ---
   // 3. THEME & CONTEXT SETUP
   const setThemeId = (id) => {
     if (THEMES[id]) {
@@ -5501,10 +5487,14 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
     }
   };
   async function fetchConcerts() {
-  if (!session?.user?.id) { console.log('fetchConcerts: no user id'); return; }
-  console.log('fetchConcerts: starting');
-  const { data } = await supabase.from('concerts').select('*').eq('user_id', session.user.id).order('date', { ascending: false });
-  console.log('fetchConcerts: done', data?.length);
+  if (!session?.user?.id) return;
+  const { data, error } = await supabase
+    .from('concerts')
+    .select('*')
+    .eq('user_id', session.user.id) // 🔒 RLS Double-check
+    .order('date', { ascending: false });
+    
+  if (error) console.error("FETCH ERROR:", error);
   if (data) setConcerts(data);
 }
 
