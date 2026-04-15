@@ -1,28 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabaseClient';
 
+// Helper constants (Assuming these aren't global in your file)
 const TEAL = '#00e5cc';
+const GRAY = '#888';
 const GOLD = '#ffcc00';
-const PURPLE = '#9966ff';
-const GRAY = '#8899aa';
 
+// Global helpers (Assumed defined in your project)
 const getBandName = (b) => typeof b === 'string' ? b : (b?.name || '');
-
-const fmtDateShort = d => {
-  if (!d) return '—';
-  const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const dt = new Date(d + 'T12:00:00');
-  return `${M[dt.getMonth()]} ${dt.getDate()}, ${dt.getFullYear()}`;
-};
-
 const getYear = d => d ? new Date(d + 'T12:00:00').getFullYear() : null;
-
-const GENRE_COLORS = {
-  'Indie Rock':'#00f2ff','Alternative':'#9d00ff','Experimental':'#ff00ff',
-  'Electronic':'#ff0077','Jam':'#ffcc00','Folk':'#ffaa00','Classic Rock':'#ff4400',
-  'Pop':'#00e5ff','Hip Hop':'#a2ff00','Punk':'#ff3300','R&B':'#ff66cc',
-  'Country':'#cc8800','Metal':'#888888','Other':'#334455','Festival':'#ffcc00',
+const fmtDateShort = d => { 
+  if (!d) return '—'; 
+  const dt = new Date(d + 'T12:00:00'); 
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase(); 
 };
+const GENRE_COLORS = { 'Indie Rock':'#00f2ff','Alternative':'#9d00ff','Experimental':'#ff00ff','Electronic':'#ff0077','Jam':'#ffcc00','Folk':'#ffaa00','Classic Rock':'#ff4400','Pop':'#00e5ff','Hip Hop':'#a2ff00','Punk':'#ff3300','R&B':'#ff66cc','Country':'#cc8800','Metal':'#888888','Other':'#334455' };
 
 export default function PublicProfile({ username, currentSession }) {
   const [profile, setProfile] = useState(null);
@@ -32,49 +24,65 @@ export default function PublicProfile({ username, currentSession }) {
   const [activeTab, setActiveTab] = useState('overview');
   const isMobile = window.innerWidth < 768;
 
-  const isOwner = currentSession?.user && profile?.user_id === currentSession.user.id;
+  const isOwner = currentSession?.user && profile?.id === currentSession.user.id;
 
+  // ── 1. THE ARCHIVE LOADER ──
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      setNotFound(false);
 
-      // Fetch profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('username', username)
-        .single();
+      try {
+        // A. Fetch the profile by username
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('username', username)
+          .single();
 
-      if (profileError || !profileData) {
-        setNotFound(true);
+        if (profileError || !profileData) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+
+        setProfile(profileData);
+
+        // B. Fetch their FULL museum archaeology
+        const { data: museumData, error: museumError } = await supabase
+          .from('concerts')
+          .select('*')
+          .eq('user_id', profileData.id)
+          .order('date', { ascending: false });
+
+        if (museumError) throw museumError;
+        setConcerts(museumData || []);
+
+      } catch (err) {
+        console.error("ARCHIVE ACCESS DENIED:", err);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      setProfile(profileData);
-
-      // Fetch their concerts
-      // Inside PublicProfile's fetch logic
-const { data, error } = await supabase
-  .from('concerts')
-  .select('*') // Ensure we get EVERYTHING (images, setlists, etc.)
-  .eq('user_id', targetUserId)
-  .order('date', { ascending: false });
-
-    load();
+    };
+    
+    if (username) load();
   }, [username]);
 
-  // Derived stats
+  // ── 2. THE STATS ENGINE ──
   const stats = useMemo(() => {
-    if (!concerts.length) return {};
-    const artists = new Set(concerts.flatMap(c => (c.bands || []).map(getBandName)).filter(Boolean));
+    if (!concerts.length) return { 
+      totalShows: 0, uniqueArtists: 0, uniqueVenues: 0, 
+      uniqueStates: 0, festDays: 0, topArtists: [], topGenres: [] 
+    };
+
+    const artists = new Set(concerts.flatMap(c => (Array.isArray(c.bands) ? c.bands : []).map(getBandName)).filter(Boolean));
     const venues = new Set(concerts.map(c => c.venue).filter(Boolean));
     const states = new Set(concerts.map(c => c.state).filter(Boolean));
     const fests = concerts.filter(c => c.is_festival).length;
 
     // Artist counts
     const artistCounts = {};
-    concerts.forEach(c => (c.bands || []).forEach(b => {
+    concerts.forEach(c => (Array.isArray(c.bands) ? c.bands : []).forEach(b => {
       const name = getBandName(b);
       if (name) artistCounts[name] = (artistCounts[name] || 0) + 1;
     }));
@@ -158,30 +166,13 @@ const { data, error } = await supabase
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: isMobile ? '0 16px' : '0 32px', height: 52
       }}>
-        {/* Back to landing */}
         <button
           onClick={() => { window.location.hash = ''; window.location.reload(); }}
           style={{ background: 'none', border: 'none', color: TEAL, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.1rem', letterSpacing: 3, display: 'flex', alignItems: 'center', gap: 8 }}
         >
           ← TRACKRECORD
         </button>
-
-        {/* Username */}
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 2 }}>
-          @{username}
-        </div>
-
-        {/* CTA for visitors */}
-        {!currentSession && (
-          <button
-            onClick={() => { window.location.hash = ''; window.location.reload(); }}
-            style={{ background: TEAL, color: '#000', border: 'none', padding: '6px 16px', fontFamily: "'Bebas Neue'", fontSize: '0.9rem', letterSpacing: 2, cursor: 'pointer', borderRadius: 3 }}
-          >
-            START YOUR ARCHIVE
-          </button>
-        )}
-
-        {/* Owner indicator */}
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 2 }}>@{username}</div>
         {isOwner && (
           <button
             onClick={() => { window.location.hash = ''; window.location.reload(); }}
@@ -200,8 +191,6 @@ const { data, error } = await supabase
       }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{ display: 'flex', gap: isMobile ? 20 : 40, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-
-            {/* Avatar */}
             <div style={{
               width: isMobile ? 64 : 80, height: isMobile ? 64 : 80,
               borderRadius: '50%', background: `${avatarColor}22`,
@@ -213,8 +202,6 @@ const { data, error } = await supabase
             }}>
               {username[0].toUpperCase()}
             </div>
-
-            {/* Identity */}
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '3rem', color: '#fff', lineHeight: 1, letterSpacing: 2 }}>
                 {username.toUpperCase()}
@@ -222,13 +209,6 @@ const { data, error } = await supabase
               <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: avatarColor, letterSpacing: 3, marginTop: 4 }}>
                 CONCERT ARCHIVIST // {stats.totalShows} SIGNALS LOGGED
               </div>
-              {profile?.bio && (
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, marginTop: 12, lineHeight: 1.6 }}>
-                  {profile.bio}
-                </div>
-              )}
-
-              {/* Quick stats */}
               <div style={{ display: 'flex', gap: isMobile ? 16 : 32, marginTop: 20, flexWrap: 'wrap' }}>
                 {[
                   [stats.totalShows, 'SHOWS'],
@@ -244,8 +224,6 @@ const { data, error } = await supabase
                 ))}
               </div>
             </div>
-
-            {/* Hero artifact */}
             {heroImg && !isMobile && (
               <div style={{ flexShrink: 0, transform: 'rotate(2deg)' }}>
                 <div style={{ background: '#fff', padding: '6px 6px 36px 6px', boxShadow: '0 20px 60px rgba(0,0,0,0.8)', borderRadius: 2, width: 140 }}>
@@ -262,7 +240,7 @@ const { data, error } = await supabase
 
       {/* ── TABS ── */}
       <div style={{ borderBottom: `1px solid #111`, background: '#000', position: 'sticky', top: 52, zIndex: 99 }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', gap: 0, overflowX: 'auto' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', overflowX: 'auto' }}>
           {[
             ['overview', '⚡ OVERVIEW'],
             ['heavy', '🏆 HEAVY ROTATION'],
@@ -290,14 +268,9 @@ const { data, error } = await supabase
         </div>
       </div>
 
-      {/* ── TAB CONTENT ── */}
       <div style={{ maxWidth: 900, margin: '0 auto', padding: isMobile ? '24px 16px 80px' : '40px 40px 80px' }}>
-
-        {/* OVERVIEW */}
         {activeTab === 'overview' && (
           <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
-
-            {/* Genre DNA */}
             <div>
               <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: avatarColor, letterSpacing: 3, marginBottom: 16 }}>// SONIC DNA</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -316,47 +289,22 @@ const { data, error } = await supabase
                 })}
               </div>
             </div>
-
-            {/* Peak year */}
             {stats.peakYear && (
               <div style={{ background: '#0a0a0a', border: `1px solid ${avatarColor}22`, borderRadius: 8, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 24 }}>
                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: avatarColor, lineHeight: 1 }}>{stats.peakYear}</div>
                 <div>
                   <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 2 }}>PEAK YEAR</div>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff' }}>{stats.peakYearCount} SHOWS LOGGED</div>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff' }}>{peakYearCount} SHOWS LOGGED</div>
                 </div>
               </div>
             )}
-
-            {/* Top artists */}
-            <div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: avatarColor, letterSpacing: 3, marginBottom: 16 }}>// HEAVY ROTATION</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {stats.topArtists?.map(([artist, count], i) => (
-                  <div key={artist} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: '1px solid #0a0a0a' }}>
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: avatarColor, width: 32, textAlign: 'right' }}>#{i+1}</div>
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff', flex: 1 }}>{artist.toUpperCase()}</div>
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: avatarColor }}>{count}×</div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         )}
 
-        {/* HEAVY ROTATION */}
         {activeTab === 'heavy' && (
           <div className="fade-in">
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
-              {Object.entries(
-                concerts.reduce((acc, c) => {
-                  (c.bands || []).forEach(b => {
-                    const name = getBandName(b);
-                    if (name) acc[name] = (acc[name] || 0) + 1;
-                  });
-                  return acc;
-                }, {})
-              ).sort((a, b) => b[1] - a[1]).slice(0, 20).map(([artist, count], i) => (
+              {stats.topArtists?.map(([artist, count], i) => (
                 <div key={artist} style={{ background: '#0a0a0a', border: `1px solid #111`, borderRadius: 8, padding: '20px', position: 'relative' }}>
                   <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: avatarColor, marginBottom: 8 }}>#{i+1}</div>
                   <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff', lineHeight: 1, marginBottom: 4 }}>{artist.toUpperCase()}</div>
@@ -367,64 +315,36 @@ const { data, error } = await supabase
           </div>
         )}
 
-        {/* PAPER TRAIL */}
         {activeTab === 'trail' && (
           <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {concerts.map((c, i) => {
               const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
-              const allBands = (c.bands || []).map(getBandName).filter(Boolean);
               const color = GENRE_COLORS[c.genre] || avatarColor;
               const img = c.image_url?.split(',')[0] || c.personal_photo_url?.split(',')[0];
               return (
-                <div key={c.id || i} className="show-row" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', background: '#050505', borderRadius: 6, border: `1px solid #111`, transition: 'background 0.2s' }}>
-                  {img && (
-                    <img src={img} alt={band} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 3, flexShrink: 0 }} />
-                  )}
-                  {!img && (
-                    <div style={{ width: 48, height: 48, background: `${color}22`, borderRadius: 3, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
-                    </div>
-                  )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', lineHeight: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {allBands.join(' · ').toUpperCase() || band.toUpperCase()}
-                    </div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, marginTop: 3 }}>
-                      {c.venue} {c.city ? `· ${c.city}` : ''}
-                    </div>
+                <div key={c.id || i} className="show-row" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', background: '#050505', borderRadius: 6, border: `1px solid #111` }}>
+                  {img && <img src={img} alt={band} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 3 }} />}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff' }}>{band.toUpperCase()}</div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY }}>{c.venue}</div>
                   </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: color }}>{fmtDateShort(c.date)}</div>
-                    {c.is_festival && <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: GOLD, marginTop: 2 }}>FEST</div>}
-                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: color }}>{fmtDateShort(c.date)}</div>
                 </div>
               );
             })}
           </div>
         )}
 
-        {/* ARTIFACTS */}
         {activeTab === 'artifacts' && (
           <div className="fade-in">
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fill, minmax(200px, 1fr))', gap: 24, alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fill, minmax(200px, 1fr))', gap: 24 }}>
               {concerts.filter(c => c.image_url || c.personal_photo_url).map((c, i) => {
                 const img = c.image_url?.split(',')[0] || c.personal_photo_url?.split(',')[0];
                 const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
-                const rotation = (i % 2 === 0 ? -1.5 : 1.5);
                 return (
-                  <div key={c.id || i} style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s' }}
-                    onMouseEnter={e => e.currentTarget.style.transform = 'rotate(0deg) scale(1.03)'}
-                    onMouseLeave={e => e.currentTarget.style.transform = `rotate(${rotation}deg)`}
-                  >
-                    <div style={{ background: '#fff', padding: '6px 6px 32px 6px', boxShadow: '0 10px 30px rgba(0,0,0,0.7)', borderRadius: 2 }}>
-                      <img src={img} alt={band} style={{ width: '100%', height: isMobile ? 100 : 140, objectFit: 'cover', display: 'block' }} />
-                      <div style={{ textAlign: 'center', fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: '#111', marginTop: 4 }}>
-                        {band.slice(0, 16).toUpperCase()}
-                      </div>
-                      <div style={{ textAlign: 'center', fontFamily: "'Space Mono'", fontSize: 6, color: '#888' }}>
-                        {fmtDateShort(c.date)}
-                      </div>
-                    </div>
+                  <div key={c.id || i} style={{ background: '#fff', padding: '6px 6px 32px 6px', boxShadow: '0 10px 30px rgba(0,0,0,0.7)', borderRadius: 2, transform: `rotate(${i%2===0?-1.5:1.5}deg)` }}>
+                    <img src={img} alt={band} style={{ width: '100%', height: 120, objectFit: 'cover' }} />
+                    <div style={{ textAlign: 'center', fontFamily: "'Bebas Neue'", fontSize: '0.75rem', color: '#111', marginTop: 4 }}>{band.toUpperCase()}</div>
                   </div>
                 );
               })}
