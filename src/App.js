@@ -5175,13 +5175,17 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
 
  // --- START OF UNIFIED SYSTEM BLOCK ---
   
+// --- START OF UNIFIED SYSTEM BLOCK ---
+
   // 1. HARDWARE & AUTH HEARTBEAT
   useEffect(() => {
+    // Initial Handshake
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setAuthLoading(false);
     });
 
+    // Listener for Tab Sync & Logins
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setAuthLoading(false);
@@ -5209,7 +5213,7 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
             })
             .eq('user_id', session.user.id);
         } catch (err) {
-          console.warn("Profile update skipped:", err);
+          console.warn("Archaeology Pulse Skipped:", err);
         }
       }
     });
@@ -5227,7 +5231,7 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
     };
   }, []);
 
-  // 2. THEME & DATA RECONCILIATION
+  // 2. DATA SYNCHRONIZATION
   const initRan = useRef(false);
 
   useEffect(() => { 
@@ -5239,18 +5243,18 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
       setLoading(true);
       try {
         const timeout = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('init timeout')), 8000)
+          setTimeout(() => reject(new Error('Signal Timeout')), 8000)
         );
         await Promise.race([
           Promise.all([
             fetchConcerts(),
             fetchUpcoming(),
-            fetchGenres().catch(e => console.warn('Genres failed silently:', e))
+            fetchGenres().catch(e => console.warn('Genres failed:', e))
           ]),
           timeout
         ]);
       } catch (e) {
-        console.error('Init error:', e);
+        console.error('ARCHIVE ERROR:', e);
       } finally {
         setLoading(false);
       }
@@ -5259,14 +5263,7 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
     if (session?.user?.id) {
       if (!initRan.current) {
         initRan.current = true;
-        supabase.auth.getSession().then(({ data: { session: freshSession } }) => {
-          if (freshSession?.user?.id) {
-            init();
-          } else {
-            setSession(null);
-            setLoading(false);
-          }
-        });
+        init();
       }
     } else if (!authLoading) {
       initRan.current = false;
@@ -5274,6 +5271,7 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
     }
   }, [themeId, session, authLoading]);
 
+  // 3. THEME & CONTEXT MAPPING
   const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
 
   const setThemeId = (id) => {
@@ -5283,7 +5281,6 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
       localStorage.setItem('concert-theme', id);
     }
   };
-
   // --- END OF UNIFIED SYSTEM BLOCK ---
 // ── 6. DATA DERIVATION ENGINE ──
   const PER_PAGE = 50; 
