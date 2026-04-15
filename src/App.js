@@ -5477,10 +5477,12 @@ useEffect(() => {
     }
   };
   async function fetchConcerts() {
-    if (!session?.user?.id) return;
-    const { data } = await supabase.from('concerts').select('*').eq('user_id', session.user.id).order('date', { ascending: false });
-    if (data) setConcerts(data);
-  }
+  if (!session?.user?.id) { console.log('fetchConcerts: no user id'); return; }
+  console.log('fetchConcerts: starting');
+  const { data } = await supabase.from('concerts').select('*').eq('user_id', session.user.id).order('date', { ascending: false });
+  console.log('fetchConcerts: done', data?.length);
+  if (data) setConcerts(data);
+}
 
   async function fetchGenres() {
   try {
@@ -5503,10 +5505,12 @@ useEffect(() => {
 }
 
   async function fetchUpcoming() {
-    if (!session?.user?.id) return;
-    const { data } = await supabase.from('upcoming_concerts').select('*').eq('user_id', session.user.id).order('date', { ascending: true });
-    if (data) setUpcoming(data);
-  }
+  if (!session?.user?.id) { console.log('fetchUpcoming: no user id'); return; }
+  console.log('fetchUpcoming: starting');
+  const { data } = await supabase.from('upcoming_concerts').select('*').eq('user_id', session.user.id).order('date', { ascending: true });
+  console.log('fetchUpcoming: done', data?.length);
+  if (data) setUpcoming(data);
+}
 
   async function handleDelete(id) {
     if (!id || id === 'new') {
