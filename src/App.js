@@ -5588,7 +5588,11 @@ if (profileMatch) {
   return <PublicProfile username={username} currentSession={session} />;
 }
 
-if (authLoading) return null;
+if (authLoading) return (
+  <div style={{ background: '#050508', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#00e5cc', letterSpacing: '0.15em' }}>LOADING...</div>
+  </div>
+);
 if (!session) return <LandingPage />;
 if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
