@@ -5572,6 +5572,16 @@ useEffect(() => {
     setActiveTab('browse');
   };
 // ── 7. DB ACTIONS ──
+// ── THE TELEPORT BRIDGE ──
+  const handleNavigateToUser = (targetUsername) => {
+    // 1. Update the URL to the user's museum path
+    window.location.hash = `#/u/${targetUsername}`;
+    
+    // 2. 🟢 THE FORCE: Tell React to look at the URL immediately
+    // This ensures the App re-runs its "Gate" checks
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  };
+
   const handleSave = async (id, payload) => {
     if (!isAdmin) return;
     try {
