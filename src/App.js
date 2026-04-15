@@ -5237,10 +5237,16 @@ useEffect(() => {
   const init = async () => {
   setLoading(true);
   try {
-    await Promise.all([
-      fetchConcerts(),
-      fetchUpcoming(),
-      fetchGenres().catch(e => console.warn('Genres failed silently:', e))
+    const timeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('init timeout')), 8000)
+    );
+    await Promise.race([
+      Promise.all([
+        fetchConcerts(),
+        fetchUpcoming(),
+        fetchGenres().catch(e => console.warn('Genres failed silently:', e))
+      ]),
+      timeout
     ]);
   } catch (e) {
     console.error('Init error:', e);
