@@ -306,62 +306,60 @@ const [sessionChecked, setSessionChecked] = useState(false);
       <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, letterSpacing: 3, marginBottom: 4 }}>// ACTIVE ARCHIVISTS</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {sessionChecked && recentUsers.slice(0, 5).map(u => (
-  <button
-    key={u.username}
-    onClick={() => {
-      // 🟢 THE BRIDGE: Tell App.js to handle the navigation
-      if (props.onNavigateToUser) {
-        props.onNavigateToUser(u.username);
-      }
-    }}
-    style={{ 
-      background: '#0a0a0a', 
-      border: `1px solid ${u.avatar_color || TEAL}44`, 
-      borderRadius: 6, 
-      padding: '6px 12px', 
-      cursor: 'pointer', 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: 8, 
-      transition: 'all 0.2s' 
-    }}
-    onMouseEnter={e => { 
-      e.currentTarget.style.borderColor = u.avatar_color || TEAL; 
-      e.currentTarget.style.background = `${u.avatar_color || TEAL}11`; 
-    }}
-    onMouseLeave={e => { 
-      e.currentTarget.style.borderColor = `${u.avatar_color || TEAL}44`; 
-      e.currentTarget.style.background = '#0a0a0a'; 
-    }}
-  >
-    <div style={{ 
-      width: 20, height: 20, borderRadius: '50%', 
-      background: `${u.avatar_color || TEAL}22`, 
-      border: `1px solid ${u.avatar_color || TEAL}`, 
-      display: 'flex', alignItems: 'center', justifyContent: 'center', 
-      fontFamily: "'Bebas Neue'", fontSize: '0.8rem', 
-      color: u.avatar_color || TEAL, flexShrink: 0 
-    }}>
-      {u.username[0].toUpperCase()}
-    </div>
-    <div style={{ textAlign: 'left' }}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff', letterSpacing: 1 }}>
-        @{u.username}
-      </div>
-      {/* 🟢 Keep the "Visual Archaeology" signal showing their latest discovery */}
-      {u.last_artist && (
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: GRAY, marginTop: 1 }}>
-          {u.last_artist.slice(0, 18).toUpperCase()}
-        </div>
-      )}
-    </div>
-  </button>
-))}
+          <button
+            key={u.username}
+            onClick={() => {
+              // 🟢 THE BRIDGE: Tell App.js to handle the navigation via hash router
+              if (props.onNavigateToUser) {
+                props.onNavigateToUser(u.username);
+              }
+            }}
+            style={{ 
+              background: '#0a0a0a', 
+              border: `1px solid ${u.avatar_color || TEAL}44`, 
+              borderRadius: 6, 
+              padding: '6px 12px', 
+              cursor: 'pointer', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 8, 
+              transition: 'all 0.2s' 
+            }}
+            onMouseEnter={e => { 
+              e.currentTarget.style.borderColor = u.avatar_color || TEAL; 
+              e.currentTarget.style.background = `${u.avatar_color || TEAL}11`; 
+            }}
+            onMouseLeave={e => { 
+              e.currentTarget.style.borderColor = `${u.avatar_color || TEAL}44`; 
+              e.currentTarget.style.background = '#0a0a0a'; 
+            }}
+          >
+            <div style={{ 
+              width: 20, height: 20, borderRadius: '50%', 
+              background: `${u.avatar_color || TEAL}22`, 
+              border: `1px solid ${u.avatar_color || TEAL}`, 
+              display: 'flex', alignItems: 'center', justifyContent: 'center', 
+              fontFamily: "'Bebas Neue'", fontSize: '0.8rem', 
+              color: u.avatar_color || TEAL, flexShrink: 0 
+            }}>
+              {u.username[0].toUpperCase()}
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff', letterSpacing: 1 }}>
+                @{u.username}
+              </div>
+              {/* 🟢 Visual Archaeology Signal: Shows their latest discovery metadata */}
+              {u.last_artist && (
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: GRAY, marginTop: 1 }}>
+                  {u.last_artist.slice(0, 18).toUpperCase()}
+                </div>
+              )}
+            </div>
+          </button>
         ))}
       </div>
     </div>
   )}
-
   {/* Wordmark */}
   <div className="fade-in" style={{ textAlign: 'center', marginBottom: 48, position: 'relative', zIndex: 1 }}>
     <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '3.5rem' : 'clamp(3rem, 8vw, 6rem)', letterSpacing: 8, color: '#fff', lineHeight: 0.9, textShadow: `0 0 40px rgba(0,229,204,0.3)` }}>
