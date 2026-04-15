@@ -5838,340 +5838,7 @@ export default function App() {
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
         {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
         {editTarget && <EditModal concert={editTarget === 'new' ? 'new' : editTarget} onClose={() => setEditTarget(null)} onSave={editTarget?.isNudge ? (id, payload) => handleReconcile(editTarget.id, payload) : handleSave} onDelete={handleDelete} allConcerts={concerts} />}
-        {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
-      </div>
-    </ThemeContext.Provider>
-  );
-} // 🟢 THIS CLOSES THE MAIN APP FUNCTION
-  {/* ── MAIN NAV AREA ── */}
-<div style={{ flex: 1, overflowY: 'auto', padding: '20px 0' }} className="wristband-bin">
-  {TAB_GROUPS.map((group) => {
-    // 🟢 Filter individual tabs: show everything except 'manage' to the public
-    const visibleTabs = group.tabs.filter(([id]) => {
-      if (id === 'manage' && !isAdmin) return false;
-      return true;
-    });
-
-    if (visibleTabs.length === 0) return null;
-
-    return (
-      <div key={group.header} style={{ marginBottom: 35 }}>
-        {(!navCollapsed || isMobile) && (
-          <div style={{ 
-            fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.teal, 
-            letterSpacing: '3px', padding: '0 20px 14px' 
-          }}>
-            {group.header}
-          </div>
-        )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {visibleTabs.map(([id, label, color]) => (
-            <button key={id} onClick={() => { setActiveTab(id); if(isMobile) setNavCollapsed(true); }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 14, fontFamily: "'Space Mono'", fontSize: '11px',
-                color: activeTab === id ? '#fff' : C.gray, 
-                background: activeTab === id ? hexToRgba(color, 0.15) : 'transparent', 
-                border: 'none', borderLeft: `3px solid ${activeTab === id ? color : 'transparent'}`,
-                padding: '12px 20px', cursor: 'pointer', textAlign: 'left', borderRadius: '0 4px 4px 0'
-              }}
-            >
-              <span style={{ fontSize: '1.2rem' }}>{label.split(' ')[0]}</span>
-              {(!navCollapsed || isMobile) && <span style={{ textTransform: 'uppercase' }}>{label.split(' ').slice(1).join(' ')}</span>}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  })}
-</div>
-
-{/* ── SYSTEM BOOTH (ADMIN ONLY) ── */}
-{isAdmin && (
-  <div style={{ 
-    padding: '20px 12px', borderTop: `1px solid ${hexToRgba(C.teal, 0.3)}`, 
-    background: 'rgba(0,0,0,0.3)', marginTop: 'auto' 
-  }}>
-    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: C.teal, letterSpacing: 2, padding: '0 12px 10px' }}>
-      SYSTEM BOOTH
-    </div>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {RIGHT_TABS.map(([id, label, color]) => (
-        <button key={id} onClick={() => setActiveTab(id)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 14, fontFamily: "'Space Mono'", fontSize: '11px',
-            color: activeTab === id ? '#fff' : C.grayDim, 
-            background: activeTab === id ? hexToRgba(color, 0.1) : 'transparent',
-            border: 'none', borderLeft: `3px solid ${activeTab === id ? color : 'transparent'}`,
-            padding: '10px 18px', cursor: 'pointer', borderRadius: '0 4px 4px 0', textAlign: 'left', textTransform: 'uppercase'
-          }}>
-          <span style={{ fontSize: '1.2rem' }}>{label.split(' ')[0]}</span>
-          {(!navCollapsed || isMobile) && <span>{label.split(' ').slice(1).join(' ')}</span>}
-        </button>
-      ))}
-      
-      {/* Logout functionality tucked into the bottom of the Booth */}
-      <button 
-        onClick={async () => { if(window.confirm("TERMINATE SESSION?")) await supabase.auth.signOut(); }}
-        style={{
-          marginTop: 10, padding: '10px 18px', background: 'rgba(255, 68, 68, 0.05)', 
-          border: 'none', borderLeft: '3px solid #ff4444', color: '#ff4444', 
-          fontFamily: "'Space Mono'", fontSize: '10px', fontWeight: 900, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', gap: 14
-        }}
-      >
-        <span style={{ fontSize: '1.2rem' }}>⏻</span>
-        {(!navCollapsed || isMobile) && <span>LOGOUT</span>}
-      </button>
-    </div>
-  </div>
-)}
-</aside>
-          {/* ── 4. THE MAIN STAGE ── */}
-          <div style={{ flex: 1, height: '100%', overflowY: 'auto', overflowX: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', background: C.bg }}>
-            
-            {/* STICKY HEADER */}
-            <header style={{ 
-              padding: '0', background: '#050508', position: 'sticky', top: 0, zIndex: 100,
-              display: 'flex', alignItems: 'stretch', borderBottom: `2px solid ${C.border}`,
-              height: isMobile ? '75px' : '90px', flexShrink: 0, boxSizing: 'border-box', overflow: 'visible'
-            }}>
-              {/* Identity / Mobile Menu Trigger */}
-              <div onClick={() => isMobile && setNavCollapsed(false)} style={{ width: isMobile ? '75px' : '280px', borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isMobile ? `linear-gradient(135deg, ${hexToRgba(C.teal, 0.2)} 0%, #08080c 100%)` : `linear-gradient(135deg, ${C.bgCard} 0%, #08080c 100%)`, flexShrink: 0, cursor: isMobile ? 'pointer' : 'default', gap: 2 }}>
-                <div style={{ transform: isMobile ? 'scale(0.7)' : 'none', lineHeight: 0 }}>
-                  <TrackRecordLogo size={40} />
-                </div>
-                {isMobile && <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: C.teal, letterSpacing: '1px', fontWeight: 900, opacity: 0.8 }}>MENU</div>}
-              </div>
-
-              {/* Header Stats */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', flex: 1, gap: '1px', background: C.border, minWidth: 0 }}>
-                {[
-                  { value: headerStats.totalSets, label: 'SETS', color: C.teal, onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } },
-                  { value: headerStats.uniqueArtists, label: 'ACTS', color: C.cyan, onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } },
-                  { value: headerStats.totalShows, label: 'DAYS', color: C.purple, onClick: () => setActiveTab('timeline') },
-                  { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'VENUES', color: C.red, onClick: () => setActiveTab('venues') },
-                  { value: headerStats.setlistCount, label: 'FILES', color: C.gold, onClick: () => setActiveTab('vault') }
-                ].map((s) => (
-                  <div key={s.label} onClick={s.onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative', background: `linear-gradient(180deg, ${hexToRgba(s.color, 0.08)} 0%, #050508 100%)`, transition: 'all 0.3s ease', overflow: 'hidden', padding: isMobile ? '0 2px' : '0' }}>
-                    <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: '2px', background: s.color, boxShadow: `0 0 10px ${s.color}`, opacity: 0.8 }} />
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.1rem' : '3rem', color: s.color, lineHeight: 1, textShadow: isMobile ? 'none' : `0 0 20px ${hexToRgba(s.color, 0.4)}` }}>{s.value}</div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? '5px' : '8px', color: '#fff', letterSpacing: isMobile ? '1px' : '3px', fontWeight: 900, marginTop: 4, opacity: 0.5 }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', padding: isMobile ? '0 10px' : '0 30px', background: `linear-gradient(225deg, ${hexToRgba(C.teal, 0.05)} 0%, #050508 100%)`, borderLeft: `1px solid ${C.border}`, flexShrink: 0 }}>
-                <ThemeSwitcher isMobile={isMobile} />
-              </div>
-            </header>
-<main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
-  
-  {/* 1. THE DASHBOARD (CENTER STAGE) */}
-  {activeTab === 'dashboard' && (
-    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <OnThisDay concerts={concerts} />
-      
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr', gap: 20 }}>
-        <ArtistInsights concerts={concerts} />
-        <TheaterMarquee 
-          upcoming={upcoming} 
-          onAdd={isAdmin ? () => setUpcomingModal('new') : null} 
-          onEdit={isAdmin ? setUpcomingModal : null} 
-        />
-        <RandomShow concerts={concerts} />
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: 20 }}>
-        <VenueDonutCard concerts={concerts} onNavigateToVenues={() => setActiveTab('venues')} />
-        <Card neon>
-          <CardTitle>Sets Per Year by Venue </CardTitle>
-          <div style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stackedTimelineData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
-                <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
-                <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10 }} />
-                {venueKeys.map((v, i) => (
-                  <Bar key={v} dataKey={v} stackId="a" fill={v === 'other' ? '#334' : ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88'][i % 5]} />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-      </div>
-
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', 
-        gap: 20,
-        alignItems: 'stretch',
-        height: isMobile ? 'auto' : '480px', 
-        marginBottom: 20
-      }}>
-        <Card neon>
-          <DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} concerts={concerts} />
-        </Card>
-        <Card neon>
-          <CardTitle>Festival Passports</CardTitle>
-          <TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} />
-        </Card>
-        <Card neon>
-          <CardTitle>By Decade</CardTitle>
-          <DecadeBlocks sets={allSetsList} headerStats={headerStats} concerts={concerts} />
-        </Card>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
-        <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <CardTitle>HEAVY ROTATION</CardTitle>
-          <div className="wristband-bin" style={{ flex: 1, overflowY: 'auto', paddingRight: 8 }}>
-            {artistCounts.filter(a => a.count >= 5).map((a, i) => (
-              <div key={a.name} onClick={() => { setSearch(a.name); setBrowseView('shows'); setActiveTab('browse'); }} style={{ padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, marginBottom: 8, cursor: 'pointer' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem' }}>{a.name}</span>
-                  <span style={{ color: C.teal }}>{a.count}×</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-        <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column' }}>
-          <CardTitle>SETLIST SPOTLIGHT</CardTitle>
-          <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
-        </Card>
-      </div>
-    </div>
-  )}
-
-  {/* 2. CHRONICLE & TOUR BUS TABS */}
-  {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
-  
-  {activeTab === 'byDay' && <ByDayTab dayGroups={dayGroups} onEdit={isAdmin ? setEditTarget : null} genreMap={artistGenres} isAdmin={isAdmin} />}
-  
-  {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={isAdmin} onEdit={isAdmin ? setEditTarget : null} />}
-  
-  {activeTab === 'passport' && (
-    <PassportTab 
-      passport={passport} 
-      onNavigateToFest={name => { 
-        setActiveTab('byFest'); 
-        setTimeout(() => { 
-          const el = document.getElementById(`fest-${name.toLowerCase().replace(/\s+/g, '-')}`); 
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
-        }, 450); 
-      }} 
-    />
-  )}
-
-  {/* 3. ARCHIVE TABS */}
-  {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
-  
-  {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
-  
-  {activeTab === 'photos' && <PhotoVaultTab concerts={concerts} />}
-  
-  {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
-  
-  {/* 4. STUDIO TABS */}
-  {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
-
-  {/* 5. THE SEARCH ENGINE (BROWSE) */}
-  {activeTab === 'browse' && (
-    <BrowseTab 
-      browseView={browseView}
-      setBrowseView={setBrowseView}
-      search={search}
-      setSearch={setSearch}
-      yearFilter={yearFilter}
-      setYearFilter={setYearFilter}
-      festFilter={festFilter}
-      setFestFilter={setFestFilter}
-      genreFilter={genreFilter}
-      setGenreFilter={setGenreFilter}
-      sortCol={sortCol}
-      setSortCol={setSortCol}
-      sortDir={sortDir}
-      setSortDir={setSortDir}
-      page={page}
-      setPage={setPage}
-      totalPages={totalPages}
-      paged={paged} 
-      artistRows={artistRows}
-      years={years}
-      onShare={(a, s) => setShareCard({ artist: a, shows: s })}
-      onEdit={isAdmin ? setEditTarget : null} 
-      isAdmin={isAdmin}
-      onSetGenre={handleSetGenre}
-      genreMap={artistGenres}
-    />
-  )}
-
-  {/* 6. ADMIN OFFICE */}
-  {isAdmin && activeTab === 'manage' && (
-    <ManageTab 
-      concerts={concerts} 
-      onEdit={setEditTarget} 
-      onAdd={() => setEditTarget('new')} 
-      onDuplicate={handleDuplicate} 
-    />
-  )}
-</main>
-
-        {/* ── MODALS LAYER -── */}
-       {isAdmin && nudgeTarget && (
-  <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
-    <div style={{ textAlign: 'center', maxWidth: 500, padding: 40 }}>
-      <div style={{ fontSize: '4rem', marginBottom: 20, animation: 'pulse 2s infinite' }}>📡</div>
-      <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: C.teal, lineHeight: 1 }}>SIGNAL DETECTED</h2>
-      <p style={{ fontFamily: "'Space Mono'", fontSize: 12, color: '#fff', marginBottom: 30 }}>
-        THE ARCHIVE DETECTED A RECENT SHOW: <br/>
-        <span style={{ color: C.gold, fontSize: '1.5rem' }}>{nudgeTarget.artist.toUpperCase()}</span><br/>
-        WAS AT {nudgeTarget.venue.toUpperCase()} ON {nudgeTarget.date}.
-      </p>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
-        <button 
-          onClick={() => {
-            setEditTarget({ ...nudgeTarget, isNudge: true });
-            setNudgeTarget(null);
-          }}
-          style={{ padding: '20px', background: C.teal, color: '#000', border: 'none', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}
-        >
-          ARCHIVE NOW
-        </button>
-        <button 
-          onClick={() => setNudgeTarget(null)}
-          style={{ padding: '20px', background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}
-        >
-          IGNORE SIGNAL
-        </button>
-      </div>
-      <p style={{ marginTop: 20, fontFamily: "'Space Mono'", fontSize: 8, color: '#444' }}>THE SIGNAL WILL PERSIST UNTIL RECONCILED</p>
-    </div>
-  </div>
-)}
-        {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
-        
-        {shareCard && (
-          <ShareCard 
-            artist={shareCard.artist} 
-            shows={shareCard.shows} 
-            onClose={() => setShareCard(null)} 
-          />
-        )}
-        
-        {editTarget && (
-          <EditModal 
-            concert={editTarget === 'new' ? 'new' : editTarget} 
-            onClose={() => setEditTarget(null)} 
-            onSave={editTarget?.isNudge ? (id, payload) => handleReconcile(editTarget.id, payload) : handleSave}
-            onDelete={handleDelete} 
-            allConcerts={concerts}
-          />
-        )}
-        
-        {upcomingModal !== null && (
+       {upcomingModal !== null && (
           <UpcomingModal 
             show={upcomingModal === 'new' ? null : upcomingModal} 
             onClose={() => setUpcomingModal(null)} 
@@ -6179,15 +5846,13 @@ export default function App() {
             onDelete={handleUpcomingDelete} 
           />
         )}
-      </div> {/* Closes main content div */}
-     </div> {/* Closes flex wrapper */}
-    </div> {/* Closes root div */}
-  </ThemeContext.Provider>
- );
-}
+      </div>
+    </ThemeContext.Provider>
+  );
+} // 🟢 THIS IS THE ONE AND ONLY CLOSURE FOR THE MAIN APP FUNCTION
 
 // ── AUTHENTICATION COMPONENT ──
-// 🟢 Added 'C' to props to prevent ReferenceErrors
+// This sits OUTSIDE the App function to keep the logic clean.
 function LoginModal({ onClose, C }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -6217,10 +5882,10 @@ function LoginModal({ onClose, C }) {
         boxShadow: `0 0 60px 0px ${hexToRgba(C?.teal || '#00e5cc', 0.2)}`,
         textAlign: 'center'
       }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C?.teal || '#00e5cc', marginBottom: 6, letterSpacing: 3 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C?.teal || '#00e5cc', marginBottom: 10, letterSpacing: 3 }}>
           ADMIN LOGIN
         </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#555', marginBottom: 25, textTransform: 'uppercase', letterSpacing: 1 }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#555', marginBottom: 25, textTransform: 'uppercase' }}>
           Authorized Personnel Only // System Override Active
         </div>
         
@@ -6230,8 +5895,7 @@ function LoginModal({ onClose, C }) {
             onChange={e => setEmail(e.target.value)}
             style={{ 
               background: '#000', border: '1px solid #222', color: '#fff', 
-              padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none',
-              borderRadius: '4px'
+              padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none', borderRadius: '4px'
             }}
           />
           <input 
@@ -6239,8 +5903,7 @@ function LoginModal({ onClose, C }) {
             onChange={e => setPassword(e.target.value)}
             style={{ 
               background: '#000', border: '1px solid #222', color: '#fff', 
-              padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none',
-              borderRadius: '4px'
+              padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none', borderRadius: '4px'
             }}
           />
           <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
