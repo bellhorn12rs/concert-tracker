@@ -5291,6 +5291,7 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
 
   // ── 5. SYSTEM HANDLERS & EFFECTS ──
 
+  // EFFECT A: The URL Listener (Watches the Address Bar)
   useEffect(() => {
     const syncView = async () => {
       const hash = window.location.hash;
@@ -5298,34 +5299,36 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
       
       if (match) {
         const username = match[1];
-        // 1. Get their ID from the database
+        // 1. Find the UUID for the username in the URL
         const { data } = await supabase.from('profiles').select('id').eq('username', username).single();
         if (data) {
           setViewingUser(data.id);
           setViewingUsername(username);
           setOnLanding(false);
-          // The fetch functions will now use the new viewingUser ID
-          fetchConcerts();
-          fetchUpcoming();
         }
       } else {
-        // 2. Return to Your Archive
+        // 2. No username in URL? Back to your own archive.
         setViewingUser(null);
         setViewingUsername(null);
-        fetchConcerts();
-        fetchUpcoming();
       }
     };
 
-    // 🟢 Subscribe to URL changes (the "Hash Pulse")
+    // Listen for the "Back" button or Link clicks
     window.addEventListener('hashchange', syncView);
-    
-    // Run once on mount to catch direct links
     syncView(); 
 
-    // Cleanup listener when component unmounts
+    // Clean up when the app closes
     return () => window.removeEventListener('hashchange', syncView);
-  }, [session]); // We only need to re-sync if the user logs in/out
+  }, [session]); // Re-sync if the user logs in/out
+
+  // EFFECT B: The Data Refresher (Loads the Shows)
+  useEffect(() => {
+    // Only fetch if we have a valid session or are viewing a public user
+    if (session || viewingUser) {
+      fetchConcerts();
+      fetchUpcoming();
+    }
+  }, [viewingUser, session]);
   
   // 🔍 THE TEMPORAL SCANNER (Post-Show Nudge)
   useEffect(() => {
