@@ -479,7 +479,7 @@ const [sessionChecked, setSessionChecked] = useState(false);
           </button>
         </div>
       </div> {/* closes hero section */}
-      
+
       {/* ── SECTION 1: TEMPORAL DRIFT ── */}
 <div style={{ padding: isMobile ? '60px 20px' : '80px 40px', background: '#050508', borderTop: '1px solid #111', borderBottom: '1px solid #111', position: 'relative', overflow: 'hidden' }}>
 
@@ -946,173 +946,126 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
 </div>
 
 {/* ── FINAL CTA ── */}
-<div style={{ padding: isMobile ? '100px 20px' : '100px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#000' }}>
+      <div style={{ padding: isMobile ? '100px 20px' : '100px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#000' }}>
+        {/* Radial glow */}
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 900, height: 900, background: 'radial-gradient(circle, rgba(0,229,204,0.07) 0%, rgba(153,102,255,0.04) 35%, transparent 65%)', pointerEvents: 'none' }} />
 
-  {/* Radial glow */}
-  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 900, height: 900, background: 'radial-gradient(circle, rgba(0,229,204,0.07) 0%, rgba(153,102,255,0.04) 35%, transparent 65%)', pointerEvents: 'none' }} />
+        {/* Top line */}
+        <div style={{ position: 'absolute', top: 0, left: '5%', right: '5%', height: 1, background: `linear-gradient(90deg, transparent, ${TEAL}88, ${PURPLE}88, transparent)`, boxShadow: `0 0 20px ${TEAL}44` }} />
 
-  {/* Top line */}
-  <div style={{ position: 'absolute', top: 0, left: '5%', right: '5%', height: 1, background: `linear-gradient(90deg, transparent, ${TEAL}88, ${PURPLE}88, transparent)`, boxShadow: `0 0 20px ${TEAL}44` }} />
+        {/* Side quotes */}
+        {!isMobile && (
+          <>
+            <div style={{ position: 'absolute', left: -40, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: TEAL, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+              CURATE YOUR COLLECTION
+            </div>
+            <div style={{ position: 'absolute', right: -60, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: PURPLE, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+              YOUR MUSIC. YOUR LEGACY.
+            </div>
+          </>
+        )}
 
-  {/* Side quotes */}
-  {!isMobile && (
-    <div style={{ position: 'absolute', left: -40, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: TEAL, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
-      CURATE YOUR COLLECTION
-    </div>
-  )}
-  {!isMobile && (
-    <div style={{ position: 'absolute', right: -60, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: PURPLE, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
-      YOUR MUSIC. YOUR LEGACY.
-    </div>
-  )}
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: TEAL, letterSpacing: 6, marginBottom: 32, opacity: 0.8 }}>
+            // THE ARCHIVE AWAITS
+          </div>
 
-  <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '4rem' : '9rem', color: '#fff', lineHeight: 0.85, letterSpacing: isMobile ? 2 : 6, marginBottom: 32, textShadow: `0 0 100px rgba(0,229,204,0.15)` }}>
+            YOUR<br />
+            HISTORY<br />
+            <span style={{ color: TEAL, textShadow: `0 0 60px rgba(0,229,204,0.8)` }}>IS WAITING.</span>
+          </div>
 
-    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: TEAL, letterSpacing: 6, marginBottom: 32, opacity: 0.8 }}>
-      // THE ARCHIVE AWAITS
-    </div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 9 : 12, color: GRAY, letterSpacing: 5, marginBottom: 20, lineHeight: 2.5 }}>
+            START YOUR ARCHIVE TODAY. IT'S FREE.<br />
+            <span style={{ color: PURPLE }}>NO SHOEBOX REQUIRED.</span>
+          </div>
 
-    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '4rem' : '9rem', color: '#fff', lineHeight: 0.85, letterSpacing: isMobile ? 2 : 6, marginBottom: 32, textShadow: `0 0 100px rgba(0,229,204,0.15)` }}>
-      YOUR<br />
-      HISTORY<br />
-      <span style={{ color: TEAL, textShadow: `0 0 60px rgba(0,229,204,0.8)` }}>IS WAITING.</span>
-    </div>
+          <div style={{ width: 80, height: 2, background: `linear-gradient(90deg, ${TEAL}, ${PURPLE})`, margin: '0 auto 60px', boxShadow: `0 0 15px ${TEAL}88` }} />
 
-    <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 9 : 12, color: GRAY, letterSpacing: 5, marginBottom: 20, lineHeight: 2.5 }}>
-      START YOUR ARCHIVE TODAY. IT'S FREE.<br />
-      <span style={{ color: PURPLE }}>NO SHOEBOX REQUIRED.</span>
-    </div>
+          {/* Bridged Buttons */}
+          <div style={{ display: 'flex', gap: isMobile ? 16 : 24, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 80 }}>
+            <button
+              onClick={() => setMode('signup')}
+              style={{
+                background: TEAL, color: '#000', border: 'none', padding: isMobile ? '20px 40px' : '28px 72px',
+                fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.4rem' : '2rem', letterSpacing: 5,
+                cursor: 'pointer', borderRadius: 4, transition: 'all 0.3s',
+                boxShadow: `0 0 40px rgba(0,229,204,0.5), 0 20px 60px rgba(0,0,0,0.5)`,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06) translateY(-4px)'; e.currentTarget.style.boxShadow = `0 0 80px rgba(0,229,204,0.8), 0 30px 80px rgba(0,0,0,0.6)`; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1) translateY(0)'; e.currentTarget.style.boxShadow = `0 0 40px rgba(0,229,204,0.5), 0 20px 60px rgba(0,0,0,0.5)`; }}
+            >
+              INITIALIZE ARCHIVE
+            </button>
+            <button
+              onClick={() => {
+                if (currentSession) {
+                  if (props.onEnterArchive) props.onEnterArchive(); 
+                } else {
+                  setMode('login');
+                }
+              }}
+              style={{
+                background: 'transparent', color: TEAL, border: `2px solid ${TEAL}`,
+                padding: isMobile ? '20px 40px' : '28px 72px', fontFamily: "'Bebas Neue'",
+                fontSize: isMobile ? '1.4rem' : '2rem', letterSpacing: 5, cursor: 'pointer',
+                borderRadius: 4, transition: 'all 0.3s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = `${TEAL}15`; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 0 30px ${TEAL}33`; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              ACCESS YOUR COLLECTION
+            </button>
+          </div>
 
-    {/* Divider */}
-    <div style={{ width: 80, height: 2, background: `linear-gradient(90deg, ${TEAL}, ${PURPLE})`, margin: '0 auto 60px', boxShadow: `0 0 15px ${TEAL}88` }} />
+          <div style={{ display: 'flex', gap: isMobile ? 24 : 80, justifyContent: 'center', flexWrap: 'wrap', padding: '40px 0', borderTop: `1px solid #111`, borderBottom: `1px solid #111`, marginBottom: 48 }}>
+            {[
+              [concerts.length, 'SHOWS', TEAL],
+              [new Set(concerts.flatMap(c => (c.bands || []).map(getBandName)).filter(Boolean)).size, 'ARTISTS', GOLD],
+              [new Set(concerts.map(c => c.venue).filter(Boolean)).size, 'VENUES', PURPLE],
+              [new Set(concerts.map(c => c.state).filter(Boolean)).size, 'STATES', '#ff4466'],
+            ].map(([val, label, color]) => (
+              <div key={label} style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '3rem' : '5rem', color, lineHeight: 1, textShadow: `0 0 30px ${color}88` }}>{val}</div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, letterSpacing: 4, marginTop: 8 }}>{label}</div>
+              </div>
+            ))}
+          </div>
 
-    {/* Buttons */}
-    <div style={{ display: 'flex', gap: isMobile ? 16 : 24, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 80 }}>
-      <button
-        onClick={() => setMode('signup')}
-        style={{
-          background: TEAL,
-          color: '#000',
-          border: 'none',
-          padding: isMobile ? '20px 40px' : '28px 72px',
-          fontFamily: "'Bebas Neue'",
-          fontSize: isMobile ? '1.4rem' : '2rem',
-          letterSpacing: 5,
-          cursor: 'pointer',
-          borderRadius: 4,
-          transition: 'all 0.3s',
-          boxShadow: `0 0 40px rgba(0,229,204,0.5), 0 20px 60px rgba(0,0,0,0.5)`,
-        }}
-        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06) translateY(-4px)'; e.currentTarget.style.boxShadow = `0 0 80px rgba(0,229,204,0.8), 0 30px 80px rgba(0,0,0,0.6)`; }}
-        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1) translateY(0)'; e.currentTarget.style.boxShadow = `0 0 40px rgba(0,229,204,0.5), 0 20px 60px rgba(0,0,0,0.5)`; }}
-      >
-        INITIALIZE ARCHIVE
-      </button>
-      <button
-  onClick={() => {
-    if (currentSession) {
-      // Signal to App.js to drop the landing page and show the dashboard
-      if (props.onEnterArchive) props.onEnterArchive(); 
-    } else {
-      setMode('login');
-    }
-  }}
-  style={{
-    background: 'transparent',
-    color: TEAL,
-    border: `2px solid ${TEAL}`,
-    padding: isMobile ? '20px 40px' : '28px 72px',
-    fontFamily: "'Bebas Neue'",
-    fontSize: isMobile ? '1.4rem' : '2rem',
-    letterSpacing: 5,
-    cursor: 'pointer',
-    borderRadius: 4,
-    transition: 'all 0.3s',
-  }}
-  onMouseEnter={e => { e.currentTarget.style.background = `${TEAL}15`; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 0 30px ${TEAL}33`; }}
-  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
->
-  ACCESS YOUR COLLECTION
-</button>
-
-    {/* Stat strip */}
-    <div style={{ display: 'flex', gap: isMobile ? 24 : 80, justifyContent: 'center', flexWrap: 'wrap', padding: '40px 0', borderTop: `1px solid #111`, borderBottom: `1px solid #111`, marginBottom: 48 }}>
-      {[
-        [concerts.length, 'SHOWS', TEAL],
-        [new Set(concerts.flatMap(c => (c.bands || []).map(getBandName)).filter(Boolean)).size, 'ARTISTS', GOLD],
-        [new Set(concerts.map(c => c.venue).filter(Boolean)).size, 'VENUES', PURPLE],
-        [new Set(concerts.map(c => c.state).filter(Boolean)).size, 'STATES', '#ff4466'],
-      ].map(([val, label, color]) => (
-        <div key={label} style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '3rem' : '5rem', color, lineHeight: 1, textShadow: `0 0 30px ${color}88` }}>{val}</div>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, letterSpacing: 4, marginTop: 8 }}>{label}</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '0.9rem' : '1.1rem', color: GRAY, letterSpacing: 6, lineHeight: 2.5, opacity: 0.5 }}>
+            TRACKRECORD // MUSEUM OF SOUND // EST. 2024<br />
+            <span style={{ fontSize: '0.85rem', letterSpacing: 4 }}>EVERY SHOW. EVERY STUB. EVERY MEMORY.</span>
+          </div>
         </div>
-      ))}
-    </div>
+        <div style={{ position: 'absolute', bottom: 0, left: '5%', right: '5%', height: 1, background: `linear-gradient(90deg, transparent, ${PURPLE}88, ${TEAL}88, transparent)` }} />
+      </div>
 
-    {/* Bottom manifesto */}
-    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '0.9rem' : '1.1rem', color: GRAY, letterSpacing: 6, lineHeight: 2.5, opacity: 0.5 }}>
-      TRACKRECORD // MUSEUM OF SOUND // EST. 2024<br />
-      <span style={{ fontSize: '0.85rem', letterSpacing: 4 }}>EVERY SHOW. EVERY STUB. EVERY MEMORY.</span>
-    </div>
-  </div>
-
-  {/* Bottom line */}
-  <div style={{ position: 'absolute', bottom: 0, left: '5%', right: '5%', height: 1, background: `linear-gradient(90deg, transparent, ${PURPLE}88, ${TEAL}88, transparent)` }} />
-</div>
       {/* ── BOTTOM TICKER ── */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000, background: '#000', borderTop: `1px solid ${TEAL}22`, height: 28, display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
-        <div style={{ background: '#111', color: GOLD, fontFamily: "'Bebas Neue'", fontSize: 10, letterSpacing: 2, padding: '0 12px', height: '100%', display: 'flex', alignItems: 'center', flexShrink: 0, borderRight: `1px solid ${GOLD}33` }}>
-          SYS
-        </div>
+        <div style={{ background: '#111', color: GOLD, fontFamily: "'Bebas Neue'", fontSize: 10, letterSpacing: 2, padding: '0 12px', height: '100%', display: 'flex', alignItems: 'center', flexShrink: 0, borderRight: `1px solid ${GOLD}33` }}>SYS</div>
         <div style={{ overflow: 'hidden', flex: 1 }}>
           <div className="ticker-scroll" style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GOLD, paddingLeft: 20, letterSpacing: 1, opacity: 0.6, animationDuration: '60s' }}>
-            {`ARCHIVE STATUS: ACTIVE /// TOTAL SIGNALS: ${concerts.length} /// GENRES MAPPED: ${new Set(concerts.map(c => c.genre).filter(Boolean)).size} /// STATES COVERED: ${new Set(concerts.map(c => c.state).filter(Boolean)).size} /// ARTIFACTS STORED: ${concerts.filter(c => c.image_url || c.personal_photo_url).length} /// SYSTEM: NOMINAL /// `.repeat(3)}
+            {`ARCHIVE STATUS: ACTIVE /// TOTAL SIGNALS: ${concerts.length} /// SYSTEM: NOMINAL /// `.repeat(3)}
           </div>
         </div>
       </div>
 
       {/* ── AUTH MODAL ── */}
       {mode && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(12px)' }}
-          onClick={e => e.target === e.currentTarget && setMode(null)}
-        >
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(12px)' }} onClick={e => e.target === e.currentTarget && setMode(null)}>
           <div className="fade-in" style={{ background: '#0a0a0c', border: `1px solid ${TEAL}`, borderRadius: 12, padding: 40, width: '100%', maxWidth: 400, boxShadow: `0 0 60px rgba(0,229,204,0.2)` }}>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: TEAL, marginBottom: 6, letterSpacing: 3 }}>
-              {mode === 'login' ? 'ACCESS YOUR COLLECTION' : 'INITIALIZE ARCHIVE'}
-            </div>
-            <div style={{ fontSize: 8, color: GRAY, marginBottom: 28, letterSpacing: 2 }}>
-              {mode === 'login' ? 'ENTER YOUR CREDENTIALS TO CONTINUE' : 'CREATE YOUR ACCOUNT TO START ARCHIVING'}
-            </div>
-
-            {message && (
-              <div style={{ background: message.includes('SENT') ? 'rgba(0,229,204,0.1)' : 'rgba(255,68,68,0.1)', border: `1px solid ${message.includes('SENT') ? TEAL : '#ff4466'}`, borderRadius: 4, padding: '10px 14px', fontSize: 9, color: message.includes('SENT') ? TEAL : '#ff4466', marginBottom: 20, letterSpacing: 1, lineHeight: 1.6 }}>
-                {message}
-              </div>
-            )}
-
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: TEAL, marginBottom: 6, letterSpacing: 3 }}>{mode === 'login' ? 'ACCESS YOUR COLLECTION' : 'INITIALIZE ARCHIVE'}</div>
+            {message && <div style={{ background: message.includes('SENT') ? 'rgba(0,229,204,0.1)' : 'rgba(255,68,68,0.1)', border: `1px solid ${message.includes('SENT') ? TEAL : '#ff4466'}`, borderRadius: 4, padding: '10px 14px', fontSize: 9, color: message.includes('SENT') ? TEAL : '#ff4466', marginBottom: 20 }}>{message}</div>}
             <form onSubmit={mode === 'login' ? handleLogin : handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {mode === 'signup' && (
-                <input className="modal-input" placeholder="USERNAME" value={username} onChange={e => setUsername(e.target.value)} required />
-              )}
+              {mode === 'signup' && <input className="modal-input" placeholder="USERNAME" value={username} onChange={e => setUsername(e.target.value)} required />}
               <input className="modal-input" type="email" placeholder="EMAIL" value={email} onChange={e => setEmail(e.target.value)} required />
               <input className="modal-input" type="password" placeholder="PASSWORD" value={password} onChange={e => setPassword(e.target.value)} required />
-
               <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                <button type="button" onClick={() => { setMode(null); setMessage(''); }} style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: GRAY, padding: '12px', cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.1rem', borderRadius: 4 }}>
-                  CANCEL
-                </button>
-                <button type="submit" disabled={loading} style={{ flex: 2, background: loading ? '#222' : TEAL, border: 'none', color: '#000', padding: '12px', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', fontWeight: 900, borderRadius: 4, letterSpacing: 2 }}>
-                  {loading ? '...' : mode === 'login' ? 'ENTER' : 'CREATE ARCHIVE'}
-                </button>
+                <button type="button" onClick={() => { setMode(null); setMessage(''); }} style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: GRAY, padding: '12px', cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.1rem', borderRadius: 4 }}>CANCEL</button>
+                <button type="submit" disabled={loading} style={{ flex: 2, background: loading ? '#222' : TEAL, border: 'none', color: '#000', padding: '12px', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', fontWeight: 900, borderRadius: 4, letterSpacing: 2 }}>{loading ? '...' : mode === 'login' ? 'ENTER' : 'CREATE ARCHIVE'}</button>
               </div>
             </form>
-
-            <div style={{ marginTop: 20, textAlign: 'center' }}>
-              <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMessage(''); }} style={{ background: 'none', border: 'none', color: GRAY, fontSize: 9, cursor: 'pointer', letterSpacing: 1, textDecoration: 'underline' }}>
-                {mode === 'login' ? 'NO ACCOUNT? INITIALIZE ARCHIVE' : 'ALREADY HAVE AN ACCOUNT? ACCESS YOUR COLLECTION'}
-              </button>
-            </div>
           </div>
         </div>
       )}
