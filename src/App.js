@@ -5116,6 +5116,9 @@ export default function App() {
   // ── 1. AUTH & SYSTEM STATE ──
   const [session, setSession] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
+  // 🟢 NEW: Controls if we show the Entry Hall or the Museum Interior
+  const [onLanding, setOnLanding] = useState(true); 
+  
   const [themeId, setThemeIdRaw] = useState(() => localStorage.getItem('concert-theme') || 'neon-noir');
   const [navCollapsed, setNavCollapsed] = useState(window.innerWidth < 768); 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -5125,7 +5128,7 @@ export default function App() {
   const [artistGenres, setArtistGenres] = useState({});
   const [upcoming, setUpcoming] = useState([]);
   const [loading, setLoading] = useState(true);
-const [authLoading, setAuthLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
   
   // ── 3. UI & NAVIGATION STATE ──
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -5146,7 +5149,7 @@ const [authLoading, setAuthLoading] = useState(true);
 
   // ── OWNER CHECK ──
   const isOwner = session?.user?.email === 'bellhorn12rs@gmail.com';
-const isAdmin = !!session?.user; // any logged-in user can edit their own data
+  const isAdmin = !!session?.user; 
 
   const userValue = useMemo(() => {
     return {
@@ -5157,106 +5160,107 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
     };
   }, [session, loading, isOwner]);
 
+  // ── BRIDGE HANDLERS ──
+  // 🟢 These functions allow the Landing Page to "talk" to the App
+  const handleEnterArchive = () => {
+    setOnLanding(false);
+    setShowLogin(false);
+    setActiveTab('dashboard');
+  };
+
+  const handleNavigateToUser = (targetUsername) => {
+    window.location.hash = `#/u/${targetUsername}`;
+    // If we are looking at someone else, we aren't "on our landing page" anymore
+    setOnLanding(false);
+  };
+
   // ── 5. SYSTEM HANDLERS & EFFECTS ──
 
   // 🔍 THE TEMPORAL SCANNER (Post-Show Nudge)
   useEffect(() => {
     if (upcoming.length > 0 && !loading && isAdmin) {
       const today = new Date().toISOString().split('T')[0];
-      // Find the first upcoming show that happened yesterday or earlier
       const staleShow = upcoming.find(s => s.date < today);
-      
       if (staleShow) {
         console.log("⚠️ STALE SIGNAL DETECTED:", staleShow.artist);
         setNudgeTarget(staleShow);
       }
     }
-  }, [upcoming, loading]);
+  }, [upcoming, loading, isAdmin]);
 
- // --- START OF UNIFIED SYSTEM BLOCK ---
-// --- START OF REPAIRED SYSTEM BLOCK ---
+  // ── 5. THE SYSTEM HEARTBEAT ──
+  useEffect(() => {
+    // A. Initial session recovery
+    supabase.auth.getSession().then(({ data: { session: initSession } }) => {
+      if (initSession) setSession(initSession);
+      setAuthLoading(false);
+    });
 
-// 1. HARDWARE & AUTH HEARTBEAT
-useEffect(() => {
-  // Check for active session on boot
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session) {
-      setSession(session);
-      // 🔥 CRITICAL: Don't just set loading false; trigger data check
-    }
-    setAuthLoading(false);
-  });
-
-  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log("SIGNAL EVENT:", event);
-    setSession(session);
-    setAuthLoading(false);
-    
-    if (session?.user?.id) {
-      // If we just signed in or recovered a session from another tab
-      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-        initRan.current = false; // Reset gate to ensure data is fetched
-        updateProfilePulse(session); // Archaeology metadata update
-      }
-    } else if (event === 'SIGNED_OUT') {
-      setConcerts([]); // Clear history on logout
-      initRan.current = false;
-    }
-  });
-
-  const handleResize = () => {
-    const mobile = window.innerWidth < 768;
-    setIsMobile(mobile);
-    if (mobile) setNavCollapsed(true);
-  };
-
-  window.addEventListener('resize', handleResize);
-  return () => {
-    window.removeEventListener('resize', handleResize);
-    subscription.unsubscribe();
-  };
-}, []);
-
-// 2. DATA SYNCHRONIZATION
-const initRan = useRef(false);
-
-useEffect(() => { 
-  if (THEMES[themeId]) Object.assign(C, THEMES[themeId]);
-
-  const init = async () => {
-    // If we have no session, don't try to fetch user-specific data
-    if (!session?.user?.id) return;
-
-    setLoading(true);
-    console.log("DATABASE FETCH: Initializing for user", session.user.id);
-    
-    try {
-      const timeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Signal Timeout')), 8000)
-      );
+    // B. Real-time auth listener (Handles Logins, Logouts, and Tab Sync)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      setSession(currentSession);
+      setAuthLoading(false);
       
-      // Promise.all ensures we don't resolve until we actually have the data
-      await Promise.race([
-        Promise.all([
-          fetchConcerts(),
-          fetchUpcoming(),
-          fetchGenres().catch(e => console.warn('Genres failed silently:', e))
-        ]),
-        timeout
-      ]);
-    } catch (e) {
-      console.error('ARCHIVE ERROR:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (currentSession?.user?.id) {
+        // Reset fetch gate on fresh login or tab recovery
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+          initRan.current = false; 
+        }
+      } else if (event === 'SIGNED_OUT') {
+        // Cleanup for security
+        setConcerts([]);
+        setUpcoming([]);
+        setOnLanding(true);
+        initRan.current = false;
+      }
+    });
 
-  // 🔥 THE FIX: If we have a user and haven't run init yet, run it.
-  if (session?.user?.id && !initRan.current && !authLoading) {
-    initRan.current = true;
-    init();
-  }
-}, [session, authLoading, themeId]);
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) setNavCollapsed(true);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // ── 6. DATA SYNCHRONIZATION ──
+  const initRan = useRef(false);
+
+  useEffect(() => { 
+    if (THEMES[themeId]) Object.assign(C, THEMES[themeId]);
+
+    const init = async () => {
+      if (!session?.user?.id) return;
+      setLoading(true);
+      try {
+        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Signal Timeout')), 8000));
+        await Promise.race([
+          Promise.all([
+            fetchConcerts(),
+            fetchUpcoming(),
+            fetchGenres().catch(e => console.warn('Genres delayed:', e))
+          ]),
+          timeout
+        ]);
+      } catch (e) {
+        console.error('ARCHIVE ERROR:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Only fire if we have a user and haven't initialized THIS session yet
+    if (session?.user?.id && !initRan.current && !authLoading) {
+      initRan.current = true;
+      init();
+    }
+  }, [session, authLoading, themeId]);
+
 
 // --- END OF REPAIRED SYSTEM BLOCK ---
   // 3. THEME & CONTEXT SETUP
@@ -5604,26 +5608,40 @@ useEffect(() => {
     fetchConcerts();
   }
 // 1. Hash routing for public profiles (Always accessible)
-const hash = window.location.hash;
-const profileMatch = hash.match(/^#\/u\/(.+)$/);
-if (profileMatch) {
-  const username = profileMatch[1];
-  return <PublicProfile username={username} currentSession={session} />;
-}
+// Gate A: Public Profiles (Highest priority)
+  const hash = window.location.hash;
+  const profileMatch = hash.match(/^#\/u\/(.+)$/);
+  if (profileMatch) {
+    const username = profileMatch[1];
+    return <PublicProfile username={username} currentSession={session} />;
+  }
 
-// 2. Initial Auth Gate
-if (authLoading) return (
-  <div style={{ background: '#050508', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#00e5cc', letterSpacing: '0.15em' }}>LOADING...</div>
-  </div>
-);
+  // Gate B: Bootup Signal Recovery
+  if (authLoading) return (
+    <div style={{ background: '#050508', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#00e5cc', letterSpacing: '0.15em' }}>RECOVERING SIGNAL...</div>
+    </div>
+  );
 
-// 3. Landing Page Logic (Modified to allow entry if logged in)
-// We only show the Landing Page if:
-// - There is no session
-// - OR we are explicitly told to show login
-// - OR we haven't clicked "Access Collection" yet (controlled by a local state if you want)
-if (!session || showLogin) {
+  // Gate C: The Entry Hall (Landing Page)
+  // 🟢 Condition: Show if not logged in OR if explicitly on the landing state
+  if (!session || onLanding || showLogin) {
+    return (
+      <LandingPage 
+        currentSession={session}
+        onEnterArchive={handleEnterArchive}
+        onNavigateToUser={handleNavigateToUser}
+      />
+    );
+  }
+
+  // Gate D: Personal Data Loading
+  if (loading) return (
+    <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
+    </div>
+  );
+
   return (
     <LandingPage 
       currentSession={session}
