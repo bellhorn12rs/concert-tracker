@@ -5292,30 +5292,41 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
   // ── 5. SYSTEM HANDLERS & EFFECTS ──
 
   useEffect(() => {
-  const checkUrl = async () => {
-    const hash = window.location.hash;
-    const match = hash.match(/^#\/u\/(.+)$/);
-    
-    if (match) {
-      const username = match[1];
-      // Find their ID
-      const { data } = await supabase.from('profiles').select('id').eq('username', username).single();
-      if (data) {
-        setViewingUser(data.id);
-        setViewingUsername(username);
-        setOnLanding(false); // Move past landing if they linked directly
+    const syncView = async () => {
+      const hash = window.location.hash;
+      const match = hash.match(/^#\/u\/(.+)$/);
+      
+      if (match) {
+        const username = match[1];
+        // 1. Get their ID from the database
+        const { data } = await supabase.from('profiles').select('id').eq('username', username).single();
+        if (data) {
+          setViewingUser(data.id);
+          setViewingUsername(username);
+          setOnLanding(false);
+          // The fetch functions will now use the new viewingUser ID
+          fetchConcerts();
+          fetchUpcoming();
+        }
+      } else {
+        // 2. Return to Your Archive
+        setViewingUser(null);
+        setViewingUsername(null);
+        fetchConcerts();
+        fetchUpcoming();
       }
-    } else {
-      setViewingUser(null);
-      setViewingUsername(null);
-    }
-  };
+    };
 
-  checkUrl();
-  window.addEventListener('hashchange', checkUrl);
-  return () => window.removeEventListener('hashchange', checkUrl);
-}, []);
+    // 🟢 Subscribe to URL changes (the "Hash Pulse")
+    window.addEventListener('hashchange', syncView);
+    
+    // Run once on mount to catch direct links
+    syncView(); 
 
+    // Cleanup listener when component unmounts
+    return () => window.removeEventListener('hashchange', syncView);
+  }, [session]); // We only need to re-sync if the user logs in/out
+  
   // 🔍 THE TEMPORAL SCANNER (Post-Show Nudge)
   useEffect(() => {
     if (upcoming.length > 0 && !loading && isAdmin) {
