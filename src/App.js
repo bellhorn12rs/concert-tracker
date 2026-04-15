@@ -5251,7 +5251,15 @@ useEffect(() => {
   if (session?.user?.id) {
     if (!initRan.current) {
       initRan.current = true;
-      init();
+      // Confirm session is still valid before fetching
+      supabase.auth.getSession().then(({ data: { session: freshSession } }) => {
+        if (freshSession?.user?.id) {
+          init();
+        } else {
+          setSession(null);
+          setLoading(false);
+        }
+      });
     }
   } else if (!authLoading) {
     initRan.current = false;
