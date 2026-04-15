@@ -5607,24 +5607,27 @@ export default function App() {
     await supabase.from('concerts').insert([{ ...rest, date: '', festival_day: '' }]);
     fetchConcerts();
   }
-// 1. Hash routing for public profiles (Always accessible)
-// Gate A: Public Profiles (Highest priority)
+// ── 7. NAVIGATION GATES ──
+
+  // Gate A: Public Profiles (Highest priority, bypasses onLanding)
   const hash = window.location.hash;
   const profileMatch = hash.match(/^#\/u\/(.+)$/);
   if (profileMatch) {
-    const username = profileMatch[1];
-    return <PublicProfile username={username} currentSession={session} />;
+    const targetUsername = profileMatch[1];
+    return <PublicProfile username={targetUsername} currentSession={session} />;
   }
 
   // Gate B: Bootup Signal Recovery
-  if (authLoading) return (
-    <div style={{ background: '#050508', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#00e5cc', letterSpacing: '0.15em' }}>RECOVERING SIGNAL...</div>
-    </div>
-  );
+  if (authLoading) {
+    return (
+      <div style={{ background: '#050508', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#00e5cc', letterSpacing: '0.15em' }}>RECOVERING SIGNAL...</div>
+      </div>
+    );
+  }
 
   // Gate C: The Entry Hall (Landing Page)
-  // 🟢 Condition: Show if not logged in OR if explicitly on the landing state
+  // Condition: Show if no session OR if Eric is standing in the Entry Hall
   if (!session || onLanding || showLogin) {
     return (
       <LandingPage 
@@ -5635,119 +5638,211 @@ export default function App() {
     );
   }
 
-  // Gate D: Personal Data Loading
-  if (loading) return (
-    <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
-    </div>
-  );
+  // Gate D: Personal Data Loading (Only shows when entering private museum)
+  if (loading) {
+    return (
+      <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
+      </div>
+    );
+  }
 
+  // ── 8. FINAL MUSEUM RENDER ──
   return (
-    <LandingPage 
-      currentSession={session}
-      onEnterArchive={() => {
-        setShowLogin(false);
-        setActiveTab('dashboard'); // Force navigation to dashboard
-      }}
-      onNavigateToUser={(targetUser) => {
-        window.location.hash = `#/u/${targetUser}`;
-      }}
-    />
-  );
-}
-
-// 4. Data Loading Gate (Only for logged-in users entering their own archive)
-if (loading) return (
-  <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>LOADING TRACKRECORD...</div>
-  </div>
-);
-
-return (
-  // ... your full ThemeContext.Provider and main app layout
     <ThemeContext.Provider value={themeCtx}>
-      {/* ── 1. GLOBAL WRAPPER (Vertical Stack) ── */}
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        height: '100vh', 
-        width: '100vw', 
-        background: C.bg, 
-        overflow: 'hidden' 
-      }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', background: C.bg, overflow: 'hidden' }}>
         
-        {/* ── 2. GLOBAL NEWS TICKER (Absolute Top) ── */}
         <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
 
-        {/* ── 3. APPLICATION CONTENT (Sidebar + Stage) ── */}
-        <div key={themeId} style={{ 
-          flex: 1, 
-          display: 'flex', 
-          color: C.white,
-          overflow: 'hidden', 
-          width: '100%',
-          position: 'relative'
-        }}>       <MarqueeStyles />
+        <div key={themeId} style={{ flex: 1, display: 'flex', color: C.white, overflow: 'hidden', width: '100%', position: 'relative' }}>
+          <MarqueeStyles />
 
-          {/* ── VERTICAL SIDEBAR ── */}
-<aside style={{
-  width: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
-  minWidth: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
-  height: '100%',
-  position: isMobile ? 'fixed' : 'relative',
-  top: 0,
-  left: isMobile && navCollapsed ? '-280px' : '0', 
-  background: `linear-gradient(to right, ${C.bgCard} 0%, #050508 100%)`,
-  borderRight: `1px solid ${C.border}`,
-  display: 'flex',
-  flexDirection: 'column',
-  padding: '0',
-  zIndex: 5000, 
-  transition: 'all 0.3s ease-in-out',
-  overflow: 'hidden',
-  flexShrink: 0 
-}}>
-  {/* Toggle Button */}
-  <button onClick={() => setNavCollapsed(!navCollapsed)} style={{ position: 'absolute', right: 15, top: 15, background: 'none', border: 'none', color: C.teal, cursor: 'pointer', fontSize: '1.2rem', zIndex: 10 }}>
-    {isMobile ? '✕' : (navCollapsed ? '→' : '←')}
-  </button>
+          <aside style={{
+            width: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
+            minWidth: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
+            height: '100%',
+            position: isMobile ? 'fixed' : 'relative',
+            top: 0,
+            left: isMobile && navCollapsed ? '-280px' : '0', 
+            background: `linear-gradient(to right, ${C.bgCard} 0%, #050508 100%)`,
+            borderRight: `1px solid ${C.border}`,
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 5000, 
+            transition: 'all 0.3s ease-in-out',
+            overflow: 'hidden',
+            flexShrink: 0 
+          }}>
+            <button onClick={() => setNavCollapsed(!navCollapsed)} style={{ position: 'absolute', right: 15, top: 15, background: 'none', border: 'none', color: C.teal, cursor: 'pointer', fontSize: '1.2rem', zIndex: 10 }}>
+              {isMobile ? '✕' : (navCollapsed ? '→' : '←')}
+            </button>
 
-  {/* 🟢 STEP 1: THE LOGO TRIGGER (Double-click to Login) */}
-  <div 
-    onDoubleClick={() => setShowLogin(true)} 
-    style={{ 
-      height: isMobile ? '70px' : '80px', 
-      borderBottom: `1px solid ${C.border}`, 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      gap: '2px', 
-      flexShrink: 0,
-      cursor: 'pointer' 
-    }}
-  >
-     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '24px' }}>
-        <TrackRecordLogo size={34} />
-     </div>
-     
-     {(!navCollapsed || isMobile) && (
-       <div className="fade-in">
-         <h1 style={{ 
-           fontFamily: "'Bebas Neue', sans-serif", 
-           fontSize: '1.5rem', 
-           margin: 0, 
-           lineHeight: 0.8, 
-           letterSpacing: '4px', 
-           color: isAdmin ? C.teal : C.white, // Turns teal when you're logged in
-           textTransform: 'uppercase' 
-         }}>
-           TRACK<span style={{ color: C.teal }}>RECORD</span>
-         </h1>
-       </div>
-     )}
-  </div>
+            <div onDoubleClick={() => setShowLogin(true)} style={{ height: isMobile ? '70px' : '80px', borderBottom: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', flexShrink: 0, cursor: 'pointer' }}>
+               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '24px' }}>
+                  <TrackRecordLogo size={34} />
+               </div>
+               {(!navCollapsed || isMobile) && (
+                 <div className="fade-in">
+                   <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', margin: 0, lineHeight: 0.8, letterSpacing: '4px', color: isAdmin ? C.teal : C.white, textTransform: 'uppercase' }}>
+                     TRACK<span style={{ color: C.teal }}>RECORD</span>
+                   </h1>
+                 </div>
+               )}
+            </div>
 
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 0' }} className="wristband-bin">
+              {TAB_GROUPS.map((group) => {
+                const visibleTabs = group.tabs.filter(([id]) => (id !== 'manage' || isAdmin));
+                if (visibleTabs.length === 0) return null;
+                return (
+                  <div key={group.header} style={{ marginBottom: 35 }}>
+                    {(!navCollapsed || isMobile) && <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.teal, letterSpacing: '3px', padding: '0 20px 14px' }}>{group.header}</div>}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {visibleTabs.map(([id, label, color]) => (
+                        <button key={id} onClick={() => { setActiveTab(id); if(isMobile) setNavCollapsed(true); }} style={{ display: 'flex', alignItems: 'center', gap: 14, fontFamily: "'Space Mono'", fontSize: '11px', color: activeTab === id ? '#fff' : C.gray, background: activeTab === id ? hexToRgba(color, 0.15) : 'transparent', border: 'none', borderLeft: `3px solid ${activeTab === id ? color : 'transparent'}`, padding: '12px 20px', cursor: 'pointer', textAlign: 'left', borderRadius: '0 4px 4px 0' }}>
+                          <span style={{ fontSize: '1.2rem' }}>{label.split(' ')[0]}</span>
+                          {(!navCollapsed || isMobile) && <span style={{ textTransform: 'uppercase' }}>{label.split(' ').slice(1).join(' ')}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {isAdmin && (
+              <div style={{ padding: '20px 12px', borderTop: `1px solid ${hexToRgba(C.teal, 0.3)}`, background: 'rgba(0,0,0,0.3)', marginTop: 'auto' }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: C.teal, letterSpacing: 2, padding: '0 12px 10px' }}>SYSTEM BOOTH</div>
+                {RIGHT_TABS.map(([id, label, color]) => (
+                  <button key={id} onClick={() => setActiveTab(id)} style={{ display: 'flex', alignItems: 'center', gap: 14, fontFamily: "'Space Mono'", fontSize: '11px', color: activeTab === id ? '#fff' : C.grayDim, background: activeTab === id ? hexToRgba(color, 0.1) : 'transparent', border: 'none', borderLeft: `3px solid ${activeTab === id ? color : 'transparent'}`, padding: '10px 18px', cursor: 'pointer', borderRadius: '0 4px 4px 0', textAlign: 'left', textTransform: 'uppercase' }}>
+                    <span style={{ fontSize: '1.2rem' }}>{label.split(' ')[0]}</span>
+                    {(!navCollapsed || isMobile) && <span>{label.split(' ').slice(1).join(' ')}</span>}
+                  </button>
+                ))}
+                <button onClick={async () => { if(window.confirm("TERMINATE SESSION?")) await supabase.auth.signOut(); }} style={{ marginTop: 10, padding: '10px 18px', background: 'rgba(255, 68, 68, 0.05)', border: 'none', borderLeft: '3px solid #ff4444', color: '#ff4444', fontFamily: "'Space Mono'", fontSize: '10px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <span style={{ fontSize: '1.2rem' }}>⏻</span>
+                  {(!navCollapsed || isMobile) && <span>LOGOUT</span>}
+                </button>
+              </div>
+            )}
+          </aside>
+
+          <div style={{ flex: 1, height: '100%', overflowY: 'auto', overflowX: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', background: C.bg }}>
+            <header style={{ padding: '0', background: '#050508', position: 'sticky', top: 0, zIndex: 100, display: 'flex', alignItems: 'stretch', borderBottom: `2px solid ${C.border}`, height: isMobile ? '75px' : '90px', flexShrink: 0 }}>
+              <div onClick={() => isMobile && setNavCollapsed(false)} style={{ width: isMobile ? '75px' : '280px', borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isMobile ? `linear-gradient(135deg, ${hexToRgba(C.teal, 0.2)} 0%, #08080c 100%)` : `linear-gradient(135deg, ${C.bgCard} 0%, #08080c 100%)`, flexShrink: 0, cursor: isMobile ? 'pointer' : 'default', gap: 2 }}>
+                <div style={{ transform: isMobile ? 'scale(0.7)' : 'none', lineHeight: 0 }}><TrackRecordLogo size={40} /></div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', flex: 1, gap: '1px', background: C.border, minWidth: 0 }}>
+                {[
+                  { value: headerStats.totalSets, label: 'SETS', color: C.teal, onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } },
+                  { value: headerStats.uniqueArtists, label: 'ACTS', color: C.cyan, onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } },
+                  { value: headerStats.totalShows, label: 'DAYS', color: C.purple, onClick: () => setActiveTab('timeline') },
+                  { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'VENUES', color: C.red, onClick: () => setActiveTab('venues') },
+                  { value: headerStats.setlistCount, label: 'FILES', color: C.gold, onClick: () => setActiveTab('vault') }
+                ].map((s) => (
+                  <div key={s.label} onClick={s.onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative', background: `linear-gradient(180deg, ${hexToRgba(s.color, 0.08)} 0%, #050508 100%)`, transition: 'all 0.3s ease', padding: isMobile ? '0 2px' : '0' }}>
+                    <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: '2px', background: s.color, boxShadow: `0 0 10px ${s.color}`, opacity: 0.8 }} />
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.1rem' : '3rem', color: s.color, lineHeight: 1 }}>{s.value}</div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? '5px' : '8px', color: '#fff', letterSpacing: isMobile ? '1px' : '3px', fontWeight: 900, marginTop: 4, opacity: 0.5 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', padding: isMobile ? '0 10px' : '0 30px', background: `linear-gradient(225deg, ${hexToRgba(C.teal, 0.05)} 0%, #050508 100%)`, borderLeft: `1px solid ${C.border}`, flexShrink: 0 }}>
+                <ThemeSwitcher isMobile={isMobile} />
+              </div>
+            </header>
+
+            <main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
+              {activeTab === 'dashboard' && (
+                <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <OnThisDay concerts={concerts} />
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr', gap: 20 }}>
+                    <ArtistInsights concerts={concerts} />
+                    <TheaterMarquee upcoming={upcoming} onAdd={isAdmin ? () => setUpcomingModal('new') : null} onEdit={isAdmin ? setUpcomingModal : null} />
+                    <RandomShow concerts={concerts} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: 20 }}>
+                    <VenueDonutCard concerts={concerts} onNavigateToVenues={() => setActiveTab('venues')} />
+                    <Card neon>
+                      <CardTitle>Sets Per Year by Venue</CardTitle>
+                      <div style={{ height: 220 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={stackedTimelineData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+                            <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                            <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                            <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10 }} />
+                            {venueKeys.map((v, i) => (
+                              <Bar key={v} dataKey={v} stackId="a" fill={v === 'other' ? '#334' : ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88'][i % 5]} />
+                            ))}
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </Card>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, alignItems: 'stretch', height: isMobile ? 'auto' : '480px', marginBottom: 20 }}>
+                    <Card neon><DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} concerts={concerts} /></Card>
+                    <Card neon><CardTitle>Festival Passports</CardTitle><TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} /></Card>
+                    <Card neon><CardTitle>By Decade</CardTitle><DecadeBlocks sets={allSetsList} headerStats={headerStats} concerts={concerts} /></Card>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
+                    <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                      <CardTitle>HEAVY ROTATION</CardTitle>
+                      <div className="wristband-bin" style={{ flex: 1, overflowY: 'auto', paddingRight: 8 }}>
+                        {artistCounts.filter(a => a.count >= 5).map((a, i) => (
+                          <div key={a.name} onClick={() => { setSearch(a.name); setBrowseView('shows'); setActiveTab('browse'); }} style={{ padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, marginBottom: 8, cursor: 'pointer' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem' }}>{a.name}</span><span style={{ color: C.teal }}>{a.count}×</span></div>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                    <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column' }}>
+                      <CardTitle>SETLIST SPOTLIGHT</CardTitle>
+                      <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
+                    </Card>
+                  </div>
+                </div>
+              )}
+              {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
+              {activeTab === 'byDay' && <ByDayTab dayGroups={dayGroups} onEdit={isAdmin ? setEditTarget : null} genreMap={artistGenres} isAdmin={isAdmin} />}
+              {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={isAdmin} onEdit={isAdmin ? setEditTarget : null} />}
+              {activeTab === 'passport' && <PassportTab passport={passport} onNavigateToFest={name => { setActiveTab('byFest'); setTimeout(() => { const el = document.getElementById(`fest-${name.toLowerCase().replace(/\s+/g, '-')}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 450); }} />}
+              {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
+              {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
+              {activeTab === 'photos' && <PhotoVaultTab concerts={concerts} />}
+              {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
+              {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
+              {activeTab === 'browse' && (
+                <BrowseTab browseView={browseView} setBrowseView={setBrowseView} search={search} setSearch={setSearch} yearFilter={yearFilter} setYearFilter={setYearFilter} festFilter={festFilter} setFestFilter={setFestFilter} genreFilter={genreFilter} setGenreFilter={setGenreFilter} sortCol={sortCol} setSortCol={setSortCol} sortDir={sortDir} setSortDir={setSortDir} page={page} setPage={setPage} totalPages={totalPages} paged={paged} artistRows={artistRows} years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} onEdit={isAdmin ? setEditTarget : null} isAdmin={isAdmin} onSetGenre={handleSetGenre} genreMap={artistGenres} />
+              )}
+              {isAdmin && activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} onDuplicate={handleDuplicate} />}
+            </main>
+          </div>
+        </div>
+
+        {isAdmin && nudgeTarget && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
+            <div style={{ textAlign: 'center', maxWidth: 500, padding: 40 }}>
+              <div style={{ fontSize: '4rem', marginBottom: 20, animation: 'pulse 2s infinite' }}>📡</div>
+              <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: C.teal }}>SIGNAL DETECTED</h2>
+              <p style={{ fontFamily: "'Space Mono'", fontSize: 12, color: '#fff', marginBottom: 30 }}>THE ARCHIVE DETECTED A RECENT SHOW: <br/><span style={{ color: C.gold, fontSize: '1.5rem' }}>{nudgeTarget.artist.toUpperCase()}</span><br/>WAS AT {nudgeTarget.venue.toUpperCase()} ON {nudgeTarget.date}.</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
+                <button onClick={() => { setEditTarget({ ...nudgeTarget, isNudge: true }); setNudgeTarget(null); }} style={{ padding: '20px', background: C.teal, color: '#000', border: 'none', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}>ARCHIVE NOW</button>
+                <button onClick={() => setNudgeTarget(null)} style={{ padding: '20px', background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}>IGNORE SIGNAL</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+        {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
+        {editTarget && <EditModal concert={editTarget === 'new' ? 'new' : editTarget} onClose={() => setEditTarget(null)} onSave={editTarget?.isNudge ? (id, payload) => handleReconcile(editTarget.id, payload) : handleSave} onDelete={handleDelete} allConcerts={concerts} />}
+        {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
+      </div>
+    </ThemeContext.Provider>
+  );
+} // 🟢 THIS CLOSES THE MAIN APP FUNCTION
   {/* ── MAIN NAV AREA ── */}
 <div style={{ flex: 1, overflowY: 'auto', padding: '20px 0' }} className="wristband-bin">
   {TAB_GROUPS.map((group) => {
