@@ -5173,31 +5173,21 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
     }
   }, [upcoming, loading]);
 
-  // SYSTEM INIT & AUTH
-useEffect(() => {
-  // 1. Initial Session Check
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    setSession(session);
-    if (session?.user) {
-      setUser(session.user);
-      // Logic for first-load data fetch can go here
-    }
-    setAuthLoading(false);
-  });
+ // --- START OF UNIFIED SYSTEM BLOCK ---
+  
+  // 1. HARDWARE & AUTH HEARTBEAT
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthLoading(false);
+    });
 
-  // 2. Listen for Auth State Changes (Handles new tabs, logins, logouts)
-  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log(`AUTH EVENT: ${event}`);
-    setSession(session);
-    setAuthLoading(false);
-
-    if (session?.user) {
-      setUser(session.user);
-
-      // Only run the "Visual Archaeology" profile update on SIGNED_IN or INITIAL_SESSION
-      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setSession(session);
+      setAuthLoading(false);
+      
+      if (session?.user?.id && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
         try {
-          // Fetch the most recent artifact for the profile snapshot
           const { data: recentShow } = await supabase
             .from('concerts')
             .select('bands, venue')
@@ -5207,12 +5197,9 @@ useEffect(() => {
             .single();
 
           const lastArtist = recentShow
-            ? (typeof recentShow.bands?.[0] === 'string' 
-                ? recentShow.bands[0] 
-                : recentShow.bands?.[0]?.name || '')
+            ? (typeof recentShow.bands?.[0] === 'string' ? recentShow.bands[0] : recentShow.bands?.[0]?.name || '')
             : '';
 
-          // Update the "Last Seen" pulse in the profiles table
           await supabase
             .from('profiles')
             .update({
@@ -5221,19 +5208,12 @@ useEffect(() => {
               last_venue: recentShow?.venue || ''
             })
             .eq('user_id', session.user.id);
-            
-          console.log("PROFILE PULSE UPDATED // SIGNAL STABLE");
-        } catch (error) {
-          console.error("PROFILE UPDATE FAILED:", error);
+        } catch (err) {
+          console.warn("Profile update skipped:", err);
         }
       }
-    } else {
-      setUser(null);
-    }
-  });
+    });
 
-  return () => subscription.unsubscribe();
-}, []);
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
@@ -5241,12 +5221,60 @@ useEffect(() => {
     };
 
     window.addEventListener('resize', handleResize);
-    
     return () => {
       window.removeEventListener('resize', handleResize);
       subscription.unsubscribe();
     };
   }, []);
+
+  // 2. THEME & DATA RECONCILIATION
+  const initRan = useRef(false);
+
+  useEffect(() => { 
+    if (THEMES[themeId]) {
+      Object.assign(C, THEMES[themeId]);
+    }
+
+    const init = async () => {
+      setLoading(true);
+      try {
+        const timeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('init timeout')), 8000)
+        );
+        await Promise.race([
+          Promise.all([
+            fetchConcerts(),
+            fetchUpcoming(),
+            fetchGenres().catch(e => console.warn('Genres failed silently:', e))
+          ]),
+          timeout
+        ]);
+      } catch (e) {
+        console.error('Init error:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (session?.user?.id) {
+      if (!initRan.current) {
+        initRan.current = true;
+        supabase.auth.getSession().then(({ data: { session: freshSession } }) => {
+          if (freshSession?.user?.id) {
+            init();
+          } else {
+            setSession(null);
+            setLoading(false);
+          }
+        });
+      }
+    } else if (!authLoading) {
+      initRan.current = false;
+      setLoading(false);
+    }
+  }, [themeId, session, authLoading]);
+
+  const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
 
   const setThemeId = (id) => {
     if (THEMES[id]) {
@@ -5255,52 +5283,8 @@ useEffect(() => {
       localStorage.setItem('concert-theme', id);
     }
   };
-const initRan = useRef(false);
 
-useEffect(() => { 
-  if (THEMES[themeId]) {
-    Object.assign(C, THEMES[themeId]);
-  }
-  const init = async () => {
-  setLoading(true);
-  try {
-    const timeout = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('init timeout')), 8000)
-    );
-    await Promise.race([
-      Promise.all([
-        fetchConcerts(),
-        fetchUpcoming(),
-        fetchGenres().catch(e => console.warn('Genres failed silently:', e))
-      ]),
-      timeout
-    ]);
-  } catch (e) {
-    console.error('Init error:', e);
-  } finally {
-    setLoading(false);
-  }
-};
-  if (session?.user?.id) {
-    if (!initRan.current) {
-      initRan.current = true;
-      // Confirm session is still valid before fetching
-      supabase.auth.getSession().then(({ data: { session: freshSession } }) => {
-        if (freshSession?.user?.id) {
-          init();
-        } else {
-          setSession(null);
-          setLoading(false);
-        }
-      });
-    }
-  } else if (!authLoading) {
-    initRan.current = false;
-    setLoading(false);
-  }
-}, [themeId, session, authLoading]);
-
-  const themeCtx = useMemo(() => ({ themeId, setThemeId }), [themeId]);
+  // --- END OF UNIFIED SYSTEM BLOCK ---
 // ── 6. DATA DERIVATION ENGINE ──
   const PER_PAGE = 50; 
 
