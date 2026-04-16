@@ -2265,11 +2265,34 @@ function DecorativeTicket({ event, templateIdx }) {
   const bands = event.bands || [];
   const headliner = (getBandName(bands[0]) || 'UNKNOWN ARTIST').toUpperCase();
   
-  // 🟢 Add local state to handle image rotation
-  const [rot, setRot] = React.useState(0);
-  
   // 🛰️ PRIORITY 1: THE REAL SCAN
   const hasRealStub = event.image_url && event.image_url.trim() !== "";
+  
+  // 🟢 1. Extract saved rotation from the URL hack (e.g., "url.jpg#rot=90")
+  const initialRot = hasRealStub ? parseInt(event.image_url.split('#rot=')[1] || '0', 10) : 0;
+  const [rot, setRot] = useState(initialRot);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // 🟢 2. Save to Database instantly without refreshing
+  const handleRotate = async (e) => {
+    e.stopPropagation(); // Stops the Edit Modal from opening
+    if (isSaving || !event.id) return;
+    
+    setIsSaving(true);
+    const newRot = (rot + 90) % 360;
+    setRot(newRot);
+
+    // Build the new URL with the rotation hash appended
+    const baseUrl = event.image_url.split('#rot=')[0];
+    const newUrl = newRot === 0 ? baseUrl : `${baseUrl}#rot=${newRot}`;
+
+    // Update the database quietly in the background
+    await supabase.from('concerts').update({ image_url: newUrl }).eq('id', event.id);
+    
+    // Update local event object so it doesn't flicker back on re-render
+    event.image_url = newUrl;
+    setIsSaving(false);
+  };
 
   if (hasRealStub) {
     const isSideways = rot % 180 !== 0;
@@ -2283,14 +2306,12 @@ function DecorativeTicket({ event, templateIdx }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center'
       }}>
         <img 
-          src={event.image_url} 
+          src={event.image_url.split('#rot=')[0]} // Strip the hash for the actual image source so it loads clean
           alt="Stub" 
           style={{ 
             width: '100%', 
             height: '100%', 
-            // 🟢 CONTAIN ensures the whole ticket is visible, no ruthless cropping
             objectFit: 'contain', 
-            // 🟢 Applies rotation, and auto-scales it up so it fills the box when sideways
             transform: `rotate(${rot}deg) scale(${isSideways ? 1.7 : 1})`,
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
           }} 
@@ -2300,21 +2321,20 @@ function DecorativeTicket({ event, templateIdx }) {
         
         {/* 🟢 ROTATE BUTTON */}
         <button 
-          onClick={(e) => { 
-            e.stopPropagation(); // Prevents opening the edit modal when rotating
-            setRot(prev => prev + 90); 
-          }}
+          onClick={handleRotate}
+          disabled={isSaving}
           style={{
             position: 'absolute', bottom: 6, right: 6, 
             background: 'rgba(0,0,0,0.7)', color: '#fff', 
             border: '1px solid rgba(255,255,255,0.3)', borderRadius: 4, 
             width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', zIndex: 10, fontSize: 14,
-            backdropFilter: 'blur(4px)', transition: 'background 0.2s'
+            cursor: isSaving ? 'wait' : 'pointer', zIndex: 10, fontSize: 14,
+            backdropFilter: 'blur(4px)', transition: 'background 0.2s',
+            opacity: isSaving ? 0.5 : 1
           }}
           onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,229,204,0.5)'}
           onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.7)'}
-          title="Rotate Image"
+          title="Rotate & Save"
         >
           ↻
         </button>
