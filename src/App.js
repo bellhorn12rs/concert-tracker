@@ -5403,27 +5403,11 @@ const GRAY = theme.gray;
     return () => window.removeEventListener('hashchange', syncView);
   }, [session]); // Re-sync if the user logs in/out
 
-  useEffect(() => {
-    if (session?.user?.id && !viewingUser) {
-      if (!initRan.current) {
-        initRan.current = true;
-        init();
-      }
-    } else if (viewingUser) {
-      fetchConcerts();
-    } else if (!authLoading) {
-      initRan.current = false;
-      setLoading(false);
-    }
-  }, [session, viewingUser, authLoading]);
-
-  // 🔍 THE TEMPORAL SCANNER (Post-Show Nudge)
+ // 🔍 THE TEMPORAL SCANNER (Post-Show Nudge)
   useEffect(() => {
     if (upcoming.length > 0 && !loading && isAdmin) {
       const today = new Date().toISOString().split('T')[0];
-      // Find the first upcoming show that happened yesterday or earlier
       const staleShow = upcoming.find(s => s.date < today);
-      
       if (staleShow) {
         console.log("⚠️ STALE SIGNAL DETECTED:", staleShow.artist);
         setNudgeTarget(staleShow);
@@ -5431,90 +5415,83 @@ const GRAY = theme.gray;
     }
   }, [upcoming, loading]);
 
- // --- START OF UNIFIED SYSTEM BLOCK ---
-// --- START OF REPAIRED SYSTEM BLOCK ---
+  // ─── UNIFIED SYSTEM BLOCK ─────────────────────────────────────────────────
 
-// 1. HARDWARE & AUTH HEARTBEAT
-useEffect(() => {
-  // Check for active session on boot
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session) {
+  const initRan = useRef(false);
+
+  // 1. HARDWARE & AUTH HEARTBEAT
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      // 🔥 CRITICAL: Don't just set loading false; trigger data check
-    }
-    setAuthLoading(false);
-  });
+      setAuthLoading(false);
+    });
 
-  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log("SIGNAL EVENT:", event);
-    setSession(session);
-    setAuthLoading(false);
-    
-    if (session?.user?.id) {
-      // If we just signed in or recovered a session from another tab
-      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-        initRan.current = false; // Reset gate to ensure data is fetched
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("SIGNAL EVENT:", event);
+      setSession(session);
+      setAuthLoading(false);
+
+      if (session?.user?.id) {
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+          initRan.current = false;
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setConcerts([]);
+        setUpcoming([]);
+        initRan.current = false;
+        setLoading(false);
       }
-    } else if (event === 'SIGNED_OUT') {
-      setConcerts([]); // Clear history on logout
-      initRan.current = false;
-    }
-  });
+    });
 
-  const handleResize = () => {
-    const mobile = window.innerWidth < 768;
-    setIsMobile(mobile);
-    if (mobile) setNavCollapsed(true);
-  };
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) setNavCollapsed(true);
+    };
 
-  window.addEventListener('resize', handleResize);
-  return () => {
-    window.removeEventListener('resize', handleResize);
-    subscription.unsubscribe();
-  };
-}, []);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      subscription.unsubscribe();
+    };
+  }, []);
 
-// 2. DATA SYNCHRONIZATION
-const initRan = useRef(false);
+  // 2. DATA SYNCHRONIZATION
+  useEffect(() => {
+    if (THEMES[themeId]) Object.assign(C, THEMES[themeId]);
 
-useEffect(() => { 
-  if (THEMES[themeId]) Object.assign(C, THEMES[themeId]);
+    const init = async () => {
+      if (!session?.user?.id) return;
+      setLoading(true);
+      console.log("DATABASE FETCH: Initializing for user", session.user.id);
+      try {
+        const timeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Signal Timeout')), 8000)
+        );
+        await Promise.race([
+          Promise.all([
+            fetchConcerts(),
+            fetchUpcoming(),
+            fetchGenres().catch(e => console.warn('Genres failed silently:', e))
+          ]),
+          timeout
+        ]);
+      } catch (e) {
+        console.error('ARCHIVE ERROR:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const init = async () => {
-    // If we have no session, don't try to fetch user-specific data
-    if (!session?.user?.id) return;
-
-    setLoading(true);
-    console.log("DATABASE FETCH: Initializing for user", session.user.id);
-    
-    try {
-      const timeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Signal Timeout')), 8000)
-      );
-      
-      // Promise.all ensures we don't resolve until we actually have the data
-      await Promise.race([
-        Promise.all([
-          fetchConcerts(),
-          fetchUpcoming(),
-          fetchGenres().catch(e => console.warn('Genres failed silently:', e))
-        ]),
-        timeout
-      ]);
-    } catch (e) {
-      console.error('ARCHIVE ERROR:', e);
-    } finally {
+    if (session?.user?.id && !initRan.current && !authLoading) {
+      initRan.current = true;
+      init();
+    } else if (!session?.user?.id && !authLoading) {
       setLoading(false);
     }
-  };
+  }, [session, authLoading, themeId]);
 
-  // 🔥 THE FIX: If we have a user and haven't run init yet, run it.
-  if (session?.user?.id && !initRan.current && !authLoading) {
-    initRan.current = true;
-    init();
-  }
-}, [session, authLoading, themeId]);
-
+  
 // --- END OF REPAIRED SYSTEM BLOCK ---
   // 3. THEME & CONTEXT SETUP
   const setThemeId = (id) => {
