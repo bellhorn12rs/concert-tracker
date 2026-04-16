@@ -3225,6 +3225,8 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
 
 // ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With Multi-Artist Setlinks) ─────────────
 
+// ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With "I Was There" Trigger) ─────────────
+
 function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
   const isMobile = window.innerWidth < 768;
   const venueLabel = event.is_festival ? event.festival_name : event.venue;
@@ -3235,6 +3237,47 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
   const finalPhotos = (event.personal_photo_url || "").split(',').map(u => u.trim()).filter(Boolean);
   const bands = Array.isArray(event.bands) ? event.bands : [event.artist].filter(Boolean);
   const headlinerName = (getBandName(bands[0]) || "LIVE").toUpperCase();
+
+  // 🟢 SELF-CONTAINED CLONE LOGIC
+  // This grabs the active session and duplicates the event into Tara's DB
+  const cloneSignal = async (e) => {
+    e.stopPropagation();
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      alert("LOGIN REQUIRED TO ARCHIVE SIGNALS");
+      return;
+    }
+
+    // Sanitize: Strip Eric's IDs and Personal Photos
+    const { 
+      id, 
+      created_at, 
+      user_id, 
+      personal_photo_url, 
+      ...coreEventData 
+    } = event;
+
+    const newRecord = {
+      ...coreEventData,
+      user_id: session.user.id,
+      personal_photo_url: null, // Clean slate for Tara
+      is_public: true,
+      date_added: new Date().toISOString()
+    };
+
+    try {
+      const { error } = await supabase.from('concerts').insert([newRecord]);
+      if (error) throw error;
+      alert(`⚡ SIGNAL CLONED: ${headlinerName} added to your archive!`);
+    } catch (err) {
+      alert("Failed to clone: " + err.message);
+    }
+  };
+
+  // Detect if we are on a curator's page (spectator mode)
+  const isSpectator = window.location.hash.includes('#/u/');
+
   return (
     <div style={{ 
       display: 'flex', 
@@ -3250,27 +3293,15 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
       marginBottom: isMobile ? '10px' : '0'
     }}>
       
-      {/* 🟢 THE GHOST POSTER (Upgraded with Pulse) */}
+      {/* 🟢 THE GHOST POSTER */}
       {!isMobile && (
         <div style={{
-          position: 'absolute',
-          left: '-2%',
-          top: '-10%',
-          width: '100%',
-          height: '120%',
-          fontFamily: "'Bebas Neue'",
-          fontSize: '22rem', 
-          color: primaryColor,
-          opacity: 0.05, 
-          whiteSpace: 'nowrap',
-          pointerEvents: 'none',
-          zIndex: 0,
-          letterSpacing: '-12px', 
-          lineHeight: 0.8,
-          display: 'flex',
-          alignItems: 'flex-start',
+          position: 'absolute', left: '-2%', top: '-10%', width: '100%', height: '120%',
+          fontFamily: "'Bebas Neue'", fontSize: '22rem', color: primaryColor, opacity: 0.05, 
+          whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 0, letterSpacing: '-12px', 
+          lineHeight: 0.8, display: 'flex', alignItems: 'flex-start',
           WebkitMaskImage: 'linear-gradient(to right, black 20%, transparent 80%)',
-          animation: 'pulse-ghost 4s ease-in-out infinite' // ⚡ THE NEW PULSE
+          animation: 'pulse-ghost 4s ease-in-out infinite' 
         }}>
           {headlinerName}
         </div>
@@ -3278,14 +3309,8 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
 
       {/* 🟢 LEFT: THE TICKET STUB / WRISTBAND */}
       <div style={{ 
-        flexShrink: 0, 
-        width: isMobile ? '100%' : '320px',
-        position: 'relative',
-        zIndex: 2,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '15px',
-        alignItems: isMobile ? 'center' : 'flex-start'
+        flexShrink: 0, width: isMobile ? '100%' : '320px', position: 'relative', zIndex: 2,
+        display: 'flex', flexDirection: 'column', gap: '15px', alignItems: isMobile ? 'center' : 'flex-start'
       }}>
         <div style={{ transform: isMobile ? 'scale(0.9)' : 'none' }}>
           {event.is_festival 
@@ -3295,25 +3320,13 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
         </div>
       </div>
 
-      {/* 🟢 MIDDLE: THE INTERACTIVE LINEUP (Restored Links) */}
-      <div style={{ 
-        flex: 1, 
-        paddingLeft: isMobile ? '0' : '50px', 
-        zIndex: 2,
-        textAlign: isMobile ? 'center' : 'left'
-      }}>
+      {/* 🟢 MIDDLE: THE INTERACTIVE LINEUP */}
+      <div style={{ flex: 1, paddingLeft: isMobile ? '0' : '50px', zIndex: 2, textAlign: isMobile ? 'center' : 'left' }}>
         <div style={{ 
-          fontFamily: "'Bebas Neue'", 
-          fontSize: isMobile ? '2.2rem' : '3.8rem', 
-          lineHeight: 0.85,
-          letterSpacing: '1px',
-          marginBottom: '15px',
-          color: '#fff',
+          fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.2rem' : '3.8rem', lineHeight: 0.85,
+          letterSpacing: '1px', marginBottom: '15px', color: '#fff',
           textShadow: `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`,
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: isMobile ? 'center' : 'flex-start',
-          columnGap: '15px'
+          display: 'flex', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start', columnGap: '15px'
         }}>
           {bands.map((band, bIdx) => (
             <React.Fragment key={`${event.id}-link-${bIdx}`}>
@@ -3331,18 +3344,40 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
           ))}
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px', flexWrap: 'wrap' }}>
           <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: primaryColor, fontWeight: 900 }}>{fmtDateShort(event.date)}</div>
           <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.1)' }} />
           <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>{event.venue?.toUpperCase()}</div>
+          
+          {/* 🟢 THE CLONE BUTTON */}
+          {isSpectator && !isAdmin && (
+            <button
+              onClick={cloneSignal}
+              style={{
+                background: 'transparent',
+                border: `1px solid ${primaryColor}`,
+                color: primaryColor,
+                padding: '4px 10px',
+                fontFamily: "'Space Mono'",
+                fontSize: '9px',
+                cursor: 'pointer',
+                borderRadius: 4,
+                transition: 'all 0.2s',
+                textTransform: 'uppercase',
+                letterSpacing: 1,
+                marginLeft: '5px'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = primaryColor; e.currentTarget.style.color = '#000'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = primaryColor; }}
+            >
+              + I WAS THERE
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 🟢 RIGHT: MEDIA CLUSTER (Stacked Look) */}
-      <div style={{ 
-        display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-end', 
-        minWidth: isMobile ? '100%' : '400px', zIndex: 2, marginLeft: 'auto'
-      }}>
+      {/* 🟢 RIGHT: MEDIA CLUSTER */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-end', minWidth: isMobile ? '100%' : '400px', zIndex: 2, marginLeft: 'auto' }}>
         <div style={{ display: 'flex', transform: isMobile ? 'scale(0.8)' : 'none', transformOrigin: 'right' }}>
           {finalSetlists.map((url, sIdx) => (
             <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={finalSetlists.length} />
