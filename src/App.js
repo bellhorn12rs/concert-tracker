@@ -5131,7 +5131,9 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     if (!file) return null;
     setUploading(true);
     
-    if (type === 'POLAROID' || type === 'TICKET') {
+    // 🟢 THE FIX: Only check EXIF for Polaroids, and ONLY if the date is currently blank.
+    // Ticket stubs and posters are usually photographed after the fact!
+    if (type === 'POLAROID') {
       try {
         if (typeof EXIF !== 'undefined') {
           await new Promise((resolve) => {
@@ -5139,7 +5141,8 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
               const rawDate = EXIF.getTag(this, "DateTimeOriginal"); 
               if (rawDate) {
                 const extractedDate = rawDate.split(' ')[0].replace(/:/g, '-');
-                set('date', extractedDate);
+                // Only auto-fill if the user hasn't manually entered a date yet
+                setForm(prev => prev.date ? prev : { ...prev, date: extractedDate });
               }
               resolve();
             });
@@ -5165,6 +5168,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
       setEntryStep('form'); 
       return data.publicUrl;
     } catch (error) {
+      console.error("Upload error:", error);
       setUploading(false);
       return null;
     }
