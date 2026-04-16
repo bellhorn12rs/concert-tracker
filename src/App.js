@@ -3073,7 +3073,7 @@ function Lightbox({ src, caption, onClose, type }) {
   );
 }
 
-// ─── 📄 STACKED SETLISTS ────────────────────────────────────────────────────
+// ─── 📄 STACKED SETLISTS & ARTIFACTS ────────────────────────────────────────
 function SetlistPaper({ src, index = 0, total = 1 }) {
   const [isFull, setIsFull] = React.useState(false);
   if (!src) return null;
@@ -3106,11 +3106,13 @@ function SetlistPaper({ src, index = 0, total = 1 }) {
         <div style={{ 
           position: 'absolute', top: -10, left: '25%', width: '40px', height: '14px', 
           background: 'rgba(0, 100, 255, 0.4)', backdropFilter: 'blur(1px)', 
-          transform: 'rotate(2deg)', border: '1px solid rgba(0,100,255,0.1)' 
+          transform: 'rotate(2deg)', border: '1px solid rgba(0,100,255,0.1)',
+          zIndex: 10 // Keeps the tape above the image
         }} />
         <div style={{ 
           width: '100%', height: '100%', 
-          background: `url(${src}) center/cover no-repeat`, 
+          // 🟢 THE FIX: Changed 'cover' to 'contain' so the whole ticket fits
+          background: `url(${src}) center/contain no-repeat`, 
           filter: 'sepia(0.05) contrast(1.05)' 
         }} />
       </div>
@@ -3118,7 +3120,6 @@ function SetlistPaper({ src, index = 0, total = 1 }) {
     </>
   );
 }
-
 // ─── 📸 STACKED POLAROIDS (PHYSICS & 3D EDITION) ────────────────────────────────
 function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
   if (!src) return null;
