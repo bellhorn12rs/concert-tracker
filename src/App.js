@@ -5491,7 +5491,7 @@ const GRAY = theme.gray;
     }
   }, [session, authLoading, themeId]);
 
-  
+
 // --- END OF REPAIRED SYSTEM BLOCK ---
   // 3. THEME & CONTEXT SETUP
   const setThemeId = (id) => {
@@ -5913,18 +5913,20 @@ const GRAY = theme.gray;
   // Gate C: The Entry Hall (Landing Page)
   // Condition: Show if no session OR if we are explicitly in "Landing" mode
   if (!session || onLanding) {
-    return (
+  return (
+    <ThemeContext.Provider value={themeCtx}>
       <LandingPage 
         currentSession={session}
         onEnterArchive={() => setOnLanding(false)}
         onNavigateToUser={handleNavigateToUser}
         onLogout={async () => {
           await supabase.auth.signOut();
-          window.location.reload(); // Hard reset to clear any stuck state
+          window.location.reload();
         }}
       />
-    );
-  }
+    </ThemeContext.Provider>
+  );
+}
   // Gate D: Data Synchronization (Interior)
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
