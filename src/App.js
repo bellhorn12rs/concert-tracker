@@ -3084,39 +3084,74 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
 // ─── 4. BY DAY TAB (SCRAPBOOK EDITION - FULL MULTI-MEDIA) ────────────────────
 // ─── 4. BY DAY TAB (SCRAPBOOK TIMELINE & FESTIVAL CLUSTERS) ──────────────────
 
-// ─── 4. BY DAY TAB (SCRAPBOOK TIMELINE & MULTI-SET LOGIC) ──────────────────
+// ─── THE MASTER RENDER LOGIC ───
 
-function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin, viewingUser, session, handleIWasThere, handleDuplicate }) {
-  const isMobile = window.innerWidth < 768;
+  // 1. Define Admin & Spectator status
+  const isAdmin = session?.user?.email === 'YOUR_EMAIL@GMAIL.COM' && !viewingUser;
 
-  const clusters = useMemo(() => {
-    const results = [];
-    let currentFestKey = null;
-    let currentGroup = [];
+  // 2. Extract Active Theme Colors (Prevents the "GRAY is not defined" crash)
+  const theme = THEMES[activeTheme] || THEMES['neon-noir'];
+  const TEAL = theme.teal;
+  const GRAY = theme.gray;
 
-    dayGroups.forEach((event) => {
-      const festKey = event.is_festival 
-        ? `${event.festival_name}-${new Date(event.date + 'T12:00:00').getFullYear()}` 
-        : null;
+  // ... (Inside your return / Tabs section) ...
 
-      if (festKey && festKey === currentFestKey) {
-        currentGroup.push(event);
-      } else {
-        if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
-        if (festKey) {
-          currentFestKey = festKey;
-          currentGroup = [event];
-        } else {
-          currentFestKey = null;
-          currentGroup = [];
-          results.push({ type: 'solo', event });
-        }
-      }
-    });
-    if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
-    return results;
-  }, [dayGroups]);
+  {activeTab === 'timeline' && (
+    <ByDayTab 
+      dayGroups={concerts} 
+      onEdit={setEditTarget} 
+      isAdmin={isAdmin}
+      viewingUser={viewingUser}
+      session={session}
+      handleIWasThere={handleIWasThere}
+      handleDuplicate={handleDuplicate}
+      theme={theme} // 🟢 Pass the theme object here
+    />
+  )}
 
+  {activeTab === 'papertrail' && (
+    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {concerts.map((c, i) => {
+        const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
+        const color = GENRE_COLORS[c.genre] || TEAL;
+        const img = c.image_url?.split(',')[0] || c.personal_photo_url?.split(',')[0];
+        
+        return (
+          <div key={c.id || i} className="show-row" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', background: theme.bgCard, borderRadius: 6, border: `1px solid ${theme.border}` }}>
+            {img && <img src={img} alt={band} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 3 }} />}
+            
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: theme.white }}>{band.toUpperCase()}</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY }}>{c.venue}</div>
+            </div>
+
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: color }}>{fmtDateShort(c.date)}</div>
+              
+              {/* 🟢 THE I WAS THERE BUTTON (Paper Trail) */}
+              {viewingUser && (
+                <button
+                  onClick={() => handleIWasThere(c)}
+                  style={{
+                    background: 'transparent',
+                    border: `1px solid ${TEAL}`,
+                    color: TEAL,
+                    padding: '3px 8px',
+                    fontFamily: "'Space Mono'",
+                    fontSize: 7,
+                    cursor: 'pointer',
+                    borderRadius: 3
+                  }}
+                >
+                  + I WAS THERE
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  )}
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 32 : 60, paddingBottom: 100 }}>
       {clusters.map((cluster, idx) => {
@@ -5308,6 +5343,10 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
       loading: loading
     };
   }, [session, loading, isOwner]);
+
+  const theme = THEMES[activeTheme] || THEMES['neon-noir'];
+  const TEAL = theme.teal;
+  const GRAY = theme.gray;
 
   // ── 5. SYSTEM HANDLERS & EFFECTS ──
 
