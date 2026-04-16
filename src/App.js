@@ -5905,33 +5905,38 @@ const GRAY = theme.gray;
   
   // Gate B: Auth Bootup
   if (authLoading) return (
-    <div style={{ background: '#050508', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#00e5cc', letterSpacing: '0.15em' }}>RECOVERING SIGNAL...</div>
-    </div>
+    <ThemeContext.Provider value={themeCtx}>
+      <div style={{ background: '#050508', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#00e5cc', letterSpacing: '0.15em' }}>RECOVERING SIGNAL...</div>
+      </div>
+    </ThemeContext.Provider>
   );
 
   // Gate C: The Entry Hall (Landing Page)
   // Condition: Show if no session OR if we are explicitly in "Landing" mode
   if (!session || onLanding) {
-  return (
-    <ThemeContext.Provider value={themeCtx}>
-      <LandingPage 
-        currentSession={session}
-        onEnterArchive={() => setOnLanding(false)}
-        onNavigateToUser={handleNavigateToUser}
-        onLogout={async () => {
-          await supabase.auth.signOut();
-          window.location.reload();
-        }}
-      />
-    </ThemeContext.Provider>
-  );
+    return (
+      <ThemeContext.Provider value={themeCtx}>
+        <LandingPage 
+          currentSession={session}
+          onEnterArchive={() => setOnLanding(false)}
+          onNavigateToUser={handleNavigateToUser}
+          onLogout={async () => {
+            await supabase.auth.signOut();
+            window.location.reload(); 
+          }}
+        />
+      </ThemeContext.Provider>
+    );
+  }
 }
   // Gate D: Data Synchronization (Interior)
   if (loading) return (
-    <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>SYNCHRONIZING ARCHIVE...</div>
-    </div>
+    <ThemeContext.Provider value={themeCtx}>
+      <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>SYNCHRONIZING ARCHIVE...</div>
+      </div>
+    </ThemeContext.Provider>
   );
 
   return (
