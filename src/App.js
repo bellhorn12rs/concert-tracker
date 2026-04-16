@@ -1455,90 +1455,7 @@ function ArtistInsights({ concerts }) {
   );
 }
 
-// ─── 4. BY DAY TAB (SCRAPBOOK TIMELINE) ──────────────────────────────────
-function ByDayTab({ dayGroups, onEdit, isAdmin, viewingUser, session, handleIWasThere, handleDuplicate, theme }) {
-  const isMobile = window.innerWidth < 768;
-  const TEAL = theme?.teal || '#00e5cc';
-  const GRAY = theme?.gray || '#888';
-
-  const clusters = useMemo(() => {
-    if (!dayGroups) return [];
-    const results = [];
-    let currentFestKey = null;
-    let currentGroup = [];
-
-    dayGroups.forEach((event) => {
-      const festKey = event.is_festival 
-        ? `${event.festival_name}-${new Date(event.date + 'T12:00:00').getFullYear()}` 
-        : null;
-
-      if (festKey && festKey === currentFestKey) {
-        currentGroup.push(event);
-      } else {
-        if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
-        if (festKey) {
-          currentFestKey = festKey;
-          currentGroup = [event];
-        } else {
-          currentFestKey = null;
-          currentGroup = [];
-          results.push({ type: 'solo', event });
-        }
-      }
-    });
-    if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
-    return results;
-  }, [dayGroups]);
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 32 : 60, paddingBottom: 100 }}>
-      {clusters.map((cluster, idx) => {
-        const events = cluster.type === 'festival' ? cluster.events : [cluster.event];
-        const mainEvent = events[0];
-        const color = GENRE_COLORS[mainEvent.genre] || TEAL;
-
-        return (
-          <div key={idx} style={{ position: 'relative' }} className="fade-in">
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: color, letterSpacing: 4, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-              {fmtDate(mainEvent.date)}
-              <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${color}44, transparent)` }} />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {events.map((c) => {
-                const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
-                const img = c.image_url?.split(',')[0] || c.personal_photo_url?.split(',')[0];
-
-                return (
-                  <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px', background: '#050505', border: `1px solid #111`, borderRadius: 4 }}>
-                    {img && <img src={img} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 2 }} alt="stub" />}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{band.toUpperCase()}</div>
-                      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GRAY }}>{c.venue} · {c.city}</div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {viewingUser && (
-                        <button onClick={() => handleIWasThere(c)} style={{ background: 'transparent', border: `1px solid ${TEAL}`, color: TEAL, padding: '4px 8px', fontFamily: "'Space Mono'", fontSize: 7, cursor: 'pointer', borderRadius: 3 }}>+ I WAS THERE</button>
-                      )}
-                      {!viewingUser && isAdmin && (
-                        <>
-                          <button onClick={() => handleDuplicate(c)} style={{ background: 'none', border: 'none', color: GRAY, cursor: 'pointer', fontSize: 12 }}>❐</button>
-                          <button onClick={() => onEdit(c)} style={{ background: 'none', border: 'none', color: TEAL, cursor: 'pointer', fontSize: 12 }}>✎</button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-
+// ─── RANDOM SHOW (FULL FESTIVAL & SCROLLABLE EDITION) ────────────────────────
 // ─── RANDOM SHOW (SPECIFIC FESTIVAL & WATERMARK FIX) ────────────────────────
 function RandomShow({ concerts }) {
   const [show, setShow] = useState(null);
@@ -3164,111 +3081,116 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
     </div>
   );
 }
-// ─── THE MASTER RENDER LOGIC (Tab Switcher) ───
-  const activeThemeObj = THEMES[themeId] || THEMES['neon-noir'];
-  const isAdminCheck = !!session?.user && !viewingUser;
+// ─── 4. BY DAY TAB (SCRAPBOOK EDITION - FULL MULTI-MEDIA) ────────────────────
+// ─── 4. BY DAY TAB (SCRAPBOOK TIMELINE & FESTIVAL CLUSTERS) ──────────────────
 
-  // 1. TIMELINE TAB (Visual temporal map)
-  {activeTab === 'timeline' && (
-    <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />
-  )}
-  
-  // 2. BY DAY TAB (Scrapbook view)
-  {activeTab === 'byDay' && (
-    <ByDayTab 
-      dayGroups={dayGroups} 
-      onEdit={setEditTarget} 
-      isAdmin={isAdminCheck} 
-      viewingUser={viewingUser}
-      session={session}
-      handleIWasThere={handleIWasThere}
-      handleDuplicate={handleDuplicate}
-      theme={activeThemeObj}
-    />
-  )}
-  
-  // 3. PAPER TRAIL TAB (The high-speed list view)
-  {activeTab === 'papertrail' && (
-    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {concerts.map((c, i) => {
-        const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
-        const rowColor = GENRE_COLORS[c.genre] || activeThemeObj.teal;
-        const img = c.image_url?.split(',')[0] || c.personal_photo_url?.split(',')[0];
-        
-        return (
-          <div 
-            key={c.id || i} 
-            className="show-row" 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 16, 
-              padding: '12px 16px', 
-              background: activeThemeObj.bgCard, 
-              borderRadius: 6, 
-              border: `1px solid ${activeThemeObj.border}` 
-            }}
-          >
-            {img ? (
-              <img src={img} alt={band} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 3 }} />
-            ) : (
-              <div style={{ width: 48, height: 48, background: `${rowColor}11`, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px dashed ${rowColor}33` }}>
-                <span style={{ fontSize: 10 }}>🎫</span>
-              </div>
-            )}
+// ─── 4. BY DAY TAB (SCRAPBOOK TIMELINE & MULTI-SET LOGIC) ──────────────────
 
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: activeThemeObj.white }}>
-                {band.toUpperCase()}
-              </div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: activeThemeObj.gray }}>
-                {c.venue}
-              </div>
-            </div>
+function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
+  // 🟢 Mobile Detection
+  const isMobile = window.innerWidth < 768;
 
-            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: rowColor }}>
-                {fmtDateShort(c.date)}
-              </div>
-              
-              {/* 🟢 SPECTATOR MODE: Instant add for visiting curators */}
-              {viewingUser && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleIWasThere(c);
-                  }}
-                  style={{ 
-                    background: 'transparent', 
-                    border: `1px solid ${activeThemeObj.teal}`, 
-                    color: activeThemeObj.teal, 
-                    padding: '3px 8px', 
-                    fontFamily: "'Space Mono'", 
-                    fontSize: 7, 
-                    cursor: 'pointer', 
-                    borderRadius: 3,
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = activeThemeObj.teal; e.currentTarget.style.color = '#000'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = activeThemeObj.teal; }}
-                >
-                  + I WAS THERE
-                </button>
-              )}
+  const clusters = useMemo(() => {
+    const results = [];
+    let currentFestKey = null;
+    let currentGroup = [];
 
-              {/* 🔧 OWNER MODE: Edit/Duplicate controls */}
-              {!viewingUser && isAdminCheck && (
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => handleDuplicate(c)} style={{ background: 'none', border: 'none', color: activeThemeObj.gray, fontSize: 10, cursor: 'pointer' }}>❐</button>
-                  <button onClick={() => setEditTarget(c)} style={{ background: 'none', border: 'none', color: activeThemeObj.teal, fontSize: 10, cursor: 'pointer' }}>✎</button>
+    dayGroups.forEach((event) => {
+      const festKey = event.is_festival 
+        ? `${event.festival_name}-${new Date(event.date).getFullYear()}` 
+        : null;
+
+      if (festKey && festKey === currentFestKey) {
+        currentGroup.push(event);
+      } else {
+        if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
+        if (festKey) {
+          currentFestKey = festKey;
+          currentGroup = [event];
+        } else {
+          currentFestKey = null;
+          currentGroup = [];
+          results.push({ type: 'solo', event });
+        }
+      }
+    });
+    if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
+    return results;
+  }, [dayGroups]);
+
+  return (
+    <div style={{ padding: isMobile ? '10px' : '24px 0' }} className="fade-in">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '30px' : '60px' }}>
+        {clusters.map((cluster, ci) => {
+          if (cluster.type === 'solo') {
+            return (
+              <ScrapbookRow 
+                key={cluster.event.id} 
+                event={cluster.event} 
+                idx={ci} 
+                isAdmin={isAdmin} 
+                onEdit={onEdit} 
+                genreMap={genreMap} 
+              />
+            );
+          }
+
+          const firstEvent = cluster.events[0];
+          const festColor = GENRE_COLORS[genreMap[firstEvent.bands?.[0]]] || C.teal;
+
+          return (
+            <div key={`cluster-${ci}`} style={{ 
+              position: 'relative', 
+              padding: isMobile ? '20px 15px' : '40px', // 🟢 Tighter padding on mobile
+              background: 'rgba(255,255,255,0.01)', 
+              border: `1px solid ${hexToRgba(festColor, 0.2)}`, 
+              borderRadius: isMobile ? '12px' : '24px',
+              boxShadow: `inset 0 0 60px ${hexToRgba(festColor, 0.03)}`
+            }}>
+              {/* SHARED FESTIVAL HEADER AREA */}
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: isMobile ? 'column' : 'row', // 🟢 Stack header on mobile
+                alignItems: isMobile ? 'flex-start' : 'baseline', 
+                gap: isMobile ? '5px' : '25px', 
+                marginBottom: isMobile ? '25px' : '40px' 
+              }}>
+                <div style={{ 
+                  fontFamily: "'Bebas Neue'", 
+                  fontSize: isMobile ? '2.5rem' : '5rem', // 🟢 Shrunken font
+                  color: festColor, 
+                  lineHeight: 1, 
+                  textShadow: `0 0 30px ${hexToRgba(festColor, 0.3)}` 
+                }}>
+                  {firstEvent.festival_name.toUpperCase()}
                 </div>
-              )}
+                <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, letterSpacing: '2px', fontWeight: 900 }}>
+                  {new Date(firstEvent.date).getFullYear()} // {cluster.events.length} DAYS
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                {cluster.events.map((event, ei) => (
+                  <ScrapbookRow 
+                    key={event.id} 
+                    event={event} 
+                    idx={ei} 
+                    isAdmin={isAdmin} 
+                    onEdit={onEdit} 
+                    genreMap={genreMap} 
+                    isClustered={true}
+                    clusterColor={festColor}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
-  )}
+  );
+}
+
 // ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With Multi-Artist Setlinks) ─────────────
 
 function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
@@ -5367,10 +5289,6 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
     };
   }, [session, loading, isOwner]);
 
-  const theme = THEMES[themeId] || THEMES['neon-noir'];
-const TEAL = theme.teal;
-const GRAY = theme.gray;
-
   // ── 5. SYSTEM HANDLERS & EFFECTS ──
 
   // EFFECT A: The URL Listener (Watches the Address Bar)
@@ -5403,11 +5321,22 @@ const GRAY = theme.gray;
     return () => window.removeEventListener('hashchange', syncView);
   }, [session]); // Re-sync if the user logs in/out
 
- // 🔍 THE TEMPORAL SCANNER (Post-Show Nudge)
+  // EFFECT B: The Data Refresher (Loads the Shows)
+  useEffect(() => {
+    // Only fetch if we have a valid session or are viewing a public user
+    if (session || viewingUser) {
+      fetchConcerts();
+      fetchUpcoming();
+    }
+  }, [viewingUser, session]);
+  
+  // 🔍 THE TEMPORAL SCANNER (Post-Show Nudge)
   useEffect(() => {
     if (upcoming.length > 0 && !loading && isAdmin) {
       const today = new Date().toISOString().split('T')[0];
+      // Find the first upcoming show that happened yesterday or earlier
       const staleShow = upcoming.find(s => s.date < today);
+      
       if (staleShow) {
         console.log("⚠️ STALE SIGNAL DETECTED:", staleShow.artist);
         setNudgeTarget(staleShow);
@@ -5415,82 +5344,89 @@ const GRAY = theme.gray;
     }
   }, [upcoming, loading]);
 
-  // ─── UNIFIED SYSTEM BLOCK ─────────────────────────────────────────────────
+ // --- START OF UNIFIED SYSTEM BLOCK ---
+// --- START OF REPAIRED SYSTEM BLOCK ---
 
-  const initRan = useRef(false);
-
-  // 1. HARDWARE & AUTH HEARTBEAT
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+// 1. HARDWARE & AUTH HEARTBEAT
+useEffect(() => {
+  // Check for active session on boot
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
       setSession(session);
-      setAuthLoading(false);
-    });
+      // 🔥 CRITICAL: Don't just set loading false; trigger data check
+    }
+    setAuthLoading(false);
+  });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("SIGNAL EVENT:", event);
-      setSession(session);
-      setAuthLoading(false);
-
-      if (session?.user?.id) {
-        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-          initRan.current = false;
-        }
-      } else if (event === 'SIGNED_OUT') {
-        setConcerts([]);
-        setUpcoming([]);
-        initRan.current = false;
-        setLoading(false);
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    console.log("SIGNAL EVENT:", event);
+    setSession(session);
+    setAuthLoading(false);
+    
+    if (session?.user?.id) {
+      // If we just signed in or recovered a session from another tab
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        initRan.current = false; // Reset gate to ensure data is fetched
       }
-    });
+    } else if (event === 'SIGNED_OUT') {
+      setConcerts([]); // Clear history on logout
+      initRan.current = false;
+    }
+  });
 
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (mobile) setNavCollapsed(true);
-    };
+  const handleResize = () => {
+    const mobile = window.innerWidth < 768;
+    setIsMobile(mobile);
+    if (mobile) setNavCollapsed(true);
+  };
 
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      subscription.unsubscribe();
-    };
-  }, []);
+  window.addEventListener('resize', handleResize);
+  return () => {
+    window.removeEventListener('resize', handleResize);
+    subscription.unsubscribe();
+  };
+}, []);
 
-  // 2. DATA SYNCHRONIZATION
-  useEffect(() => {
-    if (THEMES[themeId]) Object.assign(C, THEMES[themeId]);
+// 2. DATA SYNCHRONIZATION
+const initRan = useRef(false);
 
-    const init = async () => {
-      if (!session?.user?.id) return;
-      setLoading(true);
-      console.log("DATABASE FETCH: Initializing for user", session.user.id);
-      try {
-        const timeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Signal Timeout')), 8000)
-        );
-        await Promise.race([
-          Promise.all([
-            fetchConcerts(),
-            fetchUpcoming(),
-            fetchGenres().catch(e => console.warn('Genres failed silently:', e))
-          ]),
-          timeout
-        ]);
-      } catch (e) {
-        console.error('ARCHIVE ERROR:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
+useEffect(() => { 
+  if (THEMES[themeId]) Object.assign(C, THEMES[themeId]);
 
-    if (session?.user?.id && !initRan.current && !authLoading) {
-      initRan.current = true;
-      init();
-    } else if (!session?.user?.id && !authLoading) {
+  const init = async () => {
+    // If we have no session, don't try to fetch user-specific data
+    if (!session?.user?.id) return;
+
+    setLoading(true);
+    console.log("DATABASE FETCH: Initializing for user", session.user.id);
+    
+    try {
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Signal Timeout')), 8000)
+      );
+      
+      // Promise.all ensures we don't resolve until we actually have the data
+      await Promise.race([
+        Promise.all([
+          fetchConcerts(),
+          fetchUpcoming(),
+          fetchGenres().catch(e => console.warn('Genres failed silently:', e))
+        ]),
+        timeout
+      ]);
+    } catch (e) {
+      console.error('ARCHIVE ERROR:', e);
+    } finally {
       setLoading(false);
     }
-  }, [session, authLoading, themeId]);
+  };
 
+  // 🔥 THE FIX: If we have a user and haven't run init yet, run it.
+  if (session?.user?.id && !initRan.current && !authLoading) {
+    initRan.current = true;
+    init();
+  }
+}, [session, authLoading, themeId]);
 
 // --- END OF REPAIRED SYSTEM BLOCK ---
   // 3. THEME & CONTEXT SETUP
@@ -5670,30 +5606,6 @@ const GRAY = theme.gray;
     allSetsList.forEach(s => { const y = getYear(s.date); if (y) m[y] = (m[y] || 0) + 1; });
     return Object.entries(m).sort((a, b) => +a[0] - +b[0]).map(([year, count]) => ({ year: String(year).slice(2), count, fullYear: +year }));
   }, [allSetsList]);
-
-  const handleIWasThere = async (concert) => {
-    if (!session) return alert("LOGIN REQUIRED TO ARCHIVE SIGNALS");
-
-    // 1. Prepare the clone (Remove their ID, add your ID)
-    const { id, created_at, user_id, ...clonedData } = concert;
-    
-    const newRecord = {
-      ...clonedData,
-      user_id: session.user.id, // 🟢 THE PIVOT: Now it belongs to you
-      is_public: true, // Default to public
-      date_added: new Date().toISOString()
-    };
-
-    try {
-      const { error } = await supabase.from('concerts').insert([newRecord]);
-      if (error) throw error;
-      
-      // 🟢 SUCCESS FEEDBACK: Maybe a temporary toast or a simple alert
-      alert(`SIGNAL CLONED: ${getBandName(concert.bands?.[0])} added to your archive!`);
-    } catch (err) {
-      console.error("Cloning failed:", err);
-    }
-  };
 
   const handleGenreClick = (genre) => {
     setGenreFilter(genre);
@@ -5905,38 +5817,31 @@ const GRAY = theme.gray;
   
   // Gate B: Auth Bootup
   if (authLoading) return (
-    <ThemeContext.Provider value={themeCtx}>
-      <div style={{ background: '#050508', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#00e5cc', letterSpacing: '0.15em' }}>RECOVERING SIGNAL...</div>
-      </div>
-    </ThemeContext.Provider>
+    <div style={{ background: '#050508', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#00e5cc', letterSpacing: '0.15em' }}>RECOVERING SIGNAL...</div>
+    </div>
   );
 
   // Gate C: The Entry Hall (Landing Page)
   // Condition: Show if no session OR if we are explicitly in "Landing" mode
   if (!session || onLanding) {
     return (
-      <ThemeContext.Provider value={themeCtx}>
-        <LandingPage 
-          currentSession={session}
-          onEnterArchive={() => setOnLanding(false)}
-          onNavigateToUser={handleNavigateToUser}
-          onLogout={async () => {
-            await supabase.auth.signOut();
-            window.location.reload(); 
-          }}
-        />
-      </ThemeContext.Provider>
+      <LandingPage 
+        currentSession={session}
+        onEnterArchive={() => setOnLanding(false)}
+        onNavigateToUser={handleNavigateToUser}
+        onLogout={async () => {
+          await supabase.auth.signOut();
+          window.location.reload(); // Hard reset to clear any stuck state
+        }}
+      />
     );
   }
-
   // Gate D: Data Synchronization (Interior)
   if (loading) return (
-    <ThemeContext.Provider value={themeCtx}>
-      <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>SYNCHRONIZING ARCHIVE...</div>
-      </div>
-    </ThemeContext.Provider>
+    <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>SYNCHRONIZING ARCHIVE...</div>
+    </div>
   );
 
   return (
