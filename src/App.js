@@ -20,6 +20,38 @@ function hexToRgba(hex, alpha) {
   }
 }
 
+const handleIWasThere = async (concert) => {
+    if (!session?.user) return alert("LOGIN REQUIRED TO ARCHIVE SIGNALS");
+
+    // 1. Sanitize the Data: Strip Eric's DB info AND his personal photos
+    const { 
+      id, 
+      created_at, 
+      user_id, 
+      personal_photo_url, 
+      ...coreEventData 
+    } = concert;
+
+    // 2. Build the Clone
+    const newRecord = {
+      ...coreEventData,
+      user_id: session.user.id, // Assign to Tara
+      personal_photo_url: null, // Blank slate for Tara's own photos
+      is_public: true,
+      date_added: new Date().toISOString()
+    };
+
+    try {
+      const { error } = await supabase.from('concerts').insert([newRecord]);
+      if (error) throw error;
+      
+      alert(`SIGNAL CLONED: ${getBandName(concert.bands?.[0]) || 'Show'} added to your archive!`);
+    } catch (err) {
+      console.error("Cloning failed:", err);
+      alert("Failed to clone: " + err.message);
+    }
+  };
+
 // ─── THE RETRO TICKET STUB (IDEA #1) ──────────────────────────────────────────
 const TicketStub = ({ show }) => {
   if (!show) return null;
@@ -6139,6 +6171,59 @@ useEffect(() => {
   
   {activeTab === 'byDay' && <ByDayTab dayGroups={dayGroups} onEdit={isAdmin ? setEditTarget : null} genreMap={artistGenres} isAdmin={isAdmin} />}
   
+  {/* 🟢 NEW PAPERTRAIL BLOCK GOES HERE */}
+  {activeTab === 'papertrail' && (
+    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {concerts.map((c, i) => {
+        const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
+        const color = GENRE_COLORS[c.genre] || C.teal;
+        const img = c.image_url?.split(',')[0] || c.personal_photo_url?.split(',')[0];
+        
+        return (
+          <div key={c.id || i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', background: C.bgCard, borderRadius: 6, border: `1px solid ${C.border}` }}>
+            {img && <img src={img} alt={band} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 3 }} />}
+            
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.white }}>{band.toUpperCase()}</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray }}>{c.venue}</div>
+            </div>
+            
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color }}>{fmtDateShort(c.date)}</div>
+              
+              {/* 🟢 THE CLONE TRIGGER (Spectator Mode Only) */}
+              {viewingUser && viewingUser !== session?.user?.id && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleIWasThere(c);
+                  }}
+                  style={{
+                    background: 'transparent',
+                    border: `1px solid ${C.teal}`,
+                    color: C.teal,
+                    padding: '4px 10px',
+                    fontFamily: "'Space Mono'",
+                    fontSize: 8,
+                    cursor: 'pointer',
+                    borderRadius: 4,
+                    transition: 'all 0.2s',
+                    textTransform: 'uppercase',
+                    letterSpacing: 1
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = C.teal; e.currentTarget.style.color = '#000'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = C.teal; }}
+                >
+                  + I WAS THERE
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  )}
+
   {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={isAdmin} onEdit={isAdmin ? setEditTarget : null} />}
   
   {activeTab === 'passport' && (
