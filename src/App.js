@@ -2265,26 +2265,64 @@ function DecorativeTicket({ event, templateIdx }) {
   const bands = event.bands || [];
   const headliner = (getBandName(bands[0]) || 'UNKNOWN ARTIST').toUpperCase();
   
+  // 🟢 Add local state to handle image rotation
+  const [rot, setRot] = React.useState(0);
+  
   // 🛰️ PRIORITY 1: THE REAL SCAN
   const hasRealStub = event.image_url && event.image_url.trim() !== "";
 
   if (hasRealStub) {
+    const isSideways = rot % 180 !== 0;
+
     return (
       <div style={{ 
-        width: 260, height: 130, background: '#000', borderRadius: 2, 
+        width: 260, height: 130, background: '#0a0a0a', borderRadius: 2, 
         overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', 
         border: '1px solid rgba(255,255,255,0.1)', transform: 'rotate(-1deg)',
-        position: 'relative', cursor: 'zoom-in'
+        position: 'relative', cursor: 'zoom-in',
+        display: 'flex', alignItems: 'center', justifyContent: 'center'
       }}>
-        <img src={event.image_url} alt="Stub" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img 
+          src={event.image_url} 
+          alt="Stub" 
+          style={{ 
+            width: '100%', 
+            height: '100%', 
+            // 🟢 CONTAIN ensures the whole ticket is visible, no ruthless cropping
+            objectFit: 'contain', 
+            // 🟢 Applies rotation, and auto-scales it up so it fills the box when sideways
+            transform: `rotate(${rot}deg) scale(${isSideways ? 1.7 : 1})`,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          }} 
+        />
         {/* Physical Paper Overlay */}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(45deg, rgba(255,255,255,0.05) 0%, transparent 100%)', pointerEvents: 'none' }} />
+        
+        {/* 🟢 ROTATE BUTTON */}
+        <button 
+          onClick={(e) => { 
+            e.stopPropagation(); // Prevents opening the edit modal when rotating
+            setRot(prev => prev + 90); 
+          }}
+          style={{
+            position: 'absolute', bottom: 6, right: 6, 
+            background: 'rgba(0,0,0,0.7)', color: '#fff', 
+            border: '1px solid rgba(255,255,255,0.3)', borderRadius: 4, 
+            width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', zIndex: 10, fontSize: 14,
+            backdropFilter: 'blur(4px)', transition: 'background 0.2s'
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,229,204,0.5)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.7)'}
+          title="Rotate Image"
+        >
+          ↻
+        </button>
       </div>
     );
   }
 
   // 🛰️ PRIORITY 2: THE HIGH-FIDELITY FAKE
-  // Dynamic font sizing to prevent cut-offs
   const fontSize = headliner.length > 20 ? '0.7rem' : headliner.length > 12 ? '0.9rem' : '1.1rem';
 
   return (
