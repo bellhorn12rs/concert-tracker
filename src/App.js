@@ -5367,9 +5367,9 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
     };
   }, [session, loading, isOwner]);
 
-  const theme = THEMES[activeTheme] || THEMES['neon-noir'];
-  const TEAL = theme.teal;
-  const GRAY = theme.gray;
+  const theme = THEMES[themeId] || THEMES['neon-noir'];
+const TEAL = theme.teal;
+const GRAY = theme.gray;
 
   // ── 5. SYSTEM HANDLERS & EFFECTS ──
 
@@ -5403,14 +5403,19 @@ const isAdmin = !!session?.user; // any logged-in user can edit their own data
     return () => window.removeEventListener('hashchange', syncView);
   }, [session]); // Re-sync if the user logs in/out
 
-  // EFFECT B: The Data Refresher (Loads the Shows)
   useEffect(() => {
-    // Only fetch if we have a valid session or are viewing a public user
-    if (session || viewingUser) {
+    if (session?.user?.id && !viewingUser) {
+      if (!initRan.current) {
+        initRan.current = true;
+        init();
+      }
+    } else if (viewingUser) {
       fetchConcerts();
-      fetchUpcoming();
+    } else if (!authLoading) {
+      initRan.current = false;
+      setLoading(false);
     }
-  }, [viewingUser, session]);
+  }, [session, viewingUser, authLoading]);
 
   // 🔍 THE TEMPORAL SCANNER (Post-Show Nudge)
   useEffect(() => {
