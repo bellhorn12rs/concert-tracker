@@ -3164,15 +3164,16 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
     </div>
   );
 }
-// ─── 4. BY DAY TAB (SCRAPBOOK EDITION - FULL MULTI-MEDIA) ────────────────────
-// ─── THE MASTER RENDER LOGIC ───
+// ─── THE MASTER RENDER LOGIC (Tab Switcher) ───
   const activeThemeObj = THEMES[themeId] || THEMES['neon-noir'];
   const isAdminCheck = !!session?.user && !viewingUser;
 
-  // Find the <main> section inside the App's return block and replace the tab content:
-  {/* 2. CHRONICLE & TOUR BUS TABS */}
-  {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
+  // 1. TIMELINE TAB (Visual temporal map)
+  {activeTab === 'timeline' && (
+    <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />
+  )}
   
+  // 2. BY DAY TAB (Scrapbook view)
   {activeTab === 'byDay' && (
     <ByDayTab 
       dayGroups={dayGroups} 
@@ -3186,29 +3187,81 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
     />
   )}
   
+  // 3. PAPER TRAIL TAB (The high-speed list view)
   {activeTab === 'papertrail' && (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {concerts.map((c, i) => {
         const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
-        const color = GENRE_COLORS[c.genre] || activeThemeObj.teal;
+        const rowColor = GENRE_COLORS[c.genre] || activeThemeObj.teal;
         const img = c.image_url?.split(',')[0] || c.personal_photo_url?.split(',')[0];
         
         return (
-          <div key={c.id || i} className="show-row" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', background: activeThemeObj.bgCard, borderRadius: 6, border: `1px solid ${activeThemeObj.border}` }}>
-            {img && <img src={img} alt={band} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 3 }} />}
+          <div 
+            key={c.id || i} 
+            className="show-row" 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 16, 
+              padding: '12px 16px', 
+              background: activeThemeObj.bgCard, 
+              borderRadius: 6, 
+              border: `1px solid ${activeThemeObj.border}` 
+            }}
+          >
+            {img ? (
+              <img src={img} alt={band} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 3 }} />
+            ) : (
+              <div style={{ width: 48, height: 48, background: `${rowColor}11`, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px dashed ${rowColor}33` }}>
+                <span style={{ fontSize: 10 }}>🎫</span>
+              </div>
+            )}
+
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: activeThemeObj.white }}>{band.toUpperCase()}</div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: activeThemeObj.gray }}>{c.venue}</div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: activeThemeObj.white }}>
+                {band.toUpperCase()}
+              </div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: activeThemeObj.gray }}>
+                {c.venue}
+              </div>
             </div>
+
             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: color }}>{fmtDateShort(c.date)}</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: rowColor }}>
+                {fmtDateShort(c.date)}
+              </div>
+              
+              {/* 🟢 SPECTATOR MODE: Instant add for visiting curators */}
               {viewingUser && (
                 <button
-                  onClick={() => handleIWasThere(c)}
-                  style={{ background: 'transparent', border: `1px solid ${activeThemeObj.teal}`, color: activeThemeObj.teal, padding: '3px 8px', fontFamily: "'Space Mono'", fontSize: 7, cursor: 'pointer', borderRadius: 3 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleIWasThere(c);
+                  }}
+                  style={{ 
+                    background: 'transparent', 
+                    border: `1px solid ${activeThemeObj.teal}`, 
+                    color: activeThemeObj.teal, 
+                    padding: '3px 8px', 
+                    fontFamily: "'Space Mono'", 
+                    fontSize: 7, 
+                    cursor: 'pointer', 
+                    borderRadius: 3,
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = activeThemeObj.teal; e.currentTarget.style.color = '#000'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = activeThemeObj.teal; }}
                 >
                   + I WAS THERE
                 </button>
+              )}
+
+              {/* 🔧 OWNER MODE: Edit/Duplicate controls */}
+              {!viewingUser && isAdminCheck && (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => handleDuplicate(c)} style={{ background: 'none', border: 'none', color: activeThemeObj.gray, fontSize: 10, cursor: 'pointer' }}>❐</button>
+                  <button onClick={() => setEditTarget(c)} style={{ background: 'none', border: 'none', color: activeThemeObj.teal, fontSize: 10, cursor: 'pointer' }}>✎</button>
+                </div>
               )}
             </div>
           </div>
@@ -3216,101 +3269,6 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
       })}
     </div>
   )}
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 32 : 60, paddingBottom: 100 }}>
-      {clusters.map((cluster, idx) => {
-        const isFest = cluster.type === 'festival';
-        const events = isFest ? cluster.events : [cluster.event];
-        const mainEvent = events[0];
-        const color = GENRE_COLORS[mainEvent.genre] || TEAL;
-
-        return (
-          <div key={idx} style={{ position: 'relative' }} className="fade-in">
-            {/* Date Header */}
-            <div style={{ 
-              fontFamily: "'Space Mono'", 
-              fontSize: 10, 
-              color: color, 
-              letterSpacing: 4, 
-              marginBottom: 16, 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 12 
-            }}>
-              {fmtDate(mainEvent.date)}
-              <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${color}44, transparent)` }} />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {events.map((c) => {
-                const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
-                const img = c.image_url?.split(',')[0] || c.personal_photo_url?.split(',')[0];
-            
-
-                return (
-                  <div 
-                    key={c.id} 
-                    style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 16, 
-                      padding: '12px', 
-                      background: '#050505', 
-                      border: `1px solid #111`, 
-                      borderRadius: 4 
-                    }}
-                  >
-                    {img && <img src={img} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 2 }} alt="stub" />}
-                    
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>
-                        {band.toUpperCase()}
-                      </div>
-                      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GRAY }}>
-                        {c.venue} · {c.city}
-                      </div>
-                    </div>
-
-                    {/* ── ACTION HUB ── */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {/* I WAS THERE (Spectator Mode) */}
-                      {viewingUser && (
-                        <button
-                          onClick={() => handleIWasThere(c)}
-                          style={{
-                            background: 'transparent',
-                            border: `1px solid ${TEAL}`,
-                            color: TEAL,
-                            padding: '4px 8px',
-                            fontFamily: "'Space Mono'",
-                            fontSize: 7,
-                            cursor: 'pointer',
-                            borderRadius: 3
-                          }}
-                        >
-                          + I WAS THERE
-                        </button>
-                      )}
-
-                      {/* Edit/Duplicate (Owner Mode) */}
-                      {!viewingUser && isAdmin && (
-                        <>
-                          <button onClick={() => handleDuplicate(c)} style={{ background: 'none', border: 'none', color: GRAY, cursor: 'pointer', fontSize: 12 }}>❐</button>
-                          <button onClick={() => onEdit(c)} style={{ background: 'none', border: 'none', color: TEAL, cursor: 'pointer', fontSize: 12 }}>✎</button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With Multi-Artist Setlinks) ─────────────
 
 function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
