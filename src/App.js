@@ -5929,7 +5929,7 @@ const GRAY = theme.gray;
       </ThemeContext.Provider>
     );
   }
-}
+
   // Gate D: Data Synchronization (Interior)
   if (loading) return (
     <ThemeContext.Provider value={themeCtx}>
