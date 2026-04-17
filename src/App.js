@@ -4665,11 +4665,17 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
     </div>
   );
 }
-// ─── MANAGE TAB ───────────────────────────────────────────────────────────────
+// ─── MANAGE TAB (FIXED SYNTAX) ───────────────────────────────────────────────
 function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const PER = 30;
+
+  const handleCSVUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    alert("PARSING SIGNAL... This will simulate importing your historical spreadsheet into the archive.");
+  };
 
   const filtered = useMemo(() => {
     if (!search) return concerts;
@@ -4683,43 +4689,13 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
   }, [concerts, search]);
 
   const paged = filtered.slice((page - 1) * PER, page * PER);
-  const totalPages = Math.ceil(filtered.length / PER);
 
-  // Self-contained style to prevent Reference Errors
   const localInputStyle = { 
-    background: 'rgba(0,0,0,0.4)', 
-    border: `1px solid ${C.border}`, 
-    color: '#fff', 
-    padding: '12px', 
-    borderRadius: '6px', 
-    fontFamily: "'Space Mono'",
-    outline: 'none'
+    background: 'rgba(0,0,0,0.4)', border: `1px solid ${C.border}`, color: '#fff', 
+    padding: '12px', borderRadius: '6px', fontFamily: "'Space Mono'", outline: 'none'
   };
 
   return (
-const handleCSVUpload = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  alert("PARSING SIGNAL... This will simulate importing your historical spreadsheet into the archive.");
-  // Here we would use PapaParse or similar to loop through rows and insert to Supabase
-};
-
-// Inside ManageTab's first <div>:
-<div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-  <input style={{ ...localInputStyle, flex: 1 }} placeholder="Search shows..." />
-  
-  {/* CSV TRIGGER */}
-  <label style={{ 
-    background: C.purple + '22', border: `1px solid ${C.purple}`, color: C.purple, 
-    padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 
-  }}>
-    📥 BULK IMPORT (CSV)
-    <input type="file" accept=".csv" hidden onChange={handleCSVUpload} />
-  </label>
-
-  <Btn onClick={onAdd}>+ Add Single Show</Btn>
-</div>
-
     <div style={{ padding: '24px 0' }} className="fade-in">
       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
         <input 
@@ -4728,8 +4704,19 @@ const handleCSVUpload = async (e) => {
           value={search} 
           onChange={e => { setSearch(e.target.value); setPage(1); }} 
         />
+        
+        {/* CSV TRIGGER */}
+        <label style={{ 
+          background: C.purple + '22', border: `1px solid ${C.purple}`, color: C.purple, 
+          padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 
+        }}>
+          📥 BULK IMPORT (CSV)
+          <input type="file" accept=".csv" hidden onChange={handleCSVUpload} />
+        </label>
+
         <Btn onClick={onAdd}>+ Add Show</Btn>
       </div>
+
       <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
           <thead>
@@ -4744,8 +4731,8 @@ const handleCSVUpload = async (e) => {
               <tr key={c.id} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 1 ? C.bgCardAlt : 'transparent' }}>
                 <td style={{ padding: '9px 12px', fontFamily: "'Space Mono',monospace", fontSize: '0.7rem', color: C.gray, whiteSpace: 'nowrap' }}>{fmtDate(c.date)}</td>
                 <td className="row-hover" onClick={() => onEdit(c)} style={{ padding: '9px 12px', color: C.white, fontWeight: 500, cursor: 'pointer' }}>
-                  {(c.bands || []).slice(0, 3).map(b => typeof b === 'string' ? b : b.name).join(', ')}
-{c.bands?.length > 3 ? ` +${c.bands.length - 3}` : ''}
+                  {(c.bands || []).slice(0, 3).map(b => getBandName(b)).join(', ')}
+                  {c.bands?.length > 3 ? ` +${c.bands.length - 3}` : ''}
                 </td>
                 <td style={{ padding: '9px 12px', color: C.gray }}>{c.venue || '—'}</td>
                 <td style={{ padding: '9px 12px', color: C.gray }}>{c.city || '—'}</td>
@@ -6793,75 +6780,38 @@ useEffect(() => {
   )}
 </main>
 
-        {/* ── MODALS LAYER -── */}
-       {isAdmin && nudgeTarget && (
-  <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
-    <div style={{ textAlign: 'center', maxWidth: 500, padding: 40 }}>
-      <div style={{ fontSize: '4rem', marginBottom: 20, animation: 'pulse 2s infinite' }}>📡</div>
-      <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: C.teal, lineHeight: 1 }}>SIGNAL DETECTED</h2>
-      <p style={{ fontFamily: "'Space Mono'", fontSize: 12, color: '#fff', marginBottom: 30 }}>
-        THE ARCHIVE DETECTED A RECENT SHOW: <br/>
-        <span style={{ color: C.gold, fontSize: '1.5rem' }}>{nudgeTarget.artist.toUpperCase()}</span><br/>
-        WAS AT {nudgeTarget.venue.toUpperCase()} ON {nudgeTarget.date}.
-      </p>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
-        <button 
-          onClick={() => {
-            setEditTarget({ ...nudgeTarget, isNudge: true });
-            setNudgeTarget(null);
-          }}
-          style={{ padding: '20px', background: C.teal, color: '#000', border: 'none', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}
-        >
-          ARCHIVE NOW
-        </button>
-        <button 
-          onClick={() => setNudgeTarget(null)}
-          style={{ padding: '20px', background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}
-        >
-          IGNORE SIGNAL
-        </button>
-      </div>
-      <p style={{ marginTop: 20, fontFamily: "'Space Mono'", fontSize: 8, color: '#444' }}>THE SIGNAL WILL PERSIST UNTIL RECONCILED</p>
-    </div>
-  </div>
-)}
-        {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
-        
-        {shareCard && (
-          <ShareCard 
-            artist={shareCard.artist} 
-            shows={shareCard.shows} 
-            onClose={() => setShareCard(null)} 
-          />
-        )}
-        
-        {editTarget && (
-          <EditModal 
-            concert={editTarget === 'new' ? 'new' : editTarget} 
-            onClose={() => setEditTarget(null)} 
-            onSave={editTarget?.isNudge ? (id, payload) => handleReconcile(editTarget.id, payload) : handleSave}
-            onDelete={handleDelete} 
-            allConcerts={concerts}
-          />
-        )}
-        
-        {upcomingModal !== null && (
-          <UpcomingModal 
-            show={upcomingModal === 'new' ? null : upcomingModal} 
-            onClose={() => setUpcomingModal(null)} 
-            onSave={handleUpcomingSave} 
-            onDelete={handleUpcomingDelete} 
-          />
-        )}
-      </div> {/* Closes main content div */}
-     </div> {/* Closes flex wrapper */}
-    </div> {/* Closes root div */}
-  </ThemeContext.Provider>
- );
-}
+        </main>
 
-// ── AUTHENTICATION COMPONENT ──
+            {/* ── MODALS LAYER ── */}
+            {isAdmin && nudgeTarget && (
+              <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
+                <div style={{ textAlign: 'center', maxWidth: 500, padding: 40 }}>
+                  <div style={{ fontSize: '4rem', marginBottom: 20, animation: 'pulse 2s infinite' }}>📡</div>
+                  <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: C.teal, lineHeight: 1 }}>SIGNAL DETECTED</h2>
+                  <p style={{ fontFamily: "'Space Mono'", fontSize: 12, color: '#fff', marginBottom: 30 }}>
+                    THE ARCHIVE DETECTED A RECENT SHOW: <br/>
+                    <span style={{ color: C.gold, fontSize: '1.5rem' }}>{nudgeTarget.artist.toUpperCase()}</span><br/>
+                    WAS AT {nudgeTarget.venue.toUpperCase()} ON {nudgeTarget.date}.
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
+                    <button onClick={() => { setEditTarget({ ...nudgeTarget, isNudge: true }); setNudgeTarget(null); }} style={{ padding: '20px', background: C.teal, color: '#000', border: 'none', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}>ARCHIVE NOW</button>
+                    <button onClick={() => setNudgeTarget(null)} style={{ padding: '20px', background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}>IGNORE SIGNAL</button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+            {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
+            {editTarget && <EditModal concert={editTarget === 'new' ? 'new' : editTarget} onClose={() => setEditTarget(null)} onSave={editTarget?.isNudge ? (id, payload) => handleReconcile(editTarget.id, payload) : handleSave} onDelete={handleDelete} allConcerts={concerts} />}
+            {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
+          </div>
+        </div>
+      </div>
+    </ThemeContext.Provider>
+  );
+} // <--- Properly closes the App component
+
+// ── AUTHENTICATION COMPONENT (Defined ONCE) ──
 function LoginModal({ onClose }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -6880,54 +6830,15 @@ function LoginModal({ onClose }) {
   };
 
   return (
-    <div style={{ 
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', 
-      zIndex: 20000, display: 'flex', alignItems: 'center', 
-      justifyContent: 'center', backdropFilter: 'blur(12px)' 
-    }}>
-      <div style={{ 
-        background: '#0a0a0c', border: `1px solid ${C.teal}`, padding: 40, 
-        borderRadius: 12, width: '100%', maxWidth: 360, 
-        boxShadow: '0 0 60px 0px rgba(0,242,255,0.2)',
-        textAlign: 'center'
-      }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.teal, marginBottom: 10, letterSpacing: 3 }}>
-          ADMIN LOGIN
-        </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#555', marginBottom: 25, textTransform: 'uppercase' }}>
-          Authorized Personnel Only // System Override Active
-        </div>
-        
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)' }}>
+      <div style={{ background: '#0a0a0c', border: `1px solid ${C.teal}`, padding: 40, borderRadius: 12, width: '100%', maxWidth: 360, boxShadow: '0 0 60px 0px rgba(0,242,255,0.2)', textAlign: 'center' }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.teal, marginBottom: 10, letterSpacing: 3 }}>ADMIN LOGIN</div>
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
-          <input 
-            type="email" placeholder="ADMIN EMAIL" value={email} 
-            onChange={e => setEmail(e.target.value)}
-            style={{ 
-              background: '#000', border: '1px solid #222', color: '#fff', 
-              padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none' 
-            }}
-          />
-          <input 
-            type="password" placeholder="PASSWORD" value={password} 
-            onChange={e => setPassword(e.target.value)}
-            style={{ 
-              background: '#000', border: '1px solid #222', color: '#fff', 
-              padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none' 
-            }}
-          />
+          <input type="email" placeholder="ADMIN EMAIL" value={email} onChange={e => setEmail(e.target.value)} style={{ background: '#000', border: '1px solid #222', color: '#fff', padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none' }} />
+          <input type="password" placeholder="PASSWORD" value={password} onChange={e => setPassword(e.target.value)} style={{ background: '#000', border: '1px solid #222', color: '#fff', padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none' }} />
           <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-            <button 
-              type="button" onClick={onClose}
-              style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: '#666', padding: '12px', cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: '10px' }}
-            >
-              ABORT
-            </button>
-            <button 
-              type="submit" disabled={loading}
-              style={{ flex: 2, background: C.teal, border: 'none', color: '#000', padding: '12px', cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', fontWeight: 900 }}
-            >
-              {loading ? 'VERIFYING...' : 'INITIALIZE'}
-            </button>
+            <button type="button" onClick={onClose} style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: '#666', padding: '12px', cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: '10px' }}>ABORT</button>
+            <button type="submit" disabled={loading} style={{ flex: 2, background: C.teal, border: 'none', color: '#000', padding: '12px', cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', fontWeight: 900 }}>{loading ? 'VERIFYING...' : 'INITIALIZE'}</button>
           </div>
         </form>
       </div>
