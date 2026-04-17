@@ -5723,8 +5723,8 @@ const [authLoading, setAuthLoading] = useState(true);
   const [page, setPage] = useState(1);
 
   // ── OWNER CHECK ──
-  const isOwner = session?.user?.email === 'bellhorn12rs@gmail.com';
-const isAdmin = !!session?.user; // any logged-in user can edit their own data
+const isOwner = session?.user?.email === 'bellhorn12rs@gmail.com';
+const isAdmin = !!session?.user && !viewingUser;
 
   const userValue = useMemo(() => {
     return {
