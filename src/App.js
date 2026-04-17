@@ -1235,7 +1235,7 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
 
   return (
     <div style={{
-      flex: 1,
+      flex: 'none',
       position: 'relative',
       zIndex: isTop ? 2 : 1,
       transform: `rotate(${r}deg)`,
