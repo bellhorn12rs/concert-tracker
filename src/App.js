@@ -6812,8 +6812,6 @@ useEffect(() => {
   )}
 </main>
 
-        </main>
-
             {/* ── MODALS LAYER ── */}
             {isAdmin && nudgeTarget && (
               <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
