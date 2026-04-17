@@ -1071,7 +1071,7 @@ export default function LandingPage({
       ))}
     </div>
 
-    {/* 🟢 FEEDBACK: Corrected to EST. 2026 */}
+    {/* 🟢 FEEDBACK: Corrected EST. 2026 */}
     <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '0.9rem' : '1.1rem', color: GRAY, letterSpacing: 6, lineHeight: 2.5, opacity: 0.5 }}>
       TRACKRECORD // MUSEUM OF SOUND // EST. 2026<br />
       <span style={{ fontSize: '0.85rem', letterSpacing: 4 }}>EVERY SHOW. EVERY STUB. EVERY MEMORY.</span>
