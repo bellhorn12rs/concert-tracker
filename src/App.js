@@ -6290,9 +6290,40 @@ useEffect(() => {
           <ArtifactSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
         </Card>
       </div>
+
+      {/* 🟢 NEW ADDITION: THE RESTORED SONIC DNA ROW */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, paddingBottom: 40 }}>
+        
+        {/* The Bar Chart */}
+        <SonicDNA stats={genreStats} onGenreClick={handleGenreClick} />
+        
+        {/* The Radar "Web" Chart */}
+        <Card neon style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
+          {(() => {
+            // 1. Ensure we have data
+            if (!genreStats || genreStats.length < 3) {
+              return <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.grayDim }}>AWAITING MORE GENRE DATA...</div>;
+            }
+
+            // 2. Grab the highest count so we can scale everything out of 100
+            const maxCount = genreStats[0].count;
+            
+            // 3. Take the top 6 genres to build the web shape
+            const top6 = genreStats.slice(0, 6);
+            const scores = {};
+            top6.forEach(g => {
+              scores[g.name] = Math.round((g.count / maxCount) * 100);
+            });
+
+            // 4. Render the DNA web!
+            return <SetlistDNA genreScores={scores} />;
+          })()}
+        </Card>
+
+      </div>
+
     </div>
   )}
-
   {/* 2. CHRONICLE & TOUR BUS TABS */}
   {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
   
