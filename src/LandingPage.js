@@ -292,35 +292,50 @@ export default function LandingPage({
       </div>
 
      {/* ── HERO ── */}
-<div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', padding: isMobile ? '80px 20px 60px' : '80px 40px 60px' }}>
+<div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px 20px' }}>
+  {currentSession && (
+    <button onClick={onLogout} style={{ position: 'absolute', top: 60, left: 40, background: 'none', border: '1px solid #ff4466', color: '#ff4466', padding: '6px 12px', fontSize: 9, cursor: 'pointer', borderRadius: 4 }}>⏻ TERMINATE SESSION</button>
+  )}
 
-  {/* Background glow */}
-  <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%, -50%)', width: 600, height: 600, background: `radial-gradient(circle, rgba(0,229,204,0.06) 0%, transparent 70%)`, pointerEvents: 'none' }} />
+  <div className="fade-in" style={{ textAlign: 'center', marginBottom: 48 }}>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '4rem' : '7rem', letterSpacing: 10, lineHeight: 0.9 }}>TRACK<span style={{ color: TEAL }}>RECORD</span></div>
+    {/* 🟢 FEEDBACK: Updated to Est. 2026 */}
+    <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: GRAY, letterSpacing: 4, marginTop: 12 }}>EST. 2026 // YOUR CONCERT HISTORY. MUSEUM GRADE.</div>
+  </div>
 
-{/* ── EMERGENCY LOGOUT (Landing Page) ── */}
-{currentSession && (
-  <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 100 }}>
-    <button
-      onClick={onLogout}
-      style={{
-        background: 'rgba(255, 68, 68, 0.1)',
-        border: '1px solid #ff4466',
-        color: '#ff4466',
-        padding: '6px 12px',
-        fontFamily: "'Space Mono'",
-        fontSize: 8,
-        borderRadius: 4,
-        cursor: 'pointer',
-        letterSpacing: 2,
-        transition: 'all 0.2s'
-      }}
-      onMouseEnter={e => { e.currentTarget.style.background = '#ff4466'; e.currentTarget.style.color = '#000'; }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 68, 68, 0.1)'; e.currentTarget.style.color = '#ff4466'; }}
+  <div className="hero-grid fade-in" style={{ display: 'flex', gap: 60, alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: 900, marginBottom: 60 }} onMouseEnter={() => setTickerPaused(true)} onMouseLeave={() => setTickerPaused(false)}>
+    {featuredImg && (
+      <div className="artifact-drift">
+        <div style={{ background: '#fff', padding: '10px 10px 50px 10px', boxShadow: `0 30px 80px rgba(0,0,0,0.8), 0 0 40px ${TEAL}22`, borderRadius: 2, width: isMobile ? 240 : 300 }}>
+          {/* 🟢 FEEDBACK: Artifact "Contain" fix to prevent zooming */}
+          <div style={{ background: '#000', height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <img src={featuredImg} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          </div>
+          <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, textAlign: 'center', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#111' }}>{getBandName(featured.bands?.[0]).toUpperCase()}</div>
+        </div>
+      </div>
+    )}
+    <div style={{ flex: 1, textAlign: isMobile ? 'center' : 'left' }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: GRAY, letterSpacing: 4, marginBottom: 24 }}>THE ARCHIVE // LIVE READOUT</div>
+      <div style={{ display: 'flex', gap: 32, marginBottom: 32, justifyContent: isMobile ? 'center' : 'flex-start' }}>
+        <div><div style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: TEAL }}>{concerts.length}</div><div style={{ fontSize: 7, color: GRAY }}>SHOWS</div></div>
+        {/* 🟢 FEEDBACK: Using Museums count */}
+        <div><div style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: TEAL }}>{userCount}</div><div style={{ fontSize: 7, color: GRAY }}>MUSEUMS</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
+    <button onClick={() => setMode('signup')} style={{ background: TEAL, color: '#000', border: 'none', padding: '24px 64px', fontFamily: "'Bebas Neue'", fontSize: '2rem', cursor: 'pointer', borderRadius: 4, boxShadow: `0 0 40px ${TEAL}44` }}>INITIALIZE ARCHIVE</button>
+    {/* 🟢 FEEDBACK: Teleport logic - Bypass login if session exists */}
+    <button 
+      onClick={() => currentSession ? onEnterArchive() : setMode('login')} 
+      style={{ background: 'transparent', color: TEAL, border: `2px solid ${TEAL}`, padding: '24px 64px', fontFamily: "'Bebas Neue'", fontSize: '2rem', cursor: 'pointer', borderRadius: 4 }}
     >
-      ⏻ TERMINATE SESSION
+      {currentSession ? 'ENTER THE ARCHIVE' : 'ACCESS COLLECTION'}
     </button>
   </div>
-)}
+</div>
 
   {/* Active Archivists — top right */}
   {recentUsers.length > 0 && (
@@ -475,6 +490,40 @@ export default function LandingPage({
 </div>
 </div> {/* closes hero section */}
 
+{/* ── THE SHOEBOX NARRATIVE (Filling the Blank Space) ── */}
+      <div style={{ padding: isMobile ? '80px 20px' : '120px 40px', background: '#080808', borderTop: '1px solid #111', position: 'relative' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: 60, alignItems: 'center' }}>
+          
+          <div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: GOLD, letterSpacing: 5, marginBottom: 20 }}>// THE PROBLEM</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', lineHeight: 1, color: '#fff' }}>
+              STILL DIGGING THROUGH <span style={{ color: GOLD }}>SHOEBOXES?</span>
+            </div>
+            <p style={{ fontFamily: "'Space Mono'", fontSize: 12, color: GRAY, lineHeight: 2, marginTop: 24 }}>
+              The physical world is messy. Faded stubs, lost wristbands, and photos buried in a camera roll of 40,000 images. Your musical legacy deserves more than a cardboard box in the closet.
+            </p>
+          </div>
+
+          {/* Iconography Bridge */}
+          <div style={{ background: '#000', border: `1px solid ${GOLD}22`, padding: 40, borderRadius: 12, textAlign: 'center', boxShadow: `0 20px 50px rgba(0,0,0,0.5)` }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 20, marginBottom: 20 }}>
+              <div style={{ fontSize: '2rem', opacity: 0.4 }}>📦</div>
+              <div style={{ fontSize: '1.5rem', color: GOLD }}>→</div>
+              <div style={{ fontSize: '2.5rem', textShadow: `0 0 20px ${TEAL}` }}>🏛️</div>
+            </div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: TEAL, letterSpacing: 2 }}>
+              [ DEPLOYING DIGITAL PRESERVATION ]
+            </div>
+            <div style={{ width: '100%', height: 1, background: 'linear-gradient(90deg, transparent, #222, transparent)', margin: '20px 0' }} />
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, lineHeight: 2 }}>
+              CONVERTING ANALOG CLUTTER<br/>
+              TO ARCHIVAL SIGNALS
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       {/* ── SECTION 1: TEMPORAL DRIFT ── */}
 <div style={{ padding: isMobile ? '60px 20px' : '80px 40px', background: '#050508', borderTop: '1px solid #111', borderBottom: '1px solid #111', position: 'relative', overflow: 'hidden' }}>
 
@@ -627,163 +676,141 @@ export default function LandingPage({
 </div>
 
       {/* ── SECTION 2: THE PHYSICAL ARCHIVE ── */}
-<div style={{ padding: isMobile ? '80px 20px' : '80px 40px', background: '#000', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ padding: isMobile ? '80px 20px' : '80px 40px', background: '#000', position: 'relative', overflow: 'hidden' }}>
 
-  {/* Big background watermark */}
-  {!isMobile && (
-    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontFamily: "'Bebas Neue'", fontSize: '20rem', color: GOLD, opacity: 0.025, pointerEvents: 'none', whiteSpace: 'nowrap', letterSpacing: -10, userSelect: 'none', lineHeight: 1 }}>
-      ARTIFACTS
-    </div>
-  )}
+        {/* Big background watermark */}
+        {!isMobile && (
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontFamily: "'Bebas Neue'", fontSize: '20rem', color: GOLD, opacity: 0.025, pointerEvents: 'none', whiteSpace: 'nowrap', letterSpacing: -10, userSelect: 'none', lineHeight: 1 }}>
+            ARTIFACTS
+          </div>
+        )}
 
-  {/* Side quotes */}
-  {!isMobile && (
-    <div style={{ position: 'absolute', left: -50, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: GOLD, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
-      THE SHOEBOX DIGITIZED
-    </div>
-  )}
-  {!isMobile && (
-    <div style={{ position: 'absolute', right: -70, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: GOLD, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
-      EVERY SHOW LEAVES A MARK
-    </div>
-  )}
+        {/* 🟢 FEEDBACK: Side quotes scaled up to 1.4rem */}
+        {!isMobile && (
+          <div style={{ position: 'absolute', left: -50, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: GOLD, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+            THE SHOEBOX DIGITIZED
+          </div>
+        )}
+        {!isMobile && (
+          <div style={{ position: 'absolute', right: -70, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: GOLD, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+            EVERY SHOW LEAVES A MARK
+          </div>
+        )}
 
-  <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 1 }}>
 
-    {/* Header */}
-    <div style={{ textAlign: 'center', marginBottom: 24 }}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GOLD, letterSpacing: 4, marginBottom: 12 }}>🎟️ FEATURE 02</div>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff', letterSpacing: 2, lineHeight: 0.9 }}>
-        THE PHYSICAL <span style={{ color: GOLD }}>ARCHIVE</span>
-      </div>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, marginTop: 12, letterSpacing: 2 }}>
-        TICKET STUBS. SETLISTS. POLAROIDS. POSTERS. // HOVER TO DEVELOP
-      </div>
-    </div>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GOLD, letterSpacing: 4, marginBottom: 12 }}>🎟️ FEATURE 02</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff', letterSpacing: 2, lineHeight: 0.9 }}>
+              THE PHYSICAL <span style={{ color: GOLD }}>ARCHIVE</span>
+            </div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, marginTop: 12, letterSpacing: 2 }}>
+              TICKET STUBS. SETLISTS. POLAROIDS. POSTERS. // HOVER TO DEVELOP
+            </div>
+          </div>
 
-    {/* Emotional copy */}
-    <div style={{ textAlign: 'center', marginBottom: 64 }}>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.1rem' : '1.6rem', color: GRAY, letterSpacing: 3, lineHeight: 1.6 }}>
-        Social media feeds disappear.
-      </div>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.6rem' : '2.5rem', color: '#fff', letterSpacing: 3, textShadow: `0 0 30px rgba(255,204,0,0.3)` }}>
-        THE ARCHIVE IS <span style={{ color: GOLD }}>FOREVER.</span>
-      </div>
-      <div style={{ width: 60, height: 2, background: GOLD, margin: '20px auto 0', boxShadow: `0 0 10px ${GOLD}` }} />
-    </div>
+          {/* Emotional copy */}
+          <div style={{ textAlign: 'center', marginBottom: 64 }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.1rem' : '1.6rem', color: GRAY, letterSpacing: 3, lineHeight: 1.6 }}>
+              Social media feeds disappear.
+            </div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.6rem' : '2.5rem', color: '#fff', letterSpacing: 3, textShadow: `0 0 30px rgba(255,204,0,0.3)` }}>
+              THE ARCHIVE IS <span style={{ color: GOLD }}>FOREVER.</span>
+            </div>
+            <div style={{ width: 60, height: 2, background: GOLD, margin: '20px auto 0', boxShadow: `0 0 10px ${GOLD}` }} />
+          </div>
 
-    {/* All artifacts grid — stubs, polaroids, setlists, posters */}
-    {(() => {
-      const allArtifacts = [];
-      concerts.forEach(c => {
-        if (c.image_url) {
-          c.image_url.split(',').forEach(url => {
-            if (url.trim()) allArtifacts.push({ url: url.trim(), type: 'STUB', c });
-          });
-        }
-        if (c.personal_photo_url) {
-          c.personal_photo_url.split(',').forEach(url => {
-            if (url.trim()) allArtifacts.push({ url: url.trim(), type: 'POLAROID', c });
-          });
-        }
-        if (c.setlist_image_url) {
-          c.setlist_image_url.split(',').forEach(url => {
-            if (url.trim()) allArtifacts.push({ url: url.trim(), type: 'SETLIST', c });
-          });
-        }
-        if (c.festival_poster_url) {
-          c.festival_poster_url.split(',').forEach(url => {
-            if (url.trim()) allArtifacts.push({ url: url.trim(), type: 'POSTER', c });
-          });
-        }
-      });
+          {/* 🟢 FEEDBACK: Shuffled Artifacts + Mystery Mode */}
+          {(() => {
+            const allArtifacts = [];
+            concerts.forEach(c => {
+              if (c.image_url) c.image_url.split(',').forEach(url => { if (url.trim()) allArtifacts.push({ url: url.trim(), type: 'STUB', c }); });
+              if (c.personal_photo_url) c.personal_photo_url.split(',').forEach(url => { if (url.trim()) allArtifacts.push({ url: url.trim(), type: 'POLAROID', c }); });
+              if (c.setlist_image_url) c.setlist_image_url.split(',').forEach(url => { if (url.trim()) allArtifacts.push({ url: url.trim(), type: 'SETLIST', c }); });
+            });
 
-      const typeColors = { STUB: TEAL, POLAROID: PURPLE, SETLIST: GOLD, POSTER: '#ff4466' };
-      const rotations = [-3, 1.5, -1, 2.5, -2, 3, -1.5, 2, -2.5, 1];
-      const tapeColors = [TEAL, GOLD, PURPLE, '#ff4466', '#00cfff'];
-      const shuffled = [...allArtifacts].sort(() => 0.5 - Math.random());
-const displayed = shuffled.slice(0, isMobile ? 6 : 10);
-
-      return (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(5, 1fr)', gap: isMobile ? 20 : 28, alignItems: 'start' }}>
-          {displayed.map((artifact, i) => {
-            const band = getBandName(artifact.c.bands?.[0]) || artifact.c.festival_name || 'UNKNOWN';
-            const rotation = rotations[i % rotations.length];
-            const accent = typeColors[artifact.type];
-            const tape = tapeColors[i % tapeColors.length];
-            const isHovered = hoveredArtifact === i;
+            const typeColors = { STUB: TEAL, POLAROID: PURPLE, SETLIST: GOLD, POSTER: '#ff4466' };
+            const rotations = [-3, 1.5, -1, 2.5, -2, 3, -1.5, 2, -2.5, 1];
+            const tapeColors = [TEAL, GOLD, PURPLE, '#ff4466', '#00cfff'];
+            
+            // Randomize selection
+            const displayed = [...allArtifacts].sort(() => 0.5 - Math.random()).slice(0, isMobile ? 6 : 10);
 
             return (
-              <div
-                key={i}
-                style={{
-                  transform: isHovered ? 'rotate(0deg) scale(1.08) translateY(-10px)' : `rotate(${rotation}deg)`,
-                  transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                  position: 'relative',
-                  zIndex: isHovered ? 10 : 1,
-                  cursor: 'crosshair'
-                }}
-                onMouseEnter={() => setHoveredArtifact(i)}
-                onMouseLeave={() => setHoveredArtifact(null)}
-              >
-                {/* Tape */}
-                <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 44, height: 14, background: tape, opacity: 0.8, borderRadius: 1, zIndex: 20, boxShadow: `0 2px 6px rgba(0,0,0,0.3)` }} />
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(5, 1fr)', gap: isMobile ? 20 : 28, alignItems: 'start' }}>
+                {displayed.map((artifact, i) => {
+                  const band = getBandName(artifact.c.bands?.[0]) || artifact.c.festival_name || 'UNKNOWN';
+                  const rotation = rotations[i % rotations.length];
+                  const accent = typeColors[artifact.type];
+                  const tape = tapeColors[i % tapeColors.length];
+                  const isHovered = hoveredArtifact === i;
 
-                {/* Card */}
-                <div style={{
-                  background: '#fff',
-                  padding: artifact.type === 'POLAROID' ? '8px 8px 44px 8px' : '8px 8px 32px 8px',
-                  boxShadow: isHovered
-                    ? `0 30px 80px rgba(0,0,0,0.9), 0 0 30px ${accent}44`
-                    : '0 10px 40px rgba(0,0,0,0.7)',
-                  borderRadius: 2,
-                  position: 'relative',
-                  overflow: 'hidden',
-                  transition: 'box-shadow 0.4s'
-                }}>
-                  {/* Image — blurred until hover */}
-                  <img
-                    src={artifact.url}
-                    alt={band}
-                    style={{
-                      width: '100%',
-                      height: isMobile ? 100 : 130,
-                      objectFit: 'cover',
-                      display: 'block',
-                      filter: isHovered ? 'none' : 'blur(6px) brightness(0.4)',
-                      transition: 'filter 0.5s ease',
-                    }}
-                  />
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        transform: isHovered ? 'rotate(0deg) scale(1.08) translateY(-10px)' : `rotate(${rotation}deg)`,
+                        transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        position: 'relative',
+                        zIndex: isHovered ? 10 : 1,
+                        cursor: 'crosshair'
+                      }}
+                      onMouseEnter={() => setHoveredArtifact(i)}
+                      onMouseLeave={() => setHoveredArtifact(null)}
+                    >
+                      <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 44, height: 14, background: tape, opacity: 0.8, borderRadius: 1, zIndex: 20 }} />
 
-                  {/* Encrypted overlay */}
-                  {!isHovered && (
-                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                      <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: accent, letterSpacing: 2 }}>SIGNAL_ENCRYPTED</div>
-                      <div style={{ width: 24, height: 24, border: `1px solid ${accent}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: accent }}>⊕</div>
+                      <div style={{
+                        background: '#fff',
+                        padding: artifact.type === 'POLAROID' ? '8px 8px 44px 8px' : '8px 8px 32px 8px',
+                        boxShadow: isHovered ? `0 30px 80px rgba(0,0,0,0.9)` : '0 10px 40px rgba(0,0,0,0.7)',
+                        borderRadius: 2,
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}>
+                        <img
+                          src={artifact.url}
+                          alt={band}
+                          style={{
+                            width: '100%',
+                            height: isMobile ? 100 : 130,
+                            objectFit: 'cover',
+                            display: 'block',
+                            filter: isHovered ? 'none' : 'blur(8px) brightness(0.4)',
+                            transition: 'filter 0.5s ease',
+                          }}
+                        />
+
+                        {!isHovered && (
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: 24, height: 24, border: `1px solid ${accent}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: accent }}>⊕</div>
+                          </div>
+                        )}
+
+                        {/* 🟢 FEEDBACK: Mystery Mode - Names blur until hover */}
+                        <div style={{ 
+                          padding: '6px 4px 0', 
+                          background: '#fff', 
+                          filter: isHovered ? 'none' : 'blur(4px)', 
+                          transition: 'filter 0.3s' 
+                        }}>
+                          <div style={{ textAlign: 'center', fontFamily: "'Bebas Neue'", fontSize: '0.75rem', color: '#111', letterSpacing: 1, lineHeight: 1 }}>
+                            {band.toUpperCase()}
+                          </div>
+                          <div style={{ textAlign: 'center', fontFamily: "'Space Mono'", fontSize: 6, color: '#666', marginTop: 2 }}>
+                            {getYear(artifact.c.date)}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  )}
-
-                  {/* Caption area */}
-                  <div style={{ padding: '6px 4px 0', background: '#fff' }}>
-                    <div style={{ textAlign: 'center', fontFamily: "'Bebas Neue'", fontSize: '0.75rem', color: '#111', letterSpacing: 1, lineHeight: 1 }}>
-                      {band.slice(0, 14).toUpperCase()}
-                    </div>
-                    <div style={{ textAlign: 'center', fontFamily: "'Space Mono'", fontSize: 6, color: '#666', marginTop: 2 }}>
-                      {getYear(artifact.c.date)}
-                    </div>
-                  </div>
-
-                  {/* Type badge */}
-                  <div style={{ position: 'absolute', bottom: 4, right: 4, fontFamily: "'Space Mono'", fontSize: 5, color: accent, letterSpacing: 1, opacity: isHovered ? 1 : 0, transition: 'opacity 0.3s' }}>
-                    {artifact.type}
-                  </div>
-                </div>
+                  );
+                })}
               </div>
             );
-          })}
+          })()}
         </div>
-      );
-    })()}
+      </div>
 
     {/* Bottom stat */}
     <div style={{ textAlign: 'center', marginTop: 48 }}>
@@ -1028,12 +1055,14 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
     </div>
 
     {/* Stat strip */}
+    {/* ── FINAL STAT STRIP ── */}
     <div style={{ display: 'flex', gap: isMobile ? 24 : 80, justifyContent: 'center', flexWrap: 'wrap', padding: '40px 0', borderTop: `1px solid #111`, borderBottom: `1px solid #111`, marginBottom: 48 }}>
       {[
-        [concerts.length, 'SHOWS', TEAL],
-        [new Set(concerts.flatMap(c => (c.bands || []).map(getBandName)).filter(Boolean)).size, 'ARTISTS', GOLD],
+        [concerts.length, 'SIGNALS', TEAL],
+        [uniqueArtists, 'ARTISTS', GOLD],
         [new Set(concerts.map(c => c.venue).filter(Boolean)).size, 'VENUES', PURPLE],
-        [new Set(concerts.map(c => c.state).filter(Boolean)).size, 'STATES', '#ff4466'],
+        // 🟢 FEEDBACK: Added Museum (User) Count
+        [userCount, 'MUSEUMS', '#ff4466'],
       ].map(([val, label, color]) => (
         <div key={label} style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '3rem' : '5rem', color, lineHeight: 1, textShadow: `0 0 30px ${color}88` }}>{val}</div>
@@ -1041,6 +1070,30 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
         </div>
       ))}
     </div>
+
+    {/* 🟢 FEEDBACK: Corrected to EST. 2026 */}
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '0.9rem' : '1.1rem', color: GRAY, letterSpacing: 6, lineHeight: 2.5, opacity: 0.5 }}>
+      TRACKRECORD // MUSEUM OF SOUND // EST. 2026<br />
+      <span style={{ fontSize: '0.85rem', letterSpacing: 4 }}>EVERY SHOW. EVERY STUB. EVERY MEMORY.</span>
+    </div>
+  </div>
+
+  {/* Bottom line accent */}
+  <div style={{ position: 'absolute', bottom: 0, left: '5%', right: '5%', height: 1, background: `linear-gradient(90deg, transparent, ${PURPLE}88, ${TEAL}88, transparent)` }} />
+</div>
+
+{/* ── BOTTOM SYSTEM TICKER ── */}
+<div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000, background: '#000', borderTop: `1px solid ${TEAL}22`, height: 28, display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+  <div style={{ background: '#111', color: GOLD, fontFamily: "'Bebas Neue'", fontSize: 10, letterSpacing: 2, padding: '0 12px', height: '100%', display: 'flex', alignItems: 'center', flexShrink: 0, borderRight: `1px solid ${GOLD}33` }}>
+    SYS
+  </div>
+  <div style={{ overflow: 'hidden', flex: 1 }}>
+    <div className="ticker-scroll" style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GOLD, paddingLeft: 20, letterSpacing: 1, opacity: 0.6, animationDuration: '60s' }}>
+      {/* 🟢 FEEDBACK: Included User (Museum) count in the rolling ticker too */}
+      {`ARCHIVE STATUS: ACTIVE /// TOTAL SIGNALS: ${concerts.length} /// MUSEUMS INITIALIZED: ${userCount} /// SYSTEM: NOMINAL /// `.repeat(8)}
+    </div>
+  </div>
+</div>
 
     {/* Bottom manifesto */}
     <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '0.9rem' : '1.1rem', color: GRAY, letterSpacing: 6, lineHeight: 2.5, opacity: 0.5 }}>
