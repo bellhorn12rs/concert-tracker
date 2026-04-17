@@ -1262,18 +1262,19 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
     </div>
   );
 };
-// ─── MAIN ARTIFACT SPOTLIGHT COMPONENT (STACKING EDITION) ──────────────────
+// ─── MAIN ARTIFACT SPOTLIGHT COMPONENT (SMART GROUPING EDITION) ────────────
 function ArtifactSpotlight({ concerts, onVault }) {
-  const [topIdx, setTopIdx] = useState(0);
-  const [botIdx, setBotIdx] = useState(1);
+  const [leftIdx, setLeftIdx] = useState(0);
+  const [rightIdx, setRightIdx] = useState(1);
   
   const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
 
-  const slides = useMemo(() => {
+  const columns = useMemo(() => {
     if (!concerts || !concerts.length) return [];
     
     const artifacts = [];
     
+    // 1. Extract all artifacts
     concerts.forEach(c => {
       const band = getBandName(c.bands?.[0]) || c.artist || 'UNKNOWN ARTIST';
       const venue = c.is_festival ? c.festival_name : c.venue;
@@ -1296,49 +1297,70 @@ function ArtifactSpotlight({ concerts, onVault }) {
     });
 
     if (!artifacts.length) return [];
-    const sorted = artifacts.sort((a, b) => b.date.localeCompare(a.date));
-    const newest = sorted[0];
-    const pool = sorted.slice(1).sort(() => 0.5 - Math.random());
     
-    return [newest, ...pool].slice(0, 20);
+    // 2. Sort EVERYTHING by date descending (newest first)
+    artifacts.sort((a, b) => b.date.localeCompare(a.date));
+
+    // 3. Separate into "Talls" (Setlists/Posters) and "Shorts" (Tickets)
+    const talls = artifacts.filter(a => a.type !== 'TICKET');
+    const shorts = artifacts.filter(a => a.type === 'TICKET');
+
+    const cols = [];
+
+    // 4. Smart Grouping: Pair tickets together
+    for (let i = 0; i < shorts.length; i += 2) {
+      if (shorts[i+1]) {
+        // Full stack of 2 tickets
+        cols.push({ id: `col-s-${i}`, items: [shorts[i], shorts[i+1]], newestDate: shorts[i].date });
+      } else {
+        // Odd ticket out, sits alone
+        cols.push({ id: `col-s-${i}`, items: [shorts[i]], newestDate: shorts[i].date });
+      }
+    }
+
+    // 5. Smart Grouping: Talls get their own column
+    talls.forEach((t, i) => {
+      cols.push({ id: `col-t-${i}`, items: [t], newestDate: t.date });
+    });
+
+    // 6. Sort the completed columns by the newest item inside them
+    cols.sort((a, b) => b.newestDate.localeCompare(a.newestDate));
+
+    // Keep the absolute newest column first, shuffle the rest
+    const newestCol = cols[0];
+    const pool = cols.slice(1).sort(() => 0.5 - Math.random());
+    
+    return [newestCol, ...pool].slice(0, 10); // Keep max 10 columns to cycle through
   }, [concerts]);
 
+  // Flip Timer Logic
   useEffect(() => {
-    if (slides.length < 2) return;
+    if (columns.length < 2) return;
     let timer;
 
-    const flipTop = () => {
-      setTopIdx(prev => (prev + 2) % slides.length);
-      timer = setTimeout(flipBot, 5000); 
+    const flipLeft = () => {
+      setLeftIdx(prev => (prev + 2) % columns.length);
+      timer = setTimeout(flipRight, 5000); 
     };
 
-    const flipBot = () => {
-      setBotIdx(prev => (prev + 2) % slides.length);
-      timer = setTimeout(flipTop, 5000); 
+    const flipRight = () => {
+      setRightIdx(prev => (prev + 2) % columns.length);
+      timer = setTimeout(flipLeft, 5000); 
     };
 
-    timer = setTimeout(flipTop, 2000); 
+    timer = setTimeout(flipLeft, 2000); 
     return () => clearTimeout(timer);
-  }, [slides.length]);
+  }, [columns.length]);
 
-  if (!slides.length) return (
+  if (!columns.length) return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: C.grayDim }}>
        <div style={{ fontSize: '3rem', opacity: 0.2 }}>🗃️</div>
        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, letterSpacing: 2, marginTop: 10 }}>NO ARTIFACTS SCANNED</div>
     </div>
   );
 
-  // 🟢 The Column Data Logic
-  const left1 = slides[topIdx % slides.length];
-  const right1 = slides[botIdx % slides.length];
-  
-  // If the top item is a TICKET, pull the item 2 spaces ahead to stack under it
-  const left2 = left1?.type === 'TICKET' ? slides[(topIdx + 2) % slides.length] : null;
-  const right2 = right1?.type === 'TICKET' ? slides[(botIdx + 2) % slides.length] : null;
-
-  // Safety check: Only stack if we actually have enough slides to pull from
-  const showLeft2 = left2 && slides.length >= 4;
-  const showRight2 = right2 && slides.length >= 4;
+  const leftCol = columns[leftIdx % columns.length];
+  const rightCol = columns[rightIdx % columns.length];
 
   return (
     <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
@@ -1351,19 +1373,17 @@ function ArtifactSpotlight({ concerts, onVault }) {
       }}>
         {/* LEFT COLUMN */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <SpotlightScrap key={`L1-${left1.id}`} data={left1} isTop={true} TAPE_COLORS={TAPE_COLORS} />
-          {showLeft2 && (
-            <SpotlightScrap key={`L2-${left2.id}`} data={left2} isTop={false} TAPE_COLORS={TAPE_COLORS} />
-          )}
+          {leftCol?.items.map((item, idx) => (
+             <SpotlightScrap key={`L-${item.id}`} data={item} isTop={idx === 0} TAPE_COLORS={TAPE_COLORS} />
+          ))}
         </div>
 
         {/* RIGHT COLUMN */}
-        {slides.length > 1 && (
+        {columns.length > 1 && (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <SpotlightScrap key={`R1-${right1.id}`} data={right1} isTop={true} TAPE_COLORS={TAPE_COLORS} />
-            {showRight2 && (
-              <SpotlightScrap key={`R2-${right2.id}`} data={right2} isTop={false} TAPE_COLORS={TAPE_COLORS} />
-            )}
+            {rightCol?.items.map((item, idx) => (
+               <SpotlightScrap key={`R-${item.id}`} data={item} isTop={idx === 0} TAPE_COLORS={TAPE_COLORS} />
+            ))}
           </div>
         )}
       </div>
