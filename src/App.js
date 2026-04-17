@@ -1278,10 +1278,8 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
             background: '#000', 
             overflow: 'hidden', display: 'flex', 
             alignItems: 'center', justifyContent: 'center',
-            width: '100%', 
-            /* 🟢 THE FIX: Only force the ratio for tickets. 
-               For setlists, we remove the aspectRatio so the 'paper' trims to the image height. */
-            aspectRatio: isTicket ? '2.5 / 1' : 'auto' 
+            width: '100%',
+            ...(isTicket ? { aspectRatio: '2.5 / 1' } : {})
           }}>
             <img 
               src={data.url} 
