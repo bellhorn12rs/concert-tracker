@@ -4701,7 +4701,7 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session }) {
             is_festival: entry.is_festival?.toUpperCase() === 'TRUE',
             festival_name: entry.festival_name || null,
             user_id: session?.user?.id || concerts[0]?.user_id, // Stamps it with the logged-in user's ID
-            is_public: true,
+            
           };
         });
 
