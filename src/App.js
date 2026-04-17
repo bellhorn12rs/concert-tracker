@@ -4665,6 +4665,19 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
     </div>
   );
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   THE BRIDGE: This part closes the main App component before the tabs begin.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+        </main>
+      </div>
+     </div>
+    </div>
+  </ThemeContext.Provider>
+ );
+} // 🟢 THIS BRACKET CLOSES THE APP COMPONENT
+
 // ─── MANAGE TAB (FIXED SYNTAX) ───────────────────────────────────────────────
 function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
   const [search, setSearch] = useState('');
