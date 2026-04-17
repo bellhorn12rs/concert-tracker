@@ -4667,11 +4667,11 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   THE BRIDGE: Properly closing the main App component before the tabs begin.
+   THE BRIDGE: Properly closing the main App component and its layout.
    ───────────────────────────────────────────────────────────────────────────── */
 
         </main>
-
+        
         {/* MODALS LAYER */}
         {isAdmin && nudgeTarget && (
           <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
@@ -4691,11 +4691,11 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
         {editTarget && <EditModal concert={editTarget === 'new' ? 'new' : editTarget} onClose={() => setEditTarget(null)} onSave={editTarget?.isNudge ? (id, payload) => handleReconcile(editTarget.id, payload) : handleSave} onDelete={handleDelete} allConcerts={concerts} />}
         {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
       </div>
-     </div>
     </div>
-  </ThemeContext.Provider>
+  </div>
+ </ThemeContext.Provider>
  );
-} // 🟢 PROPERLY CLOSES THE APP COMPONENT FUNCTION
+} // 🟢 THIS CLOSES THE MAIN APP COMPONENT FUNCTION PROPERLY
 
 // ─── MANAGE TAB (STABILIZED LOGIC) ───────────────────────────────────────────────
 function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
