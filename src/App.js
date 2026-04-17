@@ -1259,9 +1259,7 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
           background: '#fff', padding: '4px', boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
           display: 'flex', flexDirection: 'column', borderRadius: 2, border: '1px solid #ddd',
           width: '100%', boxSizing: 'border-box',
-          /* 🟢 THE FIX: If it's a setlist, we let the height be organic (auto) 
-             If it's a ticket, we keep the wide 2.5/1 ratio for the dashboard. */
-          height: isTicket ? 'auto' : 'fit-content'
+          height: 'fit-content'
         }}>
           {/* HEADER */}
           <div style={{ padding: '8px 4px 6px', textAlign: 'center', background: '#111', marginBottom: 4 }}>
