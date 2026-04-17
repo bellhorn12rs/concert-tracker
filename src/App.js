@@ -817,65 +817,109 @@ const MarqueeStyles = () => (
   `}</style>
 );
 // ─── SHARED ATOMS ─────────────────────────────────────────────────────────────
-// ─── THE SETLIST DNA (IDEA #2) ───────────────────────────────────────────────
+// ─── UPGRADED SONIC DNA WEB (THE "GEODE" EDITION) ──────────────────────────
 const SetlistDNA = ({ genreScores }) => {
-  // genreScores = { Rock: 80, Indie: 90, Pop: 30, Electronic: 50, Experimental: 70 }
-  
-  const labels = Object.keys(genreScores);
-  const values = Object.values(genreScores);
-  const center = 100;
-  const radius = 80;
+  // 1. Filter for valid scores and pick the Top 8 to keep the shape clean
+  const sortedEntries = Object.entries(genreScores)
+    .filter(([_, score]) => score > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8); 
 
-  // Math for the Radar Points: 
-  // We convert the 0-100 scores into X/Y coordinates on a circle
-  const points = values.map((val, i) => {
-    const angle = (Math.PI * 2 * i) / labels.length - Math.PI / 2;
-    const r = (val / 100) * radius;
-    return `${center + r * Math.cos(angle)},${center + r * Math.sin(angle)}`;
+  if (sortedEntries.length < 3) return <div style={{color: '#555', fontSize: 10}}>AWAITING MORE DATA...</div>;
+
+  // 2. Map labels to shorter versions so they don't overlap
+  const labels = sortedEntries.map(([name]) => 
+    name.replace('Post-Punk & Garage', 'Post-Punk')
+        .replace('Pop-Punk & Emo', 'Punk/Emo')
+        .replace('Americana & Folk', 'Americana')
+        .replace('Hard Rock / Metal', 'Hard Rock')
+        .replace('Hip Hop / R&B', 'Hip Hop')
+        .toUpperCase()
+  );
+  
+  const values = sortedEntries.map(([, score]) => score);
+  const topGenre = sortedEntries[0][0];
+  const mainColor = GENRE_COLORS[topGenre] || '#00f2ff';
+
+  const size = 260; // Slightly larger for better readability
+  const center = size / 2;
+  const radius = size * 0.32;
+  const numPoints = labels.length;
+
+  const getPoint = (index, value, rOffset = 0) => {
+    const angle = (Math.PI * 2 * index) / numPoints - Math.PI / 2;
+    const r = (radius * value) / 100 + rOffset;
+    return {
+      x: center + r * Math.cos(angle),
+      y: center + r * Math.sin(angle)
+    };
+  };
+
+  const webLevels = [25, 50, 75, 100];
+  const dataPoints = values.map((v, i) => {
+    const p = getPoint(i, v);
+    return `${p.x},${p.y}`;
   }).join(' ');
 
   return (
-    <div style={{ textAlign: 'center', padding: '20px' }}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginBottom: 20 }}>GENRE DNA PROFILE</div>
-      <svg width="200" height="200" viewBox="0 0 200 200" style={{ filter: `drop-shadow(0 0 10px ${hexToRgba(C.teal, 0.4)})` }}>
-        {/* Background Hexagon Rings */}
-        {[0.2, 0.4, 0.6, 0.8, 1].map(scale => (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <defs>
+          <radialGradient id="dnaGradient">
+            <stop offset="0%" stopColor={mainColor} stopOpacity="0.6" />
+            <stop offset="100%" stopColor={mainColor} stopOpacity="0.1" />
+          </radialGradient>
+        </defs>
+
+        {/* Background Grid Rings */}
+        {webLevels.map(level => (
           <polygon
-            key={scale}
+            key={level}
             points={labels.map((_, i) => {
-              const angle = (Math.PI * 2 * i) / labels.length - Math.PI / 2;
-              return `${center + (radius * scale) * Math.cos(angle)},${center + (radius * scale) * Math.sin(angle)}`;
+              const p = getPoint(i, level);
+              return `${p.x},${p.y}`;
             }).join(' ')}
             fill="none"
-            stroke="rgba(255,255,255,0.05)"
+            stroke="rgba(255,255,255,0.08)"
             strokeWidth="1"
           />
         ))}
-        
-        {/* The DNA Shape */}
-        <polygon
-          points={points}
-          fill={hexToRgba(C.teal, 0.3)}
-          stroke={C.teal}
-          strokeWidth="2"
+
+        {/* The Pulsing Data Shape */}
+        <polygon 
+          points={dataPoints} 
+          fill="url(#dnaGradient)" 
+          stroke={mainColor} 
+          strokeWidth="3" 
+          strokeLinejoin="round"
+          style={{ filter: `drop-shadow(0 0 12px ${mainColor}66)`, transition: 'all 0.8s ease' }}
         />
-        
+
         {/* Axis Labels */}
         {labels.map((label, i) => {
-          const angle = (Math.PI * 2 * i) / labels.length - Math.PI / 2;
-          const x = center + (radius + 15) * Math.cos(angle);
-          const y = center + (radius + 15) * Math.sin(angle);
+          const p = getPoint(i, 100, 20); // Push labels 20px outside the 100% ring
+          const isTop = i === 0;
           return (
-            <text key={label} x={x} y={y} fill={C.gray} fontSize="8" fontFamily="'Space Mono'" textAnchor="middle" dominantBaseline="middle">
-              {label.toUpperCase()}
+            <text
+              key={i} x={p.x} y={p.y}
+              fill={isTop ? mainColor : "#666"}
+              fontSize={isTop ? "10" : "8"}
+              fontFamily="'Space Mono'"
+              textAnchor="middle"
+              alignmentBaseline="middle"
+              style={{ fontWeight: isTop ? 900 : 400, letterSpacing: '1px' }}
+            >
+              {label}
             </text>
           );
         })}
       </svg>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: mainColor, marginTop: -10, letterSpacing: 2, opacity: 0.8 }}>
+        PRIMARY: {topGenre.toUpperCase()}
+      </div>
     </div>
   );
 };
-
 const Badge = ({ children, color = C.teal, bg = C.tealFaint }) => (
   <span style={{ display:'inline-block', fontFamily:"'Space Mono',monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color, background:bg, border:`1px solid ${color}44`, padding:'2px 6px', borderRadius:3 }}>{children}</span>
 );
