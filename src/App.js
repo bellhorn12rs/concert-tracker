@@ -4667,9 +4667,9 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   THE BRIDGE: Properly closing the main content area and App component
+   THE BRIDGE: Properly closing the main App component before the tabs begin.
    ───────────────────────────────────────────────────────────────────────────── */
-   
+
         </main>
 
         {/* MODALS LAYER */}
@@ -4695,9 +4695,9 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
     </div>
   </ThemeContext.Provider>
  );
-} // 🟢 CLOSES APP COMPONENT
+} // 🟢 PROPERLY CLOSES THE APP COMPONENT FUNCTION
 
-// ─── MANAGE TAB (FIXED SYNTAX) ───────────────────────────────────────────────
+// ─── MANAGE TAB (STABILIZED LOGIC) ───────────────────────────────────────────────
 function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -4746,7 +4746,7 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
           <input type="file" accept=".csv" hidden onChange={handleCSVUpload} />
         </label>
 
-        <Btn onClick={onAdd}>+ Add Show</Btn>
+        <Btn onClick={onAdd}>+ Add Single Show</Btn>
       </div>
 
       <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>
