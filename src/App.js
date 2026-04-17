@@ -1198,8 +1198,7 @@ function OnThisDay({ concerts }) {
   );
 }
 
-// ─── SETLIST SPOTLIGHT ATOM (POSTER EDITION) ──────────────────────────
-// ─── ARTIFACT SPOTLIGHT ATOM (DYNAMIC HEIGHT EDITION) ───────────────
+// ─── ARTIFACT SPOTLIGHT ATOM (STRETCH-PROOF EDITION) ───────────────
 const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
   if (!data) return null;
   const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
@@ -1208,30 +1207,7 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
   
   const hasImg = data.url && data.url.trim() !== "";
   const isSideways = (data.rotation || 0) % 180 !== 0;
-  const isTicket = data.type === 'TICKET'; // 🟢 Identify short artifacts
-
-  const PaperFallback = () => {
-    const doodles = ['♪', '✦', '★', '♡', '✌', '⚡', '♫', '◈'];
-    const doodle = doodles[charCode % doodles.length];
-    const [yr, mo, dy] = (data.date || '2026-01-01').split('-');
-    const searchUrl = `https://www.setlist.fm/search?query=${encodeURIComponent(`${data.band} ${mo}/${dy}/${yr}`)}`;
-
-    return (
-      <div className="scrap-paper" style={{ background: 'linear-gradient(160deg,#f5f0e8,#e8e0cc)', padding: '22px 16px 14px', boxShadow: '4px 8px 20px rgba(0,0,0,0.5)', position: 'relative', overflow: 'hidden', minHeight: 115, display: 'flex', flexDirection: 'column', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 3 }}>
-        {[0,1,2,3].map(j => <div key={j} style={{ position:'absolute', left:32, right:8, top:44+j*22, height:1, background:'rgba(150,180,220,0.45)' }} />)}
-        <div style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1.5, background: 'rgba(220,60,60,0.25)' }} />
-        <div style={{ position:'absolute', left:8, top:'40%', width:10, height:10, borderRadius:'50%', background:'rgba(0,0,0,0.08)', boxShadow:'inset 0 1px 2px rgba(0,0,0,0.15)' }} />
-        <div style={{ position:'absolute', bottom:8, right:10, fontFamily:"'Caveat',cursive", fontSize:'1.4rem', color:'rgba(0,0,0,0.12)', transform:'rotate(15deg)', userSelect:'none' }}>{doodle}</div>
-        <div style={{ paddingLeft: 14, flex: 1, position: 'relative', zIndex: 1 }}>
-          <div style={{ fontFamily: "'Caveat',cursive", fontSize: '1.8rem', fontWeight: 700, color: '#1a1a2e', lineHeight: 1, marginBottom: 4 }}>{data.band}</div>
-          <svg height="6" width="100%" style={{ marginBottom: 8, overflow:'visible' }}><path d="M2,3 Q30,1 60,4 Q90,6 120,3 Q150,1 180,4" stroke="#1a1a2e" strokeWidth="1.2" fill="none" strokeOpacity="0.15" strokeLinecap="round"/></svg>
-          <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.85rem', color: '#3a3a6e', lineHeight: 1.2 }}>{fmtDateShort(data.date)}</div>
-          <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.8rem', color: '#5a5a7e', lineHeight: 1.2 }}>{data.venue?.toUpperCase()}</div>
-        </div>
-        <a href={searchUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ alignSelf: 'flex-end', background: 'rgba(0,0,0,0.06)', color: '#1a1a2e', fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px', borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700, marginTop: 6 }}>SETLIST ↗</a>
-      </div>
-    );
-  };
+  const isTicket = data.type === 'TICKET';
 
   return (
     <div style={{
@@ -1241,7 +1217,10 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
       transform: `rotate(${r}deg)`,
       transition: 'transform 0.3s ease',
       animation: 'peel-and-stick 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards',
-      '--r': `${r}deg` 
+      '--r': `${r}deg`,
+      /* 🟢 FIX 1: Prevents the wrapper from growing taller than its contents */
+      alignSelf: 'flex-start',
+      width: '100%'
     }}>
       {/* Physical Tape */}
       <div style={{
@@ -1257,12 +1236,16 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
       {hasImg ? (
         <div style={{
           background: '#fff', padding: '4px', boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
-          display: 'block', flexDirection: 'column', borderRadius: 2, border: '1px solid #ddd',
+          /* 🟢 FIX 2: Switched to flex to ensure vertical stacking with no gaps */
+          display: 'flex', flexDirection: 'column', 
+          borderRadius: 2, border: '1px solid #ddd',
           width: '100%', boxSizing: 'border-box',
-          height: 'fit-content'
+          /* 🟢 FIX 3: Force the paper to collapse around the content */
+          height: 'auto',
+          overflow: 'hidden'
         }}>
           {/* HEADER */}
-          <div style={{ padding: '8px 4px 6px', textAlign: 'center', background: '#111', marginBottom: 4 }}>
+          <div style={{ padding: '8px 4px 6px', textAlign: 'center', background: '#111', marginBottom: 0 }}>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.4rem', color: '#fff', letterSpacing: '0.08em', lineHeight: 1 }}>
               {data.band.toUpperCase()}
             </div>
@@ -1277,7 +1260,11 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
             overflow: 'hidden', display: 'flex', 
             alignItems: 'center', justifyContent: 'center',
             width: '100%',
-            ...(isTicket ? { aspectRatio: '2.5 / 1' } : {})
+            /* 🟢 FIX 4: Rotation Logic. 
+               If sideways, we force a short aspect ratio so the container doesn't 
+               stay "tall" based on the original image orientation. */
+            aspectRatio: isTicket ? '2.5 / 1' : (isSideways ? '16 / 9' : 'auto'),
+            position: 'relative'
           }}>
             <img 
               src={data.url} 
@@ -1287,14 +1274,14 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
                 height: 'auto', 
                 display: 'block',
                 objectFit: 'contain', 
-                transform: `rotate(${data.rotation || 0}deg) scale(${isSideways ? 1.6 : 1})`,
+                transform: `rotate(${data.rotation || 0}deg) scale(${isSideways ? 1.4 : 1})`,
                 transition: 'transform 0.3s ease'
               }}
             />
           </div>
 
           {/* FOOTER */}
-          <div style={{ padding: '8px 6px', borderTop: '1px solid #f0f0f0' }}>
+          <div style={{ padding: '8px 6px', borderTop: '1px solid #f0f0f0', background: '#fff' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <div style={{ overflow: 'hidden', paddingRight: 10 }}>
                 <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '9px', color: '#000', fontWeight: 900, lineHeight: 1, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
