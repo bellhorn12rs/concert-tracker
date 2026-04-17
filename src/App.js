@@ -249,7 +249,31 @@ const HALL_OF_FAME_MIN = 6;
 const PER_PAGE = 40;
 
 // ─── GENRE CONFIG ─────────────────────────────────────────────────────────────
-const GENRES = ['Indie Rock','Alternative','Experimental','Electronic','Jam','Folk','Classic Rock','Pop','Hip Hop','Punk','R&B','Country','Metal','Other'];
+const GENRES = const GENRES = [
+  'Indie Rock', 
+  'Alternative', 
+  'Experimental', 
+  'Electronic', 
+  'Indietronica',
+  'EDM',
+  'Jam', 
+  'Folk', 
+  'Americana & Folk',
+  'Indie Pop',
+  'Pop', 
+  'Chamber Pop',
+  'Post-Punk & Garage', 
+  'Pop-Punk & Emo', 
+  'Punk',
+  'Classic Rock', 
+  'Hard Rock / Metal',
+  'Psychedelic', 
+  'Hip Hop / R&B', 
+  'Soul & Funk', 
+  'Country', 
+  'Specialty',
+  'Other'
+];
 const GENRE_COLORS = {
   'Indie Rock':'#00f2ff','Alternative':'#9d00ff','Experimental':'#ff00ff',
   'Electronic':'#ff0077','Jam':'#ffcc00','Folk':'#ffaa00','Classic Rock':'#ff4400',
