@@ -4667,16 +4667,35 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   THE BRIDGE: This part closes the main App component before the tabs begin.
+   THE BRIDGE: Properly closing the main content area and App component
    ───────────────────────────────────────────────────────────────────────────── */
-
+   
         </main>
+
+        {/* MODALS LAYER */}
+        {isAdmin && nudgeTarget && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
+            <div style={{ textAlign: 'center', maxWidth: 500, padding: 40 }}>
+              <div style={{ fontSize: '4rem', marginBottom: 20, animation: 'pulse 2s infinite' }}>📡</div>
+              <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: C.teal, lineHeight: 1 }}>SIGNAL DETECTED</h2>
+              <p style={{ fontFamily: "'Space Mono'", fontSize: 12, color: '#fff', marginBottom: 30 }}>THE ARCHIVE DETECTED A RECENT SHOW: <br/><span style={{ color: C.gold, fontSize: '1.5rem' }}>{nudgeTarget.artist.toUpperCase()}</span><br/>WAS AT {nudgeTarget.venue.toUpperCase()} ON {nudgeTarget.date}.</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
+                <button onClick={() => { setEditTarget({ ...nudgeTarget, isNudge: true }); setNudgeTarget(null); }} style={{ padding: '20px', background: C.teal, color: '#000', border: 'none', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}>ARCHIVE NOW</button>
+                <button onClick={() => setNudgeTarget(null)} style={{ padding: '20px', background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}>IGNORE SIGNAL</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+        {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
+        {editTarget && <EditModal concert={editTarget === 'new' ? 'new' : editTarget} onClose={() => setEditTarget(null)} onSave={editTarget?.isNudge ? (id, payload) => handleReconcile(editTarget.id, payload) : handleSave} onDelete={handleDelete} allConcerts={concerts} />}
+        {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
       </div>
      </div>
     </div>
   </ThemeContext.Provider>
  );
-} // 🟢 THIS BRACKET CLOSES THE APP COMPONENT
+} // 🟢 CLOSES APP COMPONENT
 
 // ─── MANAGE TAB (FIXED SYNTAX) ───────────────────────────────────────────────
 function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
