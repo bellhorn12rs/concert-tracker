@@ -1144,18 +1144,28 @@ function OnThisDay({ concerts }) {
 }
 
 // ─── SETLIST SPOTLIGHT ATOM (POSTER EDITION) ──────────────────────────
-// ─── SETLIST SPOTLIGHT ATOM (RESIZED POSTER EDITION) ──────────────────────────
+// ─── ARTIFACT SPOTLIGHT ATOM (MULTI-MEDIA & ROTATION SUPPORT) ───────────────
 const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
   if (!data) return null;
   const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
   const r = isTop ? (charCode % 4) - 3 : (charCode % 4) + 1;
   const tapeColor = TAPE_COLORS[charCode % TAPE_COLORS.length];
-  const hasImg = data.image_url && data.image_url.trim() !== "";
+  
+  // We check for the new universal 'url' property instead of 'image_url'
+  const hasImg = data.url && data.url.trim() !== "";
+  
+  // Check if the image needs the sideways scaling fix
+  const isSideways = (data.rotation || 0) % 180 !== 0;
 
   // Helper for the "Notebook Fallback" (to keep things clean)
   const PaperFallback = () => {
     const doodles = ['♪', '✦', '★', '♡', '✌', '⚡', '♫', '◈'];
     const doodle = doodles[charCode % doodles.length];
+    
+    // Generate a fallback search URL since it wasn't passed directly
+    const [yr, mo, dy] = (data.date || '2026-01-01').split('-');
+    const searchUrl = `https://www.setlist.fm/search?query=${encodeURIComponent(`${data.band} ${mo}/${dy}/${yr}`)}`;
+
     return (
       <div className="scrap-paper" style={{ background: 'linear-gradient(160deg,#f5f0e8,#e8e0cc)', padding: '22px 16px 14px', boxShadow: '4px 8px 20px rgba(0,0,0,0.5)', position: 'relative', overflow: 'hidden', minHeight: 115, display: 'flex', flexDirection: 'column', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 3 }}>
         {[0,1,2,3].map(j => <div key={j} style={{ position:'absolute', left:32, right:8, top:44+j*22, height:1, background:'rgba(150,180,220,0.45)' }} />)}
@@ -1168,7 +1178,7 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
           <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.85rem', color: '#3a3a6e', lineHeight: 1.2 }}>{fmtDateShort(data.date)}</div>
           <div style={{ fontFamily: "'Caveat',cursive", fontSize: '0.8rem', color: '#5a5a7e', lineHeight: 1.2 }}>{data.venue?.toUpperCase()}</div>
         </div>
-        <a href={data.sfmUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ alignSelf: 'flex-end', background: 'rgba(0,0,0,0.06)', color: '#1a1a2e', fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px', borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700, marginTop: 6 }}>SETLIST ↗</a>
+        <a href={searchUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ alignSelf: 'flex-end', background: 'rgba(0,0,0,0.06)', color: '#1a1a2e', fontSize: 6, fontFamily: "'Space Mono'", padding: '3px 7px', borderRadius: 2, textDecoration: 'none', border: '1px solid rgba(0,0,0,0.1)', fontWeight: 700, marginTop: 6 }}>SETLIST ↗</a>
       </div>
     );
   };
@@ -1195,7 +1205,7 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
       }} />
 
       {hasImg ? (
-        /* THE POSTER STACK */
+        /* THE ARTIFACT STACK */
         <div style={{
           background: '#fff',
           padding: '4px',
@@ -1206,11 +1216,11 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
           border: '1px solid #ddd',
           minHeight: 320
         }}>
-          {/* HEADER: Dedicated space for the band */}
+          {/* HEADER: Dedicated space for the band + Artifact Type */}
           <div style={{ 
             padding: '10px 4px 8px', 
             textAlign: 'center',
-            background: '#111', // High contrast black header
+            background: '#111', 
             marginBottom: 4
           }}>
             <div style={{ 
@@ -1222,25 +1232,32 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
             }}>
               {data.band.toUpperCase()}
             </div>
+            {/* 🟢 NEW: Displays "TICKET STUB", "GIG POSTER", etc. */}
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: tapeColor, letterSpacing: 1, marginTop: 3, fontWeight: 900 }}>
+              {data.label || 'ARTIFACT'}
+            </div>
           </div>
 
-          {/* IMAGE: Constrained to its own box */}
+          {/* IMAGE: Constrained with Contain & Rotation Support */}
           <div style={{ 
             flex: 1, 
             background: '#000', 
             overflow: 'hidden',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            minHeight: '200px'
           }}>
             <img 
-              src={data.image_url} 
+              src={data.url} 
               alt={data.band}
               style={{ 
                 width: '100%', 
                 height: 'auto', 
                 maxHeight: '220px', 
-                objectFit: 'contain' // Contain ensures the full setlist text is visible
+                objectFit: 'contain',
+                transform: `rotate(${data.rotation || 0}deg) scale(${isSideways ? 1.6 : 1})`,
+                transition: 'transform 0.3s ease'
               }}
             />
           </div>
@@ -1251,8 +1268,8 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
             borderTop: '2px solid #f0f0f0'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-              <div>
-                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '9px', color: '#000', fontWeight: 900, lineHeight: 1 }}>
+              <div style={{ overflow: 'hidden', paddingRight: 10 }}>
+                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '9px', color: '#000', fontWeight: 900, lineHeight: 1, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                   {data.venue?.toUpperCase() || 'UNKNOWN VENUE'}
                 </div>
                 <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '8px', color: '#888', marginTop: 3 }}>
@@ -1261,7 +1278,7 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
               </div>
               
               <a
-                href={data.sfmUrl}
+                href={`https://www.setlist.fm/search?query=${encodeURIComponent(`${data.band} ${data.date?.replace(/-/g, '/')}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={e => e.stopPropagation()}
@@ -1269,10 +1286,11 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
                   background: C.gold, color: '#000',
                   fontSize: 7, fontFamily: "'Space Mono'", padding: '3px 7px',
                   borderRadius: 2, textDecoration: 'none', fontWeight: 900,
-                  boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                  flexShrink: 0
                 }}
               >
-                SETLIST ↗
+                ARCHIVE ↗
               </a>
             </div>
             
@@ -1290,55 +1308,57 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
     </div>
   );
 };
-// ─── MAIN SETLIST SPOTLIGHT COMPONENT (HORIZONTAL MULTI-IMAGE EDITION) ──────
-function SetlistSpotlight({ concerts, onVault }) {
+// ─── MAIN ARTIFACT SPOTLIGHT COMPONENT (ALL-MEDIA EDITION) ──────────────────
+function ArtifactSpotlight({ concerts, onVault }) {
   const [topIdx, setTopIdx] = useState(0);
   const [botIdx, setBotIdx] = useState(1);
-
-  const vault = useMemo(() => 
-    concerts.filter(c => c.has_setlist || c.has_setlist_names?.trim()), 
-    [concerts]
-  );
   
   const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
 
   const slides = useMemo(() => {
-    if (!vault.length) return [];
+    if (!concerts || !concerts.length) return [];
     
-    // 1. Flatten the vault into individual band slides
-    const flattened = [];
-    vault.forEach(s => {
-      const bandNames = s.has_setlist_names?.split(',').map(b => b.trim()).filter(Boolean) || [];
-      const imageLinks = (s.image_url || '').split(',').map(img => img.trim()).filter(Boolean);
+    const artifacts = [];
+    
+    // 1. Scavenge all non-polaroid images from the archive
+    concerts.forEach(c => {
+      const band = getBandName(c.bands?.[0]) || c.artist || 'UNKNOWN ARTIST';
+      const venue = c.is_festival ? c.festival_name : c.venue;
 
-      bandNames.forEach((band, idx) => {
-        // Pair band with its image, or fall back to the first image
-        const img = imageLinks[idx] || (imageLinks.length === 1 ? imageLinks[0] : null);
-        
-        flattened.push({
-          id: `${s.id}-${band}`, // Unique ID for this specific setlist
-          band: band,
-          date: s.date,
-          venue: s.venue,
-          is_festival: s.is_festival,
-          festival_name: s.festival_name,
-          image_url: img, 
-          sfmUrl: `https://www.setlist.fm/search?query=${encodeURIComponent(band)}+${encodeURIComponent(s.date)}`
+      const extract = (urlStr, type, label) => {
+        if (!urlStr) return;
+        urlStr.split(',').map(u => u.trim()).filter(Boolean).forEach((url, i) => {
+          artifacts.push({
+            id: `${c.id}-${type}-${i}`,
+            url: url.split('#rot=')[0], // Clean URL
+            rotation: url.includes('#rot=') ? parseInt(url.split('#rot=')[1], 10) : 0,
+            type,
+            label,
+            band,
+            venue,
+            date: c.date
+          });
         });
-      });
+      };
+
+      extract(c.image_url, 'TICKET', 'TICKET STUB');
+      extract(c.setlist_image_url, 'SETLIST', 'STAGE ARTIFACT');
+      extract(c.festival_poster_url, 'POSTER', 'GIG POSTER');
     });
 
-    // 2. Sort by date so the newest is always available for the first slot
-    const sorted = [...flattened].sort((a, b) => b.date.localeCompare(a.date));
+    if (!artifacts.length) return [];
+
+    // 2. Sort by date so the newest artifact is always in slot 0
+    const sorted = artifacts.sort((a, b) => b.date.localeCompare(a.date));
     
-    // 3. Keep the newest, and shuffle the rest for the remaining 19 slots
+    // 3. Keep the newest, and shuffle the rest for the remaining slots
     const newest = sorted[0];
     const pool = sorted.slice(1).sort(() => 0.5 - Math.random());
     
     return [newest, ...pool].slice(0, 20);
-  }, [vault]);
+  }, [concerts]);
 
-  // Logic remains untouched (Recursive Sync-Killer)
+  // Flip Timer Logic
   useEffect(() => {
     if (slides.length < 2) return;
     let timer;
@@ -1357,7 +1377,12 @@ function SetlistSpotlight({ concerts, onVault }) {
     return () => clearTimeout(timer);
   }, [slides.length]);
 
-  if (!slides.length) return null;
+  if (!slides.length) return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: C.grayDim }}>
+       <div style={{ fontSize: '3rem', opacity: 0.2 }}>🗃️</div>
+       <div style={{ fontFamily: "'Space Mono'", fontSize: 9, letterSpacing: 2, marginTop: 10 }}>NO ARTIFACTS SCANNED</div>
+    </div>
+  );
 
   const leftSlide = slides[topIdx % slides.length];
   const rightSlide = slides[botIdx % slides.length];
@@ -1365,29 +1390,16 @@ function SetlistSpotlight({ concerts, onVault }) {
   return (
     <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
       <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 20, textTransform: 'uppercase', textAlign: 'center', opacity: 0.4 }}>
-        📋 BACKSTAGE LOG
+        📋 ARTIFACT SPOTLIGHT
       </div>
       
       <div style={{ 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'row', 
-        gap: '12px',         
-        padding: '0 4px',
-        alignItems: 'flex-start' 
+        flex: 1, display: 'flex', flexDirection: 'row', gap: '12px', padding: '0 4px', alignItems: 'flex-start' 
       }}>
-        <SpotlightScrap 
-          key={`left-${leftSlide.id}`} // Using slide ID ensures the "peel-and-stick" animation triggers correctly
-          data={leftSlide} 
-          isTop={true} 
-          TAPE_COLORS={TAPE_COLORS} 
-        />
-        <SpotlightScrap 
-          key={`right-${rightSlide.id}`} 
-          data={rightSlide} 
-          isTop={false} 
-          TAPE_COLORS={TAPE_COLORS} 
-        />
+        <SpotlightScrap key={`left-${leftSlide.id}`} data={leftSlide} isTop={true} TAPE_COLORS={TAPE_COLORS} />
+        {slides.length > 1 && (
+          <SpotlightScrap key={`right-${rightSlide.id}`} data={rightSlide} isTop={false} TAPE_COLORS={TAPE_COLORS} />
+        )}
       </div>
     </div>
   );
