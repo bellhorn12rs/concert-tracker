@@ -1206,18 +1206,21 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
   
   const hasImg = data.url && data.url.trim() !== "";
   const isSideways = (data.rotation || 0) % 180 !== 0;
-  const isTicket = data.type === 'TICKET';
+  const isTicket = data.label?.toUpperCase() === 'TICKET STUB' || data.type === 'TICKET';
 
   return (
     <div style={{
-      flex: '1 1 0px', // 🟢 Force columns to be equal width
-      minWidth: 0,     // 🟢 Prevent flex-overflow
+      flex: 'none',
       position: 'relative',
       zIndex: isTop ? 2 : 1,
       transform: `rotate(${r}deg)`,
+      transition: 'transform 0.3s ease',
       animation: 'peel-and-stick 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards',
       '--r': `${r}deg`,
-      alignSelf: 'flex-start' // 🟢 Prevent stretching to neighbor's height
+      /* 🟢 THE CRITICAL ADDITION: This stops the card from stretching vertically 
+         to match its neighbor in a Flex row (the Paper Trail view) */
+      alignSelf: 'flex-start',
+      width: '100%'
     }}>
       {/* Physical Tape */}
       <div style={{
@@ -1226,17 +1229,21 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
         width: 46, height: 16,
         background: tapeColor,
         opacity: 0.85, borderRadius: 1, zIndex: 30,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+        animation: 'tape-slam 0.4s 0.6s both'
       }} />
 
       {hasImg ? (
         <div style={{
           background: '#fff', padding: '4px', boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
-          display: 'flex', flexDirection: 'column', borderRadius: 2, border: '1px solid #ddd',
+          /* 🟢 BACK TO BLOCK: Flex on this specific div was causing 
+             vertical stretching issues in some browsers */
+          display: 'block', 
+          borderRadius: 2, border: '1px solid #ddd',
           width: '100%', boxSizing: 'border-box'
         }}>
           {/* HEADER */}
-          <div style={{ padding: '8px 4px 6px', textAlign: 'center', background: '#111' }}>
+          <div style={{ padding: '8px 4px 6px', textAlign: 'center', background: '#111', marginBottom: 4 }}>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.4rem', color: '#fff', letterSpacing: '0.08em', lineHeight: 1 }}>
               {data.band.toUpperCase()}
             </div>
@@ -1245,37 +1252,34 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
             </div>
           </div>
 
-          {/* 🟢 THE IMAGE BOX (THE FIX) */}
+          {/* 🟢 IMAGE BOX: Centers rotated images without pushing the footer down */}
           <div style={{ 
             background: '#000', 
+            overflow: 'hidden', display: 'flex', 
+            alignItems: 'center', justifyContent: 'center',
             width: '100%',
-            /* 🟢 FORCE A COMPACT HEIGHT FOR SIDEWAYS SETLISTS */
-            aspectRatio: isTicket ? '2.5 / 1' : (isSideways ? '1.8 / 1' : 'auto'),
-            position: 'relative',
-            overflow: 'hidden',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+            /* 🟢 ONLY force ratio for tickets on the dashboard. 
+               Setlists get 'auto' so the paper trims to the image height. */
+            aspectRatio: isTicket ? '2.5 / 1' : 'auto',
+            minHeight: hasImg ? 100 : 0
           }}>
             <img 
               src={data.url} 
               alt={data.band}
               style={{ 
-                /* 🟢 When rotated, we use height as the primary driver to shrink the footprint */
-                maxHeight: isSideways ? '100%' : 'none',
-                maxWidth: '100%',
-                width: isSideways ? 'auto' : '100%',
-                height: 'auto',
+                width: '100%', 
+                height: 'auto', 
                 display: 'block',
                 objectFit: 'contain', 
-                transform: `rotate(${data.rotation || 0}deg) scale(${isSideways ? 1.4 : 1})`,
+                /* Rotation and Scaling logic from your working build */
+                transform: `rotate(${data.rotation || 0}deg) scale(${isSideways ? 1.6 : 1})`,
                 transition: 'transform 0.3s ease'
               }}
             />
           </div>
 
           {/* FOOTER */}
-          <div style={{ padding: '8px 6px', borderTop: '1px solid #f0f0f0', background: '#fff' }}>
+          <div style={{ padding: '8px 6px', borderTop: '1px solid #f0f0f0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <div style={{ overflow: 'hidden', paddingRight: 10 }}>
                 <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '9px', color: '#000', fontWeight: 900, lineHeight: 1, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
@@ -1288,7 +1292,7 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
               <a
                 href={`https://www.setlist.fm/search?query=${encodeURIComponent(`${data.band} ${data.date?.replace(/-/g, '/')}`)}`}
                 target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                style={{ background: C.gold, color: '#000', fontSize: 7, fontFamily: "'Space Mono'", padding: '3px 7px', borderRadius: 2, textDecoration: 'none', fontWeight: 900, flexShrink: 0 }}
+                style={{ background: C.gold, color: '#000', fontSize: 7, fontFamily: "'Space Mono'", padding: '3px 7px', borderRadius: 2, textDecoration: 'none', fontWeight: 900, boxShadow: '0 2px 5px rgba(0,0,0,0.1)', flexShrink: 0 }}
               >
                 ARCHIVE ↗
               </a>
