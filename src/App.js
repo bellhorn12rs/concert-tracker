@@ -249,7 +249,7 @@ const HALL_OF_FAME_MIN = 6;
 const PER_PAGE = 40;
 
 // ─── GENRE CONFIG ─────────────────────────────────────────────────────────────
-const GENRES = const GENRES = [
+const GENRES = [
   'Indie Rock', 
   'Alternative', 
   'Experimental', 
