@@ -1276,17 +1276,33 @@ function ArtifactSpotlight({ concerts, onVault }) {
     
     // 1. Extract all artifacts
     concerts.forEach(c => {
-      const band = getBandName(c.bands?.[0]) || c.artist || 'UNKNOWN ARTIST';
+      const headliner = getBandName(c.bands?.[0]) || c.artist || 'UNKNOWN ARTIST';
       const venue = c.is_festival ? c.festival_name : c.venue;
+      
+      // 🟢 THE FIX: Grab the specific setlist names array from the database
+      const setlistBands = c.has_setlist_names ? c.has_setlist_names.split(',').map(b => b.trim()) : [];
 
       const extract = (urlStr, type, label) => {
         if (!urlStr) return;
         urlStr.split(',').map(u => u.trim()).filter(Boolean).forEach((url, i) => {
+          
+          // 🟢 THE FIX: Map the image index to the correct band name
+          let specificBand = headliner;
+          if (type === 'SETLIST') {
+            specificBand = setlistBands[i] || headliner; // Match Image 2 to Band 2
+          } else if (c.is_festival && type !== 'SETLIST') {
+            specificBand = c.festival_name || headliner; // Posters/Tickets get the Fest Name
+          }
+
           artifacts.push({
             id: `${c.id}-${type}-${i}`,
             url: url.split('#rot=')[0],
             rotation: url.includes('#rot=') ? parseInt(url.split('#rot=')[1], 10) : 0,
-            type, label, band, venue, date: c.date
+            type, 
+            label, 
+            band: specificBand, // Using the accurately mapped band
+            venue, 
+            date: c.date
           });
         });
       };
@@ -1330,7 +1346,7 @@ function ArtifactSpotlight({ concerts, onVault }) {
     const newestCol = cols[0];
     const pool = cols.slice(1).sort(() => 0.5 - Math.random());
     
-    return [newestCol, ...pool].slice(0, 10); // Keep max 10 columns to cycle through
+    return [newestCol, ...pool].slice(0, 10); 
   }, [concerts]);
 
   // Flip Timer Logic
