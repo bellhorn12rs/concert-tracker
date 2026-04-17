@@ -4675,7 +4675,50 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
   const handleCSVUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    alert("PARSING SIGNAL... This will simulate importing your historical spreadsheet into the archive.");
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target.result;
+        // Split rows and filter out empty ones
+        const rows = text.split(/\r?\n/).map(r => r.trim()).filter(Boolean);
+        const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
+        const dataRows = rows.slice(1);
+        
+        // Map the CSV columns to your Database schema
+        const newShows = dataRows.map(row => {
+          const values = row.split(',');
+          const entry = {};
+          headers.forEach((h, i) => { entry[h] = values[i]; });
+
+          return {
+            date: entry.date || null,
+            // Split lineup by semicolon to support multiple artists per show
+            bands: entry.lineup ? entry.lineup.split(';').map(b => b.trim()) : [entry.headliner],
+            venue: entry.venue || null,
+            city: entry.city || null,
+            state: entry.state || null,
+            is_festival: entry.is_festival?.toUpperCase() === 'TRUE',
+            festival_name: entry.festival_name || null,
+            user_id: session?.user?.id, // Stamps it with the logged-in user's ID
+            is_public: true,
+            date_added: new Date().toISOString()
+          };
+        });
+
+        if (window.confirm(`📡 SIGNAL ANALYZED: Found ${newShows.length} shows. Synchronize to museum archive?`)) {
+          const { error } = await supabase.from('concerts').insert(newShows);
+          if (error) throw error;
+          
+          alert("✅ ARCHIVE UPDATED: Your historical signals have been curated.");
+          window.location.reload(); // Refresh to see the new exhibits on the dashboard
+        }
+      } catch (err) {
+        console.error("Office sync failed:", err);
+        alert("❌ SYNC ERROR: Check your CSV format. " + err.message);
+      }
+    };
+    reader.readAsText(file);
   };
 
   const filtered = useMemo(() => {
