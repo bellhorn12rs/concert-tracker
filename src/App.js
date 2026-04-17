@@ -1663,18 +1663,18 @@ function RandomShow({ concerts }) {
   );
 }
 // ─── SONIC DNA BAR CHART (ALL GENRES EDITION) ───────────────────────────
+// ─── SONIC DNA BAR CHART (FLEXIBLE HEIGHT EDITION) ───────────────────────────
 function SonicDNA({ stats, onGenreClick }) {
   if (!stats || !stats.length) return null;
   const max = Math.max(...stats.map(s => s.count));
 
   return (
-    <Card neon style={{ display: 'flex', flexDirection: 'column', height: 480 }}>
+    <Card neon style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <CardTitle>SONIC DNA 🧬</CardTitle>
       {/* Hidden scrollbar container */}
-      <div className="hide-scroll" style={{ flex: 1, overflowY: 'auto', paddingRight: 15, display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div className="hide-scroll" style={{ flex: 1, overflowY: 'auto', paddingRight: 15, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <style>{`.hide-scroll::-webkit-scrollbar { display: none; }`}</style>
         
-        {/* 🟢 NO LIMITS: Maps every single genre that has at least 1 show */}
         {stats.filter(s => s.count > 0).map((s, i) => {
           const pct = Math.round((s.count / max) * 100);
           const color = GENRE_COLORS[s.name] || C.teal;
@@ -1684,20 +1684,17 @@ function SonicDNA({ stats, onGenreClick }) {
                  style={{ cursor: 'pointer', transition: 'all 0.2s' }} 
                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateX(5px)'; e.currentTarget.style.filter = 'brightness(1.3)'; }} 
                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.filter = 'none'; }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontFamily: "'Space Mono'", fontSize: 10, fontWeight: 900 }}>
-                {/* High opacity text shadow to punch through the black */}
-                <span style={{ color: '#fff', textShadow: `0 0 8px ${color}` }}>{s.name.toUpperCase()}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontFamily: "'Space Mono'", fontSize: 9, fontWeight: 900 }}>
+                <span style={{ color: '#fff', textShadow: `0 0 8px ${color}`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name.toUpperCase()}</span>
                 <span style={{ color: color }}>{s.count}</span>
               </div>
-              {/* Brighter track background so you can see the scale */}
-              <div style={{ width: '100%', background: 'rgba(255,255,255,0.15)', height: 12, borderRadius: 6, overflow: 'hidden', border: `1px solid ${C.border}` }}>
-                <div style={{ width: `${pct}%`, height: '100%', background: color, boxShadow: `0 0 15px ${color}, inset 0 0 5px rgba(255,255,255,0.5)` }} />
+              <div style={{ width: '100%', background: 'rgba(255,255,255,0.1)', height: 8, borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ width: `${pct}%`, height: '100%', background: color, boxShadow: `0 0 10px ${color}` }} />
               </div>
             </div>
           );
         })}
       </div>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, textAlign: 'center', marginTop: 15, letterSpacing: 1 }}>CLICK GENRE TO BROWSE ARCHIVE</div>
     </Card>
   );
 }
@@ -6290,60 +6287,34 @@ useEffect(() => {
       </div>
 
       {/* --- THE BACKSTAGE PASS & SPOTLIGHT ROW --- */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
+      {/* ─── ROW 2: ROTATION, CITIES, SPOTLIGHT (3 COLUMNS) ─── */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
         
-        {/* 🟢 HEAVY ROTATION (VIP LAMINATES) */}
-        <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <CardTitle>HEAVY ROTATION // AAA LAMINATES</CardTitle>
-          <div className="hide-scroll" style={{ flex: 1, overflowY: 'auto', paddingRight: 8, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <style>{`.hide-scroll::-webkit-scrollbar { display: none; }`}</style>
-            
-            {/* Lowered the filter to >= 3 so you get more badges to scroll through! */}
+        {/* 1. HEAVY ROTATION (FIXED TEXT & WIDTH) */}
+        <Card neon style={{ height: 380, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <CardTitle>HEAVY ROTATION</CardTitle>
+          <div className="hide-scroll" style={{ flex: 1, overflowY: 'auto', paddingRight: 4, display: 'flex', flexDirection: 'column', gap: 10 }}>
             {artistCounts.filter(a => a.count >= 3).map((a, i) => {
-              // Vibrant neon rotation so the passes pop aggressively against black
               const VIP_PALETTE = [
-                { main: '#00f2ff', bg: 'rgba(0, 242, 255, 0.2)' }, // Cyan
-                { main: '#ff0055', bg: 'rgba(255, 0, 85, 0.2)' },   // Pink/Red
-                { main: '#ccff00', bg: 'rgba(204, 255, 0, 0.2)' }, // Neon Lime
-                { main: '#9d00ff', bg: 'rgba(157, 0, 255, 0.2)' }, // Purple
-                { main: '#ffaa00', bg: 'rgba(255, 170, 0, 0.2)' }  // Orange
+                { main: '#00f2ff', bg: 'rgba(0, 242, 255, 0.15)' },
+                { main: '#ff0055', bg: 'rgba(255, 0, 85, 0.15)' },
+                { main: '#ccff00', bg: 'rgba(204, 255, 0, 0.15)' },
+                { main: '#9d00ff', bg: 'rgba(157, 0, 255, 0.15)' },
+                { main: '#ffaa00', bg: 'rgba(255, 170, 0, 0.15)' }
               ];
               const c = VIP_PALETTE[i % VIP_PALETTE.length];
 
               return (
-                <div key={a.name} 
-                     onClick={() => { setSearch(a.name); setBrowseView('shows'); setActiveTab('browse'); }} 
-                     style={{ 
-                       display: 'flex', alignItems: 'center', 
-                       background: `linear-gradient(135deg, rgba(20,20,25,0.8) 0%, ${c.bg} 100%)`, 
-                       border: `1px solid ${c.main}`, // Bright solid border so it doesn't wash out
-                       borderLeft: `8px solid ${c.main}`, // Thick lanyard edge
-                       borderRadius: '8px', 
-                       padding: '12px 16px', 
-                       cursor: 'pointer', 
-                       position: 'relative',
-                       overflow: 'hidden',
-                       boxShadow: `0 6px 20px rgba(0,0,0,0.8), inset 0 0 20px ${c.bg}`
-                     }}
-                     onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-                     onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                  {/* Physical Lanyard Hole Punch */}
-                  <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#0a0a0a', border: `2px solid ${c.main}`, marginRight: 15, boxShadow: 'inset 0 4px 6px rgba(0,0,0,0.9), 0 0 8px rgba(255,255,255,0.3)' }} />
-                  
-                  {/* Ghost Watermark - opacity boosted to 0.2 so it actually shows up! */}
-                  <div style={{ position: 'absolute', right: '-2%', top: '-15%', fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: c.main, opacity: 0.2, pointerEvents: 'none', lineHeight: 1 }}>
-                    {a.count}X
+                <div key={a.name} onClick={() => { setSearch(a.name); setBrowseView('shows'); setActiveTab('browse'); }} 
+                     style={{ display: 'flex', alignItems: 'center', background: `linear-gradient(135deg, rgba(20,20,25,0.8) 0%, ${c.bg} 100%)`, border: `1px solid ${c.main}`, borderLeft: `4px solid ${c.main}`, borderRadius: 6, padding: '8px 10px', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#0a0a0a', border: `1.5px solid ${c.main}`, marginRight: 10, flexShrink: 0 }} />
+                  {/* 🟢 FIXED: Text Truncation so long names don't break the box */}
+                  <div style={{ flex: 1, zIndex: 2, minWidth: 0 }}>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#fff', letterSpacing: 1, marginBottom: 1, fontWeight: 900 }}>ALL ACCESS</div>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff', textShadow: `0 0 8px ${c.main}`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.name.toUpperCase()}</div>
                   </div>
-
-                  <div style={{ flex: 1, zIndex: 2 }}>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff', letterSpacing: 2, marginBottom: 2, fontWeight: 900 }}>ALL ACCESS</div>
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', textShadow: `0 0 8px ${c.main}` }}>{a.name.toUpperCase()}</div>
-                  </div>
-                  
-                  <div style={{ zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#000', border: `1px solid ${c.main}`, padding: '4px 12px', borderRadius: 6, boxShadow: `0 0 10px ${c.bg}` }}>
-                    <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#fff', fontWeight: 900 }}>SCANS</span>
-                    <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: c.main, lineHeight: 1 }}>{a.count}</span>
+                  <div style={{ zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#000', border: `1px solid ${c.main}`, padding: '2px 8px', borderRadius: 4, marginLeft: 8 }}>
+                    <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: c.main, lineHeight: 1 }}>{a.count}</span>
                   </div>
                 </div>
               );
@@ -6351,39 +6322,108 @@ useEffect(() => {
           </div>
         </Card>
 
-        <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column' }}>
+        {/* 2. CITY FOOTPRINT (NEW!) */}
+        <Card neon style={{ height: 380, display: 'flex', flexDirection: 'column' }}>
+          <CardTitle>CITY FOOTPRINT 📍</CardTitle>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12 }}>
+            {(() => {
+              const counts = {};
+              concerts.forEach(c => { if(c.city) { const city = c.city.split(',')[0].toUpperCase(); counts[city] = (counts[city] || 0) + 1; }});
+              const topCities = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 5);
+              
+              return topCities.map(([city, count], idx) => (
+                <div key={city} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${C.border}`, paddingBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, opacity: 0.5 }}>0{idx + 1}</div>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', letterSpacing: 1, textShadow: `0 0 10px ${C.teal}44` }}>{city}</div>
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 12, color: C.teal, fontWeight: 900 }}>{count}</div>
+                </div>
+              ));
+            })()}
+          </div>
+        </Card>
+
+        {/* 3. ARTIFACT SPOTLIGHT */}
+        <Card neon style={{ height: 380, display: 'flex', flexDirection: 'column' }}>
           <ArtifactSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
         </Card>
       </div>
 
-      {/* --- THE UNLEASHED DNA ROW --- */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, paddingBottom: 40 }}>
+      {/* ─── ROW 3: DNA, WEB, RHYTHM, VAULT (4 COLUMNS) ─── */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 1fr', gap: 20, paddingBottom: 40 }}>
         
-        {/* The Uncapped Bar Chart */}
-        <SonicDNA stats={genreStats} onGenreClick={handleGenreClick} />
+        {/* 1. SONIC DNA */}
+        <div style={{ height: 300 }}><SonicDNA stats={genreStats} onGenreClick={handleGenreClick} /></div>
         
-        {/* The Uncapped Radar "Geode" Chart */}
-        <Card neon style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 300, overflow: 'hidden', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: 20, fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, letterSpacing: 2, fontWeight: 900 }}>// FULL SPECTRUM ANALYSIS</div>
-          
+        {/* 2. DNA WEB GEODE */}
+        <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+          <div style={{ position: 'absolute', top: 15, fontFamily: "'Space Mono'", fontSize: 9, color: C.teal, letterSpacing: 2, fontWeight: 900 }}>// FULL SPECTRUM</div>
           {(() => {
-            const allValidGenres = genreStats.filter(g => g.count > 0);
-            if (allValidGenres.length < 3) return <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.grayDim }}>AWAITING MORE GENRE DATA...</div>;
-
-            const maxCount = allValidGenres[0].count; // Array is already sorted by count
+            const allValid = genreStats.filter(g => g.count > 0);
+            if (allValid.length < 3) return <div style={{ fontSize: 10, color: C.grayDim }}>AWAITING DATA...</div>;
+            const maxCount = allValid[0].count;
             const scores = {};
-            
-            // 🟢 NO LIMITS: Throw absolutely everything into the radar web
-            allValidGenres.forEach(g => {
-              scores[g.name] = Math.round((g.count / maxCount) * 100);
-            });
-
-            return (
-              <div style={{ transform: 'scale(1.1)', marginTop: 20 }}>
-                <SetlistDNA genreScores={scores} />
-              </div>
-            );
+            allValid.forEach(g => { scores[g.name] = Math.round((g.count / maxCount) * 100); });
+            return <div style={{ transform: 'scale(0.85)', marginTop: 20 }}><SetlistDNA genreScores={scores} /></div>;
           })()}
+        </Card>
+
+        {/* 3. THE RHYTHM (NEW EQ VISUALIZER!) */}
+        <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <CardTitle>THE RHYTHM 🔊</CardTitle>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '20px 10px 0' }}>
+            {(() => {
+              const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+              const counts = [0,0,0,0,0,0,0];
+              concerts.forEach(c => { if(c.date) counts[new Date(c.date + 'T12:00:00').getDay()]++; });
+              const max = Math.max(...counts, 1);
+              
+              return days.map((day, i) => {
+                const heightPct = Math.max((counts[i] / max) * 100, 5); // min 5% height so empty days still show a dot
+                const isWeekend = day === 'FRI' || day === 'SAT';
+                const barColor = isWeekend ? C.gold : C.teal;
+                return (
+                  <div key={day} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, width: '12%', height: '100%', justifyContent: 'flex-end' }}>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff' }}>{counts[i] || ''}</div>
+                    <div style={{ width: '100%', height: `${heightPct}%`, background: `linear-gradient(to top, ${barColor}22, ${barColor})`, borderRadius: '4px 4px 0 0', boxShadow: `0 -5px 15px ${barColor}66` }} />
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: isWeekend ? '#fff' : C.gray, fontWeight: isWeekend ? 900 : 400 }}>{day[0]}</div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </Card>
+
+        {/* 4. VAULT DIAGNOSTICS (NEW TERMINAL!) */}
+        <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', background: '#050508' }}>
+          <CardTitle>DIAGNOSTICS 💻</CardTitle>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 15, fontFamily: "'Space Mono'", fontSize: 11 }}>
+            {(() => {
+              const uniqueBands = new Set();
+              let firstDate = '2099-01-01';
+              let totalMedia = 0;
+              concerts.forEach(c => {
+                (c.bands || []).forEach(b => uniqueBands.add(b));
+                if (c.date && c.date < firstDate) firstDate = c.date;
+                if (c.image_url) totalMedia++;
+                if (c.setlist_image_url) totalMedia++;
+                if (c.personal_photo_url) totalMedia++;
+              });
+              
+              return (
+                <>
+                  <div><span style={{ color: C.gray }}>SYS.BANDS_LOGGED:</span> <span style={{ color: C.gold, fontWeight: 900, textShadow: `0 0 8px ${C.gold}` }}>{uniqueBands.size}</span></div>
+                  <div><span style={{ color: C.gray }}>SYS.TOTAL_EVENTS:</span> <span style={{ color: C.teal, fontWeight: 900, textShadow: `0 0 8px ${C.teal}` }}>{concerts.length}</span></div>
+                  <div><span style={{ color: C.gray }}>SYS.MEDIA_VAULT:</span> <span style={{ color: '#9d00ff', fontWeight: 900, textShadow: `0 0 8px #9d00ff` }}>{totalMedia} FILES</span></div>
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px dashed ${C.border}` }}>
+                    <span style={{ color: C.gray, fontSize: 9 }}>ARCHIVE_GENESIS:</span><br/>
+                    <span style={{ color: '#fff', fontSize: 10 }}>{firstDate !== '2099-01-01' ? fmtDate(firstDate).toUpperCase() : 'UNKNOWN'}</span>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
         </Card>
 
       </div>
