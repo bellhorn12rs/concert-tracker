@@ -999,15 +999,18 @@ function CountUpStat({ value, label, sub, color = C.white }) {
     </div>
   );
 }
-//Theater Marquee
+// Theater Marquee (RECONFIGURED WITH FULL-WIDTH CALL TO ACTION)
 function TheaterMarquee({ upcoming, onAdd, onEdit }) {
   const BULB_COUNT = 28;
-  const text = upcoming.length
+  const isEmpty = upcoming.length === 0;
+
+  const text = !isEmpty
     ? upcoming.map(s => `NOW STAGING: ${s.artist.toUpperCase()} • ${fmtDateShort(s.date).toUpperCase()} • ${(s.venue||'TBA').toUpperCase()} • ${(s.status||'TICKETS').toUpperCase()}`).join('   ★   ')
     : 'LOUD & LIVE • ALL AGES • GIG POSTER INBOUND • TONIGHT ONLY • SOLD OUT • NOW STAGING YOUR NEXT MEMORY';
 
   return (
     <div style={{ background:'#0a0a0a', borderRadius:8, overflow:'hidden', boxShadow:'0 0 0 4px #111, 0 0 0 6px #222, 0 8px 32px rgba(0,0,0,0.8)' }}>
+      
       {/* Top bulb rail */}
       <div style={{ background:'#111', padding:'6px 12px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         {Array.from({ length: BULB_COUNT }).map((_, i) => (
@@ -1022,6 +1025,55 @@ function TheaterMarquee({ upcoming, onAdd, onEdit }) {
         </div>
       </div>
 
+      {/* 🎫 FULL-WIDTH GIG BILLBOARD (The Catchy Add Button) */}
+      <button 
+        onClick={onAdd} 
+        style={{
+          width: '100%',
+          background: `linear-gradient(90deg, rgba(255,204,0,0.05) 0%, rgba(255,204,0,0.15) 50%, rgba(255,204,0,0.05) 100%)`,
+          borderBottom: '1px solid #1a1a1a',
+          borderTop: 'none',
+          borderLeft: 'none',
+          borderRight: 'none',
+          padding: '20px 16px',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '4px',
+          outline: 'none'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(255,204,0,0.2)';
+          e.currentTarget.firstChild.style.textShadow = '0 0 15px #ffcc00';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = `linear-gradient(90deg, rgba(255,204,0,0.05) 0%, rgba(255,204,0,0.15) 50%, rgba(255,204,0,0.05) 100%)`;
+          e.currentTarget.firstChild.style.textShadow = 'none';
+        }}
+      >
+        <div style={{ 
+          fontFamily: "'Bebas Neue'", 
+          fontSize: '1.6rem', 
+          color: C.gold, 
+          letterSpacing: '0.1em',
+          transition: 'all 0.3s ease'
+        }}>
+          {isEmpty ? "YOUR FUTURE IS A BLANK STAGE" : "WHAT'S ON YOUR HORIZON?"}
+        </div>
+        
+        <div style={{ 
+          fontFamily: "'Space Mono'", 
+          fontSize: '9px', 
+          color: '#888', 
+          textTransform: 'uppercase',
+          letterSpacing: '0.2em'
+        }}>
+          {isEmpty ? "[ INITIALIZE YOUR UPCOMING TOUR + ]" : "[ ADD A FUTURE SIGNAL TO THE ARCHIVE + ]"}
+        </div>
+      </button>
+
       {/* Bottom bulb rail */}
       <div style={{ background:'#111', padding:'6px 12px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         {Array.from({ length: BULB_COUNT }).map((_, i) => (
@@ -1030,13 +1082,10 @@ function TheaterMarquee({ upcoming, onAdd, onEdit }) {
       </div>
 
       {/* Show list */}
-      <div style={{ padding:'12px 16px' }}>
-        <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:10 }}>
-          <button onClick={onAdd} style={{ background:C.gold, color:'#000', border:'none', fontSize:9, fontWeight:'900', padding:'6px 14px', cursor:'pointer', borderRadius:4, fontFamily:"'Space Mono'", letterSpacing:'0.1em' }}>+ ADD SHOW</button>
-        </div>
+      <div style={{ padding:'0 16px 16px' }}>
         <div style={{ maxHeight:190, overflowY:'auto' }}>
           {upcoming.sort((a,b) => a.date.localeCompare(b.date)).map((show, i) => (
-            <div key={show.id||i} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto auto', alignItems:'center', gap:12, padding:'10px 0', borderBottom:'1px solid #1a1a1a' }}>
+            <div key={show.id||i} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto auto', alignItems:'center', gap:12, padding:'12px 0', borderBottom: i === upcoming.length -1 ? 'none' : '1px solid #1a1a1a' }}>
               <div style={{ fontFamily:"'Space Mono'", fontSize:9, color:'#888', whiteSpace:'nowrap' }}>{fmtDateShort(show.date)}</div>
               <div style={{ textAlign:'center' }}>
                 <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.15rem', color:C.gold, letterSpacing:'0.06em', lineHeight:1 }}>{show.artist}</div>
@@ -1055,7 +1104,11 @@ function TheaterMarquee({ upcoming, onAdd, onEdit }) {
               </button>
             </div>
           ))}
-          {!upcoming.length && <div style={{ color:'#333', fontFamily:"'Space Mono'", fontSize:9, textAlign:'center', padding:20 }}>NO SHOWS QUEUED</div>}
+          {isEmpty && (
+            <div style={{ color:'#333', fontFamily:"'Space Mono'", fontSize:9, textAlign:'center', padding:'30px 20px', letterSpacing:'0.1em' }}>
+              NO FUTURE SIGNALS DETECTED
+            </div>
+          )}
         </div>
       </div>
     </div>
