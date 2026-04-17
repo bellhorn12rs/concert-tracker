@@ -6348,7 +6348,7 @@ useEffect(() => {
                 height: '100%'
               }}>
                 
-                {/* ⚙️ THE OFFICE BRIDGE */}
+                {/* ⚙️ THE OFFICE BRIDGE (Admin/Curator Shortcut) */}
                 {isAdmin && (
                   <button 
                     onClick={() => setActiveTab('manage')}
@@ -6386,145 +6386,548 @@ useEffect(() => {
             </header>
 
             <main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
-              {/* 1. THE DASHBOARD (CENTER STAGE) */}
-              {activeTab === 'community' && <CommunityTab onEnterMuseum={handleNavigateToUser} />}
-              {activeTab === 'dashboard' && (
-                <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                  <OnThisDay concerts={concerts} />
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr', gap: 20 }}>
-                    <ArtistInsights concerts={concerts} />
-                    <TheaterMarquee upcoming={upcoming} onAdd={isAdmin ? () => setUpcomingModal('new') : null} onEdit={isAdmin ? setUpcomingModal : null} />
-                    <RandomShow concerts={concerts} />
+  {/* 1. THE DASHBOARD (CENTER STAGE) */}
+
+  {activeTab === 'community' && (
+    <CommunityTab 
+      onEnterMuseum={handleNavigateToUser} 
+    />
+  )}
+  {activeTab === 'dashboard' && (
+    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <OnThisDay concerts={concerts} />
+      
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr', gap: 20 }}>
+        <ArtistInsights concerts={concerts} />
+        <TheaterMarquee 
+          upcoming={upcoming} 
+          onAdd={isAdmin ? () => setUpcomingModal('new') : null} 
+          onEdit={isAdmin ? setUpcomingModal : null} 
+        />
+        <RandomShow concerts={concerts} />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: 20 }}>
+        <VenueDonutCard concerts={concerts} onNavigateToVenues={() => setActiveTab('venues')} />
+        <Card neon>
+          <CardTitle>Sets Per Year by Venue </CardTitle>
+          <div style={{ height: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stackedTimelineData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+                <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+                <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10 }} />
+                {venueKeys.map((v, i) => (
+                  <Bar key={v} dataKey={v} stackId="a" fill={v === 'other' ? '#334' : ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88'][i % 5]} />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', 
+        gap: 20,
+        alignItems: 'stretch',
+        height: isMobile ? 'auto' : '480px', 
+        marginBottom: 20
+      }}>
+        <Card neon>
+          <DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} concerts={concerts} />
+        </Card>
+        <Card neon>
+          <CardTitle>Festival Passports</CardTitle>
+          <TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} />
+        </Card>
+        <Card neon>
+          <CardTitle>By Decade</CardTitle>
+          <DecadeBlocks sets={allSetsList} headerStats={headerStats} concerts={concerts} />
+        </Card>
+      </div>
+
+      {/* ─── ROW 2: ROTATION, SPOTLIGHT, CITIES (3 COLUMNS) ─── */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
+        
+        {/* 1. HEAVY ROTATION (LEFT) */}
+        <Card neon style={{ height: 380, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <CardTitle>HEAVY ROTATION</CardTitle>
+          <div className="hide-scroll" style={{ flex: 1, overflowY: 'auto', paddingRight: 4, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {artistCounts.filter(a => a.count >= 3).map((a, i) => {
+              const VIP_PALETTE = [
+                { main: '#00f2ff', bg: 'rgba(0, 242, 255, 0.15)' },
+                { main: '#ff0055', bg: 'rgba(255, 0, 85, 0.15)' },
+                { main: '#ccff00', bg: 'rgba(204, 255, 0, 0.15)' },
+                { main: '#9d00ff', bg: 'rgba(157, 0, 255, 0.15)' },
+                { main: '#ffaa00', bg: 'rgba(255, 170, 0, 0.15)' }
+              ];
+              const c = VIP_PALETTE[i % VIP_PALETTE.length];
+
+              return (
+                <div key={a.name} onClick={() => { setSearch(a.name); setBrowseView('shows'); setActiveTab('browse'); }} 
+                     style={{ 
+                       flexShrink: 0, /* 🟢 FIX: Prevents the rows from being squished */
+                       display: 'flex', alignItems: 'center', background: `linear-gradient(135deg, rgba(20,20,25,0.8) 0%, ${c.bg} 100%)`, border: `1px solid ${c.main}`, borderLeft: `4px solid ${c.main}`, borderRadius: 6, padding: '8px 10px', cursor: 'pointer', position: 'relative', overflow: 'hidden' 
+                     }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#0a0a0a', border: `1.5px solid ${c.main}`, marginRight: 10, flexShrink: 0 }} />
+                  <div style={{ flex: 1, zIndex: 2, minWidth: 0 }}>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#fff', letterSpacing: 1, marginBottom: 1, fontWeight: 900 }}>ALL ACCESS</div>
+                    {/* 🟢 FIX: Added paddingTop and lineHeight so Bebas Neue doesn't get its head chopped off */}
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff', textShadow: `0 0 8px ${c.main}`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '1.2', paddingTop: '2px' }}>
+                      {a.name.toUpperCase()}
+                    </div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: 20 }}>
-                    <VenueDonutCard concerts={concerts} onNavigateToVenues={() => setActiveTab('venues')} />
-                    <Card neon>
-                      <CardTitle>Sets Per Year by Venue</CardTitle>
-                      <div style={{ height: 220 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={stackedTimelineData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                            <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
-                            <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
-                            <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10 }} />
-                            {venueKeys.map((v, i) => (
-                              <Bar key={v} dataKey={v} stackId="a" fill={v === 'other' ? '#334' : ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88'][i % 5]} />
-                            ))}
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </Card>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, alignItems: 'stretch', height: isMobile ? 'auto' : '480px', marginBottom: 20 }}>
-                    <Card neon>
-                      <DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} concerts={concerts} />
-                    </Card>
-                    <Card neon>
-                      <CardTitle>Festival Passports</CardTitle>
-                      <TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} />
-                    </Card>
-                    <Card neon>
-                      <CardTitle>By Decade</CardTitle>
-                      <DecadeBlocks sets={allSetsList} headerStats={headerStats} concerts={concerts} />
-                    </Card>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
-                    <Card neon style={{ height: 380, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                      <CardTitle>HEAVY ROTATION</CardTitle>
-                      <div className="hide-scroll" style={{ flex: 1, overflowY: 'auto', paddingRight: 4, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {artistCounts.filter(a => a.count >= 3).map((a, i) => {
-                          const VIP_PALETTE = [{ main: '#00f2ff', bg: 'rgba(0, 242, 255, 0.15)' }, { main: '#ff0055', bg: 'rgba(255, 0, 85, 0.15)' }, { main: '#ccff00', bg: 'rgba(204, 255, 0, 0.15)' }, { main: '#9d00ff', bg: 'rgba(157, 0, 255, 0.15)' }, { main: '#ffaa00', bg: 'rgba(255, 170, 0, 0.15)' }];
-                          const c = VIP_PALETTE[i % VIP_PALETTE.length];
-                          return (
-                            <div key={a.name} onClick={() => { setSearch(a.name); setBrowseView('shows'); setActiveTab('browse'); }} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', background: `linear-gradient(135deg, rgba(20,20,25,0.8) 0%, ${c.bg} 100%)`, border: `1px solid ${c.main}`, borderLeft: `4px solid ${c.main}`, borderRadius: 6, padding: '8px 10px', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
-                              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#0a0a0a', border: `1.5px solid ${c.main}`, marginRight: 10, flexShrink: 0 }} />
-                              <div style={{ flex: 1, zIndex: 2, minWidth: 0 }}>
-                                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#fff', letterSpacing: 1, marginBottom: 1, fontWeight: 900 }}>ALL ACCESS</div>
-                                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff', textShadow: `0 0 8px ${c.main}`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '1.2', paddingTop: '2px' }}>{a.name.toUpperCase()}</div>
-                              </div>
-                              <div style={{ zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#000', border: `1px solid ${c.main}`, padding: '2px 8px', borderRadius: 4, marginLeft: 8 }}>
-                                <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: c.main, lineHeight: 1 }}>{a.count}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </Card>
-                    <Card neon style={{ height: 380, display: 'flex', flexDirection: 'column' }}>
-                      <ArtifactSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
-                    </Card>
-                    <Card neon style={{ height: 380, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', background: '#08080c' }}>
-                      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px)', backgroundSize: '20px 20px', zIndex: 0, pointerEvents: 'none' }} />
-                      <CardTitle style={{ zIndex: 1 }}>CITY FOOTPRINT 📍</CardTitle>
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly', zIndex: 1 }}>
-                        {/* City Logic Here */}
-                      </div>
-                    </Card>
+                  <div style={{ zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#000', border: `1px solid ${c.main}`, padding: '2px 8px', borderRadius: 4, marginLeft: 8 }}>
+                    <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: c.main, lineHeight: 1 }}>{a.count}</span>
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        </Card>
+
+        {/* 2. ARTIFACT SPOTLIGHT (MIDDLE) */}
+        <Card neon style={{ height: 380, display: 'flex', flexDirection: 'column' }}>
+          <ArtifactSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
+        </Card>
+
+        {/* 3. CITY FOOTPRINT (RIGHT - DYNAMIC HASH EDITION) */}
+        <Card neon style={{ height: 380, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', background: '#08080c' }}>
+          
+          {/* Cyber Grid & Subtle Map Vibe */}
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px)', backgroundSize: '20px 20px', zIndex: 0, pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: '20%', left: '10%', width: '80%', height: '60%', background: 'radial-gradient(ellipse at center, rgba(0,242,255,0.05) 0%, transparent 70%)', zIndex: 0, pointerEvents: 'none' }} />
+
+          {/* Glowing Vector Globe (Top Right) */}
+          <svg style={{ position: 'absolute', top: 15, right: 15, width: 32, height: 32, zIndex: 1, filter: 'drop-shadow(0 0 6px rgba(0, 242, 255, 0.4))' }} viewBox="0 0 24 24" fill="none" stroke="rgba(0, 242, 255, 0.8)" strokeWidth="1.5">
+            <circle cx="12" cy="12" r="10" />
+            <ellipse cx="12" cy="12" rx="4" ry="10" />
+            <path d="M2 12h20" />
+            <path d="M4 7h16" />
+            <path d="M4 17h16" />
+          </svg>
+
+          <CardTitle style={{ zIndex: 1 }}>CITY FOOTPRINT 📍</CardTitle>
+          
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly', zIndex: 1, padding: '10px 0 5px' }}>
+            {(() => {
+              // 1. DYNAMICALLY scavenge the user's actual cities
+              const counts = {};
+              concerts.forEach(c => { 
+                if(c.city) { 
+                  const city = c.city.split(',')[0].toUpperCase(); 
+                  counts[city] = (counts[city] || 0) + 1; 
+                }
+              });
+              const topCities = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 5);
+              
+              if (!topCities.length) return null;
+
+              const COLORS = ['#ff4477', '#ffcc00', '#00f2ff', '#00cc88', '#00e5cc'];
+              
+              // 5 distinct mathematical vector paths (Generic "City Shapes")
+              const SKYLINES = [
+                "M0,35 L5,35 L5,20 L12,20 L12,35 L16,35 L16,10 L22,10 L22,35 L28,35 L28,15 L35,15 L35,35 L40,35 L40,5 L48,5 L48,35 L52,35 L52,25 L60,25 L60,35 L65,35 L65,12 L72,12 L72,35 L78,35 L78,22 L85,22 L85,35 L90,35 L90,18 L98,18 L98,35 L100,35",
+                "M0,35 L8,35 L8,25 L15,25 L15,35 L20,35 L20,15 L28,15 L28,35 L32,35 L32,8 L36,8 L36,5 L42,5 L42,8 L46,8 L46,35 L52,35 L52,20 L60,20 L60,35 L68,35 L68,22 L75,22 L75,35 L80,35 L80,10 L88,10 L88,35 L92,35 L92,28 L100,28 L100,35",
+                "M0,35 L6,35 L6,22 L14,22 L14,35 L18,35 L18,10 L25,10 L25,35 L30,35 L30,28 L38,28 L38,35 L44,35 L44,15 L50,15 L50,35 L56,35 L56,8 L64,8 L64,35 L70,35 L70,25 L78,25 L78,35 L82,35 L82,18 L90,18 L90,35 L95,35 L95,20 L100,20",
+                "M0,35 L10,35 L10,25 L16,25 L16,35 L22,35 L22,12 L30,12 L30,35 L35,35 L35,20 L42,20 L42,35 L48,35 L48,10 L54,10 L54,5 L58,5 L58,10 L64,10 L64,35 L70,35 L70,22 L78,22 L78,35 L85,35 L85,15 L92,15 L92,35 L100,35",
+                "M0,35 L5,35 L5,28 L12,28 L12,35 L18,35 L18,18 L26,18 L26,35 L32,35 L32,25 L40,25 L40,35 L45,35 L45,8 L52,8 L52,35 L58,35 L58,22 L65,22 L65,35 L72,35 L72,15 L80,15 L80,35 L88,35 L88,20 L96,20 L96,35 L100,35"
+              ];
+
+              return topCities.map(([city, count], idx) => {
+                // 2. THE HASH: Turn the city name into a number so the skyline choice is deterministic
+                const cityHash = city.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                
+                const color = COLORS[idx % COLORS.length]; 
+                const path = SKYLINES[cityHash % SKYLINES.length]; 
+
+                return (
+                  <div key={city} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                    
+                    {/* LEFT: Neon Rank Box & City Name */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 120 }}>
+                      <div style={{ 
+                        border: `1px solid ${color}`, borderRadius: 4, padding: '2px 6px',
+                        fontFamily: "'Space Mono'", fontSize: 11, color: color,
+                        boxShadow: `0 0 10px ${color}33, inset 0 0 5px ${color}22`
+                      }}>
+                        {String(idx + 1).padStart(2, '0')}
+                      </div>
+                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSpacing: 1, textShadow: `0 0 8px ${color}44`, whiteSpace: 'nowrap' }}>
+                        {city}
+                      </div>
+                    </div>
+
+                    {/* MIDDLE: Dynamic Neon Skyline */}
+                    <div style={{ flex: 1, height: 40, position: 'relative', opacity: 0.8 }}>
+                      <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 40" style={{ filter: `drop-shadow(0 0 4px ${color})` }}>
+                        <path d={path} fill="none" stroke={color} strokeWidth="1.2" strokeLinejoin="miter" />
+                      </svg>
+                      <div style={{ position: 'absolute', bottom: 4, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${color}66, transparent)` }} />
+                    </div>
+
+                    {/* RIGHT: Cyan Readout Box */}
+                    <div style={{ 
+                      border: `1px solid rgba(0, 242, 255, 0.4)`, borderRadius: 4, padding: '3px 8px',
+                      fontFamily: "'Space Mono'", fontSize: 12, color: '#00f2ff', fontWeight: 900,
+                      boxShadow: `0 0 10px rgba(0,242,255,0.1), inset 0 0 5px rgba(0,242,255,0.1)`,
+                      minWidth: 45, textAlign: 'center'
+                    }}>
+                      {count}
+                    </div>
+
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </Card>
+      </div>
+      {/* ─── ROW 3: DNA, WEB, RHYTHM, VAULT (4 COLUMNS) ─── */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 1fr', gap: 20, paddingBottom: 40 }}>
+        
+        {/* 1. SONIC DNA */}
+        <div style={{ height: 300 }}><SonicDNA stats={genreStats} onGenreClick={handleGenreClick} /></div>
+        
+        {/* 2. DNA WEB GEODE */}
+        <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+          <div style={{ position: 'absolute', top: 15, fontFamily: "'Space Mono'", fontSize: 9, color: C.teal, letterSpacing: 2, fontWeight: 900 }}>// FULL SPECTRUM</div>
+          {(() => {
+            const allValid = genreStats.filter(g => g.count > 0);
+            if (allValid.length < 3) return <div style={{ fontSize: 10, color: C.grayDim }}>AWAITING DATA...</div>;
+            const maxCount = allValid[0].count;
+            const scores = {};
+            allValid.forEach(g => { scores[g.name] = Math.round((g.count / maxCount) * 100); });
+            return <div style={{ transform: 'scale(0.85)', marginTop: 20 }}><SetlistDNA genreScores={scores} /></div>;
+          })()}
+        </Card>
+
+        {/* 3. THE RHYTHM (NEW EQ VISUALIZER!) */}
+        <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <CardTitle>THE RHYTHM 🔊</CardTitle>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '20px 10px 0' }}>
+            {(() => {
+              const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+              const counts = [0,0,0,0,0,0,0];
+              concerts.forEach(c => { if(c.date) counts[new Date(c.date + 'T12:00:00').getDay()]++; });
+              const max = Math.max(...counts, 1);
+              
+              return days.map((day, i) => {
+                const heightPct = Math.max((counts[i] / max) * 100, 5); // min 5% height so empty days still show a dot
+                const isWeekend = day === 'FRI' || day === 'SAT';
+                const barColor = isWeekend ? C.gold : C.teal;
+                return (
+                  <div key={day} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, width: '12%', height: '100%', justifyContent: 'flex-end' }}>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff' }}>{counts[i] || ''}</div>
+                    <div style={{ width: '100%', height: `${heightPct}%`, background: `linear-gradient(to top, ${barColor}22, ${barColor})`, borderRadius: '4px 4px 0 0', boxShadow: `0 -5px 15px ${barColor}66` }} />
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: isWeekend ? '#fff' : C.gray, fontWeight: isWeekend ? 900 : 400 }}>{day[0]}</div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </Card>
+
+        {/* 4. VAULT DIAGNOSTICS (NEW TERMINAL!) */}
+        <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', background: '#050508' }}>
+          <CardTitle>DIAGNOSTICS 💻</CardTitle>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 15, fontFamily: "'Space Mono'", fontSize: 11 }}>
+            {(() => {
+              const uniqueBands = new Set();
+              let firstDate = '2099-01-01';
+              let totalMedia = 0;
+              concerts.forEach(c => {
+                (c.bands || []).forEach(b => uniqueBands.add(b));
+                if (c.date && c.date < firstDate) firstDate = c.date;
+                if (c.image_url) totalMedia++;
+                if (c.setlist_image_url) totalMedia++;
+                if (c.personal_photo_url) totalMedia++;
+              });
+              
+              return (
+                <>
+                  <div><span style={{ color: C.gray }}>SYS.BANDS_LOGGED:</span> <span style={{ color: C.gold, fontWeight: 900, textShadow: `0 0 8px ${C.gold}` }}>{uniqueBands.size}</span></div>
+                  <div><span style={{ color: C.gray }}>SYS.TOTAL_EVENTS:</span> <span style={{ color: C.teal, fontWeight: 900, textShadow: `0 0 8px ${C.teal}` }}>{concerts.length}</span></div>
+                  <div><span style={{ color: C.gray }}>SYS.MEDIA_VAULT:</span> <span style={{ color: '#9d00ff', fontWeight: 900, textShadow: `0 0 8px #9d00ff` }}>{totalMedia} FILES</span></div>
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px dashed ${C.border}` }}>
+                    <span style={{ color: C.gray, fontSize: 9 }}>ARCHIVE_GENESIS:</span><br/>
+                    <span style={{ color: '#fff', fontSize: 10 }}>{firstDate !== '2099-01-01' ? fmtDate(firstDate).toUpperCase() : 'UNKNOWN'}</span>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </Card>
+
+      </div>
+
+    </div>
+  )}
+
+  {/* 2. CHRONICLE & TOUR BUS TABS */}
+  {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
+  
+  {activeTab === 'byDay' && <ByDayTab dayGroups={dayGroups} onEdit={isAdmin ? setEditTarget : null} genreMap={artistGenres} isAdmin={isAdmin} />}
+  
+  {/* 🟢 NEW PAPERTRAIL BLOCK GOES HERE */}
+  {activeTab === 'papertrail' && (
+    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {concerts.map((c, i) => {
+        const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
+        const color = GENRE_COLORS[c.genre] || C.teal;
+        const img = c.image_url?.split(',')[0] || c.personal_photo_url?.split(',')[0];
+        
+        return (
+          <div key={c.id || i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', background: C.bgCard, borderRadius: 6, border: `1px solid ${C.border}` }}>
+            {img && <img src={img} alt={band} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 3 }} />}
+            
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.white }}>{band.toUpperCase()}</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray }}>{c.venue}</div>
+            </div>
+            
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color }}>{fmtDateShort(c.date)}</div>
+              
+              {/* 🟢 THE CLONE TRIGGER (Spectator Mode Only) */}
+              {viewingUser && viewingUser !== session?.user?.id && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleIWasThere(c);
+                  }}
+                  style={{
+                    background: 'transparent',
+                    border: `1px solid ${C.teal}`,
+                    color: C.teal,
+                    padding: '4px 10px',
+                    fontFamily: "'Space Mono'",
+                    fontSize: 8,
+                    cursor: 'pointer',
+                    borderRadius: 4,
+                    transition: 'all 0.2s',
+                    textTransform: 'uppercase',
+                    letterSpacing: 1
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = C.teal; e.currentTarget.style.color = '#000'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = C.teal; }}
+                >
+                  + I WAS THERE
+                </button>
               )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  )}
 
-              {/* TABS HANDLERS */}
-              {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
-              {activeTab === 'byDay' && <ByDayTab dayGroups={dayGroups} onEdit={isAdmin ? setEditTarget : null} genreMap={artistGenres} isAdmin={isAdmin} />}
-              {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={isAdmin} onEdit={isAdmin ? setEditTarget : null} />}
-              {activeTab === 'passport' && <PassportTab passport={passport} onNavigateToFest={name => { setActiveTab('byFest'); setTimeout(() => { const el = document.getElementById(`fest-${name.toLowerCase().replace(/\s+/g, '-')}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 450); }} />}
-              {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
-              {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
-              {activeTab === 'photos' && <PhotoVaultTab concerts={concerts} />}
-              {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
-              {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
-              {activeTab === 'browse' && <BrowseTab browseView={browseView} setBrowseView={setBrowseView} search={search} setSearch={setSearch} yearFilter={yearFilter} setYearFilter={setYearFilter} festFilter={festFilter} setFestFilter={setFestFilter} genreFilter={genreFilter} setGenreFilter={setGenreFilter} sortCol={sortCol} setSortCol={setSortCol} sortDir={sortDir} setSortDir={setSortDir} page={page} setPage={setPage} totalPages={totalPages} paged={paged} artistRows={artistRows} years={years} onShare={(a, s) => setShareCard({ artist: a, shows: s })} onEdit={isAdmin ? setEditTarget : null} isAdmin={isAdmin} onSetGenre={handleSetGenre} genreMap={artistGenres} />}
-              {isAdmin && activeTab === 'manage' && <ManageTab concerts={concerts} onEdit={setEditTarget} onAdd={() => setEditTarget('new')} onDuplicate={handleDuplicate} />}
-            </main>
+  {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={isAdmin} onEdit={isAdmin ? setEditTarget : null} />}
+  
+  {activeTab === 'passport' && (
+    <PassportTab 
+      passport={passport} 
+      onNavigateToFest={name => { 
+        setActiveTab('byFest'); 
+        setTimeout(() => { 
+          const el = document.getElementById(`fest-${name.toLowerCase().replace(/\s+/g, '-')}`); 
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+        }, 450); 
+      }} 
+    />
+  )}
 
-            {/* MODALS LAYER */}
-            {isAdmin && nudgeTarget && (
-              <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
-                <div style={{ textAlign: 'center', maxWidth: 500, padding: 40 }}>
-                  <div style={{ fontSize: '4rem', marginBottom: 20, animation: 'pulse 2s infinite' }}>📡</div>
-                  <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: C.teal, lineHeight: 1 }}>SIGNAL DETECTED</h2>
-                  <p style={{ fontFamily: "'Space Mono'", fontSize: 12, color: '#fff', marginBottom: 30 }}>THE ARCHIVE DETECTED A RECENT SHOW: <br/><span style={{ color: C.gold, fontSize: '1.5rem' }}>{nudgeTarget.artist.toUpperCase()}</span><br/>WAS AT {nudgeTarget.venue.toUpperCase()} ON {nudgeTarget.date}.</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
-                    <button onClick={() => { setEditTarget({ ...nudgeTarget, isNudge: true }); setNudgeTarget(null); }} style={{ padding: '20px', background: C.teal, color: '#000', border: 'none', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}>ARCHIVE NOW</button>
-                    <button onClick={() => setNudgeTarget(null)} style={{ padding: '20px', background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}>IGNORE SIGNAL</button>
-                  </div>
-                </div>
-              </div>
-            )}
-            {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
-            {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
-            {editTarget && <EditModal concert={editTarget === 'new' ? 'new' : editTarget} onClose={() => setEditTarget(null)} onSave={editTarget?.isNudge ? (id, payload) => handleReconcile(editTarget.id, payload) : handleSave} onDelete={handleDelete} allConcerts={concerts} />}
-            {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
-          </div> {/* Closes main stage div */}
-        </div> {/* Closes theme wrapper div */}
-      </div> {/* Closes global wrapper div */}
-    </ThemeContext.Provider>
-  );
-} // <--- THIS BRACKET CLOSES YOUR APP COMPONENT
+  {/* 3. ARCHIVE TABS */}
+  {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
+  
+  {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
+  
+  {activeTab === 'photos' && <PhotoVaultTab concerts={concerts} />}
+  
+  {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
+  
+  {/* 4. STUDIO TABS */}
+  {activeTab === 'poster' && <PosterGeneratorTab concerts={concerts} genreMap={artistGenres} allSetsList={allSetsList} />}
+
+  {/* 5. THE SEARCH ENGINE (BROWSE) */}
+  {activeTab === 'browse' && (
+    <BrowseTab 
+      browseView={browseView}
+      setBrowseView={setBrowseView}
+      search={search}
+      setSearch={setSearch}
+      yearFilter={yearFilter}
+      setYearFilter={setYearFilter}
+      festFilter={festFilter}
+      setFestFilter={setFestFilter}
+      genreFilter={genreFilter}
+      setGenreFilter={setGenreFilter}
+      sortCol={sortCol}
+      setSortCol={setSortCol}
+      sortDir={sortDir}
+      setSortDir={setSortDir}
+      page={page}
+      setPage={setPage}
+      totalPages={totalPages}
+      paged={paged} 
+      artistRows={artistRows}
+      years={years}
+      onShare={(a, s) => setShareCard({ artist: a, shows: s })}
+      onEdit={isAdmin ? setEditTarget : null} 
+      isAdmin={isAdmin}
+      onSetGenre={handleSetGenre}
+      genreMap={artistGenres}
+    />
+  )}
+
+  {/* 6. ADMIN OFFICE */}
+  {isAdmin && activeTab === 'manage' && (
+    <ManageTab 
+      concerts={concerts} 
+      onEdit={setEditTarget} 
+      onAdd={() => setEditTarget('new')} 
+      onDuplicate={handleDuplicate} 
+    />
+  )}
+</main>
+
+        {/* ── MODALS LAYER -── */}
+       {isAdmin && nudgeTarget && (
+  <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
+    <div style={{ textAlign: 'center', maxWidth: 500, padding: 40 }}>
+      <div style={{ fontSize: '4rem', marginBottom: 20, animation: 'pulse 2s infinite' }}>📡</div>
+      <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: C.teal, lineHeight: 1 }}>SIGNAL DETECTED</h2>
+      <p style={{ fontFamily: "'Space Mono'", fontSize: 12, color: '#fff', marginBottom: 30 }}>
+        THE ARCHIVE DETECTED A RECENT SHOW: <br/>
+        <span style={{ color: C.gold, fontSize: '1.5rem' }}>{nudgeTarget.artist.toUpperCase()}</span><br/>
+        WAS AT {nudgeTarget.venue.toUpperCase()} ON {nudgeTarget.date}.
+      </p>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
+        <button 
+          onClick={() => {
+            setEditTarget({ ...nudgeTarget, isNudge: true });
+            setNudgeTarget(null);
+          }}
+          style={{ padding: '20px', background: C.teal, color: '#000', border: 'none', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}
+        >
+          ARCHIVE NOW
+        </button>
+        <button 
+          onClick={() => setNudgeTarget(null)}
+          style={{ padding: '20px', background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}
+        >
+          IGNORE SIGNAL
+        </button>
+      </div>
+      <p style={{ marginTop: 20, fontFamily: "'Space Mono'", fontSize: 8, color: '#444' }}>THE SIGNAL WILL PERSIST UNTIL RECONCILED</p>
+    </div>
+  </div>
+)}
+        {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+        
+        {shareCard && (
+          <ShareCard 
+            artist={shareCard.artist} 
+            shows={shareCard.shows} 
+            onClose={() => setShareCard(null)} 
+          />
+        )}
+        
+        {editTarget && (
+          <EditModal 
+            concert={editTarget === 'new' ? 'new' : editTarget} 
+            onClose={() => setEditTarget(null)} 
+            onSave={editTarget?.isNudge ? (id, payload) => handleReconcile(editTarget.id, payload) : handleSave}
+            onDelete={handleDelete} 
+            allConcerts={concerts}
+          />
+        )}
+        
+        {upcomingModal !== null && (
+          <UpcomingModal 
+            show={upcomingModal === 'new' ? null : upcomingModal} 
+            onClose={() => setUpcomingModal(null)} 
+            onSave={handleUpcomingSave} 
+            onDelete={handleUpcomingDelete} 
+          />
+        )}
+      </div> {/* Closes main content div */}
+     </div> {/* Closes flex wrapper */}
+    </div> {/* Closes root div */}
+  </ThemeContext.Provider>
+ );
+}
 
 // ── AUTHENTICATION COMPONENT ──
 function LoginModal({ onClose }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) { alert("ACCESS DENIED: " + error.message); } else { onClose(); }
+    if (error) {
+      alert("ACCESS DENIED: " + error.message);
+    } else {
+      onClose();
+    }
     setLoading(false);
   };
+
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)' }}>
-      <div style={{ background: '#0a0a0c', border: `1px solid ${C.teal}`, padding: 40, borderRadius: 12, width: '100%', maxWidth: 360, boxShadow: '0 0 60px 0px rgba(0,242,255,0.2)', textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.teal, marginBottom: 10, letterSpacing: 3 }}>ADMIN LOGIN</div>
+    <div style={{ 
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', 
+      zIndex: 20000, display: 'flex', alignItems: 'center', 
+      justifyContent: 'center', backdropFilter: 'blur(12px)' 
+    }}>
+      <div style={{ 
+        background: '#0a0a0c', border: `1px solid ${C.teal}`, padding: 40, 
+        borderRadius: 12, width: '100%', maxWidth: 360, 
+        boxShadow: '0 0 60px 0px rgba(0,242,255,0.2)',
+        textAlign: 'center'
+      }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.teal, marginBottom: 10, letterSpacing: 3 }}>
+          ADMIN LOGIN
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#555', marginBottom: 25, textTransform: 'uppercase' }}>
+          Authorized Personnel Only // System Override Active
+        </div>
+        
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
-          <input type="email" placeholder="ADMIN EMAIL" value={email} onChange={e => setEmail(e.target.value)} style={{ background: '#000', border: '1px solid #222', color: '#fff', padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none' }} />
-          <input type="password" placeholder="PASSWORD" value={password} onChange={e => setPassword(e.target.value)} style={{ background: '#000', border: '1px solid #222', color: '#fff', padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none' }} />
+          <input 
+            type="email" placeholder="ADMIN EMAIL" value={email} 
+            onChange={e => setEmail(e.target.value)}
+            style={{ 
+              background: '#000', border: '1px solid #222', color: '#fff', 
+              padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none' 
+            }}
+          />
+          <input 
+            type="password" placeholder="PASSWORD" value={password} 
+            onChange={e => setPassword(e.target.value)}
+            style={{ 
+              background: '#000', border: '1px solid #222', color: '#fff', 
+              padding: '14px', fontFamily: "'Space Mono'", fontSize: '12px', outline: 'none' 
+            }}
+          />
           <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-            <button type="button" onClick={onClose} style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: '#666', padding: '12px', cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: '10px' }}>ABORT</button>
-            <button type="submit" disabled={loading} style={{ flex: 2, background: C.teal, border: 'none', color: '#000', padding: '12px', cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', fontWeight: 900 }}>{loading ? 'VERIFYING...' : 'INITIALIZE'}</button>
+            <button 
+              type="button" onClick={onClose}
+              style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: '#666', padding: '12px', cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: '10px' }}
+            >
+              ABORT
+            </button>
+            <button 
+              type="submit" disabled={loading}
+              style={{ flex: 2, background: C.teal, border: 'none', color: '#000', padding: '12px', cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', fontWeight: 900 }}
+            >
+              {loading ? 'VERIFYING...' : 'INITIALIZE'}
+            </button>
           </div>
         </form>
       </div>
