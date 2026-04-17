@@ -6168,26 +6168,39 @@ useEffect(() => {
   }
 
   const handleUpcomingSave = async (id, formData) => {
-    if (viewingUser) return; // 🛡️ Stay in spectator mode
-    try {
-      if (id) {
-        const { error } = await supabase
-          .from('upcoming_concerts')
-          .update(formData)
-          .eq('id', id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('upcoming_concerts')
-          .insert([formData]);
-        if (error) throw error;
-      }
-      await fetchUpcoming();
-      setUpcomingModal(null);
-    } catch (err) {
-      alert("Save failed: " + err.message);
+  if (viewingUser) return; // 🛡️ Stay in spectator mode
+  try {
+    // 🟢 THE FIX: Ensure the show is linked to the logged-in user
+    const finalData = { 
+      ...formData, 
+      user_id: session?.user?.id 
+    };
+
+    if (id) {
+      const { error } = await supabase
+        .from('upcoming_concerts')
+        .update(finalData) // Use stamped data
+        .eq('id', id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from('upcoming_concerts')
+        .insert([finalData]); // Use stamped data
+      if (error) throw error;
     }
-  };
+
+    // Refresh the local list so the Marquee sees it
+    await fetchUpcoming();
+    
+    // Close the modal
+    setUpcomingModal(null);
+    
+    console.log("📡 SIGNAL SYNCED: Upcoming show added to archive.");
+  } catch (err) {
+    console.error("Save failed:", err);
+    alert("Save failed: " + err.message);
+  }
+};
 
   const handleReconcile = async (upcomingId, payload) => {
     if (viewingUser) return;
