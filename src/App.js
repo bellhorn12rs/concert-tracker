@@ -6286,11 +6286,10 @@ useEffect(() => {
         </Card>
       </div>
 
-      {/* --- THE BACKSTAGE PASS & SPOTLIGHT ROW --- */}
-      {/* ─── ROW 2: ROTATION, CITIES, SPOTLIGHT (3 COLUMNS) ─── */}
+      {/* ─── ROW 2: ROTATION, SPOTLIGHT, CITIES (3 COLUMNS) ─── */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
         
-        {/* 1. HEAVY ROTATION (FIXED TEXT & WIDTH) */}
+        {/* 1. HEAVY ROTATION (LEFT) */}
         <Card neon style={{ height: 380, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <CardTitle>HEAVY ROTATION</CardTitle>
           <div className="hide-scroll" style={{ flex: 1, overflowY: 'auto', paddingRight: 4, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -6308,7 +6307,6 @@ useEffect(() => {
                 <div key={a.name} onClick={() => { setSearch(a.name); setBrowseView('shows'); setActiveTab('browse'); }} 
                      style={{ display: 'flex', alignItems: 'center', background: `linear-gradient(135deg, rgba(20,20,25,0.8) 0%, ${c.bg} 100%)`, border: `1px solid ${c.main}`, borderLeft: `4px solid ${c.main}`, borderRadius: 6, padding: '8px 10px', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#0a0a0a', border: `1.5px solid ${c.main}`, marginRight: 10, flexShrink: 0 }} />
-                  {/* 🟢 FIXED: Text Truncation so long names don't break the box */}
                   <div style={{ flex: 1, zIndex: 2, minWidth: 0 }}>
                     <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#fff', letterSpacing: 1, marginBottom: 1, fontWeight: 900 }}>ALL ACCESS</div>
                     <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff', textShadow: `0 0 8px ${c.main}`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.name.toUpperCase()}</div>
@@ -6322,34 +6320,103 @@ useEffect(() => {
           </div>
         </Card>
 
-        {/* 2. CITY FOOTPRINT (NEW!) */}
-        <Card neon style={{ height: 380, display: 'flex', flexDirection: 'column' }}>
-          <CardTitle>CITY FOOTPRINT 📍</CardTitle>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12 }}>
-            {(() => {
-              const counts = {};
-              concerts.forEach(c => { if(c.city) { const city = c.city.split(',')[0].toUpperCase(); counts[city] = (counts[city] || 0) + 1; }});
-              const topCities = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 5);
-              
-              return topCities.map(([city, count], idx) => (
-                <div key={city} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${C.border}`, paddingBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, opacity: 0.5 }}>0{idx + 1}</div>
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', letterSpacing: 1, textShadow: `0 0 10px ${C.teal}44` }}>{city}</div>
-                  </div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 12, color: C.teal, fontWeight: 900 }}>{count}</div>
-                </div>
-              ));
-            })()}
-          </div>
-        </Card>
-
-        {/* 3. ARTIFACT SPOTLIGHT */}
+        {/* 2. ARTIFACT SPOTLIGHT (MIDDLE) */}
         <Card neon style={{ height: 380, display: 'flex', flexDirection: 'column' }}>
           <ArtifactSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
         </Card>
-      </div>
 
+        {/* 3. CITY FOOTPRINT (RIGHT - DYNAMIC HASH EDITION) */}
+        <Card neon style={{ height: 380, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', background: '#08080c' }}>
+          
+          {/* Cyber Grid & Subtle Map Vibe */}
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px)', backgroundSize: '20px 20px', zIndex: 0, pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: '20%', left: '10%', width: '80%', height: '60%', background: 'radial-gradient(ellipse at center, rgba(0,242,255,0.05) 0%, transparent 70%)', zIndex: 0, pointerEvents: 'none' }} />
+
+          {/* Glowing Vector Globe (Top Right) */}
+          <svg style={{ position: 'absolute', top: 15, right: 15, width: 32, height: 32, zIndex: 1, filter: 'drop-shadow(0 0 6px rgba(0, 242, 255, 0.4))' }} viewBox="0 0 24 24" fill="none" stroke="rgba(0, 242, 255, 0.8)" strokeWidth="1.5">
+            <circle cx="12" cy="12" r="10" />
+            <ellipse cx="12" cy="12" rx="4" ry="10" />
+            <path d="M2 12h20" />
+            <path d="M4 7h16" />
+            <path d="M4 17h16" />
+          </svg>
+
+          <CardTitle style={{ zIndex: 1 }}>CITY FOOTPRINT 📍</CardTitle>
+          
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly', zIndex: 1, padding: '10px 0 5px' }}>
+            {(() => {
+              // 1. DYNAMICALLY scavenge the user's actual cities
+              const counts = {};
+              concerts.forEach(c => { 
+                if(c.city) { 
+                  const city = c.city.split(',')[0].toUpperCase(); 
+                  counts[city] = (counts[city] || 0) + 1; 
+                }
+              });
+              const topCities = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 5);
+              
+              if (!topCities.length) return null;
+
+              const COLORS = ['#ff4477', '#ffcc00', '#00f2ff', '#00cc88', '#00e5cc'];
+              
+              // 5 distinct mathematical vector paths (Generic "City Shapes")
+              const SKYLINES = [
+                "M0,35 L5,35 L5,20 L12,20 L12,35 L16,35 L16,10 L22,10 L22,35 L28,35 L28,15 L35,15 L35,35 L40,35 L40,5 L48,5 L48,35 L52,35 L52,25 L60,25 L60,35 L65,35 L65,12 L72,12 L72,35 L78,35 L78,22 L85,22 L85,35 L90,35 L90,18 L98,18 L98,35 L100,35",
+                "M0,35 L8,35 L8,25 L15,25 L15,35 L20,35 L20,15 L28,15 L28,35 L32,35 L32,8 L36,8 L36,5 L42,5 L42,8 L46,8 L46,35 L52,35 L52,20 L60,20 L60,35 L68,35 L68,22 L75,22 L75,35 L80,35 L80,10 L88,10 L88,35 L92,35 L92,28 L100,28 L100,35",
+                "M0,35 L6,35 L6,22 L14,22 L14,35 L18,35 L18,10 L25,10 L25,35 L30,35 L30,28 L38,28 L38,35 L44,35 L44,15 L50,15 L50,35 L56,35 L56,8 L64,8 L64,35 L70,35 L70,25 L78,25 L78,35 L82,35 L82,18 L90,18 L90,35 L95,35 L95,20 L100,20",
+                "M0,35 L10,35 L10,25 L16,25 L16,35 L22,35 L22,12 L30,12 L30,35 L35,35 L35,20 L42,20 L42,35 L48,35 L48,10 L54,10 L54,5 L58,5 L58,10 L64,10 L64,35 L70,35 L70,22 L78,22 L78,35 L85,35 L85,15 L92,15 L92,35 L100,35",
+                "M0,35 L5,35 L5,28 L12,28 L12,35 L18,35 L18,18 L26,18 L26,35 L32,35 L32,25 L40,25 L40,35 L45,35 L45,8 L52,8 L52,35 L58,35 L58,22 L65,22 L65,35 L72,35 L72,15 L80,15 L80,35 L88,35 L88,20 L96,20 L96,35 L100,35"
+              ];
+
+              return topCities.map(([city, count], idx) => {
+                // 2. THE HASH: Turn the city name into a number so the skyline choice is deterministic
+                const cityHash = city.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                
+                const color = COLORS[idx % COLORS.length]; 
+                const path = SKYLINES[cityHash % SKYLINES.length]; 
+
+                return (
+                  <div key={city} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                    
+                    {/* LEFT: Neon Rank Box & City Name */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 120 }}>
+                      <div style={{ 
+                        border: `1px solid ${color}`, borderRadius: 4, padding: '2px 6px',
+                        fontFamily: "'Space Mono'", fontSize: 11, color: color,
+                        boxShadow: `0 0 10px ${color}33, inset 0 0 5px ${color}22`
+                      }}>
+                        {String(idx + 1).padStart(2, '0')}
+                      </div>
+                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSpacing: 1, textShadow: `0 0 8px ${color}44`, whiteSpace: 'nowrap' }}>
+                        {city}
+                      </div>
+                    </div>
+
+                    {/* MIDDLE: Dynamic Neon Skyline */}
+                    <div style={{ flex: 1, height: 40, position: 'relative', opacity: 0.8 }}>
+                      <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 40" style={{ filter: `drop-shadow(0 0 4px ${color})` }}>
+                        <path d={path} fill="none" stroke={color} strokeWidth="1.2" strokeLinejoin="miter" />
+                      </svg>
+                      <div style={{ position: 'absolute', bottom: 4, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${color}66, transparent)` }} />
+                    </div>
+
+                    {/* RIGHT: Cyan Readout Box */}
+                    <div style={{ 
+                      border: `1px solid rgba(0, 242, 255, 0.4)`, borderRadius: 4, padding: '3px 8px',
+                      fontFamily: "'Space Mono'", fontSize: 12, color: '#00f2ff', fontWeight: 900,
+                      boxShadow: `0 0 10px rgba(0,242,255,0.1), inset 0 0 5px rgba(0,242,255,0.1)`,
+                      minWidth: 45, textAlign: 'center'
+                    }}>
+                      {count}
+                    </div>
+
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </Card>
+      </div>
       {/* ─── ROW 3: DNA, WEB, RHYTHM, VAULT (4 COLUMNS) ─── */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 1fr', gap: 20, paddingBottom: 40 }}>
         
