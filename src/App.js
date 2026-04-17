@@ -6285,7 +6285,7 @@ useEffect(() => {
         </Card>
         <Card neon style={{ height: 480, display: 'flex', flexDirection: 'column' }}>
           <CardTitle>SETLIST SPOTLIGHT</CardTitle>
-          <SetlistSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
+          <ArtifactSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
         </Card>
       </div>
     </div>
