@@ -1255,13 +1255,13 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
       }} />
 
       {hasImg ? (
-        /* 🟢 FIX: Added width: 100% so the paper always fills its column */
+        /* 🟢 THE OUTER PAPER: Width is locked to 100% of column, height is organic */
         <div style={{
           background: '#fff', padding: '4px', boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
           display: 'flex', flexDirection: 'column', borderRadius: 2, border: '1px solid #ddd',
           width: '100%', boxSizing: 'border-box' 
         }}>
-          {/* HEADER */}
+          {/* HEADER SECTION */}
           <div style={{ padding: '8px 4px 6px', textAlign: 'center', background: '#111', marginBottom: 4 }}>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.4rem', color: '#fff', letterSpacing: '0.08em', lineHeight: 1 }}>
               {data.band.toUpperCase()}
@@ -1271,17 +1271,19 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
             </div>
           </div>
 
-          {/* 🟢 FIX: Locked the aspect ratio so they are perfectly uniform shapes */}
+          {/* 🟢 THE IMAGE BOX: No forced aspect ratio. It grows/shrinks with the photo. */}
           <div style={{ 
-            flex: 1, background: '#000', overflow: 'hidden', display: 'flex', 
+            background: '#000', overflow: 'hidden', display: 'flex', 
             alignItems: 'center', justifyContent: 'center',
-            width: '100%', aspectRatio: isTicket ? '2.5 / 1' : '3 / 4' 
+            width: '100%' 
           }}>
             <img 
               src={data.url} 
               alt={data.band}
               style={{ 
-                width: '100%', height: '100%', 
+                width: '100%', 
+                height: 'auto', // 🟢 This lets the image define the height
+                display: 'block',
                 objectFit: 'contain',
                 transform: `rotate(${data.rotation || 0}deg) scale(${isSideways ? 1.6 : 1})`,
                 transition: 'transform 0.3s ease'
@@ -1289,8 +1291,8 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
             />
           </div>
 
-          {/* FOOTER */}
-          <div style={{ padding: '8px 6px', borderTop: '2px solid #f0f0f0' }}>
+          {/* FOOTER SECTION */}
+          <div style={{ padding: '8px 6px', borderTop: '1px solid #f0f0f0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <div style={{ overflow: 'hidden', paddingRight: 10 }}>
                 <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '9px', color: '#000', fontWeight: 900, lineHeight: 1, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
@@ -1308,7 +1310,6 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
                 ARCHIVE ↗
               </a>
             </div>
-            {data.is_festival && <div style={{ fontFamily: "'Caveat', cursive", fontSize: '11px', color: C.teal, marginTop: 4, borderTop: '1px dashed #eee', paddingTop: 3 }}>✎ {data.festival_name}</div>}
           </div>
         </div>
       ) : (
