@@ -1255,7 +1255,7 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
       }} />
 
       {hasImg ? (
-        /* 🟢 THE OUTER PAPER: Width is locked to 100% of column, height is organic */
+        /* 🟢 THE OUTER PAPER: Locked width and symmetry */
         <div style={{
           background: '#fff', padding: '4px', boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
           display: 'flex', flexDirection: 'column', borderRadius: 2, border: '1px solid #ddd',
@@ -1271,20 +1271,21 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
             </div>
           </div>
 
-          {/* 🟢 THE IMAGE BOX: No forced aspect ratio. It grows/shrinks with the photo. */}
+          {/* 🟢 THE FIX: Forced 3:4 aspect ratio for perfect vertical alignment */}
           <div style={{ 
             background: '#000', overflow: 'hidden', display: 'flex', 
             alignItems: 'center', justifyContent: 'center',
-            width: '100%' 
+            width: '100%', aspectRatio: '3 / 4', position: 'relative'
           }}>
             <img 
               src={data.url} 
               alt={data.band}
               style={{ 
                 width: '100%', 
-                height: 'auto', // 🟢 This lets the image define the height
+                height: '100%', 
                 display: 'block',
-                objectFit: 'contain',
+                /* 🟢 THE MAGIC LINE: Fills the 3:4 frame completely (no white space) */
+                objectFit: 'cover', 
                 transform: `rotate(${data.rotation || 0}deg) scale(${isSideways ? 1.6 : 1})`,
                 transition: 'transform 0.3s ease'
               }}
