@@ -2691,7 +2691,8 @@ function SetlistVaultTab({ concerts, genreMap }) {
                 padding: '12px', 
                 boxShadow: '0 25px 50px -12px rgba(0,0,0,0.7)', 
                 borderRadius: 2,
-                border: '1px solid #e0e0e0'
+                border: '1px solid #e0e0e0',
+                display: 'block',
               }}>
                 
                 {/* Visual "Blue Painter's Tape" */}
@@ -2713,17 +2714,24 @@ function SetlistVaultTab({ concerts, genreMap }) {
 
                 {/* IMAGE AREA */}
                 {s.image_url ? (
-                  <div style={{ width: '100%', overflow: 'hidden', border: '1px solid #eee', background: '#f0f0f0' }}>
+                  <div style={{ 
+                    width: '100%', 
+                    overflow: 'hidden', 
+                    border: '1px solid #eee', 
+                    background: '#000',
+                    lineHeight: 0,
+                  }}>
                     <img 
                       src={s.image_url} 
                       alt={s.band} 
                       loading="lazy"
                       style={{ 
                         width: '100%', 
-                        height: 'auto', 
+                        height: 'auto',
+                        maxHeight: '600px',
                         display: 'block',
+                        objectFit: 'contain',
                         filter: 'sepia(0.08) contrast(1.05)',
-                        mixBlendMode: 'multiply' // Makes the paper texture show through the image
                       }} 
                     />
                   </div>
