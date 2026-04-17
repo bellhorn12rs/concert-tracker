@@ -1200,10 +1200,11 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
       }} />
 
       {hasImg ? (
+        /* 🟢 FIX: Added width: 100% so the paper always fills its column */
         <div style={{
           background: '#fff', padding: '4px', boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
           display: 'flex', flexDirection: 'column', borderRadius: 2, border: '1px solid #ddd',
-          minHeight: isTicket ? '160px' : '320px' // 🟢 DYNAMIC HEIGHT
+          width: '100%', boxSizing: 'border-box' 
         }}>
           {/* HEADER */}
           <div style={{ padding: '8px 4px 6px', textAlign: 'center', background: '#111', marginBottom: 4 }}>
@@ -1215,18 +1216,17 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
             </div>
           </div>
 
-          {/* IMAGE */}
+          {/* 🟢 FIX: Locked the aspect ratio so they are perfectly uniform shapes */}
           <div style={{ 
             flex: 1, background: '#000', overflow: 'hidden', display: 'flex', 
             alignItems: 'center', justifyContent: 'center',
-            minHeight: isTicket ? '80px' : '200px' // 🟢 DYNAMIC INNER HEIGHT
+            width: '100%', aspectRatio: isTicket ? '2.5 / 1' : '3 / 4' 
           }}>
             <img 
               src={data.url} 
               alt={data.band}
               style={{ 
-                width: '100%', height: 'auto', 
-                maxHeight: isTicket ? '120px' : '220px', 
+                width: '100%', height: '100%', 
                 objectFit: 'contain',
                 transform: `rotate(${data.rotation || 0}deg) scale(${isSideways ? 1.6 : 1})`,
                 transition: 'transform 0.3s ease'
@@ -6305,11 +6305,17 @@ useEffect(() => {
 
               return (
                 <div key={a.name} onClick={() => { setSearch(a.name); setBrowseView('shows'); setActiveTab('browse'); }} 
-                     style={{ display: 'flex', alignItems: 'center', background: `linear-gradient(135deg, rgba(20,20,25,0.8) 0%, ${c.bg} 100%)`, border: `1px solid ${c.main}`, borderLeft: `4px solid ${c.main}`, borderRadius: 6, padding: '8px 10px', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
+                     style={{ 
+                       flexShrink: 0, /* 🟢 FIX: Prevents the rows from being squished */
+                       display: 'flex', alignItems: 'center', background: `linear-gradient(135deg, rgba(20,20,25,0.8) 0%, ${c.bg} 100%)`, border: `1px solid ${c.main}`, borderLeft: `4px solid ${c.main}`, borderRadius: 6, padding: '8px 10px', cursor: 'pointer', position: 'relative', overflow: 'hidden' 
+                     }}>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#0a0a0a', border: `1.5px solid ${c.main}`, marginRight: 10, flexShrink: 0 }} />
                   <div style={{ flex: 1, zIndex: 2, minWidth: 0 }}>
                     <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#fff', letterSpacing: 1, marginBottom: 1, fontWeight: 900 }}>ALL ACCESS</div>
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff', textShadow: `0 0 8px ${c.main}`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.name.toUpperCase()}</div>
+                    {/* 🟢 FIX: Added paddingTop and lineHeight so Bebas Neue doesn't get its head chopped off */}
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff', textShadow: `0 0 8px ${c.main}`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '1.2', paddingTop: '2px' }}>
+                      {a.name.toUpperCase()}
+                    </div>
                   </div>
                   <div style={{ zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#000', border: `1px solid ${c.main}`, padding: '2px 8px', borderRadius: 4, marginLeft: 8 }}>
                     <span style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: c.main, lineHeight: 1 }}>{a.count}</span>
