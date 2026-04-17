@@ -4743,7 +4743,7 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
     <div style={{ padding: '24px 0' }} className="fade-in">
       
       {/* 🤝 CURATOR ONBOARDING GUIDE (Hand-holding for new users) */}
-      {(!concerts || concerts.length < 5) && (
+      {(!concerts || concerts.length < 50) && (
         <div style={{ 
           background: 'rgba(0, 229, 204, 0.05)', 
           border: `1px dashed ${C.teal}44`, 
