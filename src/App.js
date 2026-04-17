@@ -3154,12 +3154,15 @@ function Lightbox({ src, caption, onClose, type }) {
 }
 
 // ─── 📄 STACKED SETLISTS & ARTIFACTS ────────────────────────────────────────
+// ─── 📄 STACKED SETLISTS & ARTIFACTS (TRIMMED EDITION) ────────────────────────
 function SetlistPaper({ src, index = 0, total = 1 }) {
   const [isFull, setIsFull] = React.useState(false);
   if (!src) return null;
 
   const rotation = (index % 2 === 0 ? -1.5 : 1.5) + (index * 0.5);
   const xOffset = index * -20;
+  
+  // Clean URL (strips the rotation hash)
   const cleanSrc = src.split('#rot=')[0];
 
   return (
@@ -3167,36 +3170,55 @@ function SetlistPaper({ src, index = 0, total = 1 }) {
       <div 
         onClick={() => setIsFull(true)}
         style={{
-          width: '120px', height: '160px', background: '#fdfdfd', 
+          display: 'inline-block',
+          background: '#fdfdfd', 
           boxShadow: '2px 5px 15px rgba(0,0,0,0.4)',
           transform: `rotate(${rotation}deg) translateX(${xOffset}px)`, 
-          padding: '5px', position: 'relative',
+          padding: '6px',
+          lineHeight: 0,
+          position: 'relative',
           marginRight: index === total - 1 ? '0' : '-30px', 
-          flexShrink: 0, zIndex: 5 + index, border: '1px solid #eee', 
-          cursor: 'zoom-in', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          flexShrink: 0,
+          zIndex: 5 + index,
+          border: '1px solid #eee', 
+          cursor: 'zoom-in',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          /* 🟢 THE FIX: Snap to content height */
+          alignSelf: 'flex-start'
         }}
         onMouseEnter={e => { 
-          e.currentTarget.style.transform = `rotate(0deg) scale(1.1) translateY(-10px)`; 
+          e.currentTarget.style.transform = `rotate(0deg) scale(1.05) translateY(-5px)`; 
           e.currentTarget.style.zIndex = 1000; 
         }}
         onMouseLeave={e => { 
-          e.currentTarget.style.transform = `rotate(${rotation}deg) translateX(${xOffset}px)`; 
+          e.currentTarget.style.transform = `rotate(${rotation}deg) translateX(${xOffset}px) scale(1)`; 
           e.currentTarget.style.zIndex = 5 + index; 
         }}
       >
+        {/* Blue Tape */}
         <div style={{ 
-          position: 'absolute', top: -10, left: '25%', width: '40px', height: '14px', 
+          position: 'absolute', top: -8, left: '50%', marginLeft: '-20px', 
+          width: '40px', height: '14px', 
           background: 'rgba(0, 100, 255, 0.4)', backdropFilter: 'blur(1px)', 
           transform: 'rotate(2deg)', border: '1px solid rgba(0,100,255,0.1)',
-          zIndex: 10
+          zIndex: 10 
         }} />
-        <div style={{ 
-          width: '100%', height: '100%', 
-          background: `url(${cleanSrc}) center/contain no-repeat`, 
-          filter: 'sepia(0.05) contrast(1.05)' 
-        }} />
+        
+        {/* 🟢 THE IMAGE: Removed width/maxHeight constraints that caused the chin */}
+        <img 
+          src={cleanSrc} 
+          alt="Stage Artifact" 
+          style={{
+            display: 'block',
+            width: '140px', // A consistent width for the stack
+            height: 'auto', // 🟢 Snap height to the image
+            objectFit: 'contain',
+            filter: 'sepia(0.05) contrast(1.05)'
+          }}
+        />
       </div>
-      {isFull && <Lightbox src={cleanSrc} onClose={() => setIsFull(false)} type="SETLIST" />}
+      
+      {isFull && <Lightbox src={src} onClose={() => setIsFull(false)} type="SETLIST" />}
     </>
   );
 }
