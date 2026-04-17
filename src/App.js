@@ -1412,11 +1412,21 @@ function ArtifactSpotlight({ concerts, onVault }) {
   }, [columns.length]);
 
   if (!columns.length) return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: C.grayDim }}>
-       <div style={{ fontSize: '3rem', opacity: 0.2 }}>🗃️</div>
-       <div style={{ fontFamily: "'Space Mono'", fontSize: 9, letterSpacing: 2, marginTop: 10 }}>NO ARTIFACTS SCANNED</div>
-    </div>
-  );
+  <div 
+    onClick={() => setEditTarget('new')}
+    style={{ 
+      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', 
+      justifyContent: 'center', color: C.teal, textAlign: 'center', cursor: 'pointer',
+      padding: '20px', border: `1px dashed ${C.teal}44`, borderRadius: '12px'
+    }}
+  >
+     <div style={{ fontSize: '2.5rem', marginBottom: 15, filter: 'grayscale(1) opacity(0.5)' }}>🎟️</div>
+     <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', letterSpacing: 2 }}>CURATE YOUR FIRST EXHIBIT</div>
+     <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, marginTop: 5 }}>
+       UPLOAD A STUB OR SETLIST TO START <br/> YOUR PHYSICAL ARCHIVE
+     </div>
+  </div>
+);
 
   const leftCol = columns[leftIdx % columns.length];
   const rightCol = columns[rightIdx % columns.length];
@@ -1911,7 +1921,21 @@ function DonutChart({ fest, solo, concerts }) {
 }
 // ─── 2. THE PHYSICAL WRISTBANDS (MIDDLE) ──────────────────────────
 function TopFestBlocks({ festBreakdown, concerts }) {
-  if (!concerts || !festBreakdown || festBreakdown.length === 0) return null;
+  if (!festBreakdown || festBreakdown.length === 0) return (
+  <div style={{ padding: '40px 20px', textAlign: 'center', border: `1px dashed ${C.grayDim}33`, borderRadius: 8 }}>
+    <div style={{ fontSize: '2rem', marginBottom: 10 }}>🎪</div>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.white }}>FESTIVAL WING CLOSED</div>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, marginTop: 8 }}>
+      ADD YOUR FIRST MULTI-DAY EVENT <br/> TO UNLOCK THE WRISTBAND COLLECTION
+    </div>
+    <button 
+      onClick={() => setEditTarget('new')}
+      style={{ marginTop: 15, background: 'none', border: `1px solid ${C.teal}`, color: C.teal, fontSize: 8, padding: '4px 10px', borderRadius: 4, fontFamily: "'Space Mono'", cursor: 'pointer' }}
+    >
+      + LOG FESTIVAL
+    </button>
+  </div>
+);
   const colors = ['#00e5cc', '#00cfff', '#9966ff', '#ffcc00', '#00cc88', '#ff6699'];
 
   const stats = useMemo(() => {
@@ -4673,6 +4697,29 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
   };
 
   return (
+const handleCSVUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  alert("PARSING SIGNAL... This will simulate importing your historical spreadsheet into the archive.");
+  // Here we would use PapaParse or similar to loop through rows and insert to Supabase
+};
+
+// Inside ManageTab's first <div>:
+<div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+  <input style={{ ...localInputStyle, flex: 1 }} placeholder="Search shows..." />
+  
+  {/* CSV TRIGGER */}
+  <label style={{ 
+    background: C.purple + '22', border: `1px solid ${C.purple}`, color: C.purple, 
+    padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 
+  }}>
+    📥 BULK IMPORT (CSV)
+    <input type="file" accept=".csv" hidden onChange={handleCSVUpload} />
+  </label>
+
+  <Btn onClick={onAdd}>+ Add Single Show</Btn>
+</div>
+
     <div style={{ padding: '24px 0' }} className="fade-in">
       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
         <input 
@@ -6289,12 +6336,56 @@ useEffect(() => {
                 ))}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', padding: isMobile ? '0 10px' : '0 30px', background: `linear-gradient(225deg, ${hexToRgba(C.teal, 0.05)} 0%, #050508 100%)`, borderLeft: `1px solid ${C.border}`, flexShrink: 0 }}>
+              {/* ── THEME & OFFICE CONTROLS ── */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: isMobile ? '8px' : '16px', 
+                padding: isMobile ? '0 10px' : '0 30px', 
+                background: `linear-gradient(225deg, ${hexToRgba(C.teal, 0.05)} 0%, #050508 100%)`, 
+                borderLeft: `1px solid ${C.border}`, 
+                flexShrink: 0,
+                height: '100%'
+              }}>
+                
+                {/* ⚙️ THE OFFICE BRIDGE (Admin/Curator Shortcut) */}
+                {isAdmin && (
+                  <button 
+                    onClick={() => setActiveTab('manage')}
+                    style={{
+                      background: activeTab === 'manage' ? C.teal : 'rgba(0, 229, 204, 0.1)',
+                      border: `1px solid ${C.teal}`,
+                      color: activeTab === 'manage' ? '#000' : C.teal,
+                      padding: isMobile ? '4px 8px' : '6px 12px',
+                      borderRadius: '4px',
+                      fontFamily: "'Space Mono'",
+                      fontSize: isMobile ? '7px' : '9px',
+                      fontWeight: 900,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      letterSpacing: '1px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: activeTab === 'manage' ? `0 0 15px ${C.teal}66` : 'none'
+                    }}
+                    onMouseEnter={e => {
+                      if (activeTab !== 'manage') e.currentTarget.style.background = hexToRgba(C.teal, 0.25);
+                    }}
+                    onMouseLeave={e => {
+                      if (activeTab !== 'manage') e.currentTarget.style.background = 'rgba(0, 229, 204, 0.1)';
+                    }}
+                  >
+                    <span>⚙️</span>
+                    {!isMobile && <span>THE OFFICE</span>}
+                  </button>
+                )}
+
                 <ThemeSwitcher isMobile={isMobile} />
               </div>
             </header>
-<main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
-  
+
+            <main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
   {/* 1. THE DASHBOARD (CENTER STAGE) */}
 
   {activeTab === 'community' && (
