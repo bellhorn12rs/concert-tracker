@@ -4959,7 +4959,11 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSave}>
+        <form onSubmit={(e) => {
+  e.preventDefault();
+  setSaving(true);
+  onSave(show?.id, form);
+}}>
           <label style={lbl}>Artist / Band *</label>
           <input 
             style={inpStLocal} 
