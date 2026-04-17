@@ -4710,7 +4710,10 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session }) {
           if (error) throw error;
           
           alert("✅ ARCHIVE UPDATED: Your historical signals have been curated.");
-          window.location.reload(); // Refresh to see the new exhibits on the dashboard
+// 🟢 Soft Sync: Refresh data and navigate without a hard browser reload
+if (onFetchData) await onFetchData(); 
+
+setActiveTab('dashboard');
         }
       } catch (err) {
         console.error("Office sync failed:", err);
@@ -6819,7 +6822,8 @@ useEffect(() => {
     onEdit={setEditTarget} 
     onAdd={() => setEditTarget('new')} 
     onDuplicate={handleDuplicate}
-    session={session} // 🟢 ADD THIS LINE
+    session={session}
+    onFetchData={fetchConcerts} // 🟢 Passes the data refresher down
   />
 )}
 </main>
