@@ -1255,13 +1255,12 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
       }} />
 
       {hasImg ? (
-        /* 🟢 THE OUTER PAPER: Locked width and symmetry */
         <div style={{
           background: '#fff', padding: '4px', boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
           display: 'flex', flexDirection: 'column', borderRadius: 2, border: '1px solid #ddd',
           width: '100%', boxSizing: 'border-box' 
         }}>
-          {/* HEADER SECTION */}
+          {/* HEADER */}
           <div style={{ padding: '8px 4px 6px', textAlign: 'center', background: '#111', marginBottom: 4 }}>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.4rem', color: '#fff', letterSpacing: '0.08em', lineHeight: 1 }}>
               {data.band.toUpperCase()}
@@ -1271,11 +1270,16 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
             </div>
           </div>
 
-          {/* 🟢 THE FIX: Forced 3:4 aspect ratio for perfect vertical alignment */}
+          {/* 🟢 THE FIX: Conditional Aspect Ratio based on artifact type */}
           <div style={{ 
-            background: '#000', overflow: 'hidden', display: 'flex', 
+            background: '#000', 
+            overflow: 'hidden', display: 'flex', 
             alignItems: 'center', justifyContent: 'center',
-            width: '100%', aspectRatio: '3 / 4', position: 'relative'
+            width: '100%', 
+            /* If it's a ticket, use a wide 2.5:1 ratio. 
+               If it's a setlist, use the standard 3:4 ratio. 
+            */
+            aspectRatio: isTicket ? '2.5 / 1' : '3 / 4' 
           }}>
             <img 
               src={data.url} 
@@ -1284,15 +1288,15 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
                 width: '100%', 
                 height: '100%', 
                 display: 'block',
-                /* 🟢 THE MAGIC LINE: Fills the 3:4 frame completely (no white space) */
-                objectFit: 'cover', 
+                /* 🟢 USE CONTAIN: This prevents the 'Yikes' zoom and white-space chin */
+                objectFit: 'contain', 
                 transform: `rotate(${data.rotation || 0}deg) scale(${isSideways ? 1.6 : 1})`,
                 transition: 'transform 0.3s ease'
               }}
             />
           </div>
 
-          {/* FOOTER SECTION */}
+          {/* FOOTER */}
           <div style={{ padding: '8px 6px', borderTop: '1px solid #f0f0f0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <div style={{ overflow: 'hidden', paddingRight: 10 }}>
