@@ -368,22 +368,9 @@ function MasterLanyard({ concerts, artistGenres, genreStats }) {
 
   const getColor = () => {
     const topGenre = genreStats?.[0]?.name;
-    const map = {
-      'Indie Rock': '#00f2ff',
-      'Alternative': '#9d00ff',
-      'Experimental': '#ff00ff',
-      'Electronic': '#9900ff',
-      'Jam': '#ffcc00',
-      'Folk': '#ffaa00',
-      'Classic Rock': '#ff4400',
-      'Pop': '#00e5ff',
-      'Hip Hop': '#a2ff00',
-      'Punk': '#ff3300',
-      'R&B': '#ff66cc',
-      'Country': '#cc8800',
-      'Metal': '#888888',
-    };
-    return map[topGenre] || '#00e5cc';
+    // 🟢 THE FIX: Instead of a hardcoded map, use the global GENRE_COLORS
+    // This ensures your lanyard color always matches your #1 genre on the dashboard
+    return GENRE_COLORS[topGenre] || '#00e5cc';
   };
 
   const getSerial = () => {
@@ -5794,10 +5781,23 @@ useEffect(() => {
   }, [stackedTimelineData]);
 
   const genreStats = useMemo(() => {
-    const counts = {};
-    allSetsList.forEach(s => { const g = artistGenres[s.artist] || 'Other'; counts[g] = (counts[g] || 0) + 1; });
-    return Object.entries(counts).map(([name, count]) => ({ name, count, color: GENRE_COLORS[name] || GENRE_COLORS['Other'] })).sort((a, b) => b.count - a.count);
-  }, [allSetsList, artistGenres]);
+  const counts = {};
+  allSetsList.forEach(s => {
+    // 🟢 THE FIX: Prioritize the show's actual genre, then the lookup, then 'Other'
+    // This ensures all the SQL work we did actually shows up in the chart.
+    const g = s.genre || artistGenres[s.artist] || 'Other';
+    counts[g] = (counts[g] || 0) + 1;
+  });
+
+  return Object.entries(counts)
+    .map(([name, count]) => ({
+      name,
+      count,
+      // Fallback to a teal/cyan if the specific color is missing
+      color: GENRE_COLORS[name] || GENRE_COLORS['Other'] || '#00f2ff'
+    }))
+    .sort((a, b) => b.count - a.count);
+}, [allSetsList, artistGenres]);
 
   const timelineData = useMemo(() => {
     const m = {};
