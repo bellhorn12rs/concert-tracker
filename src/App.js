@@ -3080,16 +3080,21 @@ function SetlistPaper({ src, index = 0, total = 1 }) {
 
   const rotation = (index % 2 === 0 ? -1.5 : 1.5) + (index * 0.5);
   const xOffset = index * -20;
+  
+  // Clean URL (strips the rotation hash so the image loads correctly)
+  const cleanSrc = src.split('#rot=')[0];
 
   return (
     <>
       <div 
         onClick={() => setIsFull(true)}
         style={{
-          width: '120px', height: '160px', background: '#fdfdfd', 
+          // 🟢 THE FIX: Removed fixed width/height. 'inline-block' shrink-wraps the image.
+          display: 'inline-block',
+          background: '#fdfdfd', 
           boxShadow: '2px 5px 15px rgba(0,0,0,0.4)',
           transform: `rotate(${rotation}deg) translateX(${xOffset}px)`, 
-          padding: '5px', position: 'relative',
+          padding: '6px', position: 'relative',
           marginRight: index === total - 1 ? '0' : '-30px', 
           flexShrink: 0, zIndex: 5 + index, border: '1px solid #eee', 
           cursor: 'zoom-in', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
@@ -3103,19 +3108,29 @@ function SetlistPaper({ src, index = 0, total = 1 }) {
           e.currentTarget.style.zIndex = 5 + index; 
         }}
       >
+        {/* The Blue Tape (Now centers dynamically based on paper width) */}
         <div style={{ 
-          position: 'absolute', top: -10, left: '25%', width: '40px', height: '14px', 
+          position: 'absolute', top: -8, left: '50%', marginLeft: '-20px', 
+          width: '40px', height: '14px', 
           background: 'rgba(0, 100, 255, 0.4)', backdropFilter: 'blur(1px)', 
           transform: 'rotate(2deg)', border: '1px solid rgba(0,100,255,0.1)',
-          zIndex: 10 // Keeps the tape above the image
+          zIndex: 10 
         }} />
-        <div style={{ 
-          width: '100%', height: '100%', 
-          // 🟢 THE FIX: Changed 'cover' to 'contain' so the whole ticket fits
-          background: `url(${src}) center/contain no-repeat`, 
-          filter: 'sepia(0.05) contrast(1.05)' 
-        }} />
+        
+        {/* 🟢 THE IMAGE (Dictates the size of the paper container) */}
+        <img 
+          src={cleanSrc} 
+          alt="Stage Artifact" 
+          style={{
+            display: 'block',
+            maxHeight: '160px',  // Caps the height for tall setlists
+            maxWidth: '220px',   // Allows tickets to be wide
+            objectFit: 'contain',
+            filter: 'sepia(0.05) contrast(1.05)'
+          }}
+        />
       </div>
+      
       {isFull && <Lightbox src={src} onClose={() => setIsFull(false)} type="SETLIST" />}
     </>
   );
