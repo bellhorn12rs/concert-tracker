@@ -1258,7 +1258,10 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
         <div style={{
           background: '#fff', padding: '4px', boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
           display: 'flex', flexDirection: 'column', borderRadius: 2, border: '1px solid #ddd',
-          width: '100%', boxSizing: 'border-box' 
+          width: '100%', boxSizing: 'border-box',
+          /* 🟢 THE FIX: If it's a setlist, we let the height be organic (auto) 
+             If it's a ticket, we keep the wide 2.5/1 ratio for the dashboard. */
+          height: isTicket ? 'auto' : 'fit-content'
         }}>
           {/* HEADER */}
           <div style={{ padding: '8px 4px 6px', textAlign: 'center', background: '#111', marginBottom: 4 }}>
@@ -1270,25 +1273,23 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
             </div>
           </div>
 
-          {/* 🟢 THE FIX: Conditional Aspect Ratio based on artifact type */}
+          {/* 🟢 THE IMAGE CONTAINER */}
           <div style={{ 
             background: '#000', 
             overflow: 'hidden', display: 'flex', 
             alignItems: 'center', justifyContent: 'center',
             width: '100%', 
-            /* If it's a ticket, use a wide 2.5:1 ratio. 
-               If it's a setlist, use the standard 3:4 ratio. 
-            */
-            aspectRatio: isTicket ? '2.5 / 1' : '3 / 4' 
+            /* 🟢 THE FIX: Only force the ratio for tickets. 
+               For setlists, we remove the aspectRatio so the 'paper' trims to the image height. */
+            aspectRatio: isTicket ? '2.5 / 1' : 'auto' 
           }}>
             <img 
               src={data.url} 
               alt={data.band}
               style={{ 
                 width: '100%', 
-                height: '100%', 
+                height: 'auto', 
                 display: 'block',
-                /* 🟢 USE CONTAIN: This prevents the 'Yikes' zoom and white-space chin */
                 objectFit: 'contain', 
                 transform: `rotate(${data.rotation || 0}deg) scale(${isSideways ? 1.6 : 1})`,
                 transition: 'transform 0.3s ease'
