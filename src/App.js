@@ -1257,7 +1257,7 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
       {hasImg ? (
         <div style={{
           background: '#fff', padding: '4px', boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
-          display: 'flex', flexDirection: 'column', borderRadius: 2, border: '1px solid #ddd',
+          display: 'block', flexDirection: 'column', borderRadius: 2, border: '1px solid #ddd',
           width: '100%', boxSizing: 'border-box',
           height: 'fit-content'
         }}>
