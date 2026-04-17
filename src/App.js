@@ -4666,10 +4666,6 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
   );
 }
 
-//* ─────────────────────────────────────────────────────────────────────────────
-   THE BRIDGE: Properly closing the main App component and its layout.
-   ───────────────────────────────────────────────────────────────────────────── */
-
         </main>
         
         {/* MODALS LAYER */}
