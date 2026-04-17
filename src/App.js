@@ -1198,7 +1198,6 @@ function OnThisDay({ concerts }) {
   );
 }
 
-// ─── ARTIFACT SPOTLIGHT ATOM (STRETCH-PROOF EDITION) ───────────────
 const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
   if (!data) return null;
   const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
@@ -1211,16 +1210,14 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
 
   return (
     <div style={{
-      flex: 'none',
+      flex: '1 1 0px', // 🟢 Force columns to be equal width
+      minWidth: 0,     // 🟢 Prevent flex-overflow
       position: 'relative',
       zIndex: isTop ? 2 : 1,
       transform: `rotate(${r}deg)`,
-      transition: 'transform 0.3s ease',
       animation: 'peel-and-stick 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards',
       '--r': `${r}deg`,
-      /* 🟢 FIX 1: Prevents the wrapper from growing taller than its contents */
-      alignSelf: 'flex-start',
-      width: '100%'
+      alignSelf: 'flex-start' // 🟢 Prevent stretching to neighbor's height
     }}>
       {/* Physical Tape */}
       <div style={{
@@ -1229,23 +1226,17 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
         width: 46, height: 16,
         background: tapeColor,
         opacity: 0.85, borderRadius: 1, zIndex: 30,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-        animation: 'tape-slam 0.4s 0.6s both'
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
       }} />
 
       {hasImg ? (
         <div style={{
           background: '#fff', padding: '4px', boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
-          /* 🟢 FIX 2: Switched to flex to ensure vertical stacking with no gaps */
-          display: 'flex', flexDirection: 'column', 
-          borderRadius: 2, border: '1px solid #ddd',
-          width: '100%', boxSizing: 'border-box',
-          /* 🟢 FIX 3: Force the paper to collapse around the content */
-          height: 'auto',
-          overflow: 'hidden'
+          display: 'flex', flexDirection: 'column', borderRadius: 2, border: '1px solid #ddd',
+          width: '100%', boxSizing: 'border-box'
         }}>
           {/* HEADER */}
-          <div style={{ padding: '8px 4px 6px', textAlign: 'center', background: '#111', marginBottom: 0 }}>
+          <div style={{ padding: '8px 4px 6px', textAlign: 'center', background: '#111' }}>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.4rem', color: '#fff', letterSpacing: '0.08em', lineHeight: 1 }}>
               {data.band.toUpperCase()}
             </div>
@@ -1254,24 +1245,27 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
             </div>
           </div>
 
-          {/* 🟢 THE IMAGE CONTAINER */}
+          {/* 🟢 THE IMAGE BOX (THE FIX) */}
           <div style={{ 
             background: '#000', 
-            overflow: 'hidden', display: 'flex', 
-            alignItems: 'center', justifyContent: 'center',
             width: '100%',
-            /* 🟢 FIX 4: Rotation Logic. 
-               If sideways, we force a short aspect ratio so the container doesn't 
-               stay "tall" based on the original image orientation. */
-            aspectRatio: isTicket ? '2.5 / 1' : (isSideways ? '16 / 9' : 'auto'),
-            position: 'relative'
+            /* 🟢 FORCE A COMPACT HEIGHT FOR SIDEWAYS SETLISTS */
+            aspectRatio: isTicket ? '2.5 / 1' : (isSideways ? '1.8 / 1' : 'auto'),
+            position: 'relative',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}>
             <img 
               src={data.url} 
               alt={data.band}
               style={{ 
-                width: '100%', 
-                height: 'auto', 
+                /* 🟢 When rotated, we use height as the primary driver to shrink the footprint */
+                maxHeight: isSideways ? '100%' : 'none',
+                maxWidth: '100%',
+                width: isSideways ? 'auto' : '100%',
+                height: 'auto',
                 display: 'block',
                 objectFit: 'contain', 
                 transform: `rotate(${data.rotation || 0}deg) scale(${isSideways ? 1.4 : 1})`,
@@ -1294,7 +1288,7 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
               <a
                 href={`https://www.setlist.fm/search?query=${encodeURIComponent(`${data.band} ${data.date?.replace(/-/g, '/')}`)}`}
                 target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                style={{ background: C.gold, color: '#000', fontSize: 7, fontFamily: "'Space Mono'", padding: '3px 7px', borderRadius: 2, textDecoration: 'none', fontWeight: 900, boxShadow: '0 2px 5px rgba(0,0,0,0.1)', flexShrink: 0 }}
+                style={{ background: C.gold, color: '#000', fontSize: 7, fontFamily: "'Space Mono'", padding: '3px 7px', borderRadius: 2, textDecoration: 'none', fontWeight: 900, flexShrink: 0 }}
               >
                 ARCHIVE ↗
               </a>
