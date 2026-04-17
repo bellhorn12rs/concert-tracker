@@ -4674,13 +4674,6 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
   const isMobile = window.innerWidth < 768;
 
   const handleCSVUpload = async (e) => {
-    const previewShow = newShows[0];
-const msg = `📡 SIGNAL ANALYZED: Found ${newShows.length} shows.\n\n` +
-            `PREVIEW:\n` +
-            `${previewShow.bands.join(', ')} @ ${previewShow.venue}\n\n` +
-            `Sync to archive?`;
-
-if (window.confirm(msg)) {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -4709,16 +4702,24 @@ if (window.confirm(msg)) {
           };
         });
 
-        if (window.confirm(`📡 SIGNAL ANALYZED: Found ${newShows.length} shows. Synchronize to museum archive?`)) {
-          const { error } = await supabase.from('concerts').insert(newShows);
-          if (error) throw error;
-          
-          alert("✅ ARCHIVE UPDATED: Your historical signals have been curated.");
-          
-          // Refresh data without hard reload
-          if (onFetchData) await onFetchData(); 
-          // Take them to the dashboard to see the results
-          if (setActiveTab) setActiveTab('dashboard');
+        // 📡 SMART PREVIEW LOGIC
+        if (newShows.length > 0) {
+          const previewShow = newShows[0];
+          const msg = `📡 SIGNAL ANALYZED: Found ${newShows.length} total shows.\n\n` +
+                      `PREVIEWING FIRST ENTRY:\n` +
+                      `Artist: ${previewShow.bands.join(', ')}\n` +
+                      `Venue: ${previewShow.venue}\n` +
+                      `Date: ${previewShow.date}\n\n` +
+                      `Ready to synchronize these to your museum archive?`;
+
+          if (window.confirm(msg)) {
+            const { error } = await supabase.from('concerts').insert(newShows);
+            if (error) throw error;
+            
+            alert("✅ ARCHIVE UPDATED: Your historical signals have been curated.");
+            if (onFetchData) await onFetchData(); 
+            if (setActiveTab) setActiveTab('dashboard');
+          }
         }
       } catch (err) {
         console.error("Office sync failed:", err);
@@ -4749,7 +4750,7 @@ if (window.confirm(msg)) {
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
       
-      {/* 🤝 CURATOR ONBOARDING GUIDE (Hand-holding for new users) */}
+      {/* 🤝 CURATOR ONBOARDING GUIDE */}
       {(!concerts || concerts.length < 50) && (
         <div style={{ 
           background: 'rgba(0, 229, 204, 0.05)', 
@@ -4766,67 +4767,66 @@ if (window.confirm(msg)) {
           </p>
           
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, marginTop: 20 }}>
-  {[
-    { 
-      step: "01", 
-      title: "DOWNLOAD BLUEPRINT", 
-      desc: "Use our standardized template to organize your history.", 
-      action: "GET TEMPLATE", 
-      link: "/template.xlsx" // 🟢 Points to your public folder
-    },
-    { 
-      step: "02", 
-      title: "COMPILE DATA", 
-      desc: "Ensure dates are YYYY-MM-DD and lineups use semicolons.", 
-      action: "VIEW GUIDE", 
-      // 🟢 Logic for the Guide Alert
-      isAction: true,
-      onClick: () => alert(
-        "📝 CURATOR'S COMPILATION GUIDE:\n\n" +
-        "1. DATE: Use YYYY-MM-DD (Ex: 2026-04-17)\n" +
-        "2. LINEUP: Use a semicolon (;) to separate bands (Ex: Eggy; Tapers Choice)\n" +
-        "3. FESTIVALS: Write 'TRUE' in the is_festival column to unlock a Stamp.\n" +
-        "4. SAVE: Export as .CSV (Comma Separated Values) before uploading."
-      )
-    },
-    { 
-      step: "03", 
-      title: "SYNC SIGNALS", 
-      desc: "Upload your finalized .CSV file to initialize the museum.", 
-      action: "READY TO SYNC", 
-      trigger: true 
-    }
-  ].map((item, i) => (
-    <div key={i} style={{ background: 'rgba(0,0,0,0.3)', padding: 15, borderRadius: 8, border: `1px solid ${C.border}` }}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, fontWeight: 900, marginBottom: 5 }}>{item.step}</div>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff' }}>{item.title}</div>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, margin: '8px 0 12px' }}>{item.desc}</div>
-      
-      {/* 🟢 SMART BUTTON LOGIC */}
-      {item.trigger ? (
-        <label style={{ cursor: 'pointer', color: C.gold, fontSize: 9, fontFamily: "'Space Mono'", fontWeight: 900 }}>
-           [ INITIALIZE UPLOAD ]
-           <input type="file" accept=".csv" hidden onChange={handleCSVUpload} />
-        </label>
-      ) : item.isAction ? (
-        <button 
-          onClick={item.onClick}
-          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: C.teal, fontSize: 9, fontFamily: "'Space Mono'", fontWeight: 900, textAlign: 'left' }}
-        >
-          [ {item.action} ]
-        </button>
-      ) : (
-        <a 
-          href={item.link} 
-          download 
-          style={{ textDecoration: 'none', color: C.teal, fontSize: 9, fontFamily: "'Space Mono'", fontWeight: 900 }}
-        >
-          [ {item.action} ]
-        </a>
-      )}
-    </div>
-  ))}
-</div>
+            {[
+              { 
+                step: "01", 
+                title: "DOWNLOAD BLUEPRINT", 
+                desc: "Use our standardized template to organize your history.", 
+                action: "GET TEMPLATE", 
+                link: "/template.xlsx" 
+              },
+              { 
+                step: "02", 
+                title: "COMPILE DATA", 
+                desc: "Ensure dates are YYYY-MM-DD and lineups use semicolons.", 
+                action: "VIEW GUIDE", 
+                isAction: true,
+                onClick: () => alert(
+                  "📝 CURATOR'S COMPILATION GUIDE:\n\n" +
+                  "1. DATE: Use YYYY-MM-DD (Ex: 2026-04-17)\n" +
+                  "2. LINEUP: Use a semicolon (;) to separate bands (Ex: Eggy; Tapers Choice)\n" +
+                  "3. FESTIVALS: Write 'TRUE' in the is_festival column to unlock a Stamp.\n" +
+                  "4. SAVE: Export as .CSV (Comma Separated Values) before uploading."
+                )
+              },
+              { 
+                step: "03", 
+                title: "SYNC SIGNALS", 
+                desc: "Upload your finalized .CSV file to initialize the museum.", 
+                action: "READY TO SYNC", 
+                trigger: true 
+              }
+            ].map((item, i) => (
+              <div key={i} style={{ background: 'rgba(0,0,0,0.3)', padding: 15, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, fontWeight: 900, marginBottom: 5 }}>{item.step}</div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff' }}>{item.title}</div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, margin: '8px 0 12px' }}>{item.desc}</div>
+                
+                {item.trigger ? (
+                  <label style={{ cursor: 'pointer', color: C.gold, fontSize: 9, fontFamily: "'Space Mono'", fontWeight: 900 }}>
+                     [ INITIALIZE UPLOAD ]
+                     <input type="file" accept=".csv" hidden onChange={handleCSVUpload} />
+                  </label>
+                ) : item.isAction ? (
+                  <button 
+                    onClick={item.onClick}
+                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: C.teal, fontSize: 9, fontFamily: "'Space Mono'", fontWeight: 900, textAlign: 'left' }}
+                  >
+                    [ {item.action} ]
+                  </button>
+                ) : (
+                  <a 
+                    href={item.link} 
+                    download 
+                    style={{ textDecoration: 'none', color: C.teal, fontSize: 9, fontFamily: "'Space Mono'", fontWeight: 900 }}
+                  >
+                    [ {item.action} ]
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Standard Table Controls */}
@@ -4837,7 +4837,6 @@ if (window.confirm(msg)) {
           value={search} 
           onChange={e => { setSearch(e.target.value); setPage(1); }} 
         />
-        
         <Btn onClick={onAdd}>+ Add Single Entry</Btn>
       </div>
 
