@@ -4667,7 +4667,7 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
 }
 
 // ─── MANAGE TAB (STABILIZED LOGIC) ───────────────────────────────────────────────
-function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
+function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const PER = 30;
@@ -4700,7 +4700,7 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate }) {
             state: entry.state || null,
             is_festival: entry.is_festival?.toUpperCase() === 'TRUE',
             festival_name: entry.festival_name || null,
-            user_id: session?.user?.id, // Stamps it with the logged-in user's ID
+            user_id: session?.user?.id || concerts[0]?.user_id, // Stamps it with the logged-in user's ID
             is_public: true,
             date_added: new Date().toISOString()
           };
@@ -6814,14 +6814,15 @@ useEffect(() => {
   )}
 
   {/* 6. ADMIN OFFICE */}
-  {isAdmin && activeTab === 'manage' && (
-    <ManageTab 
-      concerts={concerts} 
-      onEdit={setEditTarget} 
-      onAdd={() => setEditTarget('new')} 
-      onDuplicate={handleDuplicate} 
-    />
-  )}
+{isAdmin && activeTab === 'manage' && (
+  <ManageTab 
+    concerts={concerts} 
+    onEdit={setEditTarget} 
+    onAdd={() => setEditTarget('new')} 
+    onDuplicate={handleDuplicate}
+    session={session} // 🟢 ADD THIS LINE
+  />
+)}
 </main>
 
             {/* ── MODALS LAYER ── */}
