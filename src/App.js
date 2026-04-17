@@ -3199,11 +3199,11 @@ function SetlistPaper({ src, index = 0, total = 1 }) {
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
         }}
         onMouseEnter={e => { 
-          e.currentTarget.style.transform = `rotate(0deg) scale(1.1) translateY(-10px)`; 
+          e.currentTarget.style.transform = `rotate(0deg) scale(1.05) translateY(-5px)`; 
           e.currentTarget.style.zIndex = 1000; 
         }}
         onMouseLeave={e => { 
-          e.currentTarget.style.transform = `rotate(${rotation}deg) translateX(${xOffset}px)`; 
+          e.currentTarget.style.transform = `rotate(${rotation}deg) translateX(${xOffset}px) scale(1)`; 
           e.currentTarget.style.zIndex = 5 + index; 
         }}
       >
@@ -3247,7 +3247,7 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
     <div 
       className="polaroid-gravity-swing"
       style={{
-        padding: '12px 12px 55px 12px', // 🟢 Tightened bottom (was 75px)
+        padding: '12px 12px 20px 12px', // 🟢 Tightened bottom (was 75px)
         background: '#fff', 
         boxShadow: '0 15px 40px rgba(0,0,0,0.5), 0 0 5px rgba(0,0,0,0.1)',
         width: '320px', 
