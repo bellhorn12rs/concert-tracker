@@ -3184,15 +3184,19 @@ function SetlistPaper({ src, index = 0, total = 1 }) {
       <div 
         onClick={() => setIsFull(true)}
         style={{
-          // 🟢 THE FIX: Removed fixed width/height. 'inline-block' shrink-wraps the image.
           display: 'inline-block',
           background: '#fdfdfd', 
           boxShadow: '2px 5px 15px rgba(0,0,0,0.4)',
           transform: `rotate(${rotation}deg) translateX(${xOffset}px)`, 
-          padding: '6px', position: 'relative',
+          padding: '6px',
+          lineHeight: 0,
+          position: 'relative',
           marginRight: index === total - 1 ? '0' : '-30px', 
-          flexShrink: 0, zIndex: 5 + index, border: '1px solid #eee', 
-          cursor: 'zoom-in', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          flexShrink: 0,
+          zIndex: 5 + index,
+          border: '1px solid #eee', 
+          cursor: 'zoom-in',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
         }}
         onMouseEnter={e => { 
           e.currentTarget.style.transform = `rotate(0deg) scale(1.1) translateY(-10px)`; 
@@ -3218,8 +3222,11 @@ function SetlistPaper({ src, index = 0, total = 1 }) {
           alt="Stage Artifact" 
           style={{
             display: 'block',
-            width: '220px',
+            width: '160px',
             height: 'auto',
+            maxHeight: '220px',
+            objectFit: 'cover',
+            objectPosition: 'top',
             filter: 'sepia(0.05) contrast(1.05)'
           }}
         />
