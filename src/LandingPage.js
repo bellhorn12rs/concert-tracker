@@ -43,6 +43,7 @@ export default function LandingPage({
   const [tickerPaused, setTickerPaused] = useState(false);
   const [recentUsers, setRecentUsers] = useState([]);
   const [concerts, setConcerts] = useState([]);
+  const [userCount, setUserCount] = useState(0);
 
   useEffect(() => {
     const fetchPublicConcerts = async () => {
@@ -59,7 +60,10 @@ export default function LandingPage({
         .select('username, avatar_color, last_seen, last_artist, last_venue')
         .order('last_seen', { ascending: false })
         .limit(10);
-      if (data) setRecentUsers(data);
+      if (data) {
+        setRecentUsers(data);
+        setUserCount(data.length);
+      }
     };
     fetchRecentUsers();
   }, []);
@@ -69,8 +73,11 @@ export default function LandingPage({
   const isMobile = window.innerWidth < 768;
 
   const artifacts = useMemo(() =>
-    concerts.filter(c => c.image_url || c.personal_photo_url || c.setlist_image_url).slice(0, 20)
-  , [concerts]);
+  concerts
+    .filter(c => c.image_url || c.personal_photo_url || c.setlist_image_url)
+    .sort(() => 0.5 - Math.random())
+    .slice(0, 20)
+, [concerts]);
 
   const years = useMemo(() => {
     const ys = [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort();
@@ -378,7 +385,7 @@ export default function LandingPage({
     {featuredImg && (
       <div className="artifact-drift" style={{ flexShrink: 0 }}>
         <div style={{ background: '#fff', padding: '10px 10px 50px 10px', boxShadow: '0 30px 80px rgba(0,0,0,0.8), 0 0 40px rgba(0,229,204,0.2)', borderRadius: 2, position: 'relative', width: isMobile ? 220 : 260 }}>
-          <img src={featuredImg} alt={featuredBand} style={{ width: '100%', height: isMobile ? 160 : 200, objectFit: 'cover', display: 'block' }} />
+          <img src={featuredImg} alt={featuredBand} style={{ width: '100%', height: isMobile ? 160 : 200, objectFit: 'contain', display: 'block', background: '#000' }} />
           <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, textAlign: 'center', fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#111', letterSpacing: 2 }}>
             {featuredBand.toUpperCase()}
           </div>
@@ -475,19 +482,52 @@ export default function LandingPage({
 </div>
 </div> {/* closes hero section */}
 
+{/* ── THE SHOEBOX NARRATIVE ── */}
+<div style={{ padding: isMobile ? '80px 20px' : '120px 40px', background: '#080808', borderTop: '1px solid #111', position: 'relative' }}>
+  <div style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: 60, alignItems: 'center' }}>
+    
+    <div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: GOLD, letterSpacing: 5, marginBottom: 20 }}>// THE PROBLEM</div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', lineHeight: 1, color: '#fff' }}>
+        STILL DIGGING THROUGH <span style={{ color: GOLD }}>SHOEBOXES?</span>
+      </div>
+      <p style={{ fontFamily: "'Space Mono'", fontSize: 12, color: GRAY, lineHeight: 2, marginTop: 24 }}>
+        The physical world is messy. Faded stubs, lost wristbands, and photos buried in a camera roll of 40,000 images. Your musical legacy deserves more than a cardboard box in the closet.
+      </p>
+    </div>
+
+    <div style={{ background: '#000', border: `1px solid ${GOLD}22`, padding: 40, borderRadius: 12, textAlign: 'center', boxShadow: `0 20px 50px rgba(0,0,0,0.5)` }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 20, marginBottom: 20 }}>
+        <div style={{ fontSize: '2rem', opacity: 0.4 }}>📦</div>
+        <div style={{ fontSize: '1.5rem', color: GOLD }}>→</div>
+        <div style={{ fontSize: '2.5rem', textShadow: `0 0 20px ${TEAL}` }}>🏛️</div>
+      </div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: TEAL, letterSpacing: 2 }}>
+        [ DEPLOYING DIGITAL PRESERVATION ]
+      </div>
+      <div style={{ width: '100%', height: 1, background: 'linear-gradient(90deg, transparent, #222, transparent)', margin: '20px 0' }} />
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, lineHeight: 2 }}>
+        CONVERTING ANALOG CLUTTER<br/>
+        TO ARCHIVAL SIGNALS
+      </div>
+    </div>
+
+  </div>
+</div>
+
       {/* ── SECTION 1: TEMPORAL DRIFT ── */}
 <div style={{ padding: isMobile ? '60px 20px' : '80px 40px', background: '#050508', borderTop: '1px solid #111', borderBottom: '1px solid #111', position: 'relative', overflow: 'hidden' }}>
 
   {/* Side quote — left */}
   {!isMobile && (
-    <div style={{ position: 'absolute', left: -60, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: TEAL, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+    <div style={{ position: 'absolute', left: -60, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: TEAL, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
       EVERY SHOW TELLS A STORY
     </div>
   )}
 
   {/* Side quote — right */}
   {!isMobile && (
-    <div style={{ position: 'absolute', right: -80, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: PURPLE, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+    <div style={{ position: 'absolute', right: -80, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: PURPLE, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
       20 YEARS IN 2 SECONDS
     </div>
   )}
@@ -750,7 +790,7 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
                       height: isMobile ? 100 : 130,
                       objectFit: 'cover',
                       display: 'block',
-                      filter: isHovered ? 'none' : 'blur(6px) brightness(0.4)',
+                      filter: isHovered ? 'none' : 'blur(8px) brightness(0.5)',
                       transition: 'filter 0.5s ease',
                     }}
                   />
@@ -763,8 +803,8 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
                     </div>
                   )}
 
-                  {/* Caption area */}
-                  <div style={{ padding: '6px 4px 0', background: '#fff' }}>
+                  {/* Caption area — blurred until hover */}
+                  <div style={{ padding: '6px 4px 0', background: '#fff', filter: isHovered ? 'none' : 'blur(4px)', transition: 'filter 0.3s' }}>
                     <div style={{ textAlign: 'center', fontFamily: "'Bebas Neue'", fontSize: '0.75rem', color: '#111', letterSpacing: 1, lineHeight: 1 }}>
                       {band.slice(0, 14).toUpperCase()}
                     </div>
@@ -1004,10 +1044,7 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
         INITIALIZE ARCHIVE
       </button>
       <button
-        onClick={() => {
-  if (currentSession) window.location.href = 'https://concert-tracker-eight.vercel.app';
-  else setMode('login');
-}}
+        onClick={() => currentSession ? onEnterArchive() : setMode('login')}
         style={{
           background: 'transparent',
           color: TEAL,
@@ -1023,7 +1060,7 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
         onMouseEnter={e => { e.currentTarget.style.background = `${TEAL}15`; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 0 30px ${TEAL}33`; }}
         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
       >
-        ACCESS YOUR COLLECTION
+        {currentSession ? 'ENTER THE ARCHIVE' : 'ACCESS YOUR COLLECTION'}
       </button>
     </div>
 
@@ -1044,7 +1081,7 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
 
     {/* Bottom manifesto */}
     <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '0.9rem' : '1.1rem', color: GRAY, letterSpacing: 6, lineHeight: 2.5, opacity: 0.5 }}>
-      TRACKRECORD // MUSEUM OF SOUND // EST. 2024<br />
+      TRACKRECORD // MUSEUM OF SOUND // EST. 2026<br />
       <span style={{ fontSize: '0.85rem', letterSpacing: 4 }}>EVERY SHOW. EVERY STUB. EVERY MEMORY.</span>
     </div>
   </div>
@@ -1052,6 +1089,7 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
   {/* Bottom line */}
   <div style={{ position: 'absolute', bottom: 0, left: '5%', right: '5%', height: 1, background: `linear-gradient(90deg, transparent, ${PURPLE}88, ${TEAL}88, transparent)` }} />
 </div>
+        
       {/* ── BOTTOM TICKER ── */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000, background: '#000', borderTop: `1px solid ${TEAL}22`, height: 28, display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
         <div style={{ background: '#111', color: GOLD, fontFamily: "'Bebas Neue'", fontSize: 10, letterSpacing: 2, padding: '0 12px', height: '100%', display: 'flex', alignItems: 'center', flexShrink: 0, borderRight: `1px solid ${GOLD}33` }}>
@@ -1059,7 +1097,7 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
         </div>
         <div style={{ overflow: 'hidden', flex: 1 }}>
           <div className="ticker-scroll" style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GOLD, paddingLeft: 20, letterSpacing: 1, opacity: 0.6, animationDuration: '60s' }}>
-            {`ARCHIVE STATUS: ACTIVE /// TOTAL SIGNALS: ${concerts.length} /// GENRES MAPPED: ${new Set(concerts.map(c => c.genre).filter(Boolean)).size} /// STATES COVERED: ${new Set(concerts.map(c => c.state).filter(Boolean)).size} /// ARTIFACTS STORED: ${concerts.filter(c => c.image_url || c.personal_photo_url).length} /// SYSTEM: NOMINAL /// `.repeat(3)}
+            {`ARCHIVE STATUS: ACTIVE /// TOTAL SIGNALS: ${concerts.length} /// MUSEUMS INITIALIZED: ${userCount} /// GENRES MAPPED: ${new Set(concerts.map(c => c.genre).filter(Boolean)).size} /// STATES COVERED: ${new Set(concerts.map(c => c.state).filter(Boolean)).size} /// ARTIFACTS STORED: ${concerts.filter(c => c.image_url || c.personal_photo_url).length} /// SYSTEM: NOMINAL /// `.repeat(3)}
           </div>
         </div>
       </div>
