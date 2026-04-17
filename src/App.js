@@ -3218,9 +3218,8 @@ function SetlistPaper({ src, index = 0, total = 1 }) {
           alt="Stage Artifact" 
           style={{
             display: 'block',
-            maxHeight: '160px',  // Caps the height for tall setlists
-            maxWidth: '220px',   // Allows tickets to be wide
-            objectFit: 'contain',
+            width: '220px',
+            height: 'auto',
             filter: 'sepia(0.05) contrast(1.05)'
           }}
         />
