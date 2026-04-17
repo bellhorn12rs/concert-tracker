@@ -4666,11 +4666,12 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
   );
 }
 
-// ─── MANAGE TAB (STABILIZED LOGIC) ───────────────────────────────────────────────
-function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session }) {
+// ─── MANAGE TAB (STABILIZED LOGIC & ONBOARDING) ───────────────────────────────────────────────
+function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData, setActiveTab }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const PER = 30;
+  const isMobile = window.innerWidth < 768;
 
   const handleCSVUpload = async (e) => {
     const file = e.target.files[0];
@@ -4680,12 +4681,10 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session }) {
     reader.onload = async (event) => {
       try {
         const text = event.target.result;
-        // Split rows and filter out empty ones
         const rows = text.split(/\r?\n/).map(r => r.trim()).filter(Boolean);
         const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
         const dataRows = rows.slice(1);
         
-        // Map the CSV columns to your Database schema
         const newShows = dataRows.map(row => {
           const values = row.split(',');
           const entry = {};
@@ -4693,15 +4692,13 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session }) {
 
           return {
             date: entry.date || null,
-            // Split lineup by semicolon to support multiple artists per show
             bands: entry.lineup ? entry.lineup.split(';').map(b => b.trim()) : [entry.headliner],
             venue: entry.venue || null,
             city: entry.city || null,
             state: entry.state || null,
             is_festival: entry.is_festival?.toUpperCase() === 'TRUE',
             festival_name: entry.festival_name || null,
-            user_id: session?.user?.id || concerts[0]?.user_id, // Stamps it with the logged-in user's ID
-            
+            user_id: session?.user?.id || (concerts.length > 0 ? concerts[0].user_id : null),
           };
         });
 
@@ -4710,10 +4707,11 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session }) {
           if (error) throw error;
           
           alert("✅ ARCHIVE UPDATED: Your historical signals have been curated.");
-// 🟢 Soft Sync: Refresh data and navigate without a hard browser reload
-if (onFetchData) await onFetchData(); 
-
-setActiveTab('dashboard');
+          
+          // Refresh data without hard reload
+          if (onFetchData) await onFetchData(); 
+          // Take them to the dashboard to see the results
+          if (setActiveTab) setActiveTab('dashboard');
         }
       } catch (err) {
         console.error("Office sync failed:", err);
@@ -4743,24 +4741,57 @@ setActiveTab('dashboard');
 
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
+      
+      {/* 🤝 CURATOR ONBOARDING GUIDE (Hand-holding for new users) */}
+      {(!concerts || concerts.length < 5) && (
+        <div style={{ 
+          background: 'rgba(0, 229, 204, 0.05)', 
+          border: `1px dashed ${C.teal}44`, 
+          borderRadius: 12, 
+          padding: 25, 
+          marginBottom: 30
+        }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.teal, marginBottom: 10 }}>
+            WELCOME TO THE BACK OFFICE, CURATOR.
+          </div>
+          <p style={{ fontFamily: "'Space Mono'", fontSize: 11, color: C.gray, lineHeight: 1.6, maxWidth: 600 }}>
+            The archive is currently at low capacity. To populate your museum floors quickly, follow the bulk processing protocol below:
+          </p>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, marginTop: 20 }}>
+            {[
+              { step: "01", title: "DOWNLOAD BLUEPRINT", desc: "Use our standardized template to organize your history.", action: "GET TEMPLATE", link: "YOUR_HOSTED_TEMPLATE_URL" },
+              { step: "02", title: "COMPILE DATA", desc: "Ensure dates are YYYY-MM-DD and lineups use semicolons.", action: "VIEW GUIDE", link: "#" },
+              { step: "03", title: "SYNC SIGNALS", desc: "Upload your finalized .CSV file to initialize the museum.", action: "READY TO SYNC", trigger: true }
+            ].map((item, i) => (
+              <div key={i} style={{ background: 'rgba(0,0,0,0.3)', padding: 15, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, fontWeight: 900, marginBottom: 5 }}>{item.step}</div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff' }}>{item.title}</div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, margin: '8px 0 12px' }}>{item.desc}</div>
+                {item.trigger ? (
+                  <label style={{ cursor: 'pointer', color: C.gold, fontSize: 9, fontFamily: "'Space Mono'", fontWeight: 900 }}>
+                     [ INITIALIZE UPLOAD ]
+                     <input type="file" accept=".csv" hidden onChange={handleCSVUpload} />
+                  </label>
+                ) : (
+                  <a href={item.link} style={{ textDecoration: 'none', color: C.teal, fontSize: 9, fontFamily: "'Space Mono'", fontWeight: 900 }}>[ {item.action} ]</a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Standard Table Controls */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
         <input 
           style={{ ...localInputStyle, flex: 1 }} 
-          placeholder="Search shows to edit..." 
+          placeholder="Search existing records..." 
           value={search} 
           onChange={e => { setSearch(e.target.value); setPage(1); }} 
         />
         
-        {/* CSV TRIGGER */}
-        <label style={{ 
-          background: C.purple + '22', border: `1px solid ${C.purple}`, color: C.purple, 
-          padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 
-        }}>
-          📥 BULK IMPORT (CSV)
-          <input type="file" accept=".csv" hidden onChange={handleCSVUpload} />
-        </label>
-
-        <Btn onClick={onAdd}>+ Add Single Show</Btn>
+        <Btn onClick={onAdd}>+ Add Single Entry</Btn>
       </div>
 
       <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>
