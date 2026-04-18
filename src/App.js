@@ -6643,20 +6643,25 @@ useEffect(() => {
         
         {/* Floating Interactive Pedestal */}
         <div 
-          onClick={() => {
-            console.log("INITIALIZING SIGNAL..."); // Debugging check
-            setAddShowModal(true); 
-          }}
-          className="shrine-active"
-          style={{
-            width: isMobile ? 220 : 300,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            cursor: 'pointer',
-            zIndex: 10
-          }}
-        >
+  onClick={(e) => {
+    e.stopPropagation();
+    console.log("INITIALIZING SIGNAL...");
+    // 🟢 This is the most common function name for your current flow
+    if (typeof setAddMode === 'function') setAddMode(true);
+    else if (typeof setShowAddModal === 'function') setShowAddModal(true);
+    else if (typeof setAddShowModal === 'function') setAddShowModal(true);
+  }}
+  className="shrine-active"
+  style={{
+    width: isMobile ? 220 : 300,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    cursor: 'pointer',
+    zIndex: 9999, // High priority layer
+    position: 'relative'
+  }}
+>
           {/* THE GOLDEN SIGNAL (Throbbing/Pulsing Core) */}
           <div style={{
             width: isMobile ? 130 : 170,
