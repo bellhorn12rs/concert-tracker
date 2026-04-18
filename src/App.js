@@ -6623,7 +6623,7 @@ useEffect(() => {
       }}>
         
         {/* Background Ambient "Dust" or Signal Interference */}
-        <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 1px, ${GOLD} 1px, transparent 2px)`, backgroundSize: '100% 3px', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 1px, #ffcc00 1px, transparent 2px)`, backgroundSize: '100% 3px', pointerEvents: 'none' }} />
 
         {/* The 3D Floating Pedestal Structure */}
         <div 
@@ -6640,20 +6640,21 @@ useEffect(() => {
             position: 'relative'
           }}
         >
-          {/* THE GOLDEN SIGNAL (The Orb replacement) */}
+          {/* THE GOLDEN SIGNAL (High-Fidelity Rendering) */}
           <div 
             className="hypnotic-breathing"
             style={{
               width: isMobile ? 120 : 150,
               height: isMobile ? 120 : 150,
               borderRadius: '50%',
-              background: `radial-gradient(circle at 35% 35%, #fff 0%, ${GOLD} 45%, #b8860b 70%, #000 100%)`,
-              boxShadow: `0 0 80px ${GOLD}33, inset 0 0 20px rgba(255,255,255,0.5)`,
+              /* 🟢 Liquid Gold Gradient */
+              background: `radial-gradient(circle at 35% 35%, #fff 0%, #ffcc00 45%, #b8860b 70%, #000 100%)`,
+              boxShadow: `0 0 80px rgba(255, 204, 0, 0.2), inset 0 0 20px rgba(255,255,255,0.5)`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               zIndex: 2,
-              border: `1px solid ${GOLD}44`
+              border: `1px solid rgba(255, 204, 0, 0.3)`
             }}
           >
             {/* White-hot Core */}
@@ -6665,17 +6666,17 @@ useEffect(() => {
             marginTop: -40,
             width: '100%',
             height: 140,
-            background: `linear-gradient(180deg, ${GOLD}22 0%, transparent 100%)`,
+            background: `linear-gradient(180deg, rgba(255, 204, 0, 0.1) 0%, transparent 100%)`,
             clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)',
-            borderTop: `2px solid ${GOLD}`,
+            borderTop: `2px solid #ffcc00`,
             opacity: 0.4,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             paddingTop: 60
           }}>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GOLD, letterSpacing: 4, opacity: 0.6 }}>[ SYSTEM_IDLE ]</div>
-            <div style={{ width: '40%', height: 1, background: GOLD, marginTop: 10, opacity: 0.3 }} />
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#ffcc00', letterSpacing: 4, opacity: 0.6 }}>[ SYSTEM_IDLE ]</div>
+            <div style={{ width: '40%', height: 1, background: '#ffcc00', marginTop: 10, opacity: 0.3 }} />
           </div>
         </div>
         
@@ -6689,26 +6690,26 @@ useEffect(() => {
             lineHeight: 0.9,
             marginBottom: 12
           }}>
-            <span style={{ color: GRAY }}>MUSEUM</span><br />
-            IS <span style={{ color: GOLD, textShadow: `0 0 40px ${GOLD}66` }}>DARK.</span>
+            <span style={{ color: '#444' }}>MUSEUM</span><br />
+            IS <span style={{ color: '#ffcc00', textShadow: `0 0 40px rgba(255, 204, 0, 0.4)` }}>DARK.</span>
           </div>
           
           <div style={{ 
             fontFamily: "'Space Mono'", 
             fontSize: 11, 
-            color: GOLD, 
+            color: '#ffcc00', 
             letterSpacing: 3,
             maxWidth: 300,
             margin: '0 auto',
             lineHeight: 1.6
           }}>
             NO SIGNALS DETECTED.<br />
-            <span style={{ color: GRAY }}>TAP THE ARTIFACT TO INITIALIZE<br />YOUR FIRST PERMANENT RECORD.</span>
+            <span style={{ color: '#888' }}>TAP THE ARTIFACT TO INITIALIZE<br />YOUR FIRST PERMANENT RECORD.</span>
           </div>
         </div>
 
-        {/* Bottom Status Readout */}
-        <div style={{ position: 'absolute', bottom: 40, fontFamily: "'Space Mono'", fontSize: 8, color: '#333', letterSpacing: 4 }}>
+        {/* Bottom Status Readout using your theme color */}
+        <div style={{ position: 'absolute', bottom: 40, fontFamily: "'Space Mono'", fontSize: 8, color: C.theme, letterSpacing: 4, opacity: 0.5 }}>
           AWAITING_USER_INPUT // SECTOR_00_EMPTY
         </div>
       </div>
