@@ -6738,14 +6738,21 @@ useEffect(() => {
       <>
         <OnThisDay concerts={concerts} />
         
+        {/* ROW 1: SPINNER, MARQUEE, INSIGHTS */}
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr', gap: 20 }}>
-          <ArtistInsights concerts={concerts} />
+          
+          {/* 🟢 1. RANDOM SHOW (NOW TOP LEFT / FIRST ON MOBILE) */}
+          <RandomShow concerts={concerts} />
+
+          {/* ⚪ 2. THEATER MARQUEE (REMAINS MIDDLE) */}
           <TheaterMarquee 
             upcoming={upcoming} 
             onAdd={isAdmin ? () => setUpcomingModal('new') : null} 
             onEdit={isAdmin ? setUpcomingModal : null} 
           />
-          <RandomShow concerts={concerts} />
+
+          {/* 🟡 3. ARTIST INSIGHTS (NOW TOP RIGHT / THIRD ON MOBILE) */}
+          <ArtistInsights concerts={concerts} />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: 20 }}>
@@ -6788,7 +6795,7 @@ useEffect(() => {
             <DecadeBlocks sets={allSetsList} headerStats={headerStats} concerts={concerts} />
           </Card>
         </div>
-
+        
         {/* ─── ROW 2: ROTATION, SPOTLIGHT, CITIES (3 COLUMNS) ─── */}
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
           
