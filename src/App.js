@@ -669,6 +669,17 @@ const MarqueeStyles = () => (
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+@keyframes system-startup {
+  0% { filter: brightness(0) blur(10px); background: #000; }
+  50% { filter: brightness(2) blur(2px); background: ${C.teal}; }
+  100% { filter: brightness(1) blur(0); background: transparent; }
+}
+
+.system-online-flash {
+  animation: system-startup 1.2s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
    @keyframes orb-pulse {
   0% { transform: scale(1); box-shadow: 0 0 40px rgba(0, 229, 204, 0.4), inset 0 0 20px rgba(0, 229, 204, 0.2); }
   50% { transform: scale(1.05); box-shadow: 0 0 80px rgba(0, 229, 204, 0.6), inset 0 0 40px rgba(0, 229, 204, 0.4); }
@@ -1660,7 +1671,7 @@ function ArtistInsights({ concerts }) {
 }
 
 // ─── RANDOM SHOW (FULL FESTIVAL & SCROLLABLE EDITION) ────────────────────────
-// ─── RANDOM SHOW (SPECIFIC FESTIVAL & WATERMARK FIX) ────────────────────────
+// ─── RANDOM SHOW (SPECIFIC FESTIVAL & SYSTEM PLACEHOLDER) ────────────────────────
 function RandomShow({ concerts }) {
   const [show, setShow] = useState(null);
   const [spinning, setSpinning] = useState(false);
@@ -1686,9 +1697,36 @@ function RandomShow({ concerts }) {
 
   const bands = show.bands || [show.artist];
   const displayImg = (show.personal_photo_url?.split(',')[0]) || (show.image_url?.split(',')[0]);
-  
-  // Use specific festival name if it exists, otherwise fallback to "FESTIVAL"
   const festLabel = show.festival_name || "FESTIVAL";
+  const themeColor = show.is_festival ? C.gold : C.purple;
+
+  // 🛰️ SYSTEM PLACEHOLDER: Shown when no image exists in the archive
+  const SignalPlaceholder = () => (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      background: '#050508',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      border: `1px dashed ${hexToRgba(themeColor, 0.3)}`,
+      borderRadius: '4px',
+      opacity: 0.6
+    }}>
+      <div style={{ opacity: 0.4 }}><TrackRecordLogo size={30} /></div>
+      <div style={{ 
+        fontFamily: "'Space Mono'", 
+        fontSize: 7, 
+        color: themeColor, 
+        marginTop: 12, 
+        letterSpacing: 2,
+        textAlign: 'center'
+      }}>
+        NO_VISUAL_SIGNAL<br/>[ AWAITING_UPLOAD ]
+      </div>
+    </div>
+  );
 
   return (
     <Card neon className="card-texture" style={{ 
@@ -1699,8 +1737,8 @@ function RandomShow({ concerts }) {
       flexDirection: 'column'
     }}>
       
-      {/* 📸 THE IMAGE (Placed in the black space on the right) */}
-      {displayImg && !spinning && (
+      {/* 📸 IMAGE SLOT (REAL OR PLACEHOLDER) */}
+      {!spinning && (
         <div style={{
           position: 'absolute',
           right: 15,
@@ -1708,16 +1746,25 @@ function RandomShow({ concerts }) {
           transform: 'translateY(-50%)',
           width: '140px',
           height: '160px',
-          background: `url(${displayImg}) center/cover no-repeat`,
-          borderRadius: '4px',
-          border: `1px solid ${show.is_festival ? C.gold : C.purple}44`,
-          boxShadow: `0 0 20px rgba(0,0,0,0.6)`,
           zIndex: 1,
           animation: 'fade-in 0.5s ease'
-        }} />
+        }}>
+          {displayImg ? (
+            <div style={{
+              width: '100%',
+              height: '100%',
+              background: `url(${displayImg}) center/cover no-repeat`,
+              borderRadius: '4px',
+              border: `1px solid ${hexToRgba(themeColor, 0.4)}`,
+              boxShadow: `0 0 20px rgba(0,0,0,0.6)`
+            }} />
+          ) : (
+            <SignalPlaceholder />
+          )}
+        </div>
       )}
 
-      {/* 🗓 THE BIG FAINT YEAR WATERMARK (Moved to z-index 2 so it shows over the image/card) */}
+      {/* 🗓 BIG YEAR WATERMARK */}
       <div style={{ 
         position: 'absolute', 
         right: 10, 
@@ -1725,7 +1772,7 @@ function RandomShow({ concerts }) {
         fontFamily: "'Bebas Neue'",
         fontSize: '10rem',
         zIndex: 2,
-        color: show.is_festival ? C.gold : C.purple,
+        color: themeColor,
         opacity: 0.1,
         pointerEvents: 'none',
         lineHeight: 1,
@@ -1737,16 +1784,16 @@ function RandomShow({ concerts }) {
       <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
         {/* Header Row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: show.is_festival ? C.gold : C.purple, letterSpacing: 2, fontWeight: 700 }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: themeColor, letterSpacing: 2, fontWeight: 700 }}>
             {spinning ? "🧠 RECALLING..." : "🎲 RANDOM RECALL"}
           </div>
-          <button onClick={spin} disabled={spinning} style={{ background: spinning ? C.white : (show.is_festival ? C.gold : C.purple), border: 'none', color: '#000', fontSize: 8, padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontWeight: 900 }}>
+          <button onClick={spin} disabled={spinning} style={{ background: spinning ? C.white : themeColor, border: 'none', color: '#000', fontSize: 8, padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontWeight: 900 }}>
             {spinning ? "•••" : "SPIN"}
           </button>
         </div>
 
         <div className={spinning ? "spinning-text" : "fade-in"} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {/* DATE & SPECIFIC FESTIVAL NAME */}
+          {/* DATE & FESTIVAL */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <span style={{ background: C.white, color: C.bg, fontFamily: "'Bebas Neue'", fontSize: '1.4rem', padding: '0 8px' }}>
               {getYear(show.date)}
@@ -1764,21 +1811,20 @@ function RandomShow({ concerts }) {
                 padding: '2px 8px', 
                 borderRadius: '4px',
                 fontWeight: 900,
-                letterSpacing: '1px',
-                boxShadow: `0 0 10px ${hexToRgba(C.gold, 0.3)}`
+                letterSpacing: '1px'
               }}>
                 {festLabel.toUpperCase()}
               </span>
             )}
           </div>
 
-          {/* ARTISTS (Scrollable list) */}
+          {/* ARTISTS */}
           <div style={{ 
             display: 'flex', 
             flexDirection: 'column', 
             gap: 4, 
             marginBottom: 10, 
-            maxWidth: displayImg ? '50%' : '100%',
+            maxWidth: '52%', // Keeps text from overlapping the image/placeholder
             maxHeight: '110px',
             overflowY: 'auto',
             paddingRight: '5px',
@@ -1792,7 +1838,7 @@ function RandomShow({ concerts }) {
                 lineHeight: 1, 
                 letterSpacing: '0.05em',
                 textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                borderLeft: `2px solid ${show.is_festival ? C.gold : C.purple}`,
+                borderLeft: `2px solid ${themeColor}`,
                 paddingLeft: '8px'
               }}>
                 {getBandName(b).toUpperCase()}
@@ -1805,7 +1851,7 @@ function RandomShow({ concerts }) {
             <div style={{ 
               fontFamily: "'Bebas Neue'", 
               fontSize: '1.5rem', 
-              color: show.is_festival ? C.gold : C.purple, 
+              color: themeColor, 
               letterSpacing: '1px',
               lineHeight: 1.1 
             }}>
@@ -1824,34 +1870,100 @@ function RandomShow({ concerts }) {
 // ─── SONIC DNA BAR CHART (FLEXIBLE HEIGHT EDITION) ───────────────────────────
 function SonicDNA({ stats, onGenreClick }) {
   if (!stats || !stats.length) return null;
+  const activeStats = stats.filter(s => s.count > 0);
   const max = Math.max(...stats.map(s => s.count));
 
+  // 🛰️ DATA THRESHOLD: We want at least 3 data points to make the DNA look "mapped"
+  const isInitializing = activeStats.length < 3;
+
   return (
-    <Card neon style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Card neon style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', overflow: 'hidden' }}>
       <CardTitle>SONIC DNA 🧬</CardTitle>
-      {/* Hidden scrollbar container */}
-      <div className="hide-scroll" style={{ flex: 1, overflowY: 'auto', paddingRight: 15, display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+      {/* 🟢 OVERLAY: Awaiting Data Challenge */}
+      {isInitializing && (
+        <div style={{ 
+          position: 'absolute', 
+          inset: 0, 
+          zIndex: 10, 
+          background: 'rgba(5,5,8,0.85)', 
+          backdropFilter: 'blur(4px)',
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          padding: '20px',
+          textAlign: 'center'
+        }}>
+          <div style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 10, 
+            color: C.gold, 
+            letterSpacing: 2, 
+            fontWeight: 900,
+            animation: 'pulse 2s infinite'
+          }}>
+            [ MAPPING_IN_PROGRESS ]
+          </div>
+          <div style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 8, 
+            color: C.grayDim, 
+            marginTop: 10, 
+            lineHeight: 1.5,
+            maxWidth: '180px'
+          }}>
+            {3 - activeStats.length} MORE UNIQUE GENRE SIGNALS REQUIRED TO COMPLETE DNA SEQUENCING.
+          </div>
+        </div>
+      )}
+
+      {/* Main List Container */}
+      <div className="hide-scroll" style={{ 
+        flex: 1, 
+        overflowY: 'auto', 
+        paddingRight: 15, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: 10,
+        opacity: isInitializing ? 0.3 : 1, // Ghost the bars while initializing
+        filter: isInitializing ? 'grayscale(1)' : 'none'
+      }}>
         <style>{`.hide-scroll::-webkit-scrollbar { display: none; }`}</style>
         
-        {stats.filter(s => s.count > 0).map((s, i) => {
+        {activeStats.map((s, i) => {
           const pct = Math.round((s.count / max) * 100);
           const color = GENRE_COLORS[s.name] || C.teal;
           return (
             <div key={s.name} 
-                 onClick={() => onGenreClick && onGenreClick(s.name)} 
-                 style={{ cursor: 'pointer', transition: 'all 0.2s' }} 
-                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateX(5px)'; e.currentTarget.style.filter = 'brightness(1.3)'; }} 
+                 onClick={() => !isInitializing && onGenreClick && onGenreClick(s.name)} 
+                 style={{ cursor: isInitializing ? 'default' : 'pointer', transition: 'all 0.2s' }} 
+                 onMouseEnter={e => { if(!isInitializing) { e.currentTarget.style.transform = 'translateX(5px)'; e.currentTarget.style.filter = 'brightness(1.3)'; } }} 
                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.filter = 'none'; }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontFamily: "'Space Mono'", fontSize: 9, fontWeight: 900 }}>
-                <span style={{ color: '#fff', textShadow: `0 0 8px ${color}`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name.toUpperCase()}</span>
-                <span style={{ color: color }}>{s.count}</span>
+                <span style={{ color: '#fff', textShadow: isInitializing ? 'none' : `0 0 8px ${color}`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name.toUpperCase()}</span>
+                <span style={{ color: isInitializing ? C.grayDim : color }}>{s.count}</span>
               </div>
-              <div style={{ width: '100%', background: 'rgba(255,255,255,0.1)', height: 8, borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ width: `${pct}%`, height: '100%', background: color, boxShadow: `0 0 10px ${color}` }} />
+              <div style={{ width: '100%', background: 'rgba(255,255,255,0.05)', height: 8, borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ 
+                  width: `${pct}%`, 
+                  height: '100%', 
+                  background: isInitializing ? C.grayDim : color, 
+                  boxShadow: isInitializing ? 'none' : `0 0 10px ${color}`,
+                  transition: 'width 1s ease-out' 
+                }} />
               </div>
             </div>
           );
         })}
+
+        {/* 🟢 GHOST SLOTS: Makes the chart look like it has "space to grow" */}
+        {isInitializing && activeStats.length < 5 && Array.from({ length: 5 - activeStats.length }).map((_, i) => (
+          <div key={`ghost-${i}`} style={{ opacity: 0.1 }}>
+            <div style={{ width: '40%', height: 6, background: C.grayDim, marginBottom: 6, borderRadius: 2 }} />
+            <div style={{ width: '100%', height: 8, background: C.grayDim, borderRadius: 4 }} />
+          </div>
+        ))}
       </div>
     </Card>
   );
@@ -5469,7 +5581,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     venue: '', 
     city: '', 
     state: '',
-    bands: [], // Array of objects: [{name: '', genre: 'Jam'}]
+    bands: [], 
     is_festival: false, 
     festival_name: '',
     image_url: '', 
@@ -5482,9 +5594,19 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   const [uploading, setUploading] = useState(false);
   const [entryStep, setEntryStep] = useState(concert === 'new' ? 'gate' : 'form');
 
+  // 🟢 HELPER: Find most frequent location
+  const getHomeTurf = () => {
+    if (allConcerts.length === 0) return { city: '', state: '' };
+    // Scavenge the most recent show for a quick starting point
+    const last = allConcerts[0];
+    return { city: last.city || '', state: last.state || '' };
+  };
+
   const set = (k, v) => {
     setForm(prev => {
       const newForm = { ...prev, [k]: v };
+      
+      // Auto-fill City/State when a known venue is typed
       if (k === 'venue' && v && v.length > 2) {
         const match = allConcerts.find(c => c.venue?.toLowerCase() === v.toLowerCase());
         if (match) {
@@ -5492,6 +5614,14 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
           newForm.state = match.state || '';
         }
       }
+
+      // 🟢 AUTO-MIRROR: If Headliner is typed, sync it to the first Band slot
+      if (!prev.is_festival && k === 'artist') {
+         if (newForm.bands.length <= 1) {
+            newForm.bands = [{ name: v, genre: prev.bands[0]?.genre || 'Indie Rock' }];
+         }
+      }
+
       return newForm;
     });
   };
@@ -5500,8 +5630,6 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     if (!file) return null;
     setUploading(true);
     
-    // 🟢 THE FIX: Only check EXIF for Polaroids, and ONLY if the date is currently blank.
-    // Ticket stubs and posters are usually photographed after the fact!
     if (type === 'POLAROID') {
       try {
         if (typeof EXIF !== 'undefined') {
@@ -5510,7 +5638,6 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
               const rawDate = EXIF.getTag(this, "DateTimeOriginal"); 
               if (rawDate) {
                 const extractedDate = rawDate.split(' ')[0].replace(/:/g, '-');
-                // Only auto-fill if the user hasn't manually entered a date yet
                 setForm(prev => prev.date ? prev : { ...prev, date: extractedDate });
               }
               resolve();
@@ -5543,40 +5670,28 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     }
   }
 
-  // 🟢 PRE-FILL LOGIC: Ensures existing bands/genres load correctly on edit
   useEffect(() => {
-  if (concert && concert !== 'new') {
-    
-    // Normalize bands — handle strings, objects, and empty arrays
-    let loadedBands = [];
-    if (Array.isArray(concert.bands) && concert.bands.length > 0) {
-      loadedBands = concert.bands.map(b => {
-        if (typeof b === 'string') {
-          // Legacy string format — convert to object
-          return { name: b, genre: concert.genre || 'Indie Rock' };
-        }
-        if (typeof b === 'object' && b.name) {
-          // Already the new object format
-          return b;
-        }
-        return { name: '', genre: 'Indie Rock' };
-      });
-    } else if (concert.artist) {
-      // Very old entries with no bands array at all
-      loadedBands = [{ name: concert.artist, genre: concert.genre || 'Indie Rock' }];
+    if (concert && concert !== 'new') {
+      let loadedBands = [];
+      if (Array.isArray(concert.bands) && concert.bands.length > 0) {
+        loadedBands = concert.bands.map(b => {
+          if (typeof b === 'string') return { name: b, genre: concert.genre || 'Indie Rock' };
+          if (typeof b === 'object' && b.name) return b;
+          return { name: '', genre: 'Indie Rock' };
+        });
+      } else if (concert.artist) {
+        loadedBands = [{ name: concert.artist, genre: concert.genre || 'Indie Rock' }];
+      }
+
+      setForm({ ...initialState, ...concert, artist: loadedBands[0]?.name || concert.artist || '', bands: loadedBands });
+    } else {
+      // 🟢 NEW USER FLOW: Pre-fill location from history
+      const turf = getHomeTurf();
+      setForm({ ...initialState, city: turf.city, state: turf.state, bands: [{ name: '', genre: 'Indie Rock' }] });
     }
+  }, [concert]);
 
-    setForm({
-      ...initialState,
-      ...concert,
-      artist: loadedBands[0]?.name || concert.artist || '',
-      bands: loadedBands
-    });
-
-  } else {
-    setForm(initialState);
-  }
-}, [concert]);
+  // Render logic remains similar but uses the updated 'set' and 'form' state
 
   const gateBtn = (color) => ({
     background: hexToRgba(color, 0.1), border: `1px solid ${color}`, color: '#fff',
@@ -5786,6 +5901,15 @@ const isAdmin = !!session?.user && !viewingUser;
       loading: loading
     };
   }, [session, loading, isOwner]);
+
+  const copyProfileLink = () => {
+  // Logic: Gets the current user's profile URL
+  const handle = session?.user?.user_metadata?.username || 'curator';
+  const url = `${window.location.origin}/#/u/${handle}`;
+  
+  navigator.clipboard.writeText(url);
+  alert("SIGNAL LINK COPIED: Share your museum with the network.");
+};
 
   // ── 5. SYSTEM HANDLERS & EFFECTS ──
 
@@ -6239,32 +6363,48 @@ useEffect(() => {
   }
 
   // ── 2. MODIFICATION HANDLERS (ADMIN ONLY) ──
-  async function handleDelete(id) {
-    // 🛡️ SECURITY: Don't let someone delete while viewing another museum
-    if (viewingUser) return; 
-    
-    if (!id || id === 'new') {
+async function handleDelete(id) {
+  // 🛡️ SECURITY: Don't let someone delete while viewing another museum
+  if (viewingUser) return; 
+  
+  if (!id || id === 'new') {
+    setEditTarget(null);
+    return;
+  }
+
+  // 🟢 THE FIX: High-Intensity Safety Rail
+  const warningMsg = 
+    "⚠️ CRITICAL SYSTEM WARNING\n\n" +
+    "YOU ARE ABOUT TO PERMANENTLY ERASE THIS SIGNAL FROM THE ARCHIVE.\n" +
+    "THIS ACTION CANNOT BE UNDONE.\n\n" +
+    "DO YOU WISH TO PURGE THIS RECORD?";
+
+  if (window.confirm(warningMsg)) {
+    try {
+      // Add a small console log for debugging during the beta
+      console.log(`%c PURGING SIGNAL: ${id}`, "color: #ff4466; font-weight: bold;");
+
+      const { error } = await supabase
+        .from('concerts')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // 🟢 SUCCESS FEEDBACK: Refresh the museum floor
+      await fetchConcerts();
       setEditTarget(null);
-      return;
-    }
-
-    if (window.confirm('PERMANENTLY DELETE THIS SHOW FROM ARCHIVE?')) {
-      try {
-        const { error } = await supabase
-          .from('concerts')
-          .delete()
-          .eq('id', id);
-
-        if (error) throw error;
-
-        await fetchConcerts();
-        setEditTarget(null);
-      } catch (err) {
-        console.error("Delete Error:", err);
-        alert(`DELETE FAILED: ${err.message}`);
-      }
+      
+      // Optional: A non-intrusive confirmation log
+      console.log("✅ SIGNAL SUCCESSFULLY PURGED.");
+      
+    } catch (err) {
+      console.error("Delete Error:", err);
+      // Give them a technical readout if it fails
+      alert(`SYSTEM ERROR: PURGE FAILED // ${err.message.toUpperCase()}`);
     }
   }
+}
 
   async function handleSetGenre(artist, genre) {
     if (!artist) return;
@@ -6795,7 +6935,7 @@ useEffect(() => {
             <DecadeBlocks sets={allSetsList} headerStats={headerStats} concerts={concerts} />
           </Card>
         </div>
-        
+
         {/* ─── ROW 2: ROTATION, SPOTLIGHT, CITIES (3 COLUMNS) ─── */}
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
           
