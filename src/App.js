@@ -6628,40 +6628,43 @@ useEffect(() => {
   {activeTab === 'dashboard' && (
   <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
     
-    {/* ─── PHASE 1: THE GOLDEN SHRINE (ANIMATED) ─── */}
-    {concerts.length === 0 ? (
-      <div style={{ 
-        height: '80vh', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        background: 'radial-gradient(circle at center, #0a0a0c 0%, #000 100%)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
+    {/* ─── PHASE 1: THE GOLDEN SHRINE ─── */}
+{concerts.length === 0 ? (
+  <div style={{ 
+    height: '80vh', 
+    display: 'flex', 
+    flexDirection: 'column', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    background: 'radial-gradient(circle at center, #0a0a0c 0%, #000 100%)',
+    position: 'relative',
+    overflow: 'hidden',
+    pointerEvents: 'auto', 
+    zIndex: 1
+  }}>
+    
+    {/* Floating Interactive Pedestal */}
+    <div 
+      onClick={(e) => {
+        e.stopPropagation();
+        console.log("⚡ GOLDEN SIGNAL ACTIVATED");
         
-        {/* Floating Interactive Pedestal */}
-        <div 
-  onClick={(e) => {
-    e.stopPropagation();
-    console.log("INITIALIZING SIGNAL...");
-    // 🟢 This is the most common function name for your current flow
-    if (typeof setAddMode === 'function') setAddMode(true);
-    else if (typeof setShowAddModal === 'function') setShowAddModal(true);
-    else if (typeof setAddShowModal === 'function') setAddShowModal(true);
-  }}
-  className="shrine-active"
-  style={{
-    width: isMobile ? 220 : 300,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    cursor: 'pointer',
-    zIndex: 9999, // High priority layer
-    position: 'relative'
-  }}
->
+        /* 🟢 THE CRITICAL FIX: */
+        /* In your App.js, the variable that opens the 'Photo?' screen is setEditTarget */
+        setEditTarget('new'); 
+      }}
+      className="shrine-active"
+      style={{
+        width: isMobile ? 220 : 300,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        cursor: 'pointer',
+        zIndex: 9999, 
+        position: 'relative',
+        pointerEvents: 'auto'
+      }}
+    >
           {/* THE GOLDEN SIGNAL (Throbbing/Pulsing Core) */}
           <div style={{
             width: isMobile ? 130 : 170,
