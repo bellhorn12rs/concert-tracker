@@ -6604,13 +6604,13 @@ useEffect(() => {
             width: 150,
             height: 150,
             borderRadius: '50%',
-            /* 🟢 FIX: Changed TEAL to C.teal */
-            background: `radial-gradient(circle at 30% 30%, #fff, ${C.teal} 40%, #000 90%)`,
+            /* 🟢 FIX: Using C.theme instead of TEAL */
+            background: `radial-gradient(circle at 30% 30%, #fff, ${C.theme} 40%, #000 90%)`,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: `0 0 60px ${C.teal}44`,
+            boxShadow: `0 0 60px ${C.theme}44`,
             transition: 'transform 0.3s ease'
           }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
@@ -6626,15 +6626,15 @@ useEffect(() => {
             color: '#fff', 
             letterSpacing: 4, 
             marginBottom: 8,
-            /* 🟢 FIX: Changed TEAL to C.teal */
-            textShadow: `0 0 20px ${C.teal}33` 
+            /* 🟢 FIX: Using C.theme instead of TEAL */
+            textShadow: `0 0 20px ${C.theme}33` 
           }}>
             ARCHIVE IS EMPTY
           </div>
           <div style={{ 
             fontFamily: "'Space Mono'", 
             fontSize: 10, 
-            color: C.teal, /* 🟢 FIX: Changed TEAL to C.teal */
+            color: C.theme, /* 🟢 FIX: Using C.theme instead of TEAL */
             letterSpacing: 2 
           }}>
             [ TAP ORB TO INITIALIZE FIRST SIGNAL ]
