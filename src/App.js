@@ -692,6 +692,26 @@ const MarqueeStyles = () => (
   100% { transform: translateY(0px) rotateX(10deg); opacity: 0.8; }
 }
 
+@keyframes artifact-float {
+  0%, 100% { transform: translateY(0px) scale(1); filter: brightness(1); }
+  50% { transform: translateY(-20px) scale(1.05); filter: brightness(1.2); }
+}
+
+@keyframes gold-glimmer {
+  0% { stop-color: #ffcc00; }
+  50% { stop-color: #fff700; }
+  100% { stop-color: #ffcc00; }
+}
+
+.shrine-active {
+  animation: artifact-float 4s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
+.shrine-active:hover {
+  filter: drop-shadow(0 0 30px #ffcc00);
+}
+
 @keyframes hypnotic-breathing {
   0%, 100% { 
     box-shadow: 0 0 50px rgba(255, 204, 0, 0.5), inset 0 0 20px rgba(255, 204, 0, 0.3); 
@@ -6608,7 +6628,7 @@ useEffect(() => {
   {activeTab === 'dashboard' && (
   <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
     
-    {/* ─── PHASE 1: THE GOLDEN SHRINE (NEW USER FLOW) ─── */}
+    {/* ─── PHASE 1: THE GOLDEN SHRINE (ANIMATED) ─── */}
     {concerts.length === 0 ? (
       <div style={{ 
         height: '80vh', 
@@ -6616,102 +6636,94 @@ useEffect(() => {
         flexDirection: 'column', 
         alignItems: 'center', 
         justifyContent: 'center',
-        padding: '40px 20px',
         background: 'radial-gradient(circle at center, #0a0a0c 0%, #000 100%)',
         position: 'relative',
         overflow: 'hidden'
       }}>
         
-        {/* Background Ambient "Dust" or Signal Interference */}
-        <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 1px, #ffcc00 1px, transparent 2px)`, backgroundSize: '100% 3px', pointerEvents: 'none' }} />
-
-        {/* The 3D Floating Pedestal Structure */}
+        {/* Floating Interactive Pedestal */}
         <div 
-          onClick={() => setAddShowModal(true)} 
-          className="artifact-drift"
+          onClick={() => {
+            console.log("INITIALIZING SIGNAL..."); // Debugging check
+            setAddShowModal(true); 
+          }}
+          className="shrine-active"
           style={{
-            width: isMobile ? 220 : 280,
-            height: isMobile ? 280 : 340,
+            width: isMobile ? 220 : 300,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
             cursor: 'pointer',
-            position: 'relative'
+            zIndex: 10
           }}
         >
-          {/* THE GOLDEN SIGNAL (High-Fidelity Rendering) */}
-          <div 
-            className="hypnotic-breathing"
-            style={{
-              width: isMobile ? 120 : 150,
-              height: isMobile ? 120 : 150,
-              borderRadius: '50%',
-              /* 🟢 Liquid Gold Gradient */
-              background: `radial-gradient(circle at 35% 35%, #fff 0%, #ffcc00 45%, #b8860b 70%, #000 100%)`,
-              boxShadow: `0 0 80px rgba(255, 204, 0, 0.2), inset 0 0 20px rgba(255,255,255,0.5)`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 2,
-              border: `1px solid rgba(255, 204, 0, 0.3)`
-            }}
-          >
-            {/* White-hot Core */}
-            <div style={{ width: '25%', height: '25%', borderRadius: '50%', background: '#fff', filter: 'blur(12px)', opacity: 0.8 }} />
+          {/* THE GOLDEN SIGNAL (Throbbing/Pulsing Core) */}
+          <div style={{
+            width: isMobile ? 130 : 170,
+            height: isMobile ? 130 : 170,
+            borderRadius: '50%',
+            background: `radial-gradient(circle at 35% 35%, #fff 0%, #ffcc00 40%, #8b6b00 80%, #000 100%)`,
+            boxShadow: `0 0 80px rgba(255, 204, 0, 0.3), inset 0 0 30px rgba(255, 255, 255, 0.4)`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: `1px solid rgba(255, 204, 0, 0.4)`,
+            position: 'relative'
+          }}>
+            {/* Hot Core Pulse */}
+            <div style={{ 
+              width: '30%', 
+              height: '30%', 
+              borderRadius: '50%', 
+              background: '#fff', 
+              filter: 'blur(15px)', 
+              opacity: 0.8 
+            }} />
           </div>
 
           {/* Holographic Pedestal Base */}
           <div style={{ 
-            marginTop: -40,
-            width: '100%',
-            height: 140,
-            background: `linear-gradient(180deg, rgba(255, 204, 0, 0.1) 0%, transparent 100%)`,
-            clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)',
+            marginTop: -30,
+            width: '80%',
+            height: 100,
+            background: `linear-gradient(180deg, rgba(255, 204, 0, 0.2) 0%, transparent 100%)`,
+            clipPath: 'polygon(15% 0%, 85% 0%, 100% 100%, 0% 100%)',
             borderTop: `2px solid #ffcc00`,
-            opacity: 0.4,
             display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            paddingTop: 60
+            justifyContent: 'center',
+            paddingTop: 40,
+            opacity: 0.5
           }}>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#ffcc00', letterSpacing: 4, opacity: 0.6 }}>[ SYSTEM_IDLE ]</div>
-            <div style={{ width: '40%', height: 1, background: '#ffcc00', marginTop: 10, opacity: 0.3 }} />
-          </div>
-        </div>
-        
-        {/* The Catchy Hook */}
-        <div style={{ marginTop: 20, textAlign: 'center', zIndex: 2 }}>
-          <div style={{ 
-            fontFamily: "'Bebas Neue'", 
-            fontSize: isMobile ? '3rem' : '5rem', 
-            color: '#fff', 
-            letterSpacing: 8, 
-            lineHeight: 0.9,
-            marginBottom: 12
-          }}>
-            <span style={{ color: '#444' }}>MUSEUM</span><br />
-            IS <span style={{ color: '#ffcc00', textShadow: `0 0 40px rgba(255, 204, 0, 0.4)` }}>DARK.</span>
-          </div>
-          
-          <div style={{ 
-            fontFamily: "'Space Mono'", 
-            fontSize: 11, 
-            color: '#ffcc00', 
-            letterSpacing: 3,
-            maxWidth: 300,
-            margin: '0 auto',
-            lineHeight: 1.6
-          }}>
-            NO SIGNALS DETECTED.<br />
-            <span style={{ color: '#888' }}>TAP THE ARTIFACT TO INITIALIZE<br />YOUR FIRST PERMANENT RECORD.</span>
+             <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#ffcc00', letterSpacing: 5 }}>[ TAP_TO_AWAKEN ]</div>
           </div>
         </div>
 
-        {/* Bottom Status Readout using your theme color */}
-        <div style={{ position: 'absolute', bottom: 40, fontFamily: "'Space Mono'", fontSize: 8, color: C.theme, letterSpacing: 4, opacity: 0.5 }}>
-          AWAITING_USER_INPUT // SECTOR_00_EMPTY
+        {/* Text Hook */}
+        <div style={{ marginTop: 40, textAlign: 'center', zIndex: 5 }}>
+          <div style={{ 
+            fontFamily: "'Bebas Neue'", 
+            fontSize: isMobile ? '3.5rem' : '5rem', 
+            color: '#fff', 
+            letterSpacing: 10, 
+            lineHeight: 0.9 
+          }}>
+            MUSEUM <span style={{ color: '#ffcc00' }}>VACANT</span>
+          </div>
+          <div style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 10, 
+            color: '#888', 
+            letterSpacing: 3, 
+            marginTop: 15,
+            lineHeight: 2
+          }}>
+            SYSTEM STATUS: <span style={{ color: '#ffcc00' }}>IDLE</span><br />
+            REACH OUT TO BEGIN THE ARCHIVE.
+          </div>
         </div>
+
+        {/* Scanline Overlay for the background */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,204,0,0.03) 2px, rgba(255,204,0,0.03) 4px)' }} />
       </div>
     ) : (
       /* ─── EXISTING USER FLOW: THE FULL MUSEUM ─── */
