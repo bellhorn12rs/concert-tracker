@@ -686,6 +686,28 @@ const MarqueeStyles = () => (
       100% { transform: translateY(0) scale(1) rotate(var(--r, 0deg)); opacity: 1; }
     }
 
+    @keyframes gold-pedestal-float {
+  0% { transform: translateY(0px) rotateX(10deg); opacity: 0.8; }
+  50% { transform: translateY(-15px) rotateX(20deg); opacity: 1; }
+  100% { transform: translateY(0px) rotateX(10deg); opacity: 0.8; }
+}
+
+@keyframes hypnotic-breathing {
+  0%, 100% { 
+    box-shadow: 0 0 50px rgba(255, 204, 0, 0.5), inset 0 0 20px rgba(255, 204, 0, 0.3); 
+    filter: brightness(1); 
+  }
+  50% { 
+    box-shadow: 0 0 100px rgba(255, 204, 0, 0.8), inset 0 0 40px rgba(255, 204, 0, 0.6); 
+    filter: brightness(1.2); 
+  }
+}
+
+@keyframes geode-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
     /* 6. POLAROID PHYSICS (Glitch-Free "Living" Gallery) */
 
     /* 6. POLAROID PHYSICS (Glitch-Killer & Tightened) */
@@ -6586,59 +6608,108 @@ useEffect(() => {
   {activeTab === 'dashboard' && (
   <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
     
-    {/* ─── PHASE 1: THE ORB (NEW USER FLOW) ─── */}
+    {/* ─── PHASE 1: THE GOLDEN SHRINE (NEW USER FLOW) ─── */}
     {concerts.length === 0 ? (
       <div style={{ 
-        height: '75vh', 
+        height: '80vh', 
         display: 'flex', 
         flexDirection: 'column', 
         alignItems: 'center', 
         justifyContent: 'center',
-        textAlign: 'center'
+        padding: '40px 20px',
+        background: 'radial-gradient(circle at center, #0a0a0c 0%, #000 100%)',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        {/* Pulsing Signal Orb */}
+        
+        {/* Background Ambient "Dust" or Signal Interference */}
+        <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 1px, ${GOLD} 1px, transparent 2px)`, backgroundSize: '100% 3px', pointerEvents: 'none' }} />
+
+        {/* The 3D Floating Pedestal Structure */}
         <div 
           onClick={() => setAddShowModal(true)} 
-          className="orb-pulse"
+          className="artifact-drift"
           style={{
-            width: 150,
-            height: 150,
-            borderRadius: '50%',
-            /* 🟢 FIX: Using C.theme instead of TEAL */
-            background: `radial-gradient(circle at 30% 30%, #fff, ${C.theme} 40%, #000 90%)`,
-            cursor: 'pointer',
+            width: isMobile ? 220 : 280,
+            height: isMobile ? 280 : 340,
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: `0 0 60px ${C.theme}44`,
-            transition: 'transform 0.3s ease'
+            cursor: 'pointer',
+            position: 'relative'
           }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
         >
-          <div style={{ width: '40%', height: '40%', borderRadius: '50%', background: '#fff', filter: 'blur(15px)', opacity: 0.8 }} />
+          {/* THE GOLDEN SIGNAL (The Orb replacement) */}
+          <div 
+            className="hypnotic-breathing"
+            style={{
+              width: isMobile ? 120 : 150,
+              height: isMobile ? 120 : 150,
+              borderRadius: '50%',
+              background: `radial-gradient(circle at 35% 35%, #fff 0%, ${GOLD} 45%, #b8860b 70%, #000 100%)`,
+              boxShadow: `0 0 80px ${GOLD}33, inset 0 0 20px rgba(255,255,255,0.5)`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 2,
+              border: `1px solid ${GOLD}44`
+            }}
+          >
+            {/* White-hot Core */}
+            <div style={{ width: '25%', height: '25%', borderRadius: '50%', background: '#fff', filter: 'blur(12px)', opacity: 0.8 }} />
+          </div>
+
+          {/* Holographic Pedestal Base */}
+          <div style={{ 
+            marginTop: -40,
+            width: '100%',
+            height: 140,
+            background: `linear-gradient(180deg, ${GOLD}22 0%, transparent 100%)`,
+            clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)',
+            borderTop: `2px solid ${GOLD}`,
+            opacity: 0.4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            paddingTop: 60
+          }}>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GOLD, letterSpacing: 4, opacity: 0.6 }}>[ SYSTEM_IDLE ]</div>
+            <div style={{ width: '40%', height: 1, background: GOLD, marginTop: 10, opacity: 0.3 }} />
+          </div>
         </div>
         
-        <div style={{ marginTop: 40 }} className="fade-in">
+        {/* The Catchy Hook */}
+        <div style={{ marginTop: 20, textAlign: 'center', zIndex: 2 }}>
           <div style={{ 
             fontFamily: "'Bebas Neue'", 
-            fontSize: '2.5rem', 
+            fontSize: isMobile ? '3rem' : '5rem', 
             color: '#fff', 
-            letterSpacing: 4, 
-            marginBottom: 8,
-            /* 🟢 FIX: Using C.theme instead of TEAL */
-            textShadow: `0 0 20px ${C.theme}33` 
+            letterSpacing: 8, 
+            lineHeight: 0.9,
+            marginBottom: 12
           }}>
-            ARCHIVE IS EMPTY
+            <span style={{ color: GRAY }}>MUSEUM</span><br />
+            IS <span style={{ color: GOLD, textShadow: `0 0 40px ${GOLD}66` }}>DARK.</span>
           </div>
+          
           <div style={{ 
             fontFamily: "'Space Mono'", 
-            fontSize: 10, 
-            color: C.theme, /* 🟢 FIX: Using C.theme instead of TEAL */
-            letterSpacing: 2 
+            fontSize: 11, 
+            color: GOLD, 
+            letterSpacing: 3,
+            maxWidth: 300,
+            margin: '0 auto',
+            lineHeight: 1.6
           }}>
-            [ TAP ORB TO INITIALIZE FIRST SIGNAL ]
+            NO SIGNALS DETECTED.<br />
+            <span style={{ color: GRAY }}>TAP THE ARTIFACT TO INITIALIZE<br />YOUR FIRST PERMANENT RECORD.</span>
           </div>
+        </div>
+
+        {/* Bottom Status Readout */}
+        <div style={{ position: 'absolute', bottom: 40, fontFamily: "'Space Mono'", fontSize: 8, color: '#333', letterSpacing: 4 }}>
+          AWAITING_USER_INPUT // SECTOR_00_EMPTY
         </div>
       </div>
     ) : (
