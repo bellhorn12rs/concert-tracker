@@ -3098,22 +3098,31 @@ function TimelineDot({ item, onTeleport, genreMap, xPos }) {
   );
 }
 // ─── 2. PANORAMIC TIMELINE TAB (High-Contrast Years & Months) ──────────────
-// ─── 2. PANORAMIC TIMELINE TAB (With Jump Drive Navigation) ──────────────
+// ─── 2. PANORAMIC TIMELINE TAB (REPAIRED MASTERPIECE) ──────────────
 function TimelineTab({ concerts, setActiveTab, genreMap }) {
   const scrollRef = useRef(null);
   const [currentYear, setCurrentYear] = useState(null);
-  const [showNavigator, setShowNavigator] = useState(true); // Control the entry overlay
+  const [showNavigator, setShowNavigator] = useState(true); 
   const PX_PER_DAY = 3.5; 
 
   const data = useMemo(() => {
-    if (!concerts?.length) return { sortedShows: [], yearBlocks: [], monthMarkers: [], highlights: [], totalWidth: 0 };
+    // 🟢 GUARD RAIL 1: Stop crash if concerts is null/undefined/empty
+    if (!concerts || concerts.length === 0) {
+      return { sortedShows: [], yearBlocks: [], monthMarkers: [], highlights: [], totalWidth: 0 };
+    }
 
     const sorted = [...concerts].filter(c => c && c.date).sort((a, b) => a.date.localeCompare(b.date));
+    
+    // 🟢 GUARD RAIL 2: Prevent crash if filter removed all results
+    if (sorted.length === 0) {
+      return { sortedShows: [], yearBlocks: [], monthMarkers: [], highlights: [], totalWidth: 0 };
+    }
+
     const firstDate = new Date(sorted[0].date + 'T12:00:00');
     const lastDate = new Date(sorted[sorted.length - 1].date + 'T12:00:00');
     const minTs = firstDate.getTime();
     const MS_PER_DAY = 86400000;
-    const PADDING = 600; // Increased padding for better start/end views
+    const PADDING = 600; 
 
     const dateToX = (dateStr) => (PADDING + Math.round((new Date(dateStr + 'T12:00:00').getTime() - minTs) / MS_PER_DAY) * PX_PER_DAY);
     const totalWidth = PADDING * 2 + Math.round((lastDate.getTime() - minTs) / MS_PER_DAY) * PX_PER_DAY;
@@ -3139,7 +3148,6 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
     const laneLastX = { up: [-1000,-1000,-1000,-1000], down: [-1000,-1000,-1000,-1000] };
     const MIN_GAP = 140;
 
-    // Highlights logic remains same...
     const festGroups = [];
     withX.forEach(s => {
       if (s.is_festival) {
@@ -3172,16 +3180,13 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
     return { sortedShows: withX, yearBlocks, monthMarkers, highlights, totalWidth };
   }, [concerts, genreMap]);
 
-  // 🟢 TELEPORT FUNCTION
   const jumpTo = (targetX) => {
+    if (data.totalWidth === 0) return; // 🟢 Stop jump if no map exists
     setShowNavigator(false);
     setTimeout(() => {
       if (scrollRef.current) {
         const centerOffset = scrollRef.current.clientWidth / 2;
-        scrollRef.current.scrollTo({
-          left: targetX - centerOffset,
-          behavior: 'smooth'
-        });
+        scrollRef.current.scrollTo({ left: targetX - centerOffset, behavior: 'smooth' });
       }
     }, 100);
   };
@@ -3200,6 +3205,114 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
     el.addEventListener('scroll', onScroll);
     return () => el.removeEventListener('scroll', onScroll);
   }, [data.sortedShows]);
+
+  // 🟢 GUARD RAIL 3: Visual Void (Shown only when empty to prevent crash)
+  if (data.sortedShows.length === 0) {
+    return (
+      <div style={{ height: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', background: 'rgba(0,0,0,0.3)', borderRadius: 16, border: `1px dashed ${C.border}` }}>
+        <div style={{ fontSize: '3rem', marginBottom: 20 }}>⏳</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', letterSpacing: 3 }}>TIME MACHINE OFFLINE</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginTop: 10, letterSpacing: 2 }}>[ NO TEMPORAL COORDINATES DETECTED ]</div>
+        <button onClick={() => setActiveTab('dashboard')} style={{ marginTop: 30, background: 'transparent', border: `1px solid ${C.teal}`, color: C.teal, padding: '10px 20px', fontFamily: "'Space Mono'", fontSize: 10, cursor: 'pointer', borderRadius: 4 }}>RETURN TO CENTER STAGE</button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: '20px 0', position: 'relative' }} className="fade-in">
+      <GenreLegend />
+      {showNavigator && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 2000, background: 'rgba(5,5,8,0.95)', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 16, border: `1px solid ${C.border}` }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: '#fff', marginBottom: 10, letterSpacing: 4 }}>TIME MACHINE JUMP</div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginBottom: 40, letterSpacing: 2 }}>SELECT TEMPORAL DESTINATION</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20, width: '100%', maxWidth: 600 }}>
+            <button onClick={() => data.sortedShows[0] && jumpTo(data.sortedShows[0].xPos)} style={navBtnSt}>
+              <span style={navIconSt}>📜</span>
+              <span style={navLabelSt}>FIRST RECORD</span>
+              <span style={navSubSt}>{getYear(data.sortedShows?.[0]?.date) || '????'}</span>
+            </button>
+            <button onClick={() => data.sortedShows.length > 0 && jumpTo(data.sortedShows[data.sortedShows.length - 1].xPos)} style={navBtnSt}>
+              <span style={navIconSt}>⚡</span>
+              <span style={navLabelSt}>MOST RECENT</span>
+              <span style={navSubSt}>{getYear(data.sortedShows?.[data.sortedShows.length - 1]?.date) || '????'}</span>
+            </button>
+            <button onClick={() => { if (data.sortedShows.length > 0) { const rand = data.sortedShows[Math.floor(Math.random() * data.sortedShows.length)]; jumpTo(rand.xPos); } }} style={navBtnSt}>
+              <span style={navIconSt}>🎲</span>
+              <span style={navLabelSt}>RANDOM POINT</span>
+              <span style={navSubSt}>LUCK OF THE DRAW</span>
+            </button>
+            <div style={{ ...navBtnSt, cursor: 'default' }}>
+              <span style={navIconSt}>🗓️</span>
+              <span style={navLabelSt}>SPECIFIC YEAR</span>
+              <select onChange={(e) => { const block = data.yearBlocks.find(b => b.year === parseInt(e.target.value)); if (block) jumpTo(block.x + (block.width / 2)); }} style={{ background: '#000', border: `1px solid ${C.teal}`, color: '#fff', fontFamily: "'Space Mono'", fontSize: 10, padding: '4px 8px', marginTop: 5, borderRadius: 4 }}>
+                <option value="">SELECT...</option>
+                {data.yearBlocks.map(yb => <option key={yb.year} value={yb.year}>{yb.year}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+      {!showNavigator && (
+        <button onClick={() => setShowNavigator(true)} style={{ position: 'absolute', bottom: 40, right: 40, zIndex: 1001, background: '#000', border: `2px solid ${C.teal}`, borderRadius: '50%', width: 50, height: 50, cursor: 'pointer', boxShadow: `0 0 20px ${C.teal}66`, fontSize: '1.5rem' }}>🚀</button>
+      )}
+      <div style={{ position: 'absolute', top: 80, left: 40, zIndex: 1000, pointerEvents: 'none' }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: C.teal, opacity: 0.6, textShadow: `0 0 20px ${C.teal}44` }}>{currentYear}</div>
+      </div>
+      <div ref={scrollRef} style={{ width: '100%', height: '750px', overflowX: 'auto', overflowY: 'hidden', background: 'rgba(0,0,0,0.5)', border: `1px solid ${C.border}`, borderRadius: 16, position: 'relative' }}>
+        <div style={{ width: data.totalWidth, height: '100%', position: 'relative' }}>
+          <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 2, background: `linear-gradient(90deg, transparent, ${C.teal}66, ${C.purple}66, transparent)`, zIndex: 10, transform: 'translateY(-50%)' }} />
+          {data.yearBlocks.map(yb => (
+            <div key={yb.year} style={{ position: 'absolute', left: yb.x, top: 0, bottom: 0, width: yb.width, zIndex: 5, pointerEvents: 'none', borderLeft: `2px solid ${yb.isAlt ? C.purple : C.teal}44` }}>
+              <div style={{ position: 'sticky', left: 40, width: 'fit-content', top: yb.isAlt ? '62%' : '22%' }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '9rem', color: `${yb.isAlt ? C.purple : C.teal}33`, textShadow: `0 0 30px ${yb.isAlt ? C.purple : C.teal}22`, whiteSpace: 'nowrap' }}>{yb.year}</div>
+              </div>
+            </div>
+          ))}
+          {data.monthMarkers.map(mm => (
+            <div key={`${mm.x}-${mm.label}`} style={{ position: 'absolute', left: mm.x, top: '50%', transform: 'translateY(-50%)', zIndex: 11 }}>
+              <div style={{ width: 2, height: mm.isJan ? 35 : 18, background: mm.isJan ? C.teal : C.grayDim, boxShadow: mm.isJan ? `0 0 10px ${C.teal}` : 'none', opacity: 0.8 }} />
+              <div style={{ position: 'absolute', top: 22, left: -12, fontFamily: "'Space Mono'", fontSize: '11px', color: mm.isJan ? C.teal : C.gray, fontWeight: 900, transform: 'rotate(-45deg)', whiteSpace: 'nowrap' }}>{mm.label}</div>
+            </div>
+          ))}
+          {data.highlights.map((h, i) => {
+            const laneH = 40 - (h.lane * 8); 
+            return (
+              <div key={i} style={{ position: 'absolute', left: h.x, top: h.side === 'up' ? `${50 - laneH}%` : '50%', height: `${laneH}%`, zIndex: 100, pointerEvents: 'none' }}>
+                <div style={{ width: 2, height: '100%', background: `linear-gradient(${h.side === 'up' ? 'to top' : 'to bottom'}, ${h.color}, transparent)`, boxShadow: `0 0 15px ${h.color}`, opacity: 0.8 }} />
+                <div style={{ position: 'absolute', left: 12, [h.side === 'up' ? 'top' : 'bottom']: -15, whiteSpace: 'nowrap' }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff', textShadow: '2px 2px 4px #000' }}>{h.label?.toUpperCase()}</div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: h.color, fontWeight: 900 }}>{fmtDateShort(h.date)}</div>
+                </div>
+              </div>
+            );
+          })}
+          {data.sortedShows.map(show => (
+            <TimelineDot key={show.id} item={show} xPos={show.xPos} onTeleport={() => setActiveTab('byDay')} genreMap={genreMap} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+  // 🟢 GUARD RAIL 3: Empty State UI to prevent crash/white screen
+  if (data.sortedShows.length === 0) {
+    return (
+      <div style={{ 
+        height: '70vh', display: 'flex', flexDirection: 'column', 
+        alignItems: 'center', justifyContent: 'center', textAlign: 'center',
+        background: 'rgba(0,0,0,0.3)', borderRadius: 16, border: `1px dashed ${C.border}`
+      }}>
+        <div style={{ fontSize: '3rem', marginBottom: 20 }}>⏳</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', letterSpacing: 3 }}>TIME MACHINE OFFLINE</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginTop: 10, letterSpacing: 2 }}>
+          [ NO TEMPORAL COORDINATES DETECTED ]
+        </div>
+        <button onClick={() => setActiveTab('dashboard')} style={{ marginTop: 30, background: 'transparent', border: `1px solid ${C.teal}`, color: C.teal, padding: '10px 20px', fontFamily: "'Space Mono'", fontSize: 10, cursor: 'pointer', borderRadius: 4 }}>
+          RETURN TO CENTER STAGE
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '20px 0', position: 'relative' }} className="fade-in">
@@ -3275,7 +3388,6 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
         background: 'rgba(0,0,0,0.5)', border: `1px solid ${C.border}`, borderRadius: 16, position: 'relative' 
       }}>
         <div style={{ width: data.totalWidth, height: '100%', position: 'relative' }}>
-          {/* ... [Rest of the Timeline SVG/Dot rendering remains identical] ... */}
           <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 2, background: `linear-gradient(90deg, transparent, ${C.teal}66, ${C.purple}66, transparent)`, zIndex: 10, transform: 'translateY(-50%)' }} />
           {data.yearBlocks.map(yb => (
             <div key={yb.year} style={{ position: 'absolute', left: yb.x, top: 0, bottom: 0, width: yb.width, zIndex: 5, pointerEvents: 'none', borderLeft: `2px solid ${yb.isAlt ? C.purple : C.teal}44` }}>
@@ -3310,7 +3422,6 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
     </div>
   );
 }
-
 // ─── NAVIGATOR STYLES ───
 const navBtnSt = {
   background: 'rgba(255,255,255,0.03)',
@@ -6082,12 +6193,14 @@ useEffect(() => {
   }, [concerts]);
 
   const years = useMemo(() => {
-    const ySet = new Set();
-    if (Array.isArray(concerts)) {
-      concerts.forEach(c => { const y = getYear(c.date); if (y) ySet.add(String(y)); });
-    }
-    return [...ySet].sort((a, b) => b - a);
-  }, [concerts]);
+  if (!concerts || concerts.length === 0) return []; // 🟢 Add this line
+  const ySet = new Set();
+  concerts.forEach(c => { 
+    const y = getYear(c?.date); // Use optional chaining
+    if (y) ySet.add(String(y)); 
+  });
+  return [...ySet].sort((a, b) => b - a);
+}, [concerts]);
 
   const applyFilters = useCallback((list, isSet = false) => {
     if (!list || !Array.isArray(list)) return [];
