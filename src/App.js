@@ -6586,7 +6586,7 @@ useEffect(() => {
   {activeTab === 'dashboard' && (
   <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
     
-    {/* ─── NEW USER FLOW: THE ORB INITIALIZER ─── */}
+    {/* ─── PHASE 1: THE ORB (NEW USER FLOW) ─── */}
     {concerts.length === 0 ? (
       <div style={{ 
         height: '75vh', 
@@ -6594,37 +6594,39 @@ useEffect(() => {
         flexDirection: 'column', 
         alignItems: 'center', 
         justifyContent: 'center',
-        padding: '20px'
+        textAlign: 'center'
       }}>
+        {/* Pulsing Signal Orb */}
         <div 
           onClick={() => setAddShowModal(true)} 
           className="orb-pulse"
           style={{
-            width: 160,
-            height: 160,
+            width: 150,
+            height: 150,
             borderRadius: '50%',
+            /* 🟢 FIX: Changed TEAL to C.teal */
             background: `radial-gradient(circle at 30% 30%, #fff, ${C.teal} 40%, #000 90%)`,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             boxShadow: `0 0 60px ${C.teal}44`,
-            position: 'relative',
             transition: 'transform 0.3s ease'
           }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
         >
           <div style={{ width: '40%', height: '40%', borderRadius: '50%', background: '#fff', filter: 'blur(15px)', opacity: 0.8 }} />
         </div>
         
-        <div style={{ marginTop: 40, textAlign: 'center' }}>
+        <div style={{ marginTop: 40 }} className="fade-in">
           <div style={{ 
             fontFamily: "'Bebas Neue'", 
             fontSize: '2.5rem', 
             color: '#fff', 
             letterSpacing: 4, 
             marginBottom: 8,
+            /* 🟢 FIX: Changed TEAL to C.teal */
             textShadow: `0 0 20px ${C.teal}33` 
           }}>
             ARCHIVE IS EMPTY
@@ -6632,7 +6634,7 @@ useEffect(() => {
           <div style={{ 
             fontFamily: "'Space Mono'", 
             fontSize: 10, 
-            color: C.teal, 
+            color: C.teal, /* 🟢 FIX: Changed TEAL to C.teal */
             letterSpacing: 2 
           }}>
             [ TAP ORB TO INITIALIZE FIRST SIGNAL ]
