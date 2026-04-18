@@ -669,10 +669,10 @@ const MarqueeStyles = () => (
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
-      @keyframes orb-pulse {
-  0% { transform: scale(1); box-shadow: 0 0 40px ${TEAL}66, inset 0 0 20px ${TEAL}33; }
-  50% { transform: scale(1.05); box-shadow: 0 0 80px ${TEAL}aa, inset 0 0 40px ${TEAL}66; }
-  100% { transform: scale(1); box-shadow: 0 0 40px ${TEAL}66, inset 0 0 20px ${TEAL}33; }
+   @keyframes orb-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 40px rgba(0, 229, 204, 0.4), inset 0 0 20px rgba(0, 229, 204, 0.2); }
+  50% { transform: scale(1.05); box-shadow: 0 0 80px rgba(0, 229, 204, 0.6), inset 0 0 40px rgba(0, 229, 204, 0.4); }
+  100% { transform: scale(1); box-shadow: 0 0 40px rgba(0, 229, 204, 0.4), inset 0 0 20px rgba(0, 229, 204, 0.2); }
 }
 
 @keyframes signal-drift {
