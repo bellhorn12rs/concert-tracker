@@ -5927,11 +5927,30 @@ const StatBlock = ({ value, label, color, onClick }) => (
 // This packs 4 metrics into the space of 1 Hero block
 const QuadStat = ({ val, label, color }) => (
   <div style={{ 
-    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
-    background: hexToRgba(color, 0.05), borderRadius: 2, padding: '2px'
+    display: 'flex', 
+    flexDirection: 'column', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    background: hexToRgba(color, 0.1), // Slightly more background tint
+    borderRadius: 4, 
+    padding: '4px',
+    border: `1px solid ${hexToRgba(color, 0.2)}` // Subtle individual borders
   }}>
-    <div style={{ color, fontSize: '11px', fontFamily: "'Bebas Neue'", lineHeight: 1 }}>{val}</div>
-    <div style={{ color: '#fff', fontSize: '5px', fontFamily: "'Space Mono'", opacity: 0.4, fontWeight: 900 }}>{label}</div>
+    <div style={{ 
+      color, 
+      fontSize: '1.2rem', // 🟢 BUMPED from 11px
+      fontFamily: "'Bebas Neue'", 
+      lineHeight: 1,
+      textShadow: `0 0 10px ${hexToRgba(color, 0.3)}` 
+    }}>{val}</div>
+    <div style={{ 
+      color: '#fff', 
+      fontSize: '7px', // 🟢 BUMPED from 5px
+      fontFamily: "'Space Mono'", 
+      opacity: 0.6, 
+      fontWeight: 900,
+      letterSpacing: '1px'
+    }}>{label}</div>
   </div>
 );
 
