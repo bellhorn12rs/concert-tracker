@@ -6859,29 +6859,45 @@ async function handleDelete(id) {
             </div>
         </div>
 
-        {/* TIER 3: HERO STATS & ARTIFACT QUADRANT */}
+        {/* TIER 3: RE-MASTERED HERO STATS (Neon Outlines) */}
         <div style={{ 
             display: 'grid', 
-            // 🟢 On Desktop, we give the Quadrant more room if needed, but let's start by just making it internally "louder"
-            gridTemplateColumns: isMobile ? '1fr 1fr 1fr' : 'repeat(4, 1fr)', 
-            height: isMobile ? '75px' : '100px', // Increased height slightly
-            gap: '1px', 
-            background: C.border 
+            gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr) 1.2fr', 
+            height: isMobile ? '80px' : '110px', 
+            gap: '10px', // Gaps to show the background/separation
+            padding: '10px',
+            background: '#000' 
         }}>
-            <StatBlock value={headerStats.totalShows} label="DAYS" color={C.purple} onClick={() => setActiveTab('timeline')} />
-            <StatBlock value={headerStats.uniqueArtists} label="ACTS" color={C.cyan} onClick={() => { setBrowseView('artists'); setActiveTab('browse'); }} />
-            {!isMobile && <StatBlock value={headerStats.totalSets} label="SETS" color={C.teal} onClick={() => { setBrowseView('shows'); setActiveTab('browse'); }} />}
-            
-            {/* 🖼️ THE ARTIFACT QUADRANT (Beefed Up) */}
-            <div style={{ 
-                background: '#050508', 
-                display: 'grid', 
-                gridTemplateColumns: '1fr 1fr', 
-                gridTemplateRows: '1fr 1fr', 
-                padding: '8px', // More padding
-                gap: '6px', // Wider gaps between squares
+            {/* Standard Neon Blocks */}
+            {[
+              { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
+              { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); } },
+              { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); } },
+              { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
+              { val: headerStats.festDays, lbl: 'FESTS', col: C.gold, click: () => setActiveTab('passport') },
+            ].map(s => (
+              <div key={s.lbl} onClick={s.click} style={{
+                background: hexToRgba(s.col, 0.05),
+                border: `2px solid ${s.col}`,
+                borderRadius: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
                 cursor: 'pointer',
-                borderLeft: `1px solid ${hexToRgba(C.gold, 0.2)}` // Visual separation
+                boxShadow: `inset 0 0 15px ${hexToRgba(s.col, 0.2)}`,
+                transition: 'transform 0.2s'
+              }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: s.col, lineHeight: 1, textShadow: `0 0 10px ${s.col}` }}>{s.val}</div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: '#fff', opacity: 0.6, letterSpacing: '2px' }}>{s.lbl}</div>
+              </div>
+            ))}
+            
+            {/* The Artifact Quadrant (Same Neon Style) */}
+            <div style={{ 
+                background: hexToRgba(C.teal, 0.05), border: `2px solid ${C.teal}`, borderRadius: '8px',
+                display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', 
+                padding: '6px', gap: '6px', cursor: 'pointer', boxShadow: `inset 0 0 15px ${hexToRgba(C.teal, 0.2)}`
             }} onClick={() => setActiveTab('vault')}>
                 <QuadStat val={headerStats.tickets} label="TIX" color={C.gold} />
                 <QuadStat val={headerStats.setlists} label="LST" color={C.teal} />
@@ -6890,47 +6906,36 @@ async function handleDelete(id) {
             </div>
         </div>
     </header>
-{/* ── THE STATION: SPECTATOR BANNER ── */}
-            {viewingUser && viewingUser !== session?.user?.id && (
-              <div style={{
-                background: C.purple,
-                color: '#000',
-                padding: '10px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                fontFamily: "'Space Mono'",
-                fontSize: '10px',
-                fontWeight: 900,
-                letterSpacing: '2px',
-                zIndex: 90,
-                borderBottom: '1px solid rgba(255,255,255,0.3)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
-                  <span>🚉 TERMINAL CONNECTED: {viewingUser.toUpperCase()}'S MUSEUM</span>
-                  <span style={{ opacity: 0.4 }}>//</span>
-                  <span>SPECTATOR MODE ACTIVE</span>
-                </div>
-                <button 
-                  onClick={() => {
-                    if (typeof handleNavigateToUser === 'function') handleNavigateToUser(null);
-                    else setActiveTab('dashboard'); 
-                  }}
-                  style={{
-                    background: '#000',
-                    border: 'none',
-                    color: C.purple,
-                    padding: '4px 12px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '9px',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  RETURN TO YOUR MUSEUM
-                </button>
-              </div>
-            )}
+{/* ── THE STATION ANCHOR (Curator Rank) ── */}
+<div style={{
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '0 20px'
+}}>
+  <div style={{ 
+    fontFamily: "'Space Mono'", 
+    fontSize: '7px', 
+    color: C.teal, 
+    letterSpacing: '4px',
+    opacity: 0.6,
+    marginBottom: 4
+  }}>
+    CURRENT CURATOR STATUS:
+  </div>
+  <div style={{ 
+    fontFamily: "'Bebas Neue'", 
+    fontSize: '1.4rem', 
+    color: '#fff', 
+    letterSpacing: '3px',
+    textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`
+  }}>
+    {/* Logic for Title - We can make this a function later */}
+    {headerStats.totalShows > 50 ? "SONIC CARTOGRAPHER" : "THE ARCHIVIST"}
+  </div>
+</div>
     <main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
   {/* 1. THE DASHBOARD (CENTER STAGE) */}
 
