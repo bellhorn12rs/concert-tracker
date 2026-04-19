@@ -6800,181 +6800,144 @@ async function handleDelete(id) {
           <div style={{ flex: 1, height: '100%', overflowY: 'auto', overflowX: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', background: C.bg }}>
             
     {/* ─── TRIPLE-TIER SYSTEM HEADER ─── */}
-    <header style={{ 
-        background: '#050508', borderBottom: "2px solid ${C.border}", position: 'sticky', top: 0, zIndex: 100,
-        display: 'flex', flexDirection: 'column', borderBottom: `2px solid ${C.border}`,
-        flexShrink: 0, overflow: 'visible'
+<header style={{ 
+    background: '#050508', 
+    position: 'sticky', 
+    top: 0, 
+    zIndex: 2000,
+    display: 'flex', 
+    flexDirection: 'column', 
+    borderBottom: `2px solid ${C.border}`,
+    flexShrink: 0, 
+    overflow: 'visible'
+}}>
+    
+    {/* TIER 1: THE LIVE TICKER (System Pulse) */}
+    <div style={{ 
+        height: '24px', background: '#000', borderBottom: `1px solid ${hexToRgba(C.teal, 0.2)}`,
+        display: 'flex', alignItems: 'center', overflow: 'hidden' 
     }}>
-        
-        {/* TIER 1: THE LIVE TICKER (System Pulse) */}
+        <LiveTicker upcoming={upcoming} />
+    </div>
+
+    {/* TIER 2: THE TERMINAL (Navigation & Rank) */}
+    <div style={{ 
+      height: isMobile ? '50px' : '60px', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'space-between',
+      padding: '0 20px',
+      background: `linear-gradient(90deg, #050508, ${hexToRgba(C.purple, 0.05)})`,
+      position: 'relative', 
+      gap: 10
+    }}>
+      {/* Left Controls */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
+        <button onClick={() => setActiveTab('community')} style={navBtnStyle(activeTab === 'community', C.purple)}>
+          <span>🚉</span> {!isMobile && "THE STATION"}
+        </button>
+        {isAdmin && (
+          <button onClick={() => setEditTarget('new')} style={navBtnStyle(false, C.gold)}>
+            <span>📡</span> {!isMobile && "LOG SIGNAL"}
+          </button>
+        )}
+      </div>
+
+      {/* 🎯 CENTERED CURATOR RANK (Absolute Positioned) */}
+      <div style={{
+        position: 'absolute',
+        left: '50%',
+        top: '50%',
+        transform: 'translate(-50%, -50%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        width: '300px',
+        pointerEvents: 'none',
+        zIndex: 1
+      }}>
         <div style={{ 
-            height: '24px', background: '#000', borderBottom: `1px solid ${hexToRgba(C.teal, 0.2)}`,
-            display: 'flex', alignItems: 'center', overflow: 'hidden' 
+          fontFamily: "'Space Mono'", 
+          fontSize: '7px', 
+          color: C.teal, 
+          letterSpacing: '4px',
+          opacity: 0.6,
+          marginBottom: 2
         }}>
-            <LiveTicker upcoming={upcoming} />
+          CURRENT CURATOR STATUS:
         </div>
-
-        {/* TIER 2: THE TERMINAL (Navigation & Rank) */}
         <div style={{ 
-          height: isMobile ? '50px' : '60px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          padding: '0 20px',
-          background: `linear-gradient(90deg, #050508, ${hexToRgba(C.purple, 0.05)})`,
-          position: 'relative', 
-          gap: 10
+          fontFamily: "'Bebas Neue'", 
+          fontSize: '1.4rem', 
+          color: '#fff', 
+          letterSpacing: '3px',
+          textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`,
+          lineHeight: 1
         }}>
-          {/* Left Controls */}
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
-            <button onClick={() => setActiveTab('community')} style={navBtnStyle(activeTab === 'community', C.purple)}>
-              <span>🚉</span> {!isMobile && "THE STATION"}
-            </button>
-            {isAdmin && (
-              <button onClick={() => setEditTarget('new')} style={navBtnStyle(false, C.gold)}>
-                <span>📡</span> {!isMobile && "LOG SIGNAL"}
-              </button>
-            )}
-          </div>
+           {getCuratorTitle(headerStats, concerts)}
+        </div>
+      </div>
 
-          {/* 🎯 CENTERED CURATOR RANK (Absolute Positioned) */}
-          <div style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
+      {/* Right Controls */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
+        {isAdmin && (
+          <button onClick={() => setActiveTab('manage')} style={navBtnStyle(activeTab === 'manage', C.teal)}>
+            <span>⚙️</span> {!isMobile && "THE OFFICE"}
+          </button>
+        )}
+        <ThemeSwitcher isMobile={isMobile} />
+      </div>
+    </div>
+
+    {/* TIER 3: RE-MASTERED HERO STATS (Neon Outlines) */}
+    <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr) 1.2fr', 
+        height: isMobile ? '80px' : '110px', 
+        gap: '10px', 
+        padding: '10px',
+        background: '#000' 
+    }}>
+        {[
+          { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
+          { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); } },
+          { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); } },
+          { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
+          { val: headerStats.festDays, lbl: 'FESTS', col: C.gold, click: () => setActiveTab('passport') },
+        ].map(s => (
+          <div key={s.lbl} onClick={s.click} style={{
+            background: hexToRgba(s.col, 0.05),
+            border: `2px solid ${s.col}`,
+            borderRadius: '8px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            textAlign: 'center',
-            width: '300px',
-            pointerEvents: 'none',
-            zIndex: 1
+            cursor: 'pointer',
+            boxShadow: `inset 0 0 15px ${hexToRgba(s.col, 0.2)}`,
+            transition: 'transform 0.2s'
           }}>
-            <div style={{ 
-              fontFamily: "'Space Mono'", 
-              fontSize: '7px', 
-              color: C.teal, 
-              letterSpacing: '4px',
-              opacity: 0.6,
-              marginBottom: 2
-            }}>
-              CURRENT CURATOR STATUS:
-            </div>
-            <div style={{ 
-              fontFamily: "'Bebas Neue'", 
-              fontSize: '1.4rem', 
-              color: '#fff', 
-              letterSpacing: '3px',
-              textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`,
-              lineHeight: 1
-            }}>
-              
-            </div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: s.col, lineHeight: 1, textShadow: `0 0 10px ${s.col}` }}>{s.val}</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: '#fff', opacity: 0.6, letterSpacing: '2px' }}>{s.lbl}</div>
           </div>
-
-          {/* Right Controls */}
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
-            {isAdmin && (
-              <button onClick={() => setActiveTab('manage')} style={navBtnStyle(activeTab === 'manage', C.teal)}>
-                <span>⚙️</span> {!isMobile && "THE OFFICE"}
-              </button>
-            )}
-            <ThemeSwitcher isMobile={isMobile} />
-          </div>
-        </div>
-
-        {/* TIER 3: RE-MASTERED HERO STATS (Neon Outlines) */}
+        ))}
+        
         <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr) 1.2fr', 
-            height: isMobile ? '80px' : '110px', 
-            gap: '10px', 
-            padding: '10px',
-            background: '#000' 
-        }}>
-            {[
-              { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
-              { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); } },
-              { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); } },
-              { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
-              { val: headerStats.festDays, lbl: 'FESTS', col: C.gold, click: () => setActiveTab('passport') },
-            ].map(s => (
-              <div key={s.lbl} onClick={s.click} style={{
-                background: hexToRgba(s.col, 0.05),
-                border: `2px solid ${s.col}`,
-                borderRadius: '8px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                boxShadow: `inset 0 0 15px ${hexToRgba(s.col, 0.2)}`,
-                transition: 'transform 0.2s'
-              }}>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: s.col, lineHeight: 1, textShadow: `0 0 10px ${s.col}` }}>{s.val}</div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: '#fff', opacity: 0.6, letterSpacing: '2px' }}>{s.lbl}</div>
-              </div>
-            ))}
-            
-            <div style={{ 
-                background: hexToRgba(C.teal, 0.05), border: `2px solid ${C.teal}`, borderRadius: '8px',
-                display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', 
-                padding: '6px', gap: '6px', cursor: 'pointer', boxShadow: `inset 0 0 15px ${hexToRgba(C.teal, 0.2)}`
-            }} onClick={() => setActiveTab('vault')}>
-                <QuadStat val={headerStats.tickets} label="TIX" color={C.gold} />
-                <QuadStat val={headerStats.setlists} label="LST" color={C.teal} />
-                <QuadStat val={headerStats.posters} label="PST" color={C.purple} />
-                <QuadStat val={headerStats.photos} label="PHO" color={C.cyan} />
-            </div>
+            background: hexToRgba(C.teal, 0.05), border: `2px solid ${C.teal}`, borderRadius: '8px',
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', 
+            padding: '6px', gap: '6px', cursor: 'pointer', boxShadow: `inset 0 0 15px ${hexToRgba(C.teal, 0.2)}`
+        }} onClick={() => setActiveTab('vault')}>
+            <QuadStat val={headerStats.tickets} label="TIX" color={C.gold} />
+            <QuadStat val={headerStats.setlists} label="LST" color={C.teal} />
+            <QuadStat val={headerStats.posters} label="PST" color={C.purple} />
+            <QuadStat val={headerStats.photos} label="PHO" color={C.cyan} />
         </div>
-    </header>
-{/* ── THE STATION ANCHOR (Curator Rank - Centered) ── */}
-<div style={{
-  position: 'absolute',
-  left: '50%',
-  top: '50%',
-  transform: 'translate(-50%, -50%)',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  textAlign: 'center',
-  width: '300px', 
-  pointerEvents: 'none',
-  zIndex: 10
-}}>
-  <div style={{ 
-    fontFamily: "'Space Mono'", 
-    fontSize: '7px', 
-    color: C.teal, 
-    letterSpacing: '4px',
-    opacity: 0.6,
-    marginBottom: 2
-  }}>
-    CURRENT CURATOR STATUS:
-  </div>
-  <div style={{ 
-    fontFamily: "'Bebas Neue'", 
-    fontSize: '1.4rem', 
-    color: '#fff', 
-    letterSpacing: '3px',
-    textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`,
-    lineHeight: 1
-  }}>
-    {/* 🟢 DYNAMIC LOGIC: This calls the brain at the bottom of your file */}
-    {getCuratorTitle(headerStats, concerts)}
-  </div>
-</div>
-    <main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
-  {/* 1. THE DASHBOARD (CENTER STAGE) */}
+    </div>
+</header>
 
-  {activeTab === 'community' && (
-    <CommunityTab 
-      onEnterMuseum={handleNavigateToUser} 
-    />
-  )}
+<main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
   {activeTab === 'dashboard' && (
   <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
     
