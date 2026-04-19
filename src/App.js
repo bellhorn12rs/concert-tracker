@@ -6941,8 +6941,9 @@ async function handleDelete(id) {
   alignItems: 'center',
   justifyContent: 'center',
   textAlign: 'center',
-  width: '300px', // Prevents layout shifting
-  pointerEvents: 'none'
+  width: '300px', 
+  pointerEvents: 'none',
+  zIndex: 10
 }}>
   <div style={{ 
     fontFamily: "'Space Mono'", 
@@ -6962,8 +6963,8 @@ async function handleDelete(id) {
     textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`,
     lineHeight: 1
   }}>
-    {/* Temporary Logic - We will build the full selector next */}
-    {headerStats.totalShows > 50 ? "SONIC CARTOGRAPHER" : "THE ARCHIVIST"}
+    {/* 🟢 DYNAMIC LOGIC: This calls the brain at the bottom of your file */}
+    {getCuratorTitle(headerStats, concerts)}
   </div>
 </div>
     <main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
