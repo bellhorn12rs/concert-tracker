@@ -7309,7 +7309,7 @@ async function handleDelete(id) {
   )}
 
   {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={isAdmin} onEdit={isAdmin ? setEditTarget : null} />}
-  
+  {activeTab === 'community' && <CommunityTab onEnterMuseum={handleNavigateToUser} />}
   {activeTab === 'passport' && (
     <PassportTab 
       passport={passport} 
