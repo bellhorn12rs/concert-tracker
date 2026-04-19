@@ -5852,6 +5852,51 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     </div>
   );
 }
+// 🟢 Helper 1: Navigation Button Styling
+// This handles the "Active" glow and color switching for the Terminal row
+const navBtnStyle = (isActive, color) => ({
+  background: isActive ? color : 'transparent',
+  border: `1px solid ${color}`,
+  color: isActive ? '#000' : color,
+  padding: '6px 12px',
+  borderRadius: '6px',
+  fontFamily: "'Space Mono'",
+  fontSize: '10px',
+  fontWeight: 900,
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  transition: 'all 0.2s',
+  boxShadow: isActive ? `0 0 15px ${color}66` : 'none',
+  letterSpacing: '1px'
+});
+
+// 🟢 Helper 2: Standard Hero Stat Block
+// The "muscle" of the header - showing DAYS, ACTS, and SETS
+const StatBlock = ({ value, label, color, onClick }) => (
+  <div onClick={onClick} style={{ 
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+    background: '#050508', cursor: 'pointer', position: 'relative', transition: 'all 0.2s'
+  }}>
+    <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: '2px', background: color, boxShadow: `0 0 10px ${color}` }} />
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color, lineHeight: 1 }}>{value}</div>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: '#fff', opacity: 0.5, letterSpacing: '2px', marginTop: 4 }}>{label}</div>
+  </div>
+);
+
+// 🟢 Helper 3: The Artifact Quadrant (The 4-Way Square)
+// This packs 4 metrics into the space of 1 Hero block
+const QuadStat = ({ val, label, color }) => (
+  <div style={{ 
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+    background: hexToRgba(color, 0.05), borderRadius: 2, padding: '2px'
+  }}>
+    <div style={{ color, fontSize: '11px', fontFamily: "'Bebas Neue'", lineHeight: 1 }}>{val}</div>
+    <div style={{ color: '#fff', fontSize: '5px', fontFamily: "'Space Mono'", opacity: 0.4, fontWeight: 900 }}>{label}</div>
+  </div>
+);
+
 // ─── MAIN APP ────────────────────────────────────────────────────
 export default function App() {
   // ── 1. AUTH & SYSTEM STATE ──
@@ -6150,11 +6195,18 @@ useEffect(() => {
   const dayGroups = useMemo(() => applyFilters(concerts) || [], [concerts, applyFilters]);
 
   const headerStats = useMemo(() => ({
+    // ── YOUR ORIGINAL LOGIC (UNTOUCHED) ──
     totalShows: concerts?.length || 0,
     totalSets: allSetsList?.length || 0,
     uniqueArtists: new Set(allSetsList?.map(s => s.artist)).size,
     festDays: concerts?.filter(c => c.is_festival).length || 0,
     setlistCount: concerts?.filter(c => c.has_setlist || c.has_setlist_names).length || 0,
+
+    // ── NEW ARTIFACT QUADRANT DATA ──
+    tickets: concerts?.filter(c => c.image_url && c.image_url !== '').length || 0,
+    setlists: concerts?.filter(c => c.has_setlist || c.has_setlist_names || c.setlist_image_url).length || 0,
+    posters: concerts?.filter(c => c.poster_url && c.poster_url !== '').length || 0,
+    photos: concerts?.filter(c => c.personal_photo_url && c.personal_photo_url !== '').length || 0,
   }), [concerts, allSetsList]);
 
   const artistCounts = useMemo(() => {
@@ -6675,90 +6727,118 @@ async function handleDelete(id) {
   </div>
 )}
 </aside>
-          {/* ── 4. THE MAIN STAGE ── */}
           <div style={{ flex: 1, height: '100%', overflowY: 'auto', overflowX: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', background: C.bg }}>
             
-            {/* STICKY HEADER */}
-            <header style={{ 
-              padding: '0', background: '#050508', position: 'sticky', top: 0, zIndex: 100,
-              display: 'flex', alignItems: 'stretch', borderBottom: `2px solid ${C.border}`,
-              height: isMobile ? '75px' : '90px', flexShrink: 0, boxSizing: 'border-box', overflow: 'visible'
-            }}>
-              {/* Identity / Mobile Menu Trigger */}
-              <div onClick={() => isMobile && setNavCollapsed(false)} style={{ width: isMobile ? '75px' : '280px', borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isMobile ? `linear-gradient(135deg, ${hexToRgba(C.teal, 0.2)} 0%, #08080c 100%)` : `linear-gradient(135deg, ${C.bgCard} 0%, #08080c 100%)`, flexShrink: 0, cursor: isMobile ? 'pointer' : 'default', gap: 2 }}>
-                <div style={{ transform: isMobile ? 'scale(0.7)' : 'none', lineHeight: 0 }}>
-                  <TrackRecordLogo size={40} />
-                </div>
-                {isMobile && <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: C.teal, letterSpacing: '1px', fontWeight: 900, opacity: 0.8 }}>MENU</div>}
-              </div>
+    {/* ─── TRIPLE-TIER SYSTEM HEADER ─── */}
+    <header style={{ 
+        background: '#050508', position: 'sticky', top: 0, zIndex: 100,
+        display: 'flex', flexDirection: 'column', borderBottom: `2px solid ${C.border}`,
+        flexShrink: 0, overflow: 'visible'
+    }}>
+        
+        {/* TIER 1: THE LIVE TICKER (System Pulse) */}
+        <div style={{ 
+            height: '24px', background: '#000', borderBottom: `1px solid ${hexToRgba(C.teal, 0.2)}`,
+            display: 'flex', alignItems: 'center', overflow: 'hidden' 
+        }}>
+            <LiveTicker upcoming={upcoming} />
+        </div>
 
-              {/* Header Stats */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', flex: 1, gap: '1px', background: C.border, minWidth: 0 }}>
-                {[
-                  { value: headerStats.totalSets, label: 'SETS', color: C.teal, onClick: () => { setBrowseView('shows'); setActiveTab('browse'); } },
-                  { value: headerStats.uniqueArtists, label: 'ACTS', color: C.cyan, onClick: () => { setBrowseView('artists'); setActiveTab('browse'); } },
-                  { value: headerStats.totalShows, label: 'DAYS', color: C.purple, onClick: () => setActiveTab('timeline') },
-                  { value: new Set(concerts.map(c => c.venue).filter(Boolean)).size, label: 'VENUES', color: C.red, onClick: () => setActiveTab('venues') },
-                  { value: headerStats.setlistCount, label: 'FILES', color: C.gold, onClick: () => setActiveTab('vault') }
-                ].map((s) => (
-                  <div key={s.label} onClick={s.onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative', background: `linear-gradient(180deg, ${hexToRgba(s.color, 0.08)} 0%, #050508 100%)`, transition: 'all 0.3s ease', overflow: 'hidden', padding: isMobile ? '0 2px' : '0' }}>
-                    <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: '2px', background: s.color, boxShadow: `0 0 10px ${s.color}`, opacity: 0.8 }} />
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.1rem' : '3rem', color: s.color, lineHeight: 1, textShadow: isMobile ? 'none' : `0 0 20px ${hexToRgba(s.color, 0.4)}` }}>{s.value}</div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? '5px' : '8px', color: '#fff', letterSpacing: isMobile ? '1px' : '3px', fontWeight: 900, marginTop: 4, opacity: 0.5 }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
+        {/* TIER 2: THE TERMINAL (Transit & Control) */}
+        <div style={{ 
+            height: isMobile ? '50px' : '60px', display: 'flex', alignItems: 'center', 
+            justifyContent: 'space-between', padding: '0 20px', 
+            background: `linear-gradient(90deg, #050508, ${hexToRgba(C.purple, 0.05)})`, gap: 10 
+        }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                {/* 🚉 THE STATION (Visit Museums) */}
+                <button onClick={() => setActiveTab('community')} style={navBtnStyle(activeTab === 'community', C.purple)}>
+                    <span>🚉</span> {!isMobile && "THE STATION"}
+                </button>
 
-              {/* ── THEME & OFFICE CONTROLS ── */}
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: isMobile ? '8px' : '16px', 
-                padding: isMobile ? '0 10px' : '0 30px', 
-                background: `linear-gradient(225deg, ${hexToRgba(C.teal, 0.05)} 0%, #050508 100%)`, 
-                borderLeft: `1px solid ${C.border}`, 
-                flexShrink: 0,
-                height: '100%'
-              }}>
-                
-                {/* ⚙️ THE OFFICE BRIDGE (Admin/Curator Shortcut) */}
+                {/* ➕ LOG NEW SIGNAL */}
                 {isAdmin && (
-                  <button 
-                    onClick={() => setActiveTab('manage')}
-                    style={{
-                      background: activeTab === 'manage' ? C.teal : 'rgba(0, 229, 204, 0.1)',
-                      border: `1px solid ${C.teal}`,
-                      color: activeTab === 'manage' ? '#000' : C.teal,
-                      padding: isMobile ? '4px 8px' : '6px 12px',
-                      borderRadius: '4px',
-                      fontFamily: "'Space Mono'",
-                      fontSize: isMobile ? '7px' : '9px',
-                      fontWeight: 900,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      letterSpacing: '1px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      boxShadow: activeTab === 'manage' ? `0 0 15px ${C.teal}66` : 'none'
-                    }}
-                    onMouseEnter={e => {
-                      if (activeTab !== 'manage') e.currentTarget.style.background = hexToRgba(C.teal, 0.25);
-                    }}
-                    onMouseLeave={e => {
-                      if (activeTab !== 'manage') e.currentTarget.style.background = 'rgba(0, 229, 204, 0.1)';
-                    }}
-                  >
-                    <span>⚙️</span>
-                    {!isMobile && <span>THE OFFICE</span>}
-                  </button>
+                    <button onClick={() => setEditTarget('new')} style={navBtnStyle(false, C.gold)}>
+                        <span>📡</span> {!isMobile && "LOG SIGNAL"}
+                    </button>
                 )}
+            </div>
 
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                {/* ⚙️ THE OFFICE */}
+                {isAdmin && (
+                    <button onClick={() => setActiveTab('manage')} style={navBtnStyle(activeTab === 'manage', C.teal)}>
+                        <span>⚙️</span> {!isMobile && "THE OFFICE"}
+                    </button>
+                )}
                 <ThemeSwitcher isMobile={isMobile} />
-              </div>
-            </header>
+            </div>
+        </div>
 
-            <main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
+        {/* TIER 3: HERO STATS & ARTIFACT QUADRANT */}
+        <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: isMobile ? '1fr 1fr 1fr' : 'repeat(4, 1fr)', 
+            height: isMobile ? '70px' : '90px', gap: '1px', background: C.border 
+        }}>
+            <StatBlock value={headerStats.totalShows} label="DAYS" color={C.purple} onClick={() => setActiveTab('timeline')} />
+            <StatBlock value={headerStats.uniqueArtists} label="ACTS" color={C.cyan} onClick={() => { setBrowseView('artists'); setActiveTab('browse'); }} />
+            {!isMobile && <StatBlock value={headerStats.totalSets} label="SETS" color={C.teal} onClick={() => { setBrowseView('shows'); setActiveTab('browse'); }} />}
+            
+            {/* 🖼️ THE ARTIFACT QUADRANT (Replaces Setlist Count) */}
+            <div style={{ 
+                background: '#050508', display: 'grid', gridTemplateColumns: '1fr 1fr', 
+                gridTemplateRows: '1fr 1fr', padding: '6px', gap: '4px', cursor: 'pointer' 
+            }} onClick={() => setActiveTab('vault')}>
+                <QuadStat val={headerStats.tickets} label="TIX" color={C.gold} />
+                <QuadStat val={headerStats.setlists} label="LST" color={C.teal} />
+                <QuadStat val={headerStats.posters} label="PST" color={C.purple} />
+                <QuadStat val={headerStats.photos} label="PHO" color={C.cyan} />
+            </div>
+        </div>
+    </header>
+{/* ── THE STATION: SPECTATOR BANNER ── */}
+            {viewingUser && viewingUser !== session?.user?.id && (
+              <div style={{
+                background: C.purple,
+                color: '#000',
+                padding: '10px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontFamily: "'Space Mono'",
+                fontSize: '10px',
+                fontWeight: 900,
+                letterSpacing: '2px',
+                zIndex: 90,
+                borderBottom: '1px solid rgba(255,255,255,0.3)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
+                  <span>🚉 TERMINAL CONNECTED: {viewingUser.toUpperCase()}'S MUSEUM</span>
+                  <span style={{ opacity: 0.4 }}>//</span>
+                  <span>SPECTATOR MODE ACTIVE</span>
+                </div>
+                <button 
+                  onClick={() => {
+                    if (typeof handleNavigateToUser === 'function') handleNavigateToUser(null);
+                    else setActiveTab('dashboard'); 
+                  }}
+                  style={{
+                    background: '#000',
+                    border: 'none',
+                    color: C.purple,
+                    padding: '4px 12px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '9px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  RETURN TO YOUR MUSEUM
+                </button>
+              </div>
+            )}
+    <main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
   {/* 1. THE DASHBOARD (CENTER STAGE) */}
 
   {activeTab === 'community' && (
