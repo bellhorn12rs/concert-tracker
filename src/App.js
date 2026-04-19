@@ -6816,17 +6816,26 @@ async function handleDelete(id) {
         {/* TIER 3: HERO STATS & ARTIFACT QUADRANT */}
         <div style={{ 
             display: 'grid', 
+            // 🟢 On Desktop, we give the Quadrant more room if needed, but let's start by just making it internally "louder"
             gridTemplateColumns: isMobile ? '1fr 1fr 1fr' : 'repeat(4, 1fr)', 
-            height: isMobile ? '70px' : '90px', gap: '1px', background: C.border 
+            height: isMobile ? '75px' : '100px', // Increased height slightly
+            gap: '1px', 
+            background: C.border 
         }}>
             <StatBlock value={headerStats.totalShows} label="DAYS" color={C.purple} onClick={() => setActiveTab('timeline')} />
             <StatBlock value={headerStats.uniqueArtists} label="ACTS" color={C.cyan} onClick={() => { setBrowseView('artists'); setActiveTab('browse'); }} />
             {!isMobile && <StatBlock value={headerStats.totalSets} label="SETS" color={C.teal} onClick={() => { setBrowseView('shows'); setActiveTab('browse'); }} />}
             
-            {/* 🖼️ THE ARTIFACT QUADRANT (Replaces Setlist Count) */}
+            {/* 🖼️ THE ARTIFACT QUADRANT (Beefed Up) */}
             <div style={{ 
-                background: '#050508', display: 'grid', gridTemplateColumns: '1fr 1fr', 
-                gridTemplateRows: '1fr 1fr', padding: '6px', gap: '4px', cursor: 'pointer' 
+                background: '#050508', 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gridTemplateRows: '1fr 1fr', 
+                padding: '8px', // More padding
+                gap: '6px', // Wider gaps between squares
+                cursor: 'pointer',
+                borderLeft: `1px solid ${hexToRgba(C.gold, 0.2)}` // Visual separation
             }} onClick={() => setActiveTab('vault')}>
                 <QuadStat val={headerStats.tickets} label="TIX" color={C.gold} />
                 <QuadStat val={headerStats.setlists} label="LST" color={C.teal} />
