@@ -54,7 +54,31 @@ const handleIWasThere = async (concert) => {
       alert("Failed to clone: " + err.message);
     }
   };
+const handleBulkSync = async () => {
+    if (!selectedSignals.length) return alert("NO SIGNALS SELECTED");
+    if (!window.confirm(`SYNC ${selectedSignals.length} SIGNALS TO YOUR ARCHIVE?`)) return;
 
+    const newRecords = selectedSignals.map(s => {
+      const { id, created_at, user_id, personal_photo_url, ...core } = s;
+      return { 
+        ...core, 
+        user_id: session.user.id, 
+        personal_photo_url: null, 
+        is_public: true, 
+        date_added: new Date().toISOString() 
+      };
+    });
+
+    const { error } = await supabase.from('concerts').insert(newRecords);
+    if (!error) {
+      alert(`SUCCESS: ${selectedSignals.length} SIGNALS ARCHIVED.`);
+      setSelectedSignals([]);
+      setBulkMode(false);
+      fetchConcerts();
+    } else {
+      alert("SYNC ERROR: " + error.message);
+    }
+  };
 // ─── THE RETRO TICKET STUB (IDEA #1) ──────────────────────────────────────────
 const TicketStub = ({ show }) => {
   if (!show) return null;
@@ -3519,7 +3543,7 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
 
 // ─── 4. BY DAY TAB (SCRAPBOOK TIMELINE & MULTI-SET LOGIC) ──────────────────
 
-function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
+function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin, viewingUser, bulkMode, setBulkMode, selectedSignals, setSelectedSignals, onSync }) {
   // 🟢 Mobile Detection
   const isMobile = window.innerWidth < 768;
 
@@ -3552,75 +3576,117 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin }) {
   }, [dayGroups]);
 
   return (
-    <div style={{ padding: isMobile ? '10px' : '24px 0' }} className="fade-in">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '30px' : '60px' }}>
-        {clusters.map((cluster, ci) => {
-          if (cluster.type === 'solo') {
+    <> {/* 🟢 Parent wrapper added here */}
+      {/* 📡 BULK SYNC RAIL */}
+      {viewingUser && (
+        <div style={{ 
+          background: bulkMode ? hexToRgba(C.gold, 0.1) : 'rgba(255,255,255,0.03)', 
+          border: `1px solid ${bulkMode ? C.gold : C.border}`,
+          padding: '15px 25px', borderRadius: '12px', marginBottom: '30px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          position: 'sticky', top: '20px', zIndex: 100, backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: bulkMode ? C.gold : '#fff' }}>
+              {bulkMode ? 'SIGNAL SELECTION ACTIVE' : 'MASS ARCHIVE PROTOCOL'}
+            </div>
+            {bulkMode && <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold }}>{selectedSignals.length} SIGNALS CAPTURED</div>}
+          </div>
+          
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button 
+              onClick={() => { setBulkMode(!bulkMode); setSelectedSignals([]); }}
+              style={{ background: 'none', border: `1px solid ${bulkMode ? C.gold : C.teal}`, color: bulkMode ? C.gold : C.teal, padding: '8px 16px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 10, cursor: 'pointer' }}
+            >
+              {bulkMode ? '[ ABORT ]' : '[ INITIALIZE SYNC ]'}
+            </button>
+            {bulkMode && selectedSignals.length > 0 && (
+              <button 
+                onClick={onSync}
+                style={{ background: C.gold, border: 'none', color: '#000', padding: '8px 20px', borderRadius: 4, fontFamily: "'Bebas Neue'", fontSize: '1.1rem', fontWeight: 900, cursor: 'pointer', boxShadow: `0 0 20px ${hexToRgba(C.gold, 0.4)}` }}
+              >
+                COMMIT TO ARCHIVE
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div style={{ padding: isMobile ? '10px' : '24px 0' }} className="fade-in">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '30px' : '60px' }}>
+          {clusters.map((cluster, ci) => {
+            if (cluster.type === 'solo') {
+              return (
+                <ScrapbookRow 
+                  key={cluster.event.id} 
+                  event={cluster.event} 
+                  idx={ci} 
+                  isAdmin={isAdmin} 
+                  onEdit={onEdit} 
+                  genreMap={genreMap}
+                  bulkMode={bulkMode} 
+                  selectedSignals={selectedSignals} 
+                  setSelectedSignals={setSelectedSignals}
+                />
+              );
+            }
+
+            const firstEvent = cluster.events[0];
+            const festColor = GENRE_COLORS[genreMap[firstEvent.bands?.[0]]] || C.teal;
+
             return (
-              <ScrapbookRow 
-                key={cluster.event.id} 
-                event={cluster.event} 
-                idx={ci} 
-                isAdmin={isAdmin} 
-                onEdit={onEdit} 
-                genreMap={genreMap} 
-              />
-            );
-          }
-
-          const firstEvent = cluster.events[0];
-          const festColor = GENRE_COLORS[genreMap[firstEvent.bands?.[0]]] || C.teal;
-
-          return (
-            <div key={`cluster-${ci}`} style={{ 
-              position: 'relative', 
-              padding: isMobile ? '20px 15px' : '40px', // 🟢 Tighter padding on mobile
-              background: 'rgba(255,255,255,0.01)', 
-              border: `1px solid ${hexToRgba(festColor, 0.2)}`, 
-              borderRadius: isMobile ? '12px' : '24px',
-              boxShadow: `inset 0 0 60px ${hexToRgba(festColor, 0.03)}`
-            }}>
-              {/* SHARED FESTIVAL HEADER AREA */}
-              <div style={{ 
-                display: 'flex', 
-                flexDirection: isMobile ? 'column' : 'row', // 🟢 Stack header on mobile
-                alignItems: isMobile ? 'flex-start' : 'baseline', 
-                gap: isMobile ? '5px' : '25px', 
-                marginBottom: isMobile ? '25px' : '40px' 
+              <div key={`cluster-${ci}`} style={{ 
+                position: 'relative', 
+                padding: isMobile ? '20px 15px' : '40px', 
+                background: 'rgba(255,255,255,0.01)', 
+                border: `1px solid ${hexToRgba(festColor, 0.2)}`, 
+                borderRadius: isMobile ? '12px' : '24px',
+                boxShadow: `inset 0 0 60px ${hexToRgba(festColor, 0.03)}`
               }}>
                 <div style={{ 
-                  fontFamily: "'Bebas Neue'", 
-                  fontSize: isMobile ? '2.5rem' : '5rem', // 🟢 Shrunken font
-                  color: festColor, 
-                  lineHeight: 1, 
-                  textShadow: `0 0 30px ${hexToRgba(festColor, 0.3)}` 
+                  display: 'flex', 
+                  flexDirection: isMobile ? 'column' : 'row', 
+                  alignItems: isMobile ? 'flex-start' : 'baseline', 
+                  gap: isMobile ? '5px' : '25px', 
+                  marginBottom: isMobile ? '25px' : '40px' 
                 }}>
-                  {firstEvent.festival_name.toUpperCase()}
+                  <div style={{ 
+                    fontFamily: "'Bebas Neue'", 
+                    fontSize: isMobile ? '2.5rem' : '5rem', 
+                    color: festColor, 
+                    lineHeight: 1, 
+                    textShadow: `0 0 30px ${hexToRgba(festColor, 0.3)}` 
+                  }}>
+                    {firstEvent.festival_name.toUpperCase()}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, letterSpacing: '2px', fontWeight: 900 }}>
+                    {new Date(firstEvent.date).getFullYear()} // {cluster.events.length} DAYS
+                  </div>
                 </div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, letterSpacing: '2px', fontWeight: 900 }}>
-                  {new Date(firstEvent.date).getFullYear()} // {cluster.events.length} DAYS
-                </div>
-              </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                {cluster.events.map((event, ei) => (
-                  <ScrapbookRow 
-                    key={event.id} 
-                    event={event} 
-                    idx={ei} 
-                    isAdmin={isAdmin} 
-                    onEdit={onEdit} 
-                    genreMap={genreMap} 
-                    isClustered={true}
-                    clusterColor={festColor}
-                  />
-                ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  {cluster.events.map((event, ei) => (
+                    <ScrapbookRow 
+                      key={event.id} 
+                      event={event} 
+                      idx={ei} 
+                      isAdmin={isAdmin} 
+                      onEdit={onEdit} 
+                      genreMap={genreMap} 
+                      isClustered={true}
+                      clusterColor={festColor}
+                      bulkMode={bulkMode} 
+                      selectedSignals={selectedSignals} 
+                      setSelectedSignals={setSelectedSignals}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </> 
   );
 }
 
@@ -5965,6 +6031,8 @@ const [authLoading, setAuthLoading] = useState(true);
   const [shareCard, setShareCard] = useState(null);
   const [upcomingModal, setUpcomingModal] = useState(null);
   const [nudgeTarget, setNudgeTarget] = useState(null);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedSignals, setSelectedSignals] = useState([]);
 
   // ── 4. BROWSER & FILTER STATE ──
   const [search, setSearch] = useState('');
@@ -7271,8 +7339,20 @@ async function handleDelete(id) {
   {/* 2. CHRONICLE & TOUR BUS TABS */}
   {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
   
-  {activeTab === 'byDay' && <ByDayTab dayGroups={dayGroups} onEdit={isAdmin ? setEditTarget : null} genreMap={artistGenres} isAdmin={isAdmin} />}
-  
+  {activeTab === 'byDay' && (
+  <ByDayTab 
+    dayGroups={dayGroups} 
+    onEdit={isAdmin ? setEditTarget : null} 
+    genreMap={artistGenres} 
+    isAdmin={isAdmin}
+    viewingUser={viewingUser}
+    bulkMode={bulkMode}
+    setBulkMode={setBulkMode}
+    selectedSignals={selectedSignals}
+    setSelectedSignals={setSelectedSignals}
+    onSync={handleBulkSync}
+  />
+)}
   {/* 🟢 NEW PAPERTRAIL BLOCK GOES HERE */}
   {activeTab === 'papertrail' && (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
