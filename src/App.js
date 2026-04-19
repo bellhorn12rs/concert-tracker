@@ -3105,8 +3105,24 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
   const [showNavigator, setShowNavigator] = useState(true); 
   const PX_PER_DAY = 3.5; 
 
+  // 🟢 INTERNAL STYLES (Moved inside to prevent ReferenceErrors)
+  const navBtnSt = {
+    background: 'rgba(255,255,255,0.03)',
+    border: `1px solid ${hexToRgba('#fff', 0.1)}`,
+    borderRadius: 12,
+    padding: '30px 20px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    textAlign: 'center'
+  };
+  const navIconSt = { fontSize: '2rem', marginBottom: 10 };
+  const navLabelSt = { fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', letterSpacing: 1 };
+  const navSubSt = { fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, marginTop: 5, letterSpacing: 2 };
+
   const data = useMemo(() => {
-    // GUARD RAIL: Exit early if no data
     if (!concerts || concerts.length === 0) {
       return { sortedShows: [], yearBlocks: [], monthMarkers: [], highlights: [], totalWidth: 0 };
     }
@@ -3114,68 +3130,73 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
     const sorted = [...concerts].filter(c => c && c.date).sort((a, b) => a.date.localeCompare(b.date));
     if (sorted.length === 0) return { sortedShows: [], yearBlocks: [], monthMarkers: [], highlights: [], totalWidth: 0 };
 
-    const firstDate = new Date(sorted[0].date + 'T12:00:00');
-    const lastDate = new Date(sorted[sorted.length - 1].date + 'T12:00:00');
-    const minTs = firstDate.getTime();
-    const MS_PER_DAY = 86400000;
-    const PADDING = 600; 
+    try {
+      const firstDate = new Date(sorted[0].date + 'T12:00:00');
+      const lastDate = new Date(sorted[sorted.length - 1].date + 'T12:00:00');
+      const minTs = firstDate.getTime();
+      const MS_PER_DAY = 86400000;
+      const PADDING = 600; 
 
-    const dateToX = (dateStr) => (PADDING + Math.round((new Date(dateStr + 'T12:00:00').getTime() - minTs) / MS_PER_DAY) * PX_PER_DAY);
-    const totalWidth = PADDING * 2 + Math.round((lastDate.getTime() - minTs) / MS_PER_DAY) * PX_PER_DAY;
-    const withX = sorted.map((s, i) => ({ ...s, globalIndex: i, xPos: dateToX(s.date) }));
+      const dateToX = (dateStr) => (PADDING + Math.round((new Date(dateStr + 'T12:00:00').getTime() - minTs) / MS_PER_DAY) * PX_PER_DAY);
+      const totalWidth = PADDING * 2 + Math.round((lastDate.getTime() - minTs) / MS_PER_DAY) * PX_PER_DAY;
+      const withX = sorted.map((s, i) => ({ ...s, globalIndex: i, xPos: dateToX(s.date) }));
 
-    const yearBlocks = [];
-    for (let yr = firstDate.getFullYear(); yr <= lastDate.getFullYear(); yr++) {
-      const xStart = dateToX(`${yr}-01-01`);
-      const xEnd = dateToX(`${yr}-12-31`);
-      yearBlocks.push({ year: yr, x: xStart, width: xEnd - xStart, isAlt: yr % 2 === 1 });
-    }
-
-    const monthMarkers = [];
-    const MONTHS_LBL = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    let iter = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
-    while (iter <= lastDate) {
-      const ds = iter.toISOString().split('T')[0];
-      monthMarkers.push({ x: dateToX(ds), label: MONTHS_LBL[iter.getMonth()], isJan: iter.getMonth() === 0 });
-      iter.setMonth(iter.getMonth() + 1);
-    }
-
-    const highlights = [];
-    const laneLastX = { up: [-1000,-1000,-1000,-1000], down: [-1000,-1000,-1000,-1000] };
-    const MIN_GAP = 140;
-
-    const festGroups = [];
-    withX.forEach(s => {
-      if (s.is_festival) {
-        const last = festGroups[festGroups.length-1];
-        if (last && last.name === s.festival_name && getYear(last.date) === getYear(s.date)) last.shows.push(s);
-        else festGroups.push({ name: s.festival_name, date: s.date, shows: [s] });
+      const yearBlocks = [];
+      for (let yr = firstDate.getFullYear(); yr <= lastDate.getFullYear(); yr++) {
+        const xStart = dateToX(`${yr}-01-01`);
+        const xEnd = dateToX(`${yr}-12-31`);
+        yearBlocks.push({ year: yr, x: xStart, width: xEnd - xStart, isAlt: yr % 2 === 1 });
       }
-    });
 
-    festGroups.forEach((fg, i) => {
-      const x = fg.shows.reduce((a, s) => a + s.xPos, 0) / fg.shows.length;
-      const side = i % 2 === 0 ? 'up' : 'down';
-      for (let l=0; l<4; l++) {
-        if (x - laneLastX[side][l] > MIN_GAP) {
-          highlights.push({ label: fg.name, x, date: fg.date, color: C.gold, side, lane: l });
-          laneLastX[side][l] = x + 40; break;
+      const monthMarkers = [];
+      const MONTHS_LBL = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+      let iter = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
+      while (iter <= lastDate) {
+        const ds = iter.toISOString().split('T')[0];
+        monthMarkers.push({ x: dateToX(ds), label: MONTHS_LBL[iter.getMonth()], isJan: iter.getMonth() === 0 });
+        iter.setMonth(iter.getMonth() + 1);
+      }
+
+      const highlights = [];
+      const laneLastX = { up: [-1000,-1000,-1000,-1000], down: [-1000,-1000,-1000,-1000] };
+      const MIN_GAP = 140;
+
+      const festGroups = [];
+      withX.forEach(s => {
+        if (s.is_festival) {
+          const last = festGroups[festGroups.length-1];
+          if (last && last.name === s.festival_name && getYear(last.date) === getYear(s.date)) last.shows.push(s);
+          else festGroups.push({ name: s.festival_name, date: s.date, shows: [s] });
         }
-      }
-    });
+      });
 
-    withX.forEach((s, i) => {
-      if (s.is_festival) return;
-      const side = i % 2 === 0 ? 'up' : 'down';
-      for (let l=0; l<4; l++) {
-        if (s.xPos - laneLastX[side][l] > MIN_GAP) {
-          highlights.push({ label: getBandName((s.bands||[''])[0]), x: s.xPos, date: s.date, color: getConcertGenreInfo(s, genreMap).color || C.teal, side, lane: l });
-          laneLastX[side][l] = s.xPos; break;
+      festGroups.forEach((fg, i) => {
+        const x = fg.shows.reduce((a, s) => a + s.xPos, 0) / fg.shows.length;
+        const side = i % 2 === 0 ? 'up' : 'down';
+        for (let l=0; l<4; l++) {
+          if (x - laneLastX[side][l] > MIN_GAP) {
+            highlights.push({ label: fg.name, x, date: fg.date, color: C.gold, side, lane: l });
+            laneLastX[side][l] = x + 40; break;
+          }
         }
-      }
-    });
+      });
 
-    return { sortedShows: withX, yearBlocks, monthMarkers, highlights, totalWidth };
+      withX.forEach((s, i) => {
+        if (s.is_festival) return;
+        const side = i % 2 === 0 ? 'up' : 'down';
+        for (let l=0; l<4; l++) {
+          if (s.xPos - laneLastX[side][l] > MIN_GAP) {
+            highlights.push({ label: getBandName((s.bands||[''])[0]), x: s.xPos, date: s.date, color: getConcertGenreInfo(s, genreMap).color || C.teal, side, lane: l });
+            laneLastX[side][l] = s.xPos; break;
+          }
+        }
+      });
+
+      return { sortedShows: withX, yearBlocks, monthMarkers, highlights, totalWidth };
+    } catch (e) {
+      console.error("Timeline calc error:", e);
+      return { sortedShows: [], yearBlocks: [], monthMarkers: [], highlights: [], totalWidth: 0 };
+    }
   }, [concerts, genreMap]);
 
   const jumpTo = (targetX) => {
@@ -3220,7 +3241,6 @@ function TimelineTab({ concerts, setActiveTab, genreMap }) {
     <div style={{ padding: '20px 0', position: 'relative' }} className="fade-in">
       <GenreLegend />
 
-      {/* JUMP DRIVE OVERLAY */}
       {showNavigator && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 2000, background: 'rgba(5,5,8,0.95)', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 16, border: `1px solid ${C.border}` }}>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: '#fff', marginBottom: 10, letterSpacing: 4 }}>TIME MACHINE JUMP</div>
