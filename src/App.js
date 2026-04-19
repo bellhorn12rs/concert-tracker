@@ -4485,10 +4485,10 @@ function CommunityTab({ onEnterMuseum }) {
 
   useEffect(() => {
     async function fetchCurators() {
-      // 📡 Signal Scan: Fetching all curators from profiles
+      // 📡 Signal Scan: Fetching usernames and their historical counts
       const { data } = await supabase
         .from('profiles')
-        .select('username, avatar_color, last_seen, last_artist, last_venue')
+        .select('username, avatar_color, last_seen, last_artist, last_venue, total_shows, total_sets, total_venues')
         .order('last_seen', { ascending: false });
 
       if (data) setCurators(data);
@@ -4518,7 +4518,7 @@ function CommunityTab({ onEnterMuseum }) {
       </div>
 
       {/* ── THE FLIGHT BOARD ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px' }}>
         {curators.map((u, i) => {
           const userColor = u.avatar_color || C.teal;
           return (
@@ -4527,8 +4527,8 @@ function CommunityTab({ onEnterMuseum }) {
               onClick={() => onEnterMuseum(u.username)}
               style={{
                 background: '#07070a',
-                border: `1px solid ${hexToRgba(C.purple, 0.1)}`,
-                padding: '20px 30px',
+                border: `1px solid ${hexToRgba(C.purple, 0.15)}`,
+                padding: '25px 35px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -4543,7 +4543,7 @@ function CommunityTab({ onEnterMuseum }) {
                 e.currentTarget.style.background = hexToRgba(C.purple, 0.05);
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = hexToRgba(C.purple, 0.1);
+                e.currentTarget.style.borderColor = hexToRgba(C.purple, 0.15);
                 e.currentTarget.style.transform = 'translateX(0)';
                 e.currentTarget.style.background = '#07070a';
               }}
@@ -4553,13 +4553,27 @@ function CommunityTab({ onEnterMuseum }) {
                   {String(i + 1).padStart(2, '0')}
                 </div>
                 <div>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: '#fff', letterSpacing: '2px', lineHeight: 1 }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', letterSpacing: '2px', lineHeight: 1 }}>
                     {u.username?.toUpperCase()}'S ARCHIVE
                   </div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: '9px', color: userColor, fontWeight: 900, marginTop: 4 }}>
-                    LAST SIGNAL: {u.last_artist?.toUpperCase() || 'UNKNOWN'} @ {u.last_venue?.toUpperCase() || 'PRIVATE STAGE'}
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: userColor, fontWeight: 900, marginTop: 6, letterSpacing: '1px' }}>
+                    LATEST: {u.last_artist?.toUpperCase() || 'UNKNOWN'} @ {u.last_venue?.toUpperCase() || 'PRIVATE STAGE'}
                   </div>
                 </div>
+              </div>
+
+              {/* 📊 THE IN-LINE HERO STATS */}
+              <div style={{ display: 'flex', gap: 30, textAlign: 'center', zIndex: 2, marginRight: '40px' }}>
+                {[
+                  { label: 'DAYS', val: u.total_shows || 0, color: C.purple },
+                  { label: 'SETS', val: u.total_sets || 0, color: C.teal },
+                  { label: 'VENUES', val: u.total_venues || 0, color: C.red }
+                ].map(stat => (
+                  <div key={stat.label}>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: stat.color, lineHeight: 1 }}>{stat.val}</div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: '#fff', opacity: 0.4, letterSpacing: '2px' }}>{stat.label}</div>
+                  </div>
+                ))}
               </div>
 
               <div style={{ textAlign: 'right', zIndex: 2 }}>
@@ -4568,7 +4582,7 @@ function CommunityTab({ onEnterMuseum }) {
                 </div>
               </div>
               
-              {/* Aesthetic Scanline effect on each row */}
+              {/* Aesthetic Scanline effect */}
               <div style={{
                 position: 'absolute',
                 top: 0, left: 0, right: 0, bottom: 0,
