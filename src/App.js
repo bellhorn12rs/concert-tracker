@@ -4485,12 +4485,10 @@ function CommunityTab({ onEnterMuseum }) {
 
   useEffect(() => {
     async function fetchCurators() {
-      // 📡 Signal Scan: Fetching usernames and their historical counts
       const { data } = await supabase
         .from('profiles')
-        .select('username, avatar_color, last_seen, last_artist, last_venue, total_shows, total_sets, total_venues')
+        .select('username, avatar_color, last_seen, last_artist, last_venue')
         .order('last_seen', { ascending: false });
-
       if (data) setCurators(data);
       setLoading(false);
     }
@@ -4499,7 +4497,7 @@ function CommunityTab({ onEnterMuseum }) {
 
   if (loading) return (
     <div style={{ padding: 100, textAlign: 'center' }}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.purple, letterSpacing: 4, animation: 'pulse 2s infinite' }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.purple, letterSpacing: 4 }}>
         [ ESTABLISHING CONNECTION TO REMOTE TERMINALS... ]
       </div>
     </div>
@@ -4507,9 +4505,8 @@ function CommunityTab({ onEnterMuseum }) {
 
   return (
     <div className="fade-in" style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* ── THE BOARD HEADER ── */}
       <div style={{ borderLeft: `4px solid ${C.purple}`, paddingLeft: '25px', marginBottom: '50px', marginTop: '20px' }}>
-        <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: '#fff', margin: 0, letterSpacing: '4px', textShadow: `0 0 30px ${hexToRgba(C.purple, 0.4)}` }}>
+        <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: '#fff', margin: 0, letterSpacing: '4px' }}>
           REGIONAL TERMINAL
         </h2>
         <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.purple, fontWeight: 900, letterSpacing: '3px' }}>
@@ -4517,8 +4514,7 @@ function CommunityTab({ onEnterMuseum }) {
         </div>
       </div>
 
-      {/* ── THE FLIGHT BOARD ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
         {curators.map((u, i) => {
           const userColor = u.avatar_color || C.teal;
           return (
@@ -4562,18 +4558,12 @@ function CommunityTab({ onEnterMuseum }) {
                 </div>
               </div>
 
-              {/* 📊 THE IN-LINE HERO STATS */}
+              {/* 📊 PLACEHOLDER STATS (Prevents Crash) */}
               <div style={{ display: 'flex', gap: 30, textAlign: 'center', zIndex: 2, marginRight: '40px' }}>
-                {[
-                  { label: 'DAYS', val: u.total_shows || 0, color: C.purple },
-                  { label: 'SETS', val: u.total_sets || 0, color: C.teal },
-                  { label: 'VENUES', val: u.total_venues || 0, color: C.red }
-                ].map(stat => (
-                  <div key={stat.label}>
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: stat.color, lineHeight: 1 }}>{stat.val}</div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: '#fff', opacity: 0.4, letterSpacing: '2px' }}>{stat.label}</div>
-                  </div>
-                ))}
+                <div style={{ opacity: 0.3 }}>
+                   <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: '#fff', lineHeight: 1 }}>--</div>
+                   <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: '#fff', letterSpacing: '2px' }}>SIGNAL</div>
+                </div>
               </div>
 
               <div style={{ textAlign: 'right', zIndex: 2 }}>
@@ -4582,14 +4572,7 @@ function CommunityTab({ onEnterMuseum }) {
                 </div>
               </div>
               
-              {/* Aesthetic Scanline effect */}
-              <div style={{
-                position: 'absolute',
-                top: 0, left: 0, right: 0, bottom: 0,
-                background: 'linear-gradient(rgba(153, 102, 255, 0.02) 50%, transparent 50%)',
-                backgroundSize: '100% 4px',
-                pointerEvents: 'none'
-              }} />
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(rgba(153, 102, 255, 0.02) 50%, transparent 50%)', backgroundSize: '100% 4px', pointerEvents: 'none' }} />
             </div>
           );
         })}
