@@ -6152,6 +6152,19 @@ useEffect(() => {
 }, [session, authLoading, themeId]);
 
 // --- END OF REPAIRED SYSTEM BLOCK ---
+
+
+const getCuratorTitle = (stats, concerts) => {
+  if (stats.totalShows < 5) return "GHOST IN THE STACK";
+  if (stats.festDays > (stats.totalShows * 0.5)) return "FESTIVAL NOMAD";
+  if (stats.setlists > 10) return "SETLIST SCHOLAR";
+  if (stats.photos > (stats.totalShows * 0.8)) return "FRONT ROW FREQUENCY";
+  if (stats.uniqueArtists > (stats.totalShows * 0.9)) return "CRATE DIGGER";
+  if (stats.totalShows > 100) return "LIFELONG HEADLINER";
+  
+  // Default fallback
+  return "THE ARCHIVIST";
+};
   // 3. THEME & CONTEXT SETUP
   const setThemeId = (id) => {
     if (THEMES[id]) {
@@ -6801,62 +6814,75 @@ async function handleDelete(id) {
             <LiveTicker upcoming={upcoming} />
         </div>
 
-        {/* TIER 2: THE TERMINAL (Transit & Control) */}
+        {/* TIER 2: THE TERMINAL (Navigation & Rank) */}
         <div style={{ 
-            height: isMobile ? '50px' : '60px', display: 'flex', alignItems: 'center', 
-            justifyContent: 'space-between', padding: '0 20px', 
-            background: `linear-gradient(90deg, #050508, ${hexToRgba(C.purple, 0.05)})`, gap: 10 
+          height: isMobile ? '50px' : '60px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          padding: '0 20px',
+          background: `linear-gradient(90deg, #050508, ${hexToRgba(C.purple, 0.05)})`,
+          position: 'relative', 
+          gap: 10
         }}>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                {/* 🚉 THE STATION (Visit Museums) */}
-                <button onClick={() => setActiveTab('community')} style={navBtnStyle(activeTab === 'community', C.purple)}>
-                    <span>🚉</span> {!isMobile && "THE STATION"}
-                </button>
+          {/* Left Controls */}
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
+            <button onClick={() => setActiveTab('community')} style={navBtnStyle(activeTab === 'community', C.purple)}>
+              <span>🚉</span> {!isMobile && "THE STATION"}
+            </button>
+            {isAdmin && (
+              <button onClick={() => setEditTarget('new')} style={navBtnStyle(false, C.gold)}>
+                <span>📡</span> {!isMobile && "LOG SIGNAL"}
+              </button>
+            )}
+          </div>
 
-                {/* ➕ LOG NEW SIGNAL */}
-                {isAdmin && (
-                    <button onClick={() => setEditTarget('new')} style={navBtnStyle(false, C.gold)}>
-                        <span>📡</span> {!isMobile && "LOG SIGNAL"}
-                    </button>
-                )}
+          {/* 🎯 CENTERED CURATOR RANK (Absolute Positioned) */}
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            width: '300px',
+            pointerEvents: 'none',
+            zIndex: 1
+          }}>
+            <div style={{ 
+              fontFamily: "'Space Mono'", 
+              fontSize: '7px', 
+              color: C.teal, 
+              letterSpacing: '4px',
+              opacity: 0.6,
+              marginBottom: 2
+            }}>
+              CURRENT CURATOR STATUS:
             </div>
-
-            {/* ── THE ANCHOR (Curator ID) ── */}
-<div style={{
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  opacity: 0.4, // Keep it subtle to avoid clutter
-  pointerEvents: 'none' // Non-interactive
-}}>
-  <div style={{ 
-    fontFamily: "'Space Mono'", 
-    fontSize: '8px', 
-    color: '#fff', 
-    letterSpacing: '3px',
-    fontWeight: 900
-  }}>
-    {viewingUser ? `MUSEUM: ${viewingUser.toUpperCase()}` : `MUSEUM: ${session?.user?.email?.split('@')[0].toUpperCase() || 'PRIMARY'}`}
-  </div>
-  <div style={{ 
-    width: '40px', 
-    height: '1px', 
-    background: `linear-gradient(90deg, transparent, ${C.teal}, transparent)`,
-    marginTop: 4 
-  }} />
-</div>
-
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                {/* ⚙️ THE OFFICE */}
-                {isAdmin && (
-                    <button onClick={() => setActiveTab('manage')} style={navBtnStyle(activeTab === 'manage', C.teal)}>
-                        <span>⚙️</span> {!isMobile && "THE OFFICE"}
-                    </button>
-                )}
-                <ThemeSwitcher isMobile={isMobile} />
+            <div style={{ 
+              fontFamily: "'Bebas Neue'", 
+              fontSize: '1.4rem', 
+              color: '#fff', 
+              letterSpacing: '3px',
+              textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`,
+              lineHeight: 1
+            }}>
+              {getCuratorTitle(headerStats, concerts)}
             </div>
+          </div>
+
+          {/* Right Controls */}
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
+            {isAdmin && (
+              <button onClick={() => setActiveTab('manage')} style={navBtnStyle(activeTab === 'manage', C.teal)}>
+                <span>⚙️</span> {!isMobile && "THE OFFICE"}
+              </button>
+            )}
+            <ThemeSwitcher isMobile={isMobile} />
+          </div>
         </div>
 
         {/* TIER 3: RE-MASTERED HERO STATS (Neon Outlines) */}
@@ -6864,11 +6890,10 @@ async function handleDelete(id) {
             display: 'grid', 
             gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr) 1.2fr', 
             height: isMobile ? '80px' : '110px', 
-            gap: '10px', // Gaps to show the background/separation
+            gap: '10px', 
             padding: '10px',
             background: '#000' 
         }}>
-            {/* Standard Neon Blocks */}
             {[
               { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
               { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); } },
@@ -6893,7 +6918,6 @@ async function handleDelete(id) {
               </div>
             ))}
             
-            {/* The Artifact Quadrant (Same Neon Style) */}
             <div style={{ 
                 background: hexToRgba(C.teal, 0.05), border: `2px solid ${C.teal}`, borderRadius: '8px',
                 display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', 
@@ -6906,14 +6930,19 @@ async function handleDelete(id) {
             </div>
         </div>
     </header>
-{/* ── THE STATION ANCHOR (Curator Rank) ── */}
+{/* ── THE STATION ANCHOR (Curator Rank - Centered) ── */}
 <div style={{
-  flex: 1,
+  position: 'absolute',
+  left: '50%',
+  top: '50%',
+  transform: 'translate(-50%, -50%)',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: '0 20px'
+  textAlign: 'center',
+  width: '300px', // Prevents layout shifting
+  pointerEvents: 'none'
 }}>
   <div style={{ 
     fontFamily: "'Space Mono'", 
@@ -6921,7 +6950,7 @@ async function handleDelete(id) {
     color: C.teal, 
     letterSpacing: '4px',
     opacity: 0.6,
-    marginBottom: 4
+    marginBottom: 2
   }}>
     CURRENT CURATOR STATUS:
   </div>
@@ -6930,9 +6959,10 @@ async function handleDelete(id) {
     fontSize: '1.4rem', 
     color: '#fff', 
     letterSpacing: '3px',
-    textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`
+    textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`,
+    lineHeight: 1
   }}>
-    {/* Logic for Title - We can make this a function later */}
+    {/* Temporary Logic - We will build the full selector next */}
     {headerStats.totalShows > 50 ? "SONIC CARTOGRAPHER" : "THE ARCHIVIST"}
   </div>
 </div>
