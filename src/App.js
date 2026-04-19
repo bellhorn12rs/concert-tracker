@@ -4487,7 +4487,7 @@ function CommunityTab({ onEnterMuseum }) {
     async function fetchCurators() {
       const { data } = await supabase
         .from('profiles')
-        .select('username, avatar_color, last_seen, last_artist, last_venue')
+        .select('username, avatar_color, last_seen, last_artist, last_venue, total_shows, total_sets, total_venues')
         .order('last_seen', { ascending: false });
       if (data) setCurators(data);
       setLoading(false);
@@ -4558,12 +4558,18 @@ function CommunityTab({ onEnterMuseum }) {
                 </div>
               </div>
 
-              {/* 📊 PLACEHOLDER STATS (Prevents Crash) */}
+              {/* 📊 REAL HERO STATS */}
               <div style={{ display: 'flex', gap: 30, textAlign: 'center', zIndex: 2, marginRight: '40px' }}>
-                <div style={{ opacity: 0.3 }}>
-                   <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: '#fff', lineHeight: 1 }}>--</div>
-                   <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: '#fff', letterSpacing: '2px' }}>SIGNAL</div>
-                </div>
+                {[
+                  { label: 'DAYS', val: u.total_shows || 0, color: C.purple },
+                  { label: 'SETS', val: u.total_sets || 0, color: C.teal },
+                  { label: 'VENUES', val: u.total_venues || 0, color: C.red }
+                ].map(stat => (
+                  <div key={stat.label}>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: stat.color, lineHeight: 1 }}>{stat.val}</div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: '#fff', opacity: 0.4, letterSpacing: '2px' }}>{stat.label}</div>
+                  </div>
+                ))}
               </div>
 
               <div style={{ textAlign: 'right', zIndex: 2 }}>
@@ -6416,7 +6422,6 @@ const getCuratorTitle = (stats, concerts) => {
   };
   // ── 1. MAIN DATA FETCH (THE PIVOT) ──
   async function fetchConcerts() {
-    // 🟢 Use viewingUser (Tara) if it exists, otherwise use your ID (Eric)
     const targetId = viewingUser || session?.user?.id;
     if (!targetId) return;
 
@@ -6426,7 +6431,23 @@ const getCuratorTitle = (stats, concerts) => {
       .eq('user_id', targetId) 
       .order('date', { ascending: false });
     
-    if (data) setConcerts(data);
+    if (data) {
+      setConcerts(data);
+
+      // 📡 AUTO-SYNC STATS TO PROFILE
+      // If the logged-in user is looking at their OWN archive, push the counts to their profile
+      if (!viewingUser && session?.user?.id) {
+        const totalSets = data.reduce((acc, c) => acc + (Array.isArray(c.bands) ? c.bands.length : 1), 0);
+        const totalVenues = new Set(data.map(c => c.venue).filter(Boolean)).size;
+
+        await supabase.from('profiles').update({
+          total_shows: data.length,
+          total_sets: totalSets,
+          total_venues: totalVenues,
+          last_seen: new Date().toISOString()
+        }).eq('id', session.user.id);
+      }
+    }
   }
 
   async function fetchGenres() {
