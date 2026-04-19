@@ -6821,6 +6821,33 @@ async function handleDelete(id) {
                 )}
             </div>
 
+            {/* ── THE ANCHOR (Curator ID) ── */}
+<div style={{
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  opacity: 0.4, // Keep it subtle to avoid clutter
+  pointerEvents: 'none' // Non-interactive
+}}>
+  <div style={{ 
+    fontFamily: "'Space Mono'", 
+    fontSize: '8px', 
+    color: '#fff', 
+    letterSpacing: '3px',
+    fontWeight: 900
+  }}>
+    {viewingUser ? `MUSEUM: ${viewingUser.toUpperCase()}` : `MUSEUM: ${session?.user?.email?.split('@')[0].toUpperCase() || 'PRIMARY'}`}
+  </div>
+  <div style={{ 
+    width: '40px', 
+    height: '1px', 
+    background: `linear-gradient(90deg, transparent, ${C.teal}, transparent)`,
+    marginTop: 4 
+  }} />
+</div>
+
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 {/* ⚙️ THE OFFICE */}
                 {isAdmin && (
