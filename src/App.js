@@ -6801,7 +6801,7 @@ async function handleDelete(id) {
             
     {/* ─── TRIPLE-TIER SYSTEM HEADER ─── */}
     <header style={{ 
-        background: '#050508', position: 'sticky', top: 0, zIndex: 100,
+        background: '#050508', borderBottom: "2px solid ${C.border}", position: 'sticky', top: 0, zIndex: 100,
         display: 'flex', flexDirection: 'column', borderBottom: `2px solid ${C.border}`,
         flexShrink: 0, overflow: 'visible'
     }}>
@@ -6870,7 +6870,7 @@ async function handleDelete(id) {
               textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`,
               lineHeight: 1
             }}>
-              {getCuratorTitle(headerStats, concerts)}
+              
             </div>
           </div>
 
