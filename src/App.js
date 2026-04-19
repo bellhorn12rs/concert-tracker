@@ -5872,6 +5872,44 @@ const navBtnStyle = (isActive, color) => ({
   letterSpacing: '1px'
 });
 
+// 🟢 Helper 4: The Live System Ticker
+// This creates the scrolling "Pulse" at the very top of the header
+const LiveTicker = ({ upcoming }) => {
+  const tickerText = useMemo(() => {
+    if (!upcoming || upcoming.length === 0) return "SYSTEM ONLINE // STANDBY FOR SIGNALS // ARCHIVE READY";
+    return upcoming.map(s => 
+      `UPCOMING: ${s.bands?.[0] || s.artist} @ ${s.venue} — ${s.date}`
+    ).join(' // ');
+  }, [upcoming]);
+
+  return (
+    <div style={{ whiteSpace: 'nowrap', display: 'flex' }}>
+      <style>
+        {`
+          @keyframes scrollTicker {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+        `}
+      </style>
+      <div style={{
+        display: 'inline-block',
+        paddingLeft: '100%',
+        animation: 'scrollTicker 30s linear infinite',
+        fontFamily: "'Space Mono'",
+        fontSize: '9px',
+        color: C.teal,
+        letterSpacing: '2px',
+        fontWeight: 900,
+        textTransform: 'uppercase'
+      }}>
+        {tickerText} // {tickerText}
+      </div>
+    </div>
+  );
+};
+
+
 // 🟢 Helper 2: Standard Hero Stat Block
 // The "muscle" of the header - showing DAYS, ACTS, and SETS
 const StatBlock = ({ value, label, color, onClick }) => (
