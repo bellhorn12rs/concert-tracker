@@ -46,6 +46,9 @@ const handleIWasThere = async (concert) => {
       if (error) throw error;
       
       alert(`SIGNAL CLONED: ${getBandName(concert.bands?.[0]) || 'Show'} added to your archive!`);
+      
+      // 🟢 Keep the UI in sync
+      if (typeof fetchConcerts === 'function') fetchConcerts();
     } catch (err) {
       console.error("Cloning failed:", err);
       alert("Failed to clone: " + err.message);
@@ -81,7 +84,7 @@ const TicketStub = ({ show }) => {
         <div>
           <div style={{ fontSize: '9px', fontWeight: 'bold', marginBottom: '4px', opacity: 0.6 }}>ADMIT ONE - LIVE CONCERT</div>
           <div style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-1px', lineHeight: 1, textTransform: 'uppercase' }}>
-            {show.artist || show.bands?.[0]}
+            {show.artist || (show.bands && show.bands[0])}
           </div>
         </div>
         
