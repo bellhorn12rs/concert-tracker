@@ -4478,15 +4478,15 @@ function VenuesTab({ concerts }) {
     </div>
   );
 }
-// ─── COMMUNITY / CRATE DIGGING HUB ───────────────────────────────────────────
+// ─── THE STATION: REGIONAL TERMINAL BOARD ───
 function CommunityTab({ onEnterMuseum }) {
   const [curators, setCurators] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchCurators() {
-      // 📡 Signal Scan: Fetching all public curators from the profiles table
-      const { data, error } = await supabase
+      // 📡 Signal Scan: Fetching all curators from profiles
+      const { data } = await supabase
         .from('profiles')
         .select('username, avatar_color, last_seen, last_artist, last_venue')
         .order('last_seen', { ascending: false });
@@ -4498,101 +4498,84 @@ function CommunityTab({ onEnterMuseum }) {
   }, []);
 
   if (loading) return (
-    <div style={{ padding: 60, textAlign: 'center' }}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, letterSpacing: 4 }}>SCANNING NETWORK...</div>
+    <div style={{ padding: 100, textAlign: 'center' }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.purple, letterSpacing: 4, animation: 'pulse 2s infinite' }}>
+        [ ESTABLISHING CONNECTION TO REMOTE TERMINALS... ]
+      </div>
     </div>
   );
 
   return (
-    <div className="fade-in" style={{ padding: '20px 0' }}>
-      <div style={{ textAlign: 'center', marginBottom: 60 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: '#fff', lineHeight: 1 }}>
-          THE <span style={{ color: C.gold }}>NETWORK</span>
-        </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.grayDim, letterSpacing: 4, marginTop: 10 }}>
-          EXPLORE THE ARCHIVES OF OTHER CURATORS // LIVE FEED ACTIVE
+    <div className="fade-in" style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+      {/* ── THE BOARD HEADER ── */}
+      <div style={{ borderLeft: `4px solid ${C.purple}`, paddingLeft: '25px', marginBottom: '50px', marginTop: '20px' }}>
+        <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: '#fff', margin: 0, letterSpacing: '4px', textShadow: `0 0 30px ${hexToRgba(C.purple, 0.4)}` }}>
+          REGIONAL TERMINAL
+        </h2>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.purple, fontWeight: 900, letterSpacing: '3px' }}>
+          CONNECTED MUSEUMS // SELECT A SIGNAL TO BOARD
         </div>
       </div>
 
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
-        gap: 30,
-        padding: '0 10px'
-      }}>
-        {curators.map(u => {
+      {/* ── THE FLIGHT BOARD ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+        {curators.map((u, i) => {
           const userColor = u.avatar_color || C.teal;
           return (
             <div 
               key={u.username}
               onClick={() => onEnterMuseum(u.username)}
               style={{
-                background: `linear-gradient(135deg, ${C.bgCard}, #050508)`,
-                border: `1px solid ${hexToRgba(userColor, 0.3)}`,
-                borderRadius: 16,
-                padding: 30,
+                background: '#07070a',
+                border: `1px solid ${hexToRgba(C.purple, 0.1)}`,
+                padding: '20px 30px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
                 cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'all 0.2s ease',
                 position: 'relative',
-                overflow: 'hidden',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                overflow: 'hidden'
               }}
-              onMouseEnter={e => {
-                e.currentTarget.style.transform = 'translateY(-10px)';
-                e.currentTarget.style.borderColor = userColor;
-                e.currentTarget.style.boxShadow = `0 20px 40px ${hexToRgba(userColor, 0.15)}`;
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = C.purple;
+                e.currentTarget.style.transform = 'translateX(10px)';
+                e.currentTarget.style.background = hexToRgba(C.purple, 0.05);
               }}
-              onMouseLeave={e => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.borderColor = hexToRgba(userColor, 0.3);
-                e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = hexToRgba(C.purple, 0.1);
+                e.currentTarget.style.transform = 'translateX(0)';
+                e.currentTarget.style.background = '#07070a';
               }}
             >
-              {/* Header: Identity */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 15, marginBottom: 25 }}>
-                <div style={{ 
-                  width: 55, height: 55, borderRadius: '50%', 
-                  background: hexToRgba(userColor, 0.1),
-                  border: `2px solid ${userColor}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: userColor,
-                  boxShadow: `0 0 15px ${hexToRgba(userColor, 0.3)}`
-                }}>
-                  {u.username[0].toUpperCase()}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '40px', zIndex: 2 }}>
+                <div style={{ color: C.purple, fontFamily: "'Space Mono'", fontSize: '14px', fontWeight: 900, opacity: 0.5 }}>
+                  {String(i + 1).padStart(2, '0')}
                 </div>
                 <div>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#fff', lineHeight: 1 }}>
-                    @{u.username.toUpperCase()}
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: '#fff', letterSpacing: '2px', lineHeight: 1 }}>
+                    {u.username?.toUpperCase()}'S ARCHIVE
                   </div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 5, letterSpacing: 1 }}>
-                    CURATOR ARCHETYPE: <span style={{ color: userColor }}>ANALOG</span>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: '9px', color: userColor, fontWeight: 900, marginTop: 4 }}>
+                    LAST SIGNAL: {u.last_artist?.toUpperCase() || 'UNKNOWN'} @ {u.last_venue?.toUpperCase() || 'PRIVATE STAGE'}
                   </div>
                 </div>
               </div>
 
-              {/* Latest Intel */}
-              <div style={{ 
-                background: 'rgba(0,0,0,0.4)', 
-                borderRadius: 8, padding: 20, 
-                borderLeft: `4px solid ${userColor}` 
-              }}>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: userColor, letterSpacing: 2, marginBottom: 8, fontWeight: 900 }}>
-                  LATEST SIGNAL DETECTED
-                </div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', letterSpacing: 1, lineHeight: 1.1 }}>
-                  {u.last_artist?.toUpperCase() || 'INITIALIZING...'}
-                </div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, marginTop: 4 }}>
-                  {u.last_venue?.toUpperCase() || 'UNKNOWN STAGE'}
+              <div style={{ textAlign: 'right', zIndex: 2 }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gold, letterSpacing: '2px', fontWeight: 900 }}>
+                  BOARDING →
                 </div>
               </div>
-
-              <div style={{ marginTop: 25, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg, ${hexToRgba(userColor, 0.2)}, transparent)` }} />
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: userColor, letterSpacing: 2, marginLeft: 15 }}>
-                  VIEW ARCHIVE ↗
-                </div>
-              </div>
+              
+              {/* Aesthetic Scanline effect on each row */}
+              <div style={{
+                position: 'absolute',
+                top: 0, left: 0, right: 0, bottom: 0,
+                background: 'linear-gradient(rgba(153, 102, 255, 0.02) 50%, transparent 50%)',
+                backgroundSize: '100% 4px',
+                pointerEvents: 'none'
+              }} />
             </div>
           );
         })}
@@ -5513,7 +5496,7 @@ const TAB_GROUPS = [
   {
     header: "Hitting the Road",
     tabs: [
-      ['community', '🌐 CRATE DIGGING', '#ffcc00'],
+      ['community', '🚉 THE STATION', C.purple],
     ]
   }, // 🟢 Added missing comma here
   {
