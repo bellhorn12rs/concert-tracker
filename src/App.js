@@ -7149,10 +7149,8 @@ async function handleDelete(id) {
     {/* TIER 3: RE-MASTERED HERO STATS (Neon Outlines) */}
 <div style={{ 
     display: 'grid', 
-    // 🟢 Back to 6 columns now that we merged FESTS
-    gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', 
-    height: 'auto', 
-    minHeight: isMobile ? '160px' : '110px', 
+    // 🟢 7 columns for Desktop, 3 columns for Mobile
+    gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(7, 1fr)', 
     gap: '8px', 
     padding: '10px',
     background: '#000' 
@@ -7162,15 +7160,9 @@ async function handleDelete(id) {
       { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); } },
       { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); } },
       { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
+      { val: totalFestAttendances, lbl: 'FESTS', col: C.gold, click: () => setActiveTab('passport') },
+      { val: uniqueFestBrands, lbl: 'BRANDS', col: C.gold, click: () => setActiveTab('passport') },
       
-      // 🟢 THE MERGED FESTIVAL BOX: [Total / Brands]
-      { 
-        val: `${totalFestAttendances} / ${uniqueFestBrands}`, 
-        lbl: 'FESTS / SITES', // 🟢 New Terminology
-        col: C.gold, 
-        click: () => setActiveTab('passport'),
-        isMerged: true 
-      },
     ].map(s => (
       <div key={s.lbl} onClick={s.click} style={{
         background: hexToRgba(s.col, 0.05),
@@ -7202,12 +7194,18 @@ async function handleDelete(id) {
     ))}
     
     <div style={{ 
-        background: hexToRgba(C.teal, 0.05), border: `2px solid ${C.teal}`, borderRadius: '8px',
-        display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', 
-        padding: '6px', gap: '6px', cursor: 'pointer', boxShadow: `inset 0 0 15px ${hexToRgba(C.teal, 0.2)}`,
-        gridColumn: isMobile ? 'span 3' : 'span 1',
-        minHeight: '90px'
-    }} onClick={() => setActiveTab('vault')}>
+    background: hexToRgba(C.teal, 0.05), 
+    border: `2px solid ${C.teal}`, 
+    borderRadius: '8px',
+    display: 'grid', 
+    gridTemplateColumns: '1fr 1fr', 
+    gridTemplateRows: '1fr 1fr', 
+    padding: '6px', 
+    gap: '6px', 
+    cursor: 'pointer',
+    // 🟢 Span all 3 columns on mobile, take 1 slot on desktop
+    gridColumn: isMobile ? 'span 3' : 'span 1'
+}} onClick={() => setActiveTab('vault')}>
         <QuadStat val={headerStats.tickets} label="TIX" color={C.gold} />
         <QuadStat val={headerStats.setlists} label="LST" color={C.teal} />
         <QuadStat val={headerStats.posters} label="PST" color={C.purple} />
