@@ -2319,22 +2319,30 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
   const currentStat = rotatingStats[statIdx] || rotatingStats[0];
   const maxVal = Math.max(...Object.values(counts), 1);
 
+  // Sanitized CSS string to prevent Vercel build errors
+  const stageStyles = `
+    @keyframes woofer-pulse { 
+      0%, 100% { transform: scale(1); } 
+      50% { transform: scale(1.08); filter: brightness(1.5) drop-shadow(0 0 8px ${C.teal}); } 
+    }
+    .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
+    
+    @keyframes beam-swing { 
+      0%, 100% { transform: rotate(-8deg); } 
+      50% { transform: rotate(8deg); } 
+    }
+    .moving-light { animation: beam-swing 3s ease-in-out infinite; transform-origin: top center; }
+    
+    @keyframes truss-flash { 
+      0%, 100% { background: #fff; box-shadow: 0 0 10px #fff; } 
+      50% { background: #333; box-shadow: none; } 
+    }
+    .truss-bulb { animation: truss-flash 1.5s infinite; }
+  `;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between', gap: 10 }}>
-      {/* 🛠️ FIXED: Removed nested backticks and added defensive parentheses to stats */}
-      <style>{`
-        @keyframes woofer-pulse { 
-          0%, 100% { transform: scale(1); } 
-          50% { transform: scale(1.08); filter: brightness(1.5) drop-shadow(0 0 8px ${C.teal}); } 
-        }
-        .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
-        
-        @keyframes beam-swing { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
-        .moving-light { animation: beam-swing 3s ease-in-out infinite; transform-origin: top center; }
-        
-        @keyframes truss-flash { 0%, 100% { background: #fff; box-shadow: 0 0 10px #fff; } 50% { background: #333; box-shadow: none; } }
-        .truss-bulb { animation: truss-flash 1.5s infinite; }
-      `}</style>
+      <style>{stageStyles}</style>
 
       {/* 🟢 TOP DECADE BARS */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, flexShrink: 0 }}>
@@ -2347,7 +2355,7 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
                 <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: '#fff' }}>{decade}</span>
               </div>
               <div style={{ height: 2, background: '#000', borderRadius: 1, overflow: 'hidden', marginTop: 3 }}>
-                <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.col, boxShadow: `0 0 10px ${m.col}` }} />
+                <div style={{ height: '100%', width: `${((count / maxVal) * 100)}%`, background: m.col, boxShadow: `0 0 10px ${m.col}` }} />
               </div>
             </div>
           );
