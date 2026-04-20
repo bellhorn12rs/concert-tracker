@@ -296,14 +296,41 @@ function buildGenreMap(concerts) {
 
 function getConcertGenreInfo(concert, genreMap) {
   const bands = Array.isArray(concert.bands) ? concert.bands : [];
-  if (concert.genre) return { genre: concert.genre, color: GENRE_COLORS[concert.genre] || GENRE_COLORS['Other'], mixed: false };
+  
+  // 1. Identify the Headliner name [cite: 28, 43]
+  const headlinerObj = bands[0];
+  const headlinerName = typeof headlinerObj === 'object' ? headlinerObj.name : headlinerObj;
+
+  // 2. PRIORITY 1: Check the Global Map (The Master Registry) [cite: 29, 924]
+  // This allows global updates to override old hardcoded "Indie Rock" defaults.
+  if (headlinerName && genreMap[headlinerName]) {
+    const globalGenre = genreMap[headlinerName];
+    return { 
+      genre: globalGenre, 
+      color: GENRE_COLORS[globalGenre] || GENRE_COLORS['Other'], 
+      mixed: false 
+    };
+  }
+
+  // 3. PRIORITY 2: Check the concert-level override column 
+  if (concert.genre) {
+    return { 
+      genre: concert.genre, 
+      color: GENRE_COLORS[concert.genre] || GENRE_COLORS['Other'], 
+      mixed: false 
+    };
+  }
+
+  // 4. FALLBACK: Look for genres inside the bands array or mixed logic [cite: 31, 32]
   const genres = [...new Set(bands.map(b => {
-    const name = getBandName(b);
+    const name = typeof b === 'object' ? b.name : b;
     return b?.genre || genreMap[name] || null;
   }).filter(Boolean))];
-  if (!genres.length) return { genre: null, color: GENRE_COLORS['Other'], mixed: false };
-  if (genres.length === 1) return { genre: genres[0], color: GENRE_COLORS[genres[0]] || GENRE_COLORS['Other'], mixed: false };
-  return { genre: 'Mixed', color: null, mixed: true, genres };
+
+  if (!genres.length) return { genre: null, color: GENRE_COLORS['Other'], mixed: false }; [cite: 30]
+  if (genres.length === 1) return { genre: genres[0], color: GENRE_COLORS[genres[0]] || GENRE_COLORS['Other'], mixed: false }; [cite: 31]
+  
+  return { genre: 'Mixed', color: null, mixed: true, genres }; [cite: 32]
 }
 
 const GenreBadge = ({ genre, color, mixed, small = false }) => {
@@ -6620,19 +6647,29 @@ const getCuratorTitle = (stats, concerts) => {
   const handleSave = async (id, payload) => {
     if (!isAdmin) return;
     try {
-      // 📡 THE FINAL HANDSHAKE: Mapping payload to DB columns
+      // 1. Identify the Headliner for the Global Sync [cite: 901]
+      const headliner = Array.isArray(payload.bands) 
+        ? (typeof payload.bands[0] === 'object' ? payload.bands[0].name : payload.bands[0]) 
+        : payload.artist;
+
+      // 2. Determine the Genre [cite: 929]
+      // Priority: Payload Genre > Headliner's internal genre > Fallback 
+      const finalGenre = payload.genre || (payload.bands[0]?.genre) || 'Indie Rock';
+
+      // 📡 THE FINAL HANDSHAKE: Mapping payload to DB columns [cite: 926, 932]
       const dataToStamp = {
         date: payload.date || null,
         bands: Array.isArray(payload.bands) ? payload.bands : [],
         venue: payload.venue || null,
         city: payload.city || null,
         state: payload.state || null,
-        genre: payload.is_festival ? 'Festival' : (payload.bands[0]?.genre || payload.genre || 'Indie Rock'),
+        // Removed the 'Festival' hardcode so actual genres can stay synced [cite: 929]
+        genre: finalGenre, 
         is_festival: Boolean(payload.is_festival),
         festival_name: payload.festival_name || null,
         festival_day: payload.festival_day || null,
         
-        // ARCHAEOLOGY MAPPING
+        // ARCHAEOLOGY MAPPING [cite: 931, 932]
         image_url: payload.image_url || null,
         setlist_image_url: payload.setlist_image_url || null,
         personal_photo_url: payload.personal_photo_url || null,
@@ -6640,9 +6677,10 @@ const getCuratorTitle = (stats, concerts) => {
         
         has_setlist: Boolean(payload.setlist_image_url || payload.has_setlist_names?.trim()),
         has_setlist_names: payload.has_setlist_names || null,
-        user_id: session?.user?.id || null,
+        user_id: session?.user?.id || null, // [cite: 932]
       };
 
+      // 3. EXECUTE CONCERT SAVE [cite: 933, 934]
       let result;
       if (id && id !== 'new') {
         result = await supabase.from('concerts').update(dataToStamp).eq('id', id);
@@ -6652,12 +6690,18 @@ const getCuratorTitle = (stats, concerts) => {
 
       if (result.error) throw result.error;
 
-      setEditTarget(null);
-      await fetchConcerts(); 
+      // 4. THE RIPPLE SYNC: Update the Global Artist Registry 
+      // If we have a headliner and a genre, ensure the master table matches [cite: 923, 940]
+      if (headliner && finalGenre && finalGenre !== 'Festival') {
+        await handleSetGenre(headliner, finalGenre);
+      }
+
+      setEditTarget(null); // [cite: 935]
+      await fetchConcerts(); // [cite: 935]
 
     } catch (error) {
-      console.error("DATABASE REJECTED SAVE:", error.message);
-      alert('DATABASE REJECTED SAVE: ' + error.message);
+      console.error("DATABASE REJECTED SAVE:", error.message); // [cite: 935]
+      alert('DATABASE REJECTED SAVE: ' + error.message); // [cite: 935]
     }
   };
   // ── 1. MAIN DATA FETCH (THE PIVOT)
