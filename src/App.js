@@ -296,14 +296,20 @@ function buildGenreMap(concerts) {
 
 function getConcertGenreInfo(concert, genreMap) {
   const bands = Array.isArray(concert.bands) ? concert.bands : [];
-  if (concert.genre) return { genre: concert.genre, color: GENRE_COLORS[concert.genre] || GENRE_COLORS['Other'], mixed: false };
-  const genres = [...new Set(bands.map(b => {
-    const name = getBandName(b);
-    return b?.genre || genreMap[name] || null;
-  }).filter(Boolean))];
+  
+  // Get genre for each individual band from artist_genres (the source of truth)
+  // Fall back to the embedded band genre, then nothing
+  const genres = [...new Set(
+    bands.map(b => {
+      const name = getBandName(b);
+      return genreMap[name] || b?.genre || null;
+    }).filter(Boolean)
+  )];
+
   if (!genres.length) return { genre: null, color: GENRE_COLORS['Other'], mixed: false };
   if (genres.length === 1) return { genre: genres[0], color: GENRE_COLORS[genres[0]] || GENRE_COLORS['Other'], mixed: false };
   return { genre: 'Mixed', color: null, mixed: true, genres };
+}
 }
 
 const GenreBadge = ({ genre, color, mixed, small = false }) => {
@@ -6771,10 +6777,37 @@ async function handleDelete(id) {
 }
 
   async function handleSetGenre(artist, genre) {
-    if (!artist) return;
-    const { error } = await supabase.from('artist_genres').upsert({ artist_name: artist, genre: genre }, { onConflict: 'artist_name' });
-    if (!error) setArtistGenres(prev => ({ ...prev, [artist]: genre }));
+  if (!artist) return;
+  
+  // 1. Update the lookup table (existing behavior)
+  const { error } = await supabase
+    .from('artist_genres')
+    .upsert({ artist_name: artist, genre: genre }, { onConflict: 'artist_name' });
+  
+  if (!error) {
+    // 2. Update local state immediately (existing behavior)
+    setArtistGenres(prev => ({ ...prev, [artist]: genre }));
+    
+    // 3. NEW: Update the embedded genre in concerts.bands for this artist
+    // Find all concerts that contain this artist
+    const affectedConcerts = concerts.filter(c =>
+      (c.bands || []).some(b => getBandName(b) === artist)
+    );
+    
+    for (const concert of affectedConcerts) {
+      const updatedBands = concert.bands.map(b => {
+        if (getBandName(b) === artist) {
+          return typeof b === 'string' ? { name: b, genre } : { ...b, genre };
+        }
+        return b;
+      });
+      await supabase
+        .from('concerts')
+        .update({ bands: updatedBands })
+        .eq('id', concert.id);
+    }
   }
+}
 
   const handleUpcomingSave = async (id, formData) => {
   if (viewingUser) return; // 🛡️ Stay in spectator mode
