@@ -3999,7 +3999,7 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
         {finalSetlists.map((url, sIdx) => (
           <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={finalSetlists.length} />
         ))}
-        {(event.festival_poster_url || '').split(',').map(u => u.trim()).filter(Boolean).map((url, pIdx) => (
+        {((event.festival_poster_url || '').split(',').map(u => u.trim()).filter(Boolean)).map((url, pIdx) => (
           <GigPoster
             key={`${event.id}-poster-${pIdx}`}
             src={url}
