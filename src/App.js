@@ -55,30 +55,42 @@ const handleIWasThere = async (concert) => {
     }
   };
 const handleBulkSync = async () => {
-    if (!selectedSignals.length) return alert("NO SIGNALS SELECTED");
-    if (!window.confirm(`SYNC ${selectedSignals.length} SIGNALS TO YOUR ARCHIVE?`)) return;
+    // 🛡️ Safety check: Ensure we have signals and a logged-in user
+    if (!selectedSignals.length) return;
+    if (!session?.user?.id) return alert("LOGIN REQUIRED TO CLONE SIGNALS");
 
+    const count = selectedSignals.length;
+    if (!window.confirm(`SYNC ${count} SIGNALS TO YOUR ARCHIVE?`)) return;
+
+    // Map Eric's shows into Tara's archive (sanitizing IDs and private photos)
     const newRecords = selectedSignals.map(s => {
       const { id, created_at, user_id, personal_photo_url, ...core } = s;
       return { 
         ...core, 
-        user_id: session.user.id, 
-        personal_photo_url: null, 
+        user_id: session.user.id, // Assign to the current user
+        personal_photo_url: null, // Don't steal personal photos
         is_public: true, 
         date_added: new Date().toISOString() 
       };
     });
 
-    const { error } = await supabase.from('concerts').insert(newRecords);
-    if (!error) {
-      alert(`SUCCESS: ${selectedSignals.length} SIGNALS ARCHIVED.`);
+    try {
+      const { error } = await supabase.from('concerts').insert(newRecords);
+      if (error) throw error;
+
+      alert(`⚡ SUCCESS: ${count} SIGNALS SYNCHRONIZED.`);
+      
+      // Reset the "Cart"
       setSelectedSignals([]);
       setBulkMode(false);
+      
+      // Refresh the museum floor
       fetchConcerts();
-    } else {
-      alert("SYNC ERROR: " + error.message);
+    } catch (err) {
+      console.error("Bulk Sync Error:", err);
+      alert("DATABASE REJECTED SYNC: " + err.message);
     }
-  };
+  };;
 // ─── THE RETRO TICKET STUB (IDEA #1) ──────────────────────────────────────────
 const TicketStub = ({ show }) => {
   if (!show) return null;
@@ -4125,6 +4137,7 @@ function BrowseTab({
       {browseView === 'shows' && (
         <>
           {/* 📡 MASS ARCHIVE RAIL (Only shown when viewing another curator) */}
+          {/* 📡 MASS ARCHIVE RAIL */}
           {viewingUser && (
             <div style={{ 
               background: bulkMode ? hexToRgba(C.gold, 0.1) : 'rgba(255,255,255,0.03)', 
@@ -4133,28 +4146,38 @@ function BrowseTab({
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               backdropFilter: 'blur(10px)'
             }}>
+              {/* LEFT SIDE: The Arming Button & Status */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: bulkMode ? C.gold : '#fff', letterSpacing: '1px' }}>
-                  {bulkMode ? 'SIGNAL SELECTION ACTIVE' : 'MASS ARCHIVE PROTOCOL'}
-                </div>
-                {bulkMode && (
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold, fontWeight: 900 }}>
-                    {selectedSignals.length} SIGNALS CAPTURED
-                  </div>
-                )}
-              </div>
-              
-              <div style={{ display: 'flex', gap: 10 }}>
                 <button 
                   onClick={() => { setBulkMode(!bulkMode); setSelectedSignals([]); }}
                   style={{ background: 'none', border: `1px solid ${bulkMode ? C.gold : C.teal}`, color: bulkMode ? C.gold : C.teal, padding: '8px 16px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 10, cursor: 'pointer', transition: '0.2s' }}
                 >
                   {bulkMode ? '[ ABORT ]' : '[ INITIALIZE BULK SYNC ]'}
                 </button>
+
+                {bulkMode && (
+                  <div className="fade-in" style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: C.gold, letterSpacing: '1px' }}>
+                      SIGNAL SELECTION ACTIVE
+                    </div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold, fontWeight: 900, opacity: 0.8 }}>
+                      // {selectedSignals.length} SIGNALS CAPTURED
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* RIGHT SIDE: The Commit Button */}
+              <div style={{ display: 'flex', gap: 10 }}>
                 {bulkMode && selectedSignals.length > 0 && (
                   <button 
                     onClick={onSync}
-                    style={{ background: C.gold, border: 'none', color: '#000', padding: '8px 20px', borderRadius: 4, fontFamily: "'Bebas Neue'", fontSize: '1.1rem', fontWeight: 900, cursor: 'pointer', boxShadow: `0 0 20px ${hexToRgba(C.gold, 0.4)}` }}
+                    style={{ 
+                      background: C.gold, border: 'none', color: '#000', padding: '8px 25px', borderRadius: 4, 
+                      fontFamily: "'Bebas Neue'", fontSize: '1.2rem', fontWeight: 900, cursor: 'pointer', 
+                      boxShadow: `0 0 25px ${hexToRgba(C.gold, 0.5)}`,
+                      animation: 'pulse 2s infinite'
+                    }}
                   >
                     COMMIT {selectedSignals.length} SIGNALS
                   </button>
