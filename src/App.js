@@ -2303,13 +2303,19 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
     return c;
   }, [sets]);
 
+  const uniqueVenueCount = new Set(concerts.map(c => c.venue).filter(Boolean)).size;
+  const artistCount = headerStats.uniqueArtists || 0;
+  const showCount = headerStats.totalShows || 0;
+  const fileCount = headerStats.setlistCount || 0;
+  const setCount = headerStats.totalSets || 0;
+
   const rotatingStats = useMemo(() => [
-    { label: 'TOTAL ACTS', val: (headerStats.uniqueArtists || 0), color: C.cyan },
-    { label: 'UNIQUE VENUES', val: (new Set(concerts.map(c => c.venue).filter(Boolean)).size), color: C.red },
-    { label: 'CALENDAR DAYS', val: (headerStats.totalShows || 0), color: C.purple },
-    { label: 'SETLIST FILES', val: (headerStats.setlistCount || 0), color: C.gold },
-    { label: 'ARCHIVED SETS', val: (headerStats.totalSets || 0), color: C.teal },
-  ], [headerStats, concerts]);
+    { label: 'TOTAL ACTS', val: artistCount, color: C.cyan },
+    { label: 'UNIQUE VENUES', val: uniqueVenueCount, color: C.red },
+    { label: 'CALENDAR DAYS', val: showCount, color: C.purple },
+    { label: 'SETLIST FILES', val: fileCount, color: C.gold },
+    { label: 'ARCHIVED SETS', val: setCount, color: C.teal },
+  ], [artistCount, uniqueVenueCount, showCount, fileCount, setCount]);
 
   useEffect(() => {
     const timer = setInterval(() => setStatIdx(p => (p + 1) % rotatingStats.length), 3000);
