@@ -310,7 +310,7 @@ function getConcertGenreInfo(concert, genreMap) {
   if (genres.length === 1) return { genre: genres[0], color: GENRE_COLORS[genres[0]] || GENRE_COLORS['Other'], mixed: false };
   return { genre: 'Mixed', color: null, mixed: true, genres };
 }
-}
+
 
 const GenreBadge = ({ genre, color, mixed, small = false }) => {
   if (!genre) return null;
