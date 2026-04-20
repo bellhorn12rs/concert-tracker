@@ -4052,8 +4052,9 @@ function BrowseTab({
   yearFilter, setYearFilter, festFilter, setFestFilter, 
   genreFilter, setGenreFilter, sortCol, setSortCol, sortDir, setSortDir, 
   paged, page, setPage, totalPages, artistRows, years, 
-  onShare, onEdit, onSetGenre, genreMap,
-  isAdmin // 🟢 Added Admin Prop
+  onShare, onEdit, onSetGenre, genreMap, isAdmin,
+  /* 🟢 NEW BULK PROPS */
+  viewingUser, bulkMode, setBulkMode, selectedSignals, setSelectedSignals, onSync 
 }) {
   
   // ── 1. SAFETY GATES ──
@@ -4123,10 +4124,52 @@ function BrowseTab({
       {/* VIEW: SHOWS (SETS) */}
       {browseView === 'shows' && (
         <>
+          {/* 📡 MASS ARCHIVE RAIL (Only shown when viewing another curator) */}
+          {viewingUser && (
+            <div style={{ 
+              background: bulkMode ? hexToRgba(C.gold, 0.1) : 'rgba(255,255,255,0.03)', 
+              border: `1px solid ${bulkMode ? C.gold : C.border}`,
+              padding: '15px 25px', borderRadius: '12px', marginBottom: '20px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              backdropFilter: 'blur(10px)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: bulkMode ? C.gold : '#fff', letterSpacing: '1px' }}>
+                  {bulkMode ? 'SIGNAL SELECTION ACTIVE' : 'MASS ARCHIVE PROTOCOL'}
+                </div>
+                {bulkMode && (
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold, fontWeight: 900 }}>
+                    {selectedSignals.length} SIGNALS CAPTURED
+                  </div>
+                )}
+              </div>
+              
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button 
+                  onClick={() => { setBulkMode(!bulkMode); setSelectedSignals([]); }}
+                  style={{ background: 'none', border: `1px solid ${bulkMode ? C.gold : C.teal}`, color: bulkMode ? C.gold : C.teal, padding: '8px 16px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 10, cursor: 'pointer', transition: '0.2s' }}
+                >
+                  {bulkMode ? '[ ABORT ]' : '[ INITIALIZE BULK SYNC ]'}
+                </button>
+                {bulkMode && selectedSignals.length > 0 && (
+                  <button 
+                    onClick={onSync}
+                    style={{ background: C.gold, border: 'none', color: '#000', padding: '8px 20px', borderRadius: 4, fontFamily: "'Bebas Neue'", fontSize: '1.1rem', fontWeight: 900, cursor: 'pointer', boxShadow: `0 0 20px ${hexToRgba(C.gold, 0.4)}` }}
+                  >
+                    COMMIT {selectedSignals.length} SIGNALS
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
               <thead>
                 <tr style={{ background: C.bgCardAlt }}>
+                  {/* 🟢 NEW: Checkbox Column Header */}
+                  {bulkMode && viewingUser && <th style={{ width: '40px', borderBottom: `1px solid ${C.border}` }}></th>}
+                  
                   {[['date', 'Date'], ['artist', 'Artist'], ['venue', 'Venue'], ['city', 'City']].map(([col, label]) => (
                     <th 
                       key={col} 
@@ -4149,17 +4192,41 @@ function BrowseTab({
               <tbody>
                 {safePaged.map((s, i) => {
                   const artistGenre = safeGenreMap[s.artist] || null;
+                  const isSelected = !!selectedSignals.find(sig => sig.id === s.id);
+                  
                   return (
                     <tr 
                       key={`${s.id}-${s.artist}-${i}`} 
-                      className={isAdmin ? "row-hover" : ""} 
-                      onClick={() => isAdmin && onEdit(s)} // 🟢 Admin only trigger
+                      className={(isAdmin || bulkMode) ? "row-hover" : ""} 
+                      onClick={() => {
+                        if (isAdmin) onEdit(s);
+                        if (bulkMode) {
+                          if (isSelected) setSelectedSignals(selectedSignals.filter(sig => sig.id !== s.id));
+                          else setSelectedSignals([...selectedSignals, s]);
+                        }
+                      }}
                       style={{ 
                         borderBottom: `1px solid ${C.border}`, 
-                        background: i % 2 === 1 ? C.bgCardAlt : 'transparent', 
-                        cursor: isAdmin ? 'pointer' : 'default' // 🟢 Change cursor for public
+                        background: isSelected ? hexToRgba(C.gold, 0.08) : (i % 2 === 1 ? C.bgCardAlt : 'transparent'), 
+                        cursor: (isAdmin || bulkMode) ? 'pointer' : 'default',
+                        transition: 'background 0.2s'
                       }}
                     >
+                      {/* 🟢 NEW: Checkbox Cell */}
+                      {bulkMode && viewingUser && (
+                        <td style={{ padding: '9px 12px', textAlign: 'center' }}>
+                          <div style={{ 
+                            width: 16, height: 16, borderRadius: 3, 
+                            border: `1.5px solid ${isSelected ? C.gold : C.grayDim}`,
+                            background: isSelected ? C.gold : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'all 0.1s'
+                          }}>
+                            {isSelected && <span style={{ color: '#000', fontSize: '10px', fontWeight: 900 }}>✓</span>}
+                          </div>
+                        </td>
+                      )}
+
                       <td style={{ padding: '9px 12px', fontFamily: "'Space Mono',monospace", fontSize: '0.7rem', color: C.gray, whiteSpace: 'nowrap' }}>{fmtDate(s.date)}</td>
                       <td style={{ padding: '9px 12px', color: C.teal, fontWeight: 600 }}>{s.artist}</td>
                       <td style={{ padding: '9px 12px', color: C.gray }}>{s.venue || '—'}</td>
@@ -4195,7 +4262,6 @@ function BrowseTab({
           )}
         </>
       )}
-
       {/* VIEW: ARTISTS (ACTS) */}
       {browseView === 'artists' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
@@ -6488,7 +6554,7 @@ const getCuratorTitle = (stats, concerts) => {
       alert('DATABASE REJECTED SAVE: ' + error.message);
     }
   };
-  // ── 1. MAIN DATA FETCH (THE PIVOT) ──
+  // ── 1. MAIN DATA FETCH (THE PIVOT)
   async function fetchConcerts() {
     const targetId = viewingUser || session?.user?.id;
     if (!targetId) return;
@@ -7345,12 +7411,6 @@ async function handleDelete(id) {
     onEdit={isAdmin ? setEditTarget : null} 
     genreMap={artistGenres} 
     isAdmin={isAdmin}
-    viewingUser={viewingUser}
-    bulkMode={bulkMode}
-    setBulkMode={setBulkMode}
-    selectedSignals={selectedSignals}
-    setSelectedSignals={setSelectedSignals}
-    onSync={handleBulkSync}
   />
 )}
   {/* 🟢 NEW PAPERTRAIL BLOCK GOES HERE */}
@@ -7461,6 +7521,12 @@ async function handleDelete(id) {
       isAdmin={isAdmin}
       onSetGenre={handleSetGenre}
       genreMap={artistGenres}
+      viewingUser={viewingUser}
+      bulkMode={bulkMode}
+      setBulkMode={setBulkMode}
+      selectedSignals={selectedSignals}
+      setSelectedSignals={setSelectedSignals}
+      onSync={handleBulkSync}
     />
   )}
 
