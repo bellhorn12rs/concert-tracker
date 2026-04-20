@@ -6524,6 +6524,20 @@ const getCuratorTitle = (stats, concerts) => {
     return Object.values(m).sort((a, b) => Object.values(b.years).flat().length - Object.values(a.years).flat().length);
   }, [concerts]);
 
+// ── 🛡️ NEW HERO STATS (Calculated safely without touching existing code) ──
+  const uniqueFestBrands = useMemo(() => {
+    // Counts unique names (Bonnaroo = 1, regardless of how many times you went)
+    return new Set(concerts.filter(c => c.is_festival && c.festival_name).map(c => c.festival_name.trim().toLowerCase())).size;
+  }, [concerts]);
+
+  const totalFestAttendances = useMemo(() => {
+    // Counts unique name + year combos (Bonnaroo 2022 and Bonnaroo 2024 = 2)
+    return new Set(concerts.filter(c => c.is_festival && c.festival_name).map(c => {
+      const yr = c.date ? c.date.substring(0, 4) : 'Unknown';
+      return `${c.festival_name.trim().toLowerCase()}-${yr}`;
+    })).size;
+  }, [concerts]);
+
   const stackedTimelineData = useMemo(() => {
     const yearsMap = {};
     allSetsList.forEach(s => {
@@ -7128,51 +7142,59 @@ async function handleDelete(id) {
     </div>
 
     {/* TIER 3: RE-MASTERED HERO STATS (Neon Outlines) */}
+<div style={{ 
+    display: 'grid', 
+    // 🟢 Updated to 6 columns for desktop, 3 columns (2 rows) for mobile
+    gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', 
+    height: 'auto', 
+    minHeight: isMobile ? '160px' : '110px', 
+    gap: '8px', 
+    padding: '10px',
+    background: '#000' 
+}}>
+    {[
+      { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
+      { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); } },
+      { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); } },
+      { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
+      // 🟢 NEW: Unique Festival Brands (Halls of Fame)
+      { val: uniqueFestBrands, lbl: 'BRANDS', col: C.gold, click: () => setActiveTab('passport') },
+      // 🟢 REFINED: Total Festival Attendances (Yearly Visits)
+      { val: totalFestAttendances, lbl: 'FESTS', col: C.gold, click: () => setActiveTab('passport') },
+    ].map(s => (
+      <div key={s.lbl} onClick={s.click} style={{
+        background: hexToRgba(s.col, 0.05),
+        border: `2px solid ${s.col}`,
+        borderRadius: '8px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        boxShadow: `inset 0 0 15px ${hexToRgba(s.col, 0.2)}`,
+        transition: 'transform 0.2s'
+      }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: s.col, lineHeight: 1, textShadow: `0 0 10px ${s.col}` }}>{s.val}</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: '#fff', opacity: 0.6, letterSpacing: '2px' }}>{s.lbl}</div>
+      </div>
+    ))}
+    
+    {/* 🟢 NOTE: The QuadStat box below will now move to a new row on desktop 
+        because we have 6 items above. If you want it on the same line, 
+        we'd need 7 columns, but 6 looks cleaner on desktop. */}
     <div style={{ 
-        display: 'grid', 
-        // 🟢 FIX: Allow rows to expand on mobile
-        gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr) 1.2fr', 
-        height: 'auto', // 🟢 Changed from fixed height
-        minHeight: isMobile ? '160px' : '110px', 
-        gap: '8px', 
-        padding: '10px',
-        background: '#000' 
-    }}>
-        {[
-          { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
-          { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); } },
-          { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); } },
-          { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
-          { val: headerStats.festDays, lbl: 'FESTS', col: C.gold, click: () => setActiveTab('passport') },
-        ].map(s => (
-          <div key={s.lbl} onClick={s.click} style={{
-            background: hexToRgba(s.col, 0.05),
-            border: `2px solid ${s.col}`,
-            borderRadius: '8px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: `inset 0 0 15px ${hexToRgba(s.col, 0.2)}`,
-            transition: 'transform 0.2s'
-          }}>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: s.col, lineHeight: 1, textShadow: `0 0 10px ${s.col}` }}>{s.val}</div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: '#fff', opacity: 0.6, letterSpacing: '2px' }}>{s.lbl}</div>
-          </div>
-        ))}
-        
-        <div style={{ 
-            background: hexToRgba(C.teal, 0.05), border: `2px solid ${C.teal}`, borderRadius: '8px',
-            display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', 
-            padding: '6px', gap: '6px', cursor: 'pointer', boxShadow: `inset 0 0 15px ${hexToRgba(C.teal, 0.2)}`
-        }} onClick={() => setActiveTab('vault')}>
-            <QuadStat val={headerStats.tickets} label="TIX" color={C.gold} />
-            <QuadStat val={headerStats.setlists} label="LST" color={C.teal} />
-            <QuadStat val={headerStats.posters} label="PST" color={C.purple} />
-            <QuadStat val={headerStats.photos} label="PHO" color={C.cyan} />
-        </div>
+        background: hexToRgba(C.teal, 0.05), border: `2px solid ${C.teal}`, borderRadius: '8px',
+        display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', 
+        padding: '6px', gap: '6px', cursor: 'pointer', boxShadow: `inset 0 0 15px ${hexToRgba(C.teal, 0.2)}`,
+        // Ensure it spans 2 units on mobile if needed
+        gridColumn: isMobile ? 'span 3' : 'span 1'
+    }} onClick={() => setActiveTab('vault')}>
+        <QuadStat val={headerStats.tickets} label="TIX" color={C.gold} />
+        <QuadStat val={headerStats.setlists} label="LST" color={C.teal} />
+        <QuadStat val={headerStats.posters} label="PST" color={C.purple} />
+        <QuadStat val={headerStats.photos} label="PHO" color={C.cyan} />
     </div>
+</div>
 </header>
 
 <main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
