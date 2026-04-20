@@ -296,41 +296,14 @@ function buildGenreMap(concerts) {
 
 function getConcertGenreInfo(concert, genreMap) {
   const bands = Array.isArray(concert.bands) ? concert.bands : [];
-  
-  // 1. Identify the Headliner name [cite: 28, 43]
-  const headlinerObj = bands[0];
-  const headlinerName = typeof headlinerObj === 'object' ? headlinerObj.name : headlinerObj;
-
-  // 2. PRIORITY 1: Check the Global Map (The Master Registry) [cite: 29, 924]
-  // This allows global updates to override old hardcoded "Indie Rock" defaults.
-  if (headlinerName && genreMap[headlinerName]) {
-    const globalGenre = genreMap[headlinerName];
-    return { 
-      genre: globalGenre, 
-      color: GENRE_COLORS[globalGenre] || GENRE_COLORS['Other'], 
-      mixed: false 
-    };
-  }
-
-  // 3. PRIORITY 2: Check the concert-level override column 
-  if (concert.genre) {
-    return { 
-      genre: concert.genre, 
-      color: GENRE_COLORS[concert.genre] || GENRE_COLORS['Other'], 
-      mixed: false 
-    };
-  }
-
-  // 4. FALLBACK: Look for genres inside the bands array or mixed logic [cite: 31, 32]
+  if (concert.genre) return { genre: concert.genre, color: GENRE_COLORS[concert.genre] || GENRE_COLORS['Other'], mixed: false };
   const genres = [...new Set(bands.map(b => {
-    const name = typeof b === 'object' ? b.name : b;
+    const name = getBandName(b);
     return b?.genre || genreMap[name] || null;
   }).filter(Boolean))];
-
-  if (!genres.length) return { genre: null, color: GENRE_COLORS['Other'], mixed: false }; [cite: 30]
-  if (genres.length === 1) return { genre: genres[0], color: GENRE_COLORS[genres[0]] || GENRE_COLORS['Other'], mixed: false }; [cite: 31]
-  
-  return { genre: 'Mixed', color: null, mixed: true, genres }; [cite: 32]
+  if (!genres.length) return { genre: null, color: GENRE_COLORS['Other'], mixed: false };
+  if (genres.length === 1) return { genre: genres[0], color: GENRE_COLORS[genres[0]] || GENRE_COLORS['Other'], mixed: false };
+  return { genre: 'Mixed', color: null, mixed: true, genres };
 }
 
 const GenreBadge = ({ genre, color, mixed, small = false }) => {
@@ -2303,19 +2276,13 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
     return c;
   }, [sets]);
 
-  const uniqueVenueCount = new Set(concerts.map(c => c.venue).filter(Boolean)).size;
-  const artistCount = headerStats.uniqueArtists || 0;
-  const showCount = headerStats.totalShows || 0;
-  const fileCount = headerStats.setlistCount || 0;
-  const setCount = headerStats.totalSets || 0;
-
   const rotatingStats = useMemo(() => [
-    { label: 'TOTAL ACTS', val: artistCount, color: C.cyan },
-    { label: 'UNIQUE VENUES', val: uniqueVenueCount, color: C.red },
-    { label: 'CALENDAR DAYS', val: showCount, color: C.purple },
-    { label: 'SETLIST FILES', val: fileCount, color: C.gold },
-    { label: 'ARCHIVED SETS', val: setCount, color: C.teal },
-  ], [artistCount, uniqueVenueCount, showCount, fileCount, setCount]);
+    { label: 'TOTAL ACTS', val: headerStats.uniqueArtists || 0, color: C.cyan },
+    { label: 'UNIQUE VENUES', val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, color: C.red },
+    { label: 'CALENDAR DAYS', val: headerStats.totalShows || 0, color: C.purple },
+    { label: 'SETLIST FILES', val: headerStats.setlistCount || 0, color: C.gold },
+    { label: 'ARCHIVED SETS', val: headerStats.totalSets || 0, color: C.teal },
+  ], [headerStats, concerts]);
 
   useEffect(() => {
     const timer = setInterval(() => setStatIdx(p => (p + 1) % rotatingStats.length), 3000);
@@ -2325,30 +2292,18 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
   const currentStat = rotatingStats[statIdx] || rotatingStats[0];
   const maxVal = Math.max(...Object.values(counts), 1);
 
-  // Sanitized CSS string to prevent Vercel build errors
-  const stageStyles = `
-    @keyframes woofer-pulse { 
-      0%, 100% { transform: scale(1); } 
-      50% { transform: scale(1.08); filter: brightness(1.5) drop-shadow(0 0 8px ${C.teal}); } 
-    }
-    .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
-    
-    @keyframes beam-swing { 
-      0%, 100% { transform: rotate(-8deg); } 
-      50% { transform: rotate(8deg); } 
-    }
-    .moving-light { animation: beam-swing 3s ease-in-out infinite; transform-origin: top center; }
-    
-    @keyframes truss-flash { 
-      0%, 100% { background: #fff; box-shadow: 0 0 10px #fff; } 
-      50% { background: #333; box-shadow: none; } 
-    }
-    .truss-bulb { animation: truss-flash 1.5s infinite; }
-  `;
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between', gap: 10 }}>
-      <style>{stageStyles}</style>
+      <style>{`
+        @keyframes woofer-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); filter: brightness(1.5) drop-shadow(0 0 8px ${C.teal}); } }
+        .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
+        
+        @keyframes beam-swing { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+        .moving-light { animation: beam-swing 3s ease-in-out infinite; transform-origin: top center; }
+        
+        @keyframes truss-flash { 0%, 100% { background: #fff; box-shadow: 0 0 10px #fff; } 50% { background: #333; box-shadow: none; } }
+        .truss-bulb { animation: truss-flash 1.5s infinite; }
+      `}</style>
 
       {/* 🟢 TOP DECADE BARS */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, flexShrink: 0 }}>
@@ -2361,7 +2316,7 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
                 <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: '#fff' }}>{decade}</span>
               </div>
               <div style={{ height: 2, background: '#000', borderRadius: 1, overflow: 'hidden', marginTop: 3 }}>
-                <div style={{ height: '100%', width: `${((count / maxVal) * 100)}%`, background: m.col, boxShadow: `0 0 10px ${m.col}` }} />
+                <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.col, boxShadow: `0 0 10px ${m.col}` }} />
               </div>
             </div>
           );
@@ -6665,29 +6620,19 @@ const getCuratorTitle = (stats, concerts) => {
   const handleSave = async (id, payload) => {
     if (!isAdmin) return;
     try {
-      // 1. Identify the Headliner for the Global Sync [cite: 901]
-      const headliner = Array.isArray(payload.bands) 
-        ? (typeof payload.bands[0] === 'object' ? payload.bands[0].name : payload.bands[0]) 
-        : payload.artist;
-
-      // 2. Determine the Genre [cite: 929]
-      // Priority: Payload Genre > Headliner's internal genre > Fallback 
-      const finalGenre = payload.genre || (payload.bands[0]?.genre) || 'Indie Rock';
-
-      // 📡 THE FINAL HANDSHAKE: Mapping payload to DB columns [cite: 926, 932]
+      // 📡 THE FINAL HANDSHAKE: Mapping payload to DB columns
       const dataToStamp = {
         date: payload.date || null,
         bands: Array.isArray(payload.bands) ? payload.bands : [],
         venue: payload.venue || null,
         city: payload.city || null,
         state: payload.state || null,
-        // Removed the 'Festival' hardcode so actual genres can stay synced [cite: 929]
-        genre: finalGenre, 
+        genre: payload.is_festival ? 'Festival' : (payload.bands[0]?.genre || payload.genre || 'Indie Rock'),
         is_festival: Boolean(payload.is_festival),
         festival_name: payload.festival_name || null,
         festival_day: payload.festival_day || null,
         
-        // ARCHAEOLOGY MAPPING [cite: 931, 932]
+        // ARCHAEOLOGY MAPPING
         image_url: payload.image_url || null,
         setlist_image_url: payload.setlist_image_url || null,
         personal_photo_url: payload.personal_photo_url || null,
@@ -6695,10 +6640,9 @@ const getCuratorTitle = (stats, concerts) => {
         
         has_setlist: Boolean(payload.setlist_image_url || payload.has_setlist_names?.trim()),
         has_setlist_names: payload.has_setlist_names || null,
-        user_id: session?.user?.id || null, // [cite: 932]
+        user_id: session?.user?.id || null,
       };
 
-      // 3. EXECUTE CONCERT SAVE [cite: 933, 934]
       let result;
       if (id && id !== 'new') {
         result = await supabase.from('concerts').update(dataToStamp).eq('id', id);
@@ -6708,18 +6652,12 @@ const getCuratorTitle = (stats, concerts) => {
 
       if (result.error) throw result.error;
 
-      // 4. THE RIPPLE SYNC: Update the Global Artist Registry 
-      // If we have a headliner and a genre, ensure the master table matches [cite: 923, 940]
-      if (headliner && finalGenre && finalGenre !== 'Festival') {
-        await handleSetGenre(headliner, finalGenre);
-      }
-
-      setEditTarget(null); // [cite: 935]
-      await fetchConcerts(); // [cite: 935]
+      setEditTarget(null);
+      await fetchConcerts(); 
 
     } catch (error) {
-      console.error("DATABASE REJECTED SAVE:", error.message); // [cite: 935]
-      alert('DATABASE REJECTED SAVE: ' + error.message); // [cite: 935]
+      console.error("DATABASE REJECTED SAVE:", error.message);
+      alert('DATABASE REJECTED SAVE: ' + error.message);
     }
   };
   // ── 1. MAIN DATA FETCH (THE PIVOT)
