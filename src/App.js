@@ -6100,20 +6100,35 @@ const [authLoading, setAuthLoading] = useState(true);
     const count = selectedSignals.length;
     if (!window.confirm(`SYNC ${count} SIGNALS TO YOUR ARCHIVE?`)) return;
 
+    // 🟢 THE DATA TRANSLATOR
     const newRecords = selectedSignals.map(s => {
-      const { id, created_at, user_id, personal_photo_url, ...core } = s;
       return { 
-        ...core, 
-        user_id: session.user.id, 
-        personal_photo_url: null, 
+        date: s.date,
+        // Map the array correctly
+        bands: Array.isArray(s.bands) ? s.bands : [s.artist], 
+        venue: s.venue,
+        city: s.city,
+        state: s.state,
+        genre: s.genre,
+        is_festival: s.is_festival,
+        festival_name: s.festival_name,
+        festival_day: s.festival_day,
+        // System Data
+        user_id: session.user.id,
         is_public: true, 
-        date_added: new Date().toISOString() 
+        date_added: new Date().toISOString(),
+        // 🛡️ SECURITY: Strip original IDs and private media
+        image_url: null,
+        personal_photo_url: null,
+        setlist_image_url: null,
+        festival_poster_url: null
       };
     });
 
     try {
       const { error } = await supabase.from('concerts').insert(newRecords);
       if (error) throw error;
+
       alert(`⚡ SUCCESS: ${count} SIGNALS SYNCHRONIZED.`);
       setSelectedSignals([]);
       setBulkMode(false);
