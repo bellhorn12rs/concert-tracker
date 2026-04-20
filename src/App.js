@@ -7066,81 +7066,86 @@ async function handleDelete(id) {
     </div>
 
     {/* TIER 2: THE TERMINAL (Navigation & Rank) */}
-    <div style={{ 
-      height: isMobile ? '50px' : '60px', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'space-between',
-      padding: '0 20px',
-      background: `linear-gradient(90deg, #050508, ${hexToRgba(C.purple, 0.05)})`,
-      position: 'relative', 
-      gap: 10
-    }}>
-      {/* Left Controls */}
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
-        {/* 🟢 NEW: Mobile Menu Trigger */}
-        {isMobile && (
-          <button 
-            onClick={() => setNavCollapsed(false)}
-            style={{ background: 'none', border: `1px solid ${C.teal}`, color: C.teal, padding: '5px 8px', borderRadius: '4px', marginRight: '5px' }}
-          >
-            ☰
-          </button>
-        )}
-        <button onClick={() => setActiveTab('community')} style={navBtnStyle(activeTab === 'community', C.purple)}>
-          <span>🚉</span> {!isMobile && "THE STATION"}
-        </button>
-        )}
-      </div>
+<div style={{ 
+  height: isMobile ? '50px' : '60px', 
+  display: 'flex', 
+  alignItems: 'center', 
+  justifyContent: 'space-between',
+  padding: '0 20px',
+  background: `linear-gradient(90deg, #050508, ${hexToRgba(C.purple, 0.05)})`,
+  position: 'relative', 
+  gap: 10
+}}>
+  {/* Left Controls */}
+  <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
+    {isMobile && (
+      <button 
+        onClick={() => setNavCollapsed(false)}
+        style={{ background: 'none', border: `1px solid ${C.teal}`, color: C.teal, padding: '5px 8px', borderRadius: '4px', marginRight: '5px' }}
+      >
+        ☰
+      </button>
+    )}
+    <button onClick={() => setActiveTab('community')} style={navBtnStyle(activeTab === 'community', C.purple)}>
+      <span>🚉</span> {!isMobile && "THE STATION"}
+    </button>
 
-      {/* 🎯 CENTERED CURATOR RANK (Absolute Positioned) */}
-      <div style={{
-        position: 'absolute',
-        left: '50%',
-        top: '50%',
-        transform: 'translate(-50%, -50%)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
-        width: '300px',
-        pointerEvents: 'none',
-        zIndex: 1
-      }}>
-        <div style={{ 
-          fontFamily: "'Space Mono'", 
-          fontSize: '7px', 
-          color: C.teal, 
-          letterSpacing: '4px',
-          opacity: 0.6,
-          marginBottom: 2
-        }}>
-          CURRENT CURATOR STATUS:
-        </div>
-        <div style={{ 
-          fontFamily: "'Bebas Neue'", 
-          fontSize: '1.4rem', 
-          color: '#fff', 
-          letterSpacing: '3px',
-          textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`,
-          lineHeight: 1
-        }}>
-           {getCuratorTitle(headerStats, concerts)}
-        </div>
-      </div>
+    {/* 🟢 RESTORED: Add Show (+) Button */}
+    {!viewingUser && (
+      <button 
+        onClick={() => setEditTarget('new')}
+        style={{
+          background: 'none',
+          border: `1px solid ${C.teal}`,
+          color: C.teal,
+          borderRadius: '4px',
+          padding: '4px 10px',
+          fontFamily: "'Space Mono'",
+          fontSize: '10px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '5px'
+        }}
+      >
+        <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span> {!isMobile && "SIGNAL"}
+      </button>
+    )}
+  </div>
 
-      {/* Right Controls */}
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
-        {isAdmin && (
-          <button onClick={() => setActiveTab('manage')} style={navBtnStyle(activeTab === 'manage', C.teal)}>
-            <span>⚙️</span> {!isMobile && "THE OFFICE"}
-          </button>
-        )}
-        <ThemeSwitcher isMobile={isMobile} />
-      </div>
+  {/* 🎯 CENTERED CURATOR RANK */}
+  <div style={{
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    transform: 'translate(-50%, -50%)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+    width: isMobile ? '150px' : '300px',
+    pointerEvents: 'none',
+    zIndex: 1
+  }}>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: C.teal, letterSpacing: '4px', opacity: 0.6, marginBottom: 2 }}>
+      CURRENT CURATOR STATUS:
     </div>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.1rem' : '1.4rem', color: '#fff', letterSpacing: '3px', textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`, lineHeight: 1 }}>
+       {getCuratorTitle(headerStats, concerts)}
+    </div>
+  </div>
 
+  {/* Right Controls */}
+  <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
+    {/* 🟢 FIXED: Office Button (Always show if not viewing someone else) */}
+    {!viewingUser && (
+      <button onClick={() => setActiveTab('office')} style={navBtnStyle(activeTab === 'office', C.teal)}>
+        <span>⚙️</span> {!isMobile && "THE OFFICE"}
+      </button>
+    )}
+    <ThemeSwitcher isMobile={isMobile} />
+  </div>
+</div>
     {/* TIER 3: RE-MASTERED HERO STATS (Neon Outlines) */}
 <div style={{ 
     display: 'grid', 
@@ -7160,8 +7165,8 @@ async function handleDelete(id) {
       
       // 🟢 THE MERGED FESTIVAL BOX: [Total / Brands]
       { 
-        val: `${totalFestAttendances}/${uniqueFestBrands}`, 
-        lbl: 'FESTS / BRANDS', 
+        val: `${totalFestAttendances} / ${uniqueFestBrands}`, 
+        lbl: 'FESTS / SITES', // 🟢 New Terminology
         col: C.gold, 
         click: () => setActiveTab('passport'),
         isMerged: true 
