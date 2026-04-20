@@ -4667,7 +4667,7 @@ function CommunityTab({ onEnterMuseum }) {
     async function fetchCurators() {
       const { data } = await supabase
         .from('profiles')
-        .select('id, username, avatar_color, last_seen, last_artist, last_venue, total_shows, total_sets, total_venues')
+        .select('username, avatar_color, last_seen, last_artist, last_venue, total_shows, total_sets, total_venues')
         .order('last_seen', { ascending: false });
       if (data) setCurators(data);
       setLoading(false);
@@ -6124,7 +6124,6 @@ const QuadStat = ({ val, label, color }) => (
 export default function App() {
   // ── 1. AUTH & SYSTEM STATE ──
   const [session, setSession] = useState(null);
-  const [viewedUserId, setViewedUserId] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
   const [onLanding, setOnLanding] = useState(true);
   const [themeId, setThemeIdRaw] = useState(() => localStorage.getItem('concert-theme') || 'neon-noir');
@@ -6477,35 +6476,20 @@ const getCuratorTitle = (stats, concerts) => {
 
   const dayGroups = useMemo(() => applyFilters(concerts) || [], [concerts, applyFilters]);
 
-  const headerStats = useMemo(() => {
-  // 1. THE SIGNAL FILTER: Determine which museum to broadcast
-  // We prioritize viewedUserId (from the Terminal) over your own session ID.
-  const targetUser = viewedUserId || session?.user?.id;
-  
-  // 2. SAFETY CHECK: Ensure we aren't filtering an undefined list
-  const safeConcerts = Array.isArray(concerts) ? concerts : [];
-  const safeSetsList = Array.isArray(allSetsList) ? allSetsList : [];
+  const headerStats = useMemo(() => ({
+    // ── YOUR ORIGINAL LOGIC (UNTOUCHED) ──
+    totalShows: concerts?.length || 0,
+    totalSets: allSetsList?.length || 0,
+    uniqueArtists: new Set(allSetsList?.map(s => s.artist)).size,
+    festDays: concerts?.filter(c => c.is_festival).length || 0,
+    setlistCount: concerts?.filter(c => c.has_setlist || c.has_setlist_names).length || 0,
 
-  // 3. THE DATA DRILL: Filter for the target signal
-  // NOTE: If Mike's user_id in the DB is null, this will return 0.
-  const currentConcerts = safeConcerts.filter(c => String(c.user_id) === String(targetUser));
-  const currentSets = safeSetsList.filter(s => String(s.user_id) === String(targetUser));
-
-  return {
-    // ── DATA FOR THE VIEWED USER ──
-    totalShows: currentConcerts.length,
-    totalSets: currentSets.length,
-    uniqueArtists: new Set(currentSets.map(s => s.artist)).size,
-    festDays: currentConcerts.filter(c => c.is_festival).length,
-    setlistCount: currentConcerts.filter(c => c.has_setlist || c.has_setlist_names).length,
-
-    // ── ARTIFACT QUADRANT (VIEWED USER ONLY) ──
-    tickets: currentConcerts.filter(c => c.image_url && c.image_url !== '').length,
-    setlists: currentConcerts.filter(c => c.has_setlist || c.has_setlist_names || c.setlist_image_url).length,
-    posters: currentConcerts.filter(c => (c.poster_url && c.poster_url !== '')).length,
-    photos: currentConcerts.filter(c => (c.personal_photo_url && c.personal_photo_url !== '')).length,
-  };
-}, [concerts, allSetsList, viewedUserId, session]);
+    // ── NEW ARTIFACT QUADRANT DATA ──
+    tickets: concerts?.filter(c => c.image_url && c.image_url !== '').length || 0,
+    setlists: concerts?.filter(c => c.has_setlist || c.has_setlist_names || c.setlist_image_url).length || 0,
+    posters: concerts?.filter(c => c.poster_url && c.poster_url !== '').length || 0,
+    photos: concerts?.filter(c => c.personal_photo_url && c.personal_photo_url !== '').length || 0,
+  }), [concerts, allSetsList]);
 
   const artistCounts = useMemo(() => {
     const m = {};
