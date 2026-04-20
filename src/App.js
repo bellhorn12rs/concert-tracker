@@ -6476,20 +6476,29 @@ const getCuratorTitle = (stats, concerts) => {
 
   const dayGroups = useMemo(() => applyFilters(concerts) || [], [concerts, applyFilters]);
 
-  const headerStats = useMemo(() => ({
-    // ── YOUR ORIGINAL LOGIC (UNTOUCHED) ──
-    totalShows: concerts?.length || 0,
-    totalSets: allSetsList?.length || 0,
-    uniqueArtists: new Set(allSetsList?.map(s => s.artist)).size,
-    festDays: concerts?.filter(c => c.is_festival).length || 0,
-    setlistCount: concerts?.filter(c => c.has_setlist || c.has_setlist_names).length || 0,
+  const headerStats = useMemo(() => {
+  // 1. THE SIGNAL FILTER: Only crunch numbers for the person we are currently viewing
+  // If no specific user is selected (e.g., initial load), we default to your ID or all.
+  const targetUser = viewedUserId || session?.user?.id;
+  
+  const currentConcerts = concerts?.filter(c => c.user_id === targetUser) || [];
+  const currentSets = allSetsList?.filter(s => s.user_id === targetUser) || [];
 
-    // ── NEW ARTIFACT QUADRANT DATA ──
-    tickets: concerts?.filter(c => c.image_url && c.image_url !== '').length || 0,
-    setlists: concerts?.filter(c => c.has_setlist || c.has_setlist_names || c.setlist_image_url).length || 0,
-    posters: concerts?.filter(c => c.poster_url && c.poster_url !== '').length || 0,
-    photos: concerts?.filter(c => c.personal_photo_url && c.personal_photo_url !== '').length || 0,
-  }), [concerts, allSetsList]);
+  return {
+    // ── DATA FOR THE VIEWED USER ──
+    totalShows: currentConcerts.length,
+    totalSets: currentSets.length,
+    uniqueArtists: new Set(currentSets.map(s => s.artist)).size,
+    festDays: currentConcerts.filter(c => c.is_festival).length,
+    setlistCount: currentConcerts.filter(c => c.has_setlist || c.has_setlist_names).length,
+
+    // ── ARTIFACT QUADRANT (VIEWED USER ONLY) ──
+    tickets: currentConcerts.filter(c => c.image_url && c.image_url !== '').length,
+    setlists: currentConcerts.filter(c => c.has_setlist || c.has_setlist_names || c.setlist_image_url).length,
+    posters: currentConcerts.filter(c => c.poster_url && c.poster_url !== '').length,
+    photos: currentConcerts.filter(c => c.personal_photo_url && c.personal_photo_url !== '').length,
+  };
+}, [concerts, allSetsList, viewedUserId, session]); // ── ADD viewedUserId TO DEPENDENCIES
 
   const artistCounts = useMemo(() => {
     const m = {};
