@@ -54,43 +54,7 @@ const handleIWasThere = async (concert) => {
       alert("Failed to clone: " + err.message);
     }
   };
-const handleBulkSync = async () => {
-    // 🛡️ Safety check: Ensure we have signals and a logged-in user
-    if (!selectedSignals.length) return;
-    if (!session?.user?.id) return alert("LOGIN REQUIRED TO CLONE SIGNALS");
 
-    const count = selectedSignals.length;
-    if (!window.confirm(`SYNC ${count} SIGNALS TO YOUR ARCHIVE?`)) return;
-
-    // Map Eric's shows into Tara's archive (sanitizing IDs and private photos)
-    const newRecords = selectedSignals.map(s => {
-      const { id, created_at, user_id, personal_photo_url, ...core } = s;
-      return { 
-        ...core, 
-        user_id: session.user.id, // Assign to the current user
-        personal_photo_url: null, // Don't steal personal photos
-        is_public: true, 
-        date_added: new Date().toISOString() 
-      };
-    });
-
-    try {
-      const { error } = await supabase.from('concerts').insert(newRecords);
-      if (error) throw error;
-
-      alert(`⚡ SUCCESS: ${count} SIGNALS SYNCHRONIZED.`);
-      
-      // Reset the "Cart"
-      setSelectedSignals([]);
-      setBulkMode(false);
-      
-      // Refresh the museum floor
-      fetchConcerts();
-    } catch (err) {
-      console.error("Bulk Sync Error:", err);
-      alert("DATABASE REJECTED SYNC: " + err.message);
-    }
-  };;
 // ─── THE RETRO TICKET STUB (IDEA #1) ──────────────────────────────────────────
 const TicketStub = ({ show }) => {
   if (!show) return null;
@@ -6122,6 +6086,43 @@ const [authLoading, setAuthLoading] = useState(true);
   const [nudgeTarget, setNudgeTarget] = useState(null);
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedSignals, setSelectedSignals] = useState([]);
+
+  const handleBulkSync = async () => {
+    if (!selectedSignals || selectedSignals.length === 0) {
+      alert("NO SIGNALS SELECTED");
+      return;
+    }
+    if (!session?.user?.id) {
+      alert("LOGIN REQUIRED TO CLONE SIGNALS");
+      return;
+    }
+
+    const count = selectedSignals.length;
+    if (!window.confirm(`SYNC ${count} SIGNALS TO YOUR ARCHIVE?`)) return;
+
+    const newRecords = selectedSignals.map(s => {
+      const { id, created_at, user_id, personal_photo_url, ...core } = s;
+      return { 
+        ...core, 
+        user_id: session.user.id, 
+        personal_photo_url: null, 
+        is_public: true, 
+        date_added: new Date().toISOString() 
+      };
+    });
+
+    try {
+      const { error } = await supabase.from('concerts').insert(newRecords);
+      if (error) throw error;
+      alert(`⚡ SUCCESS: ${count} SIGNALS SYNCHRONIZED.`);
+      setSelectedSignals([]);
+      setBulkMode(false);
+      fetchConcerts();
+    } catch (err) {
+      console.error("Bulk Sync Error:", err);
+      alert("DATABASE REJECTED SYNC: " + err.message);
+    }
+  };
 
   // ── 4. BROWSER & FILTER STATE ──
   const [search, setSearch] = useState('');
