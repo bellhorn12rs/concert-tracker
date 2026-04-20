@@ -6836,20 +6836,21 @@ async function handleDelete(id) {
   );
 
   // Gate B: The Entry Hall (Landing Page)
-  // 🟢 GATEKEEPER: Show landing page UNLESS they are viewing a public user
-  if ((!session && !viewingUser) || onLanding) {
-    return (
-      <LandingPage 
-        currentSession={session}
-        onEnterArchive={() => setOnLanding(false)}
-        onNavigateToUser={handleNavigateToUser}
-        onLogout={async () => {
-          await supabase.auth.signOut();
-          window.location.reload();
-        }}
-      />
-    );
-  }
+  // 🟢 GATEKEEPER in App.js
+if ((!session && !viewingUser) || onLanding) {
+  return (
+    <LandingPage 
+      currentSession={session}
+      onEnterArchive={() => setOnLanding(false)}
+      onNavigateToUser={handleNavigateToUser}
+      setShowLogin={setShowLogin} // 🟢 MAKE SURE THIS LINE EXISTS
+      onLogout={async () => {
+        await supabase.auth.signOut();
+        window.location.reload();
+      }}
+    />
+  );
+}
 
   // Gate C: Data Synchronization (Interior)
   if (loading) return (
