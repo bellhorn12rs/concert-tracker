@@ -6785,7 +6785,20 @@ async function handleDelete(id) {
 
   // Gate C: The Entry Hall (Landing Page)
   // Condition: Show if no session OR if we are explicitly in "Landing" mode
-  if (!session || onLanding) {
+  // 🟢 GATEKEEPER: Show landing page UNLESS they are viewing a public user
+  if ((!session && !viewingUser) || onLanding) {
+    return (
+      <LandingPage 
+        currentSession={session}
+        onEnterArchive={() => setOnLanding(false)}
+        onNavigateToUser={handleNavigateToUser}
+        onLogout={async () => {
+          await supabase.auth.signOut();
+          window.location.reload();
+        }}
+      />
+    );
+  }
     return (
       <LandingPage 
         currentSession={session}

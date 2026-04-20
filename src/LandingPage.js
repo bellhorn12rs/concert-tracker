@@ -24,6 +24,74 @@ const GENRE_COLORS = {
   'Pop':'#00e5ff','Hip Hop':'#a2ff00','Punk':'#ff3300','R&B':'#ff66cc',
   'Country':'#cc8800','Metal':'#888888','Other':'#334455','Festival':'#ffcc00',
 };
+
+const FounderEntrance = ({ onEnter }) => {
+  return (
+    <div 
+      onClick={onEnter}
+      style={{
+        width: '100%',
+        maxWidth: '400px',
+        margin: '40px auto',
+        cursor: 'pointer',
+        position: 'relative'
+      }}
+    >
+      <div style={{
+        fontFamily: "'Space Mono'",
+        fontSize: '10px',
+        color: '#ffcc00', // Gold
+        textAlign: 'center',
+        letterSpacing: '4px',
+        marginBottom: '15px',
+        opacity: 0.8
+      }}>
+        [ ACCESS PUBLIC EXHIBIT ]
+      </div>
+
+      <div style={{
+        height: '200px',
+        background: '#0a0a0c',
+        border: `2px solid #1e2a38`,
+        borderRadius: '8px',
+        position: 'relative',
+        display: 'flex',
+        overflow: 'hidden',
+        boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+        transition: 'all 0.3s ease'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = '#ffcc00';
+        e.currentTarget.style.boxShadow = `0 0 30px rgba(255, 204, 0, 0.2)`;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = '#1e2a38';
+        e.currentTarget.style.boxShadow = '0 20px 50px rgba(0,0,0,0.5)';
+      }}
+      >
+        {/* Left Door */}
+        <div style={{ flex: 1, borderRight: '1px solid #222', background: 'linear-gradient(90deg, #111, #080808)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: '10px' }}>
+           <div style={{ width: '4px', height: '40px', background: '#222', borderRadius: '2px' }} />
+        </div>
+
+        {/* Center Portal Text */}
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', letterSpacing: '2px', lineHeight: 1 }}>FOUNDER</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#ffcc00', letterSpacing: '4px' }}>ARCHIVE</div>
+        </div>
+
+        {/* Right Door */}
+        <div style={{ flex: 1, borderLeft: '1px solid #222', background: 'linear-gradient(-90deg, #111, #080808)', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: '10px' }}>
+           <div style={{ width: '4px', height: '40px', background: '#222', borderRadius: '2px' }} />
+        </div>
+      </div>
+      
+      <div style={{ marginTop: '15px', textAlign: 'center', fontFamily: "'Space Mono'", fontSize: '9px', color: '#666' }}>
+        ENTRY TYPE: SPECTATOR // NO AUTH REQUIRED
+      </div>
+    </div>
+  );
+};
 export default function LandingPage({ 
   currentSession, 
   onEnterArchive, 
@@ -480,6 +548,9 @@ export default function LandingPage({
     ACCESS YOUR COLLECTION
   </button>
 </div>
+
+<FounderEntrance onEnter={() => onNavigateToUser('eric')} />
+
 </div> {/* closes hero section */}
 
 {/* ── THE SHOEBOX NARRATIVE ── */}
