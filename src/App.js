@@ -6090,36 +6090,32 @@ const StatBlock = ({ value, label, color, onClick }) => (
 );
 
 // 🟢 Helper 3: The Artifact Quadrant (The 4-Way Square)
-// Adaptive QuadStat: Switches layout to save vertical space on mobile
-const QuadStat = ({ val, label, color, small }) => (
+// This packs 4 metrics into the space of 1 Hero block
+const QuadStat = ({ val, label, color }) => (
   <div style={{ 
     display: 'flex', 
-    // 🟢 Side-by-side on mobile, stacked on desktop
-    flexDirection: small ? 'row' : 'column', 
+    flexDirection: 'column', 
     alignItems: 'center', 
     justifyContent: 'center', 
-    gap: small ? '6px' : '0',
-    background: hexToRgba(color, 0.1), 
+    background: hexToRgba(color, 0.1), // Slightly more background tint
     borderRadius: 4, 
-    padding: small ? '2px 6px' : '4px',
-    border: `1px solid ${hexToRgba(color, 0.2)}`,
-    flex: 1 // Ensures they fill the horizontal strip evenly
+    padding: '4px',
+    border: `1px solid ${hexToRgba(color, 0.2)}` // Subtle individual borders
   }}>
     <div style={{ 
       color, 
-      fontSize: small ? '0.9rem' : '1.2rem', 
+      fontSize: '1.2rem', // 🟢 BUMPED from 11px
       fontFamily: "'Bebas Neue'", 
       lineHeight: 1,
       textShadow: `0 0 10px ${hexToRgba(color, 0.3)}` 
     }}>{val}</div>
     <div style={{ 
       color: '#fff', 
-      fontSize: small ? '6px' : '7px', 
+      fontSize: '7px', // 🟢 BUMPED from 5px
       fontFamily: "'Space Mono'", 
       opacity: 0.6, 
       fontWeight: 900,
-      letterSpacing: '1px',
-      marginTop: small ? '1px' : '0'
+      letterSpacing: '1px'
     }}>{label}</div>
   </div>
 );
@@ -6887,29 +6883,8 @@ async function handleDelete(id) {
         background: C.bg, 
         overflow: 'hidden' 
       }}>
-
-        {/* ── 🟢 THE STICKY WRAPPER STARTS HERE ── */}
-        <div style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 5001, // Higher than the sidebar
-          background: C.bg,
-          flexShrink: 0
-        }}>
-          <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
-          
-          {/* Your Tier 2 (The Terminal) */}
-          {/* ... Tier 2 Code ... */}
-
-          {/* Your Tier 3 (The Compact Stats from Step 1) */}
-          {/* ... Tier 3 Code ... */}
-        </div>
-        {/* ── 🔴 THE STICKY WRAPPER ENDS HERE ── */}
-
-        {/* The rest of your app (Sidebar + Stage) continues below */}
-        <div key={themeId} style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-           {/* ... Sidebar and Main Stage ... */}
-        </div>
+        {/* News Ticker Bar */}
+        <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
 
         {/* Main Application Content */}
         <div key={themeId} style={{ 
@@ -7171,71 +7146,72 @@ async function handleDelete(id) {
     <ThemeSwitcher isMobile={isMobile} />
   </div>
 </div>
-    {/* TIER 3: COMPACT HERO STATS */}
+    {/* TIER 3: RE-MASTERED HERO STATS (Neon Outlines) */}
 <div style={{ 
     display: 'grid', 
-    // 🟢 Desktop: 7 columns (including Quad) | Mobile: 3 columns
-    gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(7, 1fr)', 
-    gap: '6px', 
+    // 🟢 Back to 6 columns now that we merged FESTS
+    gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', 
+    height: 'auto', 
+    minHeight: isMobile ? '160px' : '110px', 
+    gap: '8px', 
     padding: '10px',
-    background: '#000',
-    // 🟢 Keep it tight on mobile
-    minHeight: isMobile ? 'auto' : '110px'
+    background: '#000' 
 }}>
     {[
       { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
       { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); } },
       { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); } },
       { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
-      // 🟢 Split back to two squares for a perfect 3x2 grid on mobile
-      { val: totalFestAttendances, lbl: 'FESTS', col: C.gold, click: () => setActiveTab('passport') },
-      { val: uniqueFestBrands, lbl: 'BRANDS', col: C.gold, click: () => setActiveTab('passport') },
+      
+      // 🟢 THE MERGED FESTIVAL BOX: [Total / Brands]
+      { 
+        val: `${totalFestAttendances} / ${uniqueFestBrands}`, 
+        lbl: 'FESTS / SITES', // 🟢 New Terminology
+        col: C.gold, 
+        click: () => setActiveTab('passport'),
+        isMerged: true 
+      },
     ].map(s => (
       <div key={s.lbl} onClick={s.click} style={{
         background: hexToRgba(s.col, 0.05),
-        border: `1px solid ${s.col}`, // 🟢 Thinner border for mobile
-        borderRadius: '6px',
+        border: `2px solid ${s.col}`,
+        borderRadius: '8px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
-        // 🟢 Massive height reduction for mobile
-        height: isMobile ? '60px' : '90px',
-        boxShadow: `inset 0 0 10px ${hexToRgba(s.col, 0.15)}`,
+        boxShadow: `inset 0 0 15px ${hexToRgba(s.col, 0.2)}`,
+        transition: 'transform 0.2s',
+        minHeight: '90px'
       }}>
         <div style={{ 
           fontFamily: "'Bebas Neue'", 
-          fontSize: isMobile ? '1.4rem' : '2.2rem', 
+          // 🟢 Slightly smaller font if it's the merged string to prevent overflow
+          fontSize: s.isMerged ? '2rem' : '2.5rem', 
           color: s.col, 
-          lineHeight: 1 
+          lineHeight: 1, 
+          textShadow: `0 0 10px ${s.col}` 
         }}>
           {s.val}
         </div>
-        <div style={{ 
-          fontFamily: "'Space Mono'", 
-          fontSize: '7px', 
-          color: '#fff', 
-          opacity: 0.5, 
-          letterSpacing: '1px' 
-        }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: '#fff', opacity: 0.6, letterSpacing: '2px' }}>
           {s.lbl}
         </div>
       </div>
     ))}
-
-    {/* The QuadBox: Spans full width on mobile bottom row */}
+    
     <div style={{ 
-        background: hexToRgba(C.teal, 0.05), border: `1px solid ${C.teal}`, borderRadius: '6px',
-        display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', // 🟢 4-wide on mobile to save height
-        padding: '4px', gap: '4px', cursor: 'pointer',
+        background: hexToRgba(C.teal, 0.05), border: `2px solid ${C.teal}`, borderRadius: '8px',
+        display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', 
+        padding: '6px', gap: '6px', cursor: 'pointer', boxShadow: `inset 0 0 15px ${hexToRgba(C.teal, 0.2)}`,
         gridColumn: isMobile ? 'span 3' : 'span 1',
-        height: isMobile ? '40px' : '90px'
+        minHeight: '90px'
     }} onClick={() => setActiveTab('vault')}>
-        <QuadStat val={headerStats.tickets} label="TIX" color={C.gold} small={isMobile} />
-        <QuadStat val={headerStats.setlists} label="LST" color={C.teal} small={isMobile} />
-        <QuadStat val={headerStats.posters} label="PST" color={C.purple} small={isMobile} />
-        <QuadStat val={headerStats.photos} label="PHO" color={C.cyan} small={isMobile} />
+        <QuadStat val={headerStats.tickets} label="TIX" color={C.gold} />
+        <QuadStat val={headerStats.setlists} label="LST" color={C.teal} />
+        <QuadStat val={headerStats.posters} label="PST" color={C.purple} />
+        <QuadStat val={headerStats.photos} label="PHO" color={C.cyan} />
     </div>
 </div>
 </header>
