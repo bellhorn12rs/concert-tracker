@@ -2322,8 +2322,10 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between', gap: 10 }}>
       <style>{`
-        @keyframes woofer-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); filter: brightness(1.5) drop-shadow(0 0 8px ${C.teal}); } }
-        .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
+        {`
+  @keyframes woofer-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); filter: brightness(1.5) drop-shadow(0 0 8px ${C.teal}); } }
+  .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
+`}
         
         @keyframes beam-swing { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
         .moving-light { animation: beam-swing 3s ease-in-out infinite; transform-origin: top center; }
