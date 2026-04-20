@@ -5809,7 +5809,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
       } catch (e) { console.log("📡 NO EXIF"); }
     }
 
-    const bucketMap = { 'TICKET': 'Ticket Stubs', 'SETLIST': 'setlists', 'POLAROID': 'polaroids', 'POSTER': 'posters' };
+    const bucketMap = { 'TICKET': 'Ticket Stubs', 'SETLIST': 'setlists', 'POLAROID': 'polaroids', 'POSTER': 'Posters' };
     
     try {
       const bucket = bucketMap[type];
