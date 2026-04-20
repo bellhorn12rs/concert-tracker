@@ -284,15 +284,6 @@ const GENRE_COLORS = {
   'Country':'#cc8800','Metal':'#888888','Other':'#334455',
 };
 
-function buildGenreMap(concerts) {
-  const m = {};
-  concerts.forEach(c => {
-    if (c.genre && Array.isArray(c.bands)) {
-      c.bands.forEach(b => { if (b && !m[b]) m[b] = c.genre; });
-    }
-  });
-  return m;
-}
 
 function getConcertGenreInfo(concert, genreMap) {
   const bands = Array.isArray(concert.bands) ? concert.bands : [];
@@ -6433,7 +6424,7 @@ const getCuratorTitle = (stats, concerts) => {
     
     if (genreFilter !== 'all') {
       d = d.filter(r => { 
-        const g = isSet ? (artistGenres[r.artist] || 'Other') : (r.genre || 'Other'); 
+        const g = isSet ? (artistGenres[r.artist] || 'Other') : (getConcertGenreInfo(r, artistGenres).genre || 'Other'); 
         return g === genreFilter; 
       });
     }
@@ -6577,7 +6568,7 @@ const getCuratorTitle = (stats, concerts) => {
   allSetsList.forEach(s => {
     // 🟢 THE FIX: Prioritize the show's actual genre, then the lookup, then 'Other'
     // This ensures all the SQL work we did actually shows up in the chart.
-    const g = s.genre || artistGenres[s.artist] || 'Other';
+    const g = artistGenres[s.artist] || s.genre || 'Other';
     counts[g] = (counts[g] || 0) + 1;
   });
 
