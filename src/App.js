@@ -7144,8 +7144,8 @@ async function handleDelete(id) {
     {/* TIER 3: RE-MASTERED HERO STATS (Neon Outlines) */}
 <div style={{ 
     display: 'grid', 
-    // 🟢 Changed to 7 columns for desktop to fit the QuadStat perfectly
-    gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(7, 1fr)', 
+    // 🟢 Back to 6 columns now that we merged FESTS
+    gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', 
     height: 'auto', 
     minHeight: isMobile ? '160px' : '110px', 
     gap: '8px', 
@@ -7157,8 +7157,15 @@ async function handleDelete(id) {
       { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); } },
       { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); } },
       { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
-      { val: uniqueFestBrands, lbl: 'BRANDS', col: C.gold, click: () => setActiveTab('passport') },
-      { val: totalFestAttendances, lbl: 'FESTS', col: C.gold, click: () => setActiveTab('passport') },
+      
+      // 🟢 THE MERGED FESTIVAL BOX: [Total / Brands]
+      { 
+        val: `${totalFestAttendances}/${uniqueFestBrands}`, 
+        lbl: 'FESTS / BRANDS', 
+        col: C.gold, 
+        click: () => setActiveTab('passport'),
+        isMerged: true 
+      },
     ].map(s => (
       <div key={s.lbl} onClick={s.click} style={{
         background: hexToRgba(s.col, 0.05),
@@ -7171,10 +7178,21 @@ async function handleDelete(id) {
         cursor: 'pointer',
         boxShadow: `inset 0 0 15px ${hexToRgba(s.col, 0.2)}`,
         transition: 'transform 0.2s',
-        minHeight: '90px' // Ensures consistent height
+        minHeight: '90px'
       }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: s.col, lineHeight: 1, textShadow: `0 0 10px ${s.col}` }}>{s.val}</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: '#fff', opacity: 0.6, letterSpacing: '2px' }}>{s.lbl}</div>
+        <div style={{ 
+          fontFamily: "'Bebas Neue'", 
+          // 🟢 Slightly smaller font if it's the merged string to prevent overflow
+          fontSize: s.isMerged ? '2rem' : '2.5rem', 
+          color: s.col, 
+          lineHeight: 1, 
+          textShadow: `0 0 10px ${s.col}` 
+        }}>
+          {s.val}
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: '#fff', opacity: 0.6, letterSpacing: '2px' }}>
+          {s.lbl}
+        </div>
       </div>
     ))}
     
@@ -7182,7 +7200,6 @@ async function handleDelete(id) {
         background: hexToRgba(C.teal, 0.05), border: `2px solid ${C.teal}`, borderRadius: '8px',
         display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', 
         padding: '6px', gap: '6px', cursor: 'pointer', boxShadow: `inset 0 0 15px ${hexToRgba(C.teal, 0.2)}`,
-        // 🟢 Mobile: spans the whole row. Desktop: just 1 of the 7 slots.
         gridColumn: isMobile ? 'span 3' : 'span 1',
         minHeight: '90px'
     }} onClick={() => setActiveTab('vault')}>
