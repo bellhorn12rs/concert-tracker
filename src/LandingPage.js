@@ -161,9 +161,8 @@ const FounderEntrance = ({ onEnter }) => {
 };
 export default function LandingPage({ 
   currentSession, 
-  onEnterArchive, // 🟢 MAKE SURE THIS IS HERE
+  onEnterArchive, 
   onNavigateToUser, 
-  setShowLogin, 
   onLogout 
 }) {
   // 🟢 Removed internal session state because it now comes from App.js as a prop
@@ -572,21 +571,11 @@ export default function LandingPage({
   </div>
 
   {/* CTAs */}
-{/* ─── MAIN CALL TO ACTION ─── */}
 <div className="fade-in" style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center', position: 'relative', zIndex: 1, marginTop: 40 }}>
-  
-  {/* BUTTON 1: THE SMART ENTRANCE */}
   <button
-    onClick={() => {
-      console.log("Archive Triggered. Session:", !!currentSession);
-      if (currentSession) {
-        onEnterArchive(); // 🚪 Teleport to Dashboard
-      } else {
-        setShowLogin(true); // 🔑 Open Login Modal
-      }
-    }}
+    onClick={() => setMode('signup')}
     style={{
-      background: '#00e5cc', // High-vis Teal
+      background: TEAL,
       color: '#000',
       border: 'none',
       padding: isMobile ? '18px 40px' : '24px 64px',
@@ -598,25 +587,20 @@ export default function LandingPage({
       transition: 'all 0.3s',
       boxShadow: `0 0 40px rgba(0,229,204,0.4), 0 10px 40px rgba(0,0,0,0.4)`,
     }}
-    onMouseEnter={e => { 
-      e.currentTarget.style.transform = 'scale(1.05) translateY(-3px)'; 
-      e.currentTarget.style.boxShadow = `0 0 70px rgba(0,229,204,0.7), 0 20px 60px rgba(0,0,0,0.5)`; 
-    }}
-    onMouseLeave={e => { 
-      e.currentTarget.style.transform = 'scale(1) translateY(0)'; 
-      e.currentTarget.style.boxShadow = `0 0 40px rgba(0,229,204,0.4), 0 10px 40px rgba(0,0,0,0.4)`; 
-    }}
+    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05) translateY(-3px)'; e.currentTarget.style.boxShadow = `0 0 70px rgba(0,229,204,0.7), 0 20px 60px rgba(0,0,0,0.5)`; }}
+    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1) translateY(0)'; e.currentTarget.style.boxShadow = `0 0 40px rgba(0,229,204,0.4), 0 10px 40px rgba(0,0,0,0.4)`; }}
   >
-    {currentSession ? 'ENTER YOUR MUSEUM' : 'INITIALIZE ARCHIVE'}
+    INITIALIZE ARCHIVE
   </button>
-
-  {/* BUTTON 2: THE FOUNDER GATES (ERIC'S PROFILE) */}
   <button
-    onClick={() => onNavigateToUser('eric')}
+    onClick={() => {
+  if (currentSession) window.location.href = 'https://concert-tracker-eight.vercel.app';
+  else setMode('login');
+}}
     style={{
       background: 'transparent',
-      color: '#00e5cc',
-      border: `2px solid #00e5cc`,
+      color: TEAL,
+      border: `2px solid ${TEAL}`,
       padding: isMobile ? '18px 40px' : '24px 64px',
       fontFamily: "'Bebas Neue'",
       fontSize: isMobile ? '1.4rem' : '2rem',
@@ -625,18 +609,10 @@ export default function LandingPage({
       borderRadius: 4,
       transition: 'all 0.3s',
     }}
-    onMouseEnter={e => { 
-      e.currentTarget.style.background = `rgba(0, 229, 204, 0.15)`; 
-      e.currentTarget.style.transform = 'translateY(-3px)'; 
-      e.currentTarget.style.boxShadow = `0 0 30px rgba(0, 229, 204, 0.2)`; 
-    }}
-    onMouseLeave={e => { 
-      e.currentTarget.style.background = 'transparent'; 
-      e.currentTarget.style.transform = 'translateY(0)'; 
-      e.currentTarget.style.boxShadow = 'none'; 
-    }}
+    onMouseEnter={e => { e.currentTarget.style.background = `${TEAL}15`; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 0 30px ${TEAL}33`; }}
+    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
   >
-    VIEW FOUNDER ARCHIVE
+    ACCESS YOUR COLLECTION
   </button>
 </div>
 
