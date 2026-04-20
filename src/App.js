@@ -6478,12 +6478,18 @@ const getCuratorTitle = (stats, concerts) => {
   const dayGroups = useMemo(() => applyFilters(concerts) || [], [concerts, applyFilters]);
 
   const headerStats = useMemo(() => {
-  // 1. THE SIGNAL FILTER: Only crunch numbers for the person we are currently viewing
-  // If no specific user is selected (e.g., initial load), we default to your ID or all.
+  // 1. THE SIGNAL FILTER: Determine which museum to broadcast
+  // We prioritize viewedUserId (from the Terminal) over your own session ID.
   const targetUser = viewedUserId || session?.user?.id;
   
-  const currentConcerts = concerts?.filter(c => c.user_id === targetUser) || [];
-  const currentSets = allSetsList?.filter(s => s.user_id === targetUser) || [];
+  // 2. SAFETY CHECK: Ensure we aren't filtering an undefined list
+  const safeConcerts = Array.isArray(concerts) ? concerts : [];
+  const safeSetsList = Array.isArray(allSetsList) ? allSetsList : [];
+
+  // 3. THE DATA DRILL: Filter for the target signal
+  // NOTE: If Mike's user_id in the DB is null, this will return 0.
+  const currentConcerts = safeConcerts.filter(c => String(c.user_id) === String(targetUser));
+  const currentSets = safeSetsList.filter(s => String(s.user_id) === String(targetUser));
 
   return {
     // ── DATA FOR THE VIEWED USER ──
@@ -6496,10 +6502,10 @@ const getCuratorTitle = (stats, concerts) => {
     // ── ARTIFACT QUADRANT (VIEWED USER ONLY) ──
     tickets: currentConcerts.filter(c => c.image_url && c.image_url !== '').length,
     setlists: currentConcerts.filter(c => c.has_setlist || c.has_setlist_names || c.setlist_image_url).length,
-    posters: currentConcerts.filter(c => c.poster_url && c.poster_url !== '').length,
-    photos: currentConcerts.filter(c => c.personal_photo_url && c.personal_photo_url !== '').length,
+    posters: currentConcerts.filter(c => (c.poster_url && c.poster_url !== '')).length,
+    photos: currentConcerts.filter(c => (c.personal_photo_url && c.personal_photo_url !== '')).length,
   };
-}, [concerts, allSetsList, viewedUserId, session]); // ── ADD viewedUserId TO DEPENDENCIES
+}, [concerts, allSetsList, viewedUserId, session]);
 
   const artistCounts = useMemo(() => {
     const m = {};
