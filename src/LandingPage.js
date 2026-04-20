@@ -31,63 +31,130 @@ const FounderEntrance = ({ onEnter }) => {
       onClick={onEnter}
       style={{
         width: '100%',
-        maxWidth: '400px',
-        margin: '40px auto',
+        maxWidth: '500px',
+        margin: '60px auto',
         cursor: 'pointer',
+        perspective: '1000px', // 3D Effect
         position: 'relative'
       }}
     >
       <div style={{
         fontFamily: "'Space Mono'",
-        fontSize: '10px',
-        color: '#ffcc00', // Gold
+        fontSize: '11px',
+        color: '#ffcc00',
         textAlign: 'center',
-        letterSpacing: '4px',
-        marginBottom: '15px',
-        opacity: 0.8
+        letterSpacing: '6px',
+        marginBottom: '20px',
+        textShadow: '0 0 10px rgba(255,204,0,0.5)'
       }}>
-        [ ACCESS PUBLIC EXHIBIT ]
+        [ UNLOCK THE FOUNDER'S GATE ]
+      </div>
+
+      <div 
+        className="castle-gate"
+        style={{
+          height: '320px',
+          background: '#050508',
+          border: '4px solid #1a1a1a',
+          borderRadius: '4px',
+          display: 'flex',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 30px 100px rgba(0,0,0,0.8), inset 0 0 50px rgba(0,0,0,1)',
+          transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = '#ffcc00';
+          e.currentTarget.style.transform = 'translateZ(20px)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = '#1a1a1a';
+          e.currentTarget.style.transform = 'translateZ(0)';
+        }}
+      >
+        {/* Left Heavy Door */}
+        <div style={{ 
+          flex: 1, 
+          background: 'linear-gradient(90deg, #111 0%, #1a1a1a 100%)', 
+          borderRight: '2px solid #000',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          padding: '20px',
+          gap: '20px'
+        }}>
+          {/* Iron Studs */}
+          {[...Array(6)].map((_, i) => (
+            <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: '#000', boxShadow: 'inset -2px -2px 2px #333' }} />
+          ))}
+        </div>
+
+        {/* The Crest Portal */}
+        <div style={{ 
+          position: 'absolute', 
+          inset: 0, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          zIndex: 10,
+          pointerEvents: 'none'
+        }}>
+          <div style={{ 
+            width: 120, height: 160, 
+            border: '2px solid #ffcc00', 
+            borderRadius: '60px 60px 10px 10px',
+            background: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 0 40px rgba(255,204,0,0.2)'
+          }}>
+             <div style={{ fontSize: '3rem', marginBottom: 5 }}>🏰</div>
+             <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: '#fff', letterSpacing: 2 }}>FOUNDER</div>
+             <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#ffcc00', letterSpacing: 5 }}>ERIC</div>
+          </div>
+        </div>
+
+        {/* Right Heavy Door */}
+        <div style={{ 
+          flex: 1, 
+          background: 'linear-gradient(-90deg, #111 0%, #1a1a1a 100%)', 
+          borderLeft: '2px solid #000',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          padding: '20px',
+          gap: '20px',
+          justifyItems: 'end'
+        }}>
+          {/* Iron Studs */}
+          {[...Array(6)].map((_, i) => (
+            <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: '#000', boxShadow: 'inset 2px -2px 2px #333' }} />
+          ))}
+        </div>
+
+        {/* Under-Door Light Leak */}
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: '#ffcc00',
+          boxShadow: '0 0 20px #ffcc00',
+          opacity: 0.6
+        }} />
       </div>
 
       <div style={{
-        height: '200px',
-        background: '#0a0a0c',
-        border: `2px solid #1e2a38`,
-        borderRadius: '8px',
-        position: 'relative',
-        display: 'flex',
-        overflow: 'hidden',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-        transition: 'all 0.3s ease'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = '#ffcc00';
-        e.currentTarget.style.boxShadow = `0 0 30px rgba(255, 204, 0, 0.2)`;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = '#1e2a38';
-        e.currentTarget.style.boxShadow = '0 20px 50px rgba(0,0,0,0.5)';
-      }}
-      >
-        {/* Left Door */}
-        <div style={{ flex: 1, borderRight: '1px solid #222', background: 'linear-gradient(90deg, #111, #080808)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: '10px' }}>
-           <div style={{ width: '4px', height: '40px', background: '#222', borderRadius: '2px' }} />
-        </div>
-
-        {/* Center Portal Text */}
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', letterSpacing: '2px', lineHeight: 1 }}>FOUNDER</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#ffcc00', letterSpacing: '4px' }}>ARCHIVE</div>
-        </div>
-
-        {/* Right Door */}
-        <div style={{ flex: 1, borderLeft: '1px solid #222', background: 'linear-gradient(-90deg, #111, #080808)', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: '10px' }}>
-           <div style={{ width: '4px', height: '40px', background: '#222', borderRadius: '2px' }} />
-        </div>
-      </div>
-      
-      <div style={{ marginTop: '15px', textAlign: 'center', fontFamily: "'Space Mono'", fontSize: '9px', color: '#666' }}>
-        ENTRY TYPE: SPECTATOR // NO AUTH REQUIRED
+        marginTop: '30px',
+        textAlign: 'center',
+        fontFamily: "'Space Mono'",
+        fontSize: '10px',
+        color: '#444',
+        textTransform: 'uppercase'
+      }}>
+        // Protocol: Secure Spectator Entry // Clearance: Level 1
       </div>
     </div>
   );

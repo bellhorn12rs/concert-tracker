@@ -6269,32 +6269,24 @@ useEffect(() => {
   };
 }, []);
 
-// 2. DATA SYNCHRONIZATION
+// 2. DATA SYNCHRONIZATION (THE BYPASS EDITION)
 const initRan = useRef(false);
 
 useEffect(() => { 
   if (THEMES[themeId]) Object.assign(C, THEMES[themeId]);
 
   const init = async () => {
-    // If we have no session, don't try to fetch user-specific data
-    if (!session?.user?.id) return;
+    // 🟢 THE FIX: Let spectators in even if session is null
+    if (!session?.user?.id && !viewingUser) return;
 
     setLoading(true);
-    console.log("DATABASE FETCH: Initializing for user", session.user.id);
+    console.log("DATABASE FETCH: Initializing archive...");
     
     try {
-      const timeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Signal Timeout')), 8000)
-      );
-      
-      // Promise.all ensures we don't resolve until we actually have the data
-      await Promise.race([
-        Promise.all([
-          fetchConcerts(),
-          fetchUpcoming(),
-          fetchGenres().catch(e => console.warn('Genres failed silently:', e))
-        ]),
-        timeout
+      await Promise.all([
+        fetchConcerts(),
+        fetchUpcoming(),
+        fetchGenres().catch(e => console.warn('Genres failed silently:', e))
       ]);
     } catch (e) {
       console.error('ARCHIVE ERROR:', e);
@@ -6303,12 +6295,12 @@ useEffect(() => {
     }
   };
 
-  // 🔥 THE FIX: If we have a user and haven't run init yet, run it.
-  if (session?.user?.id && !initRan.current && !authLoading) {
+  // Trigger if we have a session OR if we are teleporting to a public user
+  if ((session?.user?.id || viewingUser) && !initRan.current && !authLoading) {
     initRan.current = true;
     init();
   }
-}, [session, authLoading, themeId]);
+}, [session, authLoading, themeId, viewingUser]); // 🟢 Added viewingUser to watchers
 
 // --- END OF REPAIRED SYSTEM BLOCK ---
 
