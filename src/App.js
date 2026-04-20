@@ -6775,16 +6775,14 @@ async function handleDelete(id) {
   }
 // ── 7. NAVIGATION GATES ──
 
-  
-  // Gate B: Auth Bootup
+  // Gate A: Auth Bootup
   if (authLoading) return (
     <div style={{ background: '#050508', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#00e5cc', letterSpacing: '0.15em' }}>RECOVERING SIGNAL...</div>
     </div>
   );
 
-  // Gate C: The Entry Hall (Landing Page)
-  // Condition: Show if no session OR if we are explicitly in "Landing" mode
+  // Gate B: The Entry Hall (Landing Page)
   // 🟢 GATEKEEPER: Show landing page UNLESS they are viewing a public user
   if ((!session && !viewingUser) || onLanding) {
     return (
@@ -6799,28 +6797,17 @@ async function handleDelete(id) {
       />
     );
   }
-    return (
-      <LandingPage 
-        currentSession={session}
-        onEnterArchive={() => setOnLanding(false)}
-        onNavigateToUser={handleNavigateToUser}
-        onLogout={async () => {
-          await supabase.auth.signOut();
-          window.location.reload(); // Hard reset to clear any stuck state
-        }}
-      />
-    );
-  }
-  // Gate D: Data Synchronization (Interior)
+
+  // Gate C: Data Synchronization (Interior)
   if (loading) return (
     <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: '0.15em' }}>SYNCHRONIZING ARCHIVE...</div>
     </div>
   );
 
+  // ── 8. FINAL STAGE RENDER ──
   return (
     <ThemeContext.Provider value={themeCtx}>
-      {/* ── 1. GLOBAL WRAPPER (Vertical Stack) ── */}
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
@@ -6829,10 +6816,10 @@ async function handleDelete(id) {
         background: C.bg, 
         overflow: 'hidden' 
       }}>
-        {/* ── 2. GLOBAL NEWS TICKER (Absolute Top) ── */}
+        {/* News Ticker Bar */}
         <NewsTicker concerts={concerts} artistCounts={artistCounts} genreStats={genreStats} />
 
-        {/* ── 3. APPLICATION CONTENT (Sidebar + Stage) ── */}
+        {/* Main Application Content */}
         <div key={themeId} style={{ 
           flex: 1, 
           display: 'flex', 
@@ -6840,26 +6827,27 @@ async function handleDelete(id) {
           overflow: 'hidden', 
           width: '100%',
           position: 'relative'
-        }}>       <MarqueeStyles />
+        }}>
+          <MarqueeStyles />
 
           {/* ── VERTICAL SIDEBAR ── */}
-<aside style={{
-  width: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
-  minWidth: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
-  height: '100%',
-  position: isMobile ? 'fixed' : 'relative',
-  top: 0,
-  left: isMobile && navCollapsed ? '-280px' : '0', 
-  background: `linear-gradient(to right, ${C.bgCard} 0%, #050508 100%)`,
-  borderRight: `1px solid ${C.border}`,
-  display: 'flex',
-  flexDirection: 'column',
-  padding: '0',
-  zIndex: 5000, 
-  transition: 'all 0.3s ease-in-out',
-  overflow: 'hidden',
-  flexShrink: 0 
-}}>
+          <aside style={{
+            width: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
+            minWidth: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
+            height: '100%',
+            position: isMobile ? 'fixed' : 'relative',
+            top: 0,
+            left: isMobile && navCollapsed ? '-280px' : '0', 
+            background: `linear-gradient(to right, ${C.bgCard} 0%, #050508 100%)`,
+            borderRight: `1px solid ${C.border}`,
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '0',
+            zIndex: 5000, 
+            transition: 'all 0.3s ease-in-out',
+            overflow: 'hidden',
+            flexShrink: 0 
+          }}>
   {/* Toggle Button */}
   <button onClick={() => setNavCollapsed(!navCollapsed)} style={{ position: 'absolute', right: 15, top: 15, background: 'none', border: 'none', color: C.teal, cursor: 'pointer', fontSize: '1.2rem', zIndex: 10 }}>
     {isMobile ? '✕' : (navCollapsed ? '→' : '←')}
