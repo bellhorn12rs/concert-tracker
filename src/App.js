@@ -7144,8 +7144,8 @@ async function handleDelete(id) {
     {/* TIER 3: RE-MASTERED HERO STATS (Neon Outlines) */}
 <div style={{ 
     display: 'grid', 
-    // 🟢 Updated to 6 columns for desktop, 3 columns (2 rows) for mobile
-    gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', 
+    // 🟢 Changed to 7 columns for desktop to fit the QuadStat perfectly
+    gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(7, 1fr)', 
     height: 'auto', 
     minHeight: isMobile ? '160px' : '110px', 
     gap: '8px', 
@@ -7157,9 +7157,7 @@ async function handleDelete(id) {
       { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); } },
       { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); } },
       { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
-      // 🟢 NEW: Unique Festival Brands (Halls of Fame)
       { val: uniqueFestBrands, lbl: 'BRANDS', col: C.gold, click: () => setActiveTab('passport') },
-      // 🟢 REFINED: Total Festival Attendances (Yearly Visits)
       { val: totalFestAttendances, lbl: 'FESTS', col: C.gold, click: () => setActiveTab('passport') },
     ].map(s => (
       <div key={s.lbl} onClick={s.click} style={{
@@ -7172,22 +7170,21 @@ async function handleDelete(id) {
         justifyContent: 'center',
         cursor: 'pointer',
         boxShadow: `inset 0 0 15px ${hexToRgba(s.col, 0.2)}`,
-        transition: 'transform 0.2s'
+        transition: 'transform 0.2s',
+        minHeight: '90px' // Ensures consistent height
       }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: s.col, lineHeight: 1, textShadow: `0 0 10px ${s.col}` }}>{s.val}</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: s.col, lineHeight: 1, textShadow: `0 0 10px ${s.col}` }}>{s.val}</div>
         <div style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: '#fff', opacity: 0.6, letterSpacing: '2px' }}>{s.lbl}</div>
       </div>
     ))}
     
-    {/* 🟢 NOTE: The QuadStat box below will now move to a new row on desktop 
-        because we have 6 items above. If you want it on the same line, 
-        we'd need 7 columns, but 6 looks cleaner on desktop. */}
     <div style={{ 
         background: hexToRgba(C.teal, 0.05), border: `2px solid ${C.teal}`, borderRadius: '8px',
         display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', 
         padding: '6px', gap: '6px', cursor: 'pointer', boxShadow: `inset 0 0 15px ${hexToRgba(C.teal, 0.2)}`,
-        // Ensure it spans 2 units on mobile if needed
-        gridColumn: isMobile ? 'span 3' : 'span 1'
+        // 🟢 Mobile: spans the whole row. Desktop: just 1 of the 7 slots.
+        gridColumn: isMobile ? 'span 3' : 'span 1',
+        minHeight: '90px'
     }} onClick={() => setActiveTab('vault')}>
         <QuadStat val={headerStats.tickets} label="TIX" color={C.gold} />
         <QuadStat val={headerStats.setlists} label="LST" color={C.teal} />
