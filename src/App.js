@@ -7518,40 +7518,41 @@ async function handleDelete(id) {
 
   {/* 5. THE SEARCH ENGINE (BROWSE) */}
   {activeTab === 'browse' && (
-    <BrowseTab 
-      browseView={browseView}
-      setBrowseView={setBrowseView}
-      search={search}
-      setSearch={setSearch}
-      yearFilter={yearFilter}
-      setYearFilter={setYearFilter}
-      festFilter={festFilter}
-      setFestFilter={setFestFilter}
-      genreFilter={genreFilter}
-      setGenreFilter={setGenreFilter}
-      sortCol={sortCol}
-      setSortCol={setSortCol}
-      sortDir={sortDir}
-      setSortDir={setSortDir}
-      page={page}
-      setPage={setPage}
-      totalPages={totalPages}
-      paged={paged} 
-      artistRows={artistRows}
-      years={years}
-      onShare={(a, s) => setShareCard({ artist: a, shows: s })}
-      onEdit={isAdmin ? setEditTarget : null} 
-      isAdmin={isAdmin}
-      onSetGenre={handleSetGenre}
-      genreMap={artistGenres}
-      viewingUser={viewingUser}
-      bulkMode={bulkMode}
-      setBulkMode={setBulkMode}
-      selectedSignals={selectedSignals}
-      setSelectedSignals={setSelectedSignals}
-      onSync={handleBulkSync}
-    />
-  )}
+  <BrowseTab 
+    browseView={browseView}
+    setBrowseView={setBrowseView}
+    search={search}
+    setSearch={setSearch}
+    yearFilter={yearFilter}
+    setYearFilter={setYearFilter}
+    festFilter={festFilter}
+    setFestFilter={setFestFilter}
+    genreFilter={genreFilter}
+    setGenreFilter={setGenreFilter}
+    sortCol={sortCol}
+    setSortCol={setSortCol}
+    sortDir={sortDir}
+    setSortDir={setSortDir}
+    page={page}
+    setPage={setPage}
+    totalPages={totalPages}
+    paged={paged} 
+    artistRows={artistRows}
+    years={years}
+    onShare={(a, s) => setShareCard({ artist: a, shows: s })}
+    onEdit={isAdmin ? setEditTarget : null} 
+    isAdmin={isAdmin}
+    onSetGenre={handleSetGenre}
+    genreMap={artistGenres}
+    /* 🟢 THE CRITICAL CONNECTIONS */
+    viewingUser={viewingUser}
+    bulkMode={bulkMode}
+    setBulkMode={setBulkMode}
+    selectedSignals={selectedSignals}
+    setSelectedSignals={setSelectedSignals}
+    onSync={handleBulkSync} // <-- Ensure this line is exactly handleBulkSync
+  />
+)}
 
   {/* 6. ADMIN OFFICE */}
 {isAdmin && activeTab === 'manage' && (
