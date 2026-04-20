@@ -163,6 +163,7 @@ export default function LandingPage({
   currentSession, 
   onEnterArchive, 
   onNavigateToUser, 
+  setShowLogin, // 🟢 ADD THIS HERE
   onLogout 
 }) {
   // 🟢 Removed internal session state because it now comes from App.js as a prop
