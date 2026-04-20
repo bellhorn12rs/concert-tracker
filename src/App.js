@@ -3994,31 +3994,30 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
       </div>
 
       {/* 🟢 RIGHT: MEDIA CLUSTER */}
-<div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-end', minWidth: isMobile ? '100%' : '400px', zIndex: 2, marginLeft: 'auto' }}>
-  <div style={{ display: 'flex', alignItems: 'flex-start', transform: isMobile ? 'scale(0.8)' : 'none', transformOrigin: 'right' }}>
-    {finalSetlists.map((url, sIdx) => (
-      <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={finalSetlists.length} />
-    ))}
-    {(event.festival_poster_url || '').split(',').map(u => u.trim()).filter(Boolean).map((url, pIdx) => (
-      <GigPoster
-        key={`${event.id}-poster-${pIdx}`}
-        src={url}
-        artist={getBandName(event.bands?.[0]) || event.festival_name}
-        date={event.date}
-        index={pIdx}
-      />
-    ))}
-    <div style={{ marginLeft: (finalSetlists.length > 0 || event.festival_poster_url) ? '-20px' : '0', display: 'flex' }}>
-      {finalPhotos.map((url, pIdx) => (
-        <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
-      ))}
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-end', minWidth: isMobile ? '100%' : '400px', zIndex: 2, marginLeft: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', transform: isMobile ? 'scale(0.8)' : 'none', transformOrigin: 'right' }}>
+        {finalSetlists.map((url, sIdx) => (
+          <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={finalSetlists.length} />
+        ))}
+        {(event.festival_poster_url || '').split(',').map(u => u.trim()).filter(Boolean).map((url, pIdx) => (
+          <GigPoster
+            key={`${event.id}-poster-${pIdx}`}
+            src={url}
+            artist={getBandName(event.bands?.[0]) || event.festival_name}
+            date={event.date}
+            index={pIdx}
+          />
+        ))}
+        <div style={{ marginLeft: (finalSetlists.length > 0 || event.festival_poster_url) ? '-20px' : '0', display: 'flex' }}>
+          {finalPhotos.map((url, pIdx) => (
+            <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
+          ))}
+        </div>
+      </div>
     </div>
   </div>
-</div>
   );
 }
-// ─── HELPER: COLOR STAIRCASE ────────────────────────────────────────────────
-// This makes sure Day 1 is bright and Day 3 is a deep, moody variant of the same color
 const getDayColor = (baseHex, index) => {
   const variants = [1.0, 0.8, 0.6, 0.45, 0.3]; 
   return hexToRgba(baseHex || C.teal, variants[index % variants.length]);
