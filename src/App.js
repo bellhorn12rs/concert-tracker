@@ -7044,19 +7044,17 @@ async function handleDelete(id) {
 </aside>
           <div style={{ flex: 1, height: '100%', overflowY: 'auto', overflowX: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', background: C.bg }}>
             
-    {/* ─── TRIPLE-TIER SYSTEM HEADER ─── */}
+    {/* ─── FIXED NAVIGATION (Tiers 1 & 2) ─── */}
 <header style={{ 
     background: '#050508', 
     position: 'sticky', 
     top: 0, 
-    zIndex: 2000,
+    zIndex: 10001, // Pinned above everything
     display: 'flex', 
     flexDirection: 'column', 
-    borderBottom: `2px solid ${C.border}`,
-    flexShrink: 0, 
-    overflow: 'visible'
+    borderBottom: `1px solid ${C.border}`,
+    flexShrink: 0 
 }}>
-    
     {/* TIER 1: THE LIVE TICKER (System Pulse) */}
     <div style={{ 
         height: '24px', background: '#000', borderBottom: `1px solid ${hexToRgba(C.teal, 0.2)}`,
@@ -7066,103 +7064,90 @@ async function handleDelete(id) {
     </div>
 
     {/* TIER 2: THE TERMINAL (Navigation & Rank) */}
-<div style={{ 
-  height: isMobile ? '50px' : '60px', 
-  display: 'flex', 
-  alignItems: 'center', 
-  justifyContent: 'space-between',
-  padding: '0 20px',
-  background: `linear-gradient(90deg, #050508, ${hexToRgba(C.purple, 0.05)})`,
-  position: 'relative', 
-  gap: 10
-}}>
-  {/* Left Controls */}
-  <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
-    {isMobile && (
-      <button 
-        onClick={() => setNavCollapsed(false)}
-        style={{ background: 'none', border: `1px solid ${C.teal}`, color: C.teal, padding: '5px 8px', borderRadius: '4px', marginRight: '5px' }}
-      >
-        ☰
-      </button>
-    )}
-    <button onClick={() => setActiveTab('community')} style={navBtnStyle(activeTab === 'community', C.purple)}>
-      <span>🚉</span> {!isMobile && "THE STATION"}
-    </button>
+    <div style={{ 
+      height: isMobile ? '50px' : '60px', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'space-between',
+      padding: '0 20px',
+      background: `linear-gradient(90deg, #050508, ${hexToRgba(C.purple, 0.05)})`,
+      position: 'relative', 
+      gap: 10
+    }}>
+      {/* Left Controls */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
+        {isMobile && (
+          <button 
+            onClick={() => setNavCollapsed(false)}
+            style={{ background: 'none', border: `1px solid ${C.teal}`, color: C.teal, padding: '5px 8px', borderRadius: '4px', marginRight: '5px' }}
+          >
+            ☰
+          </button>
+        )}
+        <button onClick={() => setActiveTab('community')} style={navBtnStyle(activeTab === 'community', C.purple)}>
+          <span>🚉</span> {!isMobile && "THE STATION"}
+        </button>
 
-    {/* 🟢 RESTORED: Add Show (+) Button */}
-    {!viewingUser && (
-      <button 
-        onClick={() => setEditTarget('new')}
-        style={{
-          background: 'none',
-          border: `1px solid ${C.teal}`,
-          color: C.teal,
-          borderRadius: '4px',
-          padding: '4px 10px',
-          fontFamily: "'Space Mono'",
-          fontSize: '10px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '5px'
-        }}
-      >
-        <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span> {!isMobile && "SIGNAL"}
-      </button>
-    )}
-  </div>
+        {!viewingUser && (
+          <button 
+            onClick={() => setEditTarget('new')}
+            style={{
+              background: 'none', border: `1px solid ${C.teal}`, color: C.teal, borderRadius: '4px',
+              padding: '4px 10px', fontFamily: "'Space Mono'", fontSize: '10px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '5px'
+            }}
+          >
+            <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span> {!isMobile && "SIGNAL"}
+          </button>
+        )}
+      </div>
 
-  {/* 🎯 CENTERED CURATOR RANK */}
-  <div style={{
-    position: 'absolute',
-    left: '50%',
-    top: '50%',
-    transform: 'translate(-50%, -50%)',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    textAlign: 'center',
-    width: isMobile ? '150px' : '300px',
-    pointerEvents: 'none',
-    zIndex: 1
-  }}>
-    <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: C.teal, letterSpacing: '4px', opacity: 0.6, marginBottom: 2 }}>
-      CURRENT CURATOR STATUS:
+      {/* 🎯 CENTERED CURATOR RANK */}
+      <div style={{
+        position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
+        width: isMobile ? '150px' : '300px', pointerEvents: 'none', zIndex: 1
+      }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: C.teal, letterSpacing: '4px', opacity: 0.6, marginBottom: 2 }}>
+          CURRENT CURATOR STATUS:
+        </div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.1rem' : '1.4rem', color: '#fff', letterSpacing: '3px', textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`, lineHeight: 1 }}>
+           {getCuratorTitle(headerStats, concerts)}
+        </div>
+      </div>
+
+      {/* Right Controls */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
+        {!viewingUser && (
+          <button onClick={() => setActiveTab('office')} style={navBtnStyle(activeTab === 'office', C.teal)}>
+            <span>⚙️</span> {!isMobile && "THE OFFICE"}
+          </button>
+        )}
+        <ThemeSwitcher isMobile={isMobile} />
+      </div>
     </div>
-    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.1rem' : '1.4rem', color: '#fff', letterSpacing: '3px', textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`, lineHeight: 1 }}>
-       {getCuratorTitle(headerStats, concerts)}
-    </div>
-  </div>
+</header>
+{/* 🟢 NAVIGATION ENDS. Tiers 1 & 2 are now frozen at top. */}
 
-  {/* Right Controls */}
-  <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
-    {/* 🟢 FIXED: Office Button (Always show if not viewing someone else) */}
-    {!viewingUser && (
-      <button onClick={() => setActiveTab('office')} style={navBtnStyle(activeTab === 'office', C.teal)}>
-        <span>⚙️</span> {!isMobile && "THE OFFICE"}
-      </button>
-    )}
-    <ThemeSwitcher isMobile={isMobile} />
-  </div>
-</div>
-    {/* TIER 3: RE-MASTERED HERO STATS (Neon Outlines) */}
+
+{/* ─── TIER 3: HERO STATS (SCROLLABLE ON MOBILE) ─── */}
 <div style={{ 
     display: 'grid', 
     // 🟢 7 columns for Desktop, 3 columns for Mobile
     gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(7, 1fr)', 
     gap: '8px', 
     padding: '10px',
-    background: '#000' 
+    background: '#000',
+    borderBottom: `1px solid ${C.border}`
 }}>
     {[
       { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
       { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); } },
       { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); } },
       { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
+      // 🟢 SPLIT BOXES
       { val: totalFestAttendances, lbl: 'FESTS', col: C.gold, click: () => setActiveTab('passport') },
       { val: uniqueFestBrands, lbl: 'BRANDS', col: C.gold, click: () => setActiveTab('passport') },
-      
     ].map(s => (
       <div key={s.lbl} onClick={s.click} style={{
         background: hexToRgba(s.col, 0.05),
@@ -7175,44 +7160,27 @@ async function handleDelete(id) {
         cursor: 'pointer',
         boxShadow: `inset 0 0 15px ${hexToRgba(s.col, 0.2)}`,
         transition: 'transform 0.2s',
-        minHeight: '90px'
+        minHeight: isMobile ? '70px' : '90px' // Slightly shorter on mobile
       }}>
-        <div style={{ 
-          fontFamily: "'Bebas Neue'", 
-          // 🟢 Slightly smaller font if it's the merged string to prevent overflow
-          fontSize: s.isMerged ? '2rem' : '2.5rem', 
-          color: s.col, 
-          lineHeight: 1, 
-          textShadow: `0 0 10px ${s.col}` 
-        }}>
-          {s.val}
-        </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: '8px', color: '#fff', opacity: 0.6, letterSpacing: '2px' }}>
-          {s.lbl}
-        </div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.5rem' : '2.2rem', color: s.col, lineHeight: 1, textShadow: `0 0 10px ${s.col}` }}>{s.val}</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: '#fff', opacity: 0.6, letterSpacing: '1px' }}>{s.lbl}</div>
       </div>
     ))}
     
     <div style={{ 
-    background: hexToRgba(C.teal, 0.05), 
-    border: `2px solid ${C.teal}`, 
-    borderRadius: '8px',
-    display: 'grid', 
-    gridTemplateColumns: '1fr 1fr', 
-    gridTemplateRows: '1fr 1fr', 
-    padding: '6px', 
-    gap: '6px', 
-    cursor: 'pointer',
-    // 🟢 Span all 3 columns on mobile, take 1 slot on desktop
-    gridColumn: isMobile ? 'span 3' : 'span 1'
-}} onClick={() => setActiveTab('vault')}>
+        background: hexToRgba(C.teal, 0.05), border: `2px solid ${C.teal}`, borderRadius: '8px',
+        display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', 
+        padding: '6px', gap: '6px', cursor: 'pointer', boxShadow: `inset 0 0 15px ${hexToRgba(C.teal, 0.2)}`,
+        // 🟢 Span all 3 columns on mobile
+        gridColumn: isMobile ? 'span 3' : 'span 1',
+        minHeight: isMobile ? '60px' : '90px'
+    }} onClick={() => setActiveTab('vault')}>
         <QuadStat val={headerStats.tickets} label="TIX" color={C.gold} />
         <QuadStat val={headerStats.setlists} label="LST" color={C.teal} />
         <QuadStat val={headerStats.posters} label="PST" color={C.purple} />
         <QuadStat val={headerStats.photos} label="PHO" color={C.cyan} />
     </div>
 </div>
-</header>
 
 <main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
   {activeTab === 'dashboard' && (
