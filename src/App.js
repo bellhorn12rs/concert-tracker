@@ -2455,12 +2455,12 @@ function HallOfFame({ sets, genreMap, onShare }) {
   };
 
   // 2. 🟢 ROBUST MEDIA ARCHIVE
-  // This checks EVERY bucket. Even if it's in the old "image_url" slot, we find it.
   const archive = useMemo(() => {
-    if (!selectedData) return { setlists: [], photos: [] };
-    
-    const setlists = [];
-    const photos = [];
+  if (!selectedData) return { setlists: [], photos: [], posters: [] };
+  
+  const setlists = [];
+  const photos = [];
+  const posters = [];
 
     selectedData.shows.forEach(s => {
       // Logic for Setlists: Check new bucket FIRST, then fallback to old image_url
@@ -2470,6 +2470,12 @@ function HallOfFame({ sets, genreMap, onShare }) {
           if (url.trim()) setlists.push({ url: url.trim(), date: s.date });
         });
       }
+
+      if (s.festival_poster_url && typeof s.festival_poster_url === 'string') {
+  s.festival_poster_url.split(',').forEach(url => {
+    if (url.trim()) posters.push({ url: url.trim(), date: s.date });
+  });
+}
       
       // Logic for Polaroids
       if (s.personal_photo_url && typeof s.personal_photo_url === 'string') {
@@ -2479,7 +2485,7 @@ function HallOfFame({ sets, genreMap, onShare }) {
       }
     });
 
-    return { setlists, photos };
+    return { setlists, photos, posters };
   }, [selectedData]);
 
   return (
@@ -2537,31 +2543,34 @@ function HallOfFame({ sets, genreMap, onShare }) {
               </div>
 
               {/* MEDIA VAULT (REPAIRED) */}
-              <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '30px' }}>
-                {archive.setlists.length > 0 && (
-                  <div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: gc, letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// STAGE ARTIFACTS</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
-                      {archive.setlists.map((m, idx) => (
-                        <SetlistPaper key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.setlists.length} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {archive.photos.length > 0 && (
-                  <div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#9d00ff', letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// PERSONAL MEMORIES</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
-                      {archive.photos.map((m, idx) => (
-                        <PersonalPolaroid key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.photos.length} caption={fmtDateShort(m.date)} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+<div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '30px' }}>
+  {(archive.setlists.length > 0 || archive.posters.length > 0) && (
+    <div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: gc, letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// STAGE ARTIFACTS</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'flex-start' }}>
+        {archive.setlists.map((m, idx) => (
+          <SetlistPaper key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.setlists.length} />
+        ))}
+        {archive.posters.map((m, idx) => (
+          <GigPoster key={`poster-${idx}-${m.url}`} src={m.url} artist={selectedData.artist} date={m.date} index={idx} />
+        ))}
+      </div>
+    </div>
+  )}
+  
+  {archive.photos.length > 0 && (
+    <div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#9d00ff', letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// PERSONAL MEMORIES</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+        {archive.photos.map((m, idx) => (
+          <PersonalPolaroid key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.photos.length} caption={fmtDateShort(m.date)} />
+        ))}
+      </div>
+    </div>
+  )}
+</div>
+</div>
+</div>
         );
       })()}
 
@@ -3520,6 +3529,113 @@ function SetlistPaper({ src, index = 0, total = 1 }) {
     </>
   );
 }
+
+function GigPoster({ src, artist, date, index = 0 }) {
+  const [isFull, setIsFull] = React.useState(false);
+  if (!src) return null;
+
+  const cleanSrc = src.split('#rot=')[0];
+  const rotation = (index % 2 === 0 ? -1.2 : 1.2);
+
+  return (
+    <>
+      <div
+        onClick={() => setIsFull(true)}
+        style={{
+          display: 'inline-block',
+          position: 'relative',
+          transform: `rotate(${rotation}deg)`,
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          cursor: 'zoom-in',
+          flexShrink: 0,
+          alignSelf: 'flex-start',
+          marginRight: '-20px',
+          zIndex: 5 + index,
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.transform = `rotate(0deg) scale(1.05) translateY(-5px)`;
+          e.currentTarget.style.zIndex = 1000;
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.transform = `rotate(${rotation}deg)`;
+          e.currentTarget.style.zIndex = 5 + index;
+        }}
+      >
+        {/* OUTER FRAME */}
+        <div style={{
+          padding: '6px',
+          background: 'linear-gradient(145deg, #4a4a4a 0%, #1a1a1a 40%, #3a3a3a 60%, #111 100%)',
+          borderRadius: '3px',
+          boxShadow: `
+            0 0 0 1px #666,
+            0 0 0 2px #111,
+            4px 8px 20px rgba(0,0,0,0.7),
+            inset 0 1px 0 rgba(255,255,255,0.15),
+            inset 0 -1px 0 rgba(0,0,0,0.5)
+          `,
+          width: '130px',
+        }}>
+          {/* MATTE */}
+          <div style={{
+            padding: '5px',
+            background: '#0a0a0a',
+            border: '1px solid #2a2a2a',
+          }}>
+            {/* IMAGE */}
+            <img
+              src={cleanSrc}
+              alt={artist}
+              style={{
+                display: 'block',
+                width: '100%',
+                height: 'auto',
+                maxHeight: '180px',
+                objectFit: 'cover',
+              }}
+            />
+          </div>
+
+          {/* NAMEPLATE */}
+          <div style={{
+            marginTop: '5px',
+            padding: '4px 6px',
+            background: 'linear-gradient(90deg, #2a2a2a, #1a1a1a, #2a2a2a)',
+            border: '1px solid #3a3a3a',
+            borderRadius: '1px',
+            textAlign: 'center',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+          }}>
+            <div style={{
+              fontFamily: "'Space Mono', monospace",
+              fontSize: '7px',
+              color: '#aaa',
+              letterSpacing: '2px',
+              textTransform: 'uppercase',
+              lineHeight: 1.4,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}>
+              {artist?.toUpperCase()}
+            </div>
+            <div style={{
+              fontFamily: "'Space Mono', monospace",
+              fontSize: '6px',
+              color: '#666',
+              letterSpacing: '1px',
+              marginTop: '1px',
+            }}>
+              {date ? fmtDateShort(date).toUpperCase() : 'GIG POSTER'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {isFull && <Lightbox src={cleanSrc} caption={artist} onClose={() => setIsFull(false)} type="POSTER" />}
+    </>
+  );
+}
+
 // ─── 📸 STACKED POLAROIDS (PHYSICS & 3D EDITION) ────────────────────────────────
 function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
   if (!src) return null;
@@ -3878,19 +3994,27 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
       </div>
 
       {/* 🟢 RIGHT: MEDIA CLUSTER */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-end', minWidth: isMobile ? '100%' : '400px', zIndex: 2, marginLeft: 'auto' }}>
-        <div style={{ display: 'flex', transform: isMobile ? 'scale(0.8)' : 'none', transformOrigin: 'right' }}>
-          {finalSetlists.map((url, sIdx) => (
-            <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={finalSetlists.length} />
-          ))}
-          <div style={{ marginLeft: finalSetlists.length > 0 ? '-30px' : '0', display: 'flex' }}>
-            {finalPhotos.map((url, pIdx) => (
-              <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
-            ))}
-          </div>
-        </div>
-      </div>
+<div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-end', minWidth: isMobile ? '100%' : '400px', zIndex: 2, marginLeft: 'auto' }}>
+  <div style={{ display: 'flex', alignItems: 'flex-start', transform: isMobile ? 'scale(0.8)' : 'none', transformOrigin: 'right' }}>
+    {finalSetlists.map((url, sIdx) => (
+      <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={finalSetlists.length} />
+    ))}
+    {(event.festival_poster_url || '').split(',').map(u => u.trim()).filter(Boolean).map((url, pIdx) => (
+      <GigPoster
+        key={`${event.id}-poster-${pIdx}`}
+        src={url}
+        artist={getBandName(event.bands?.[0]) || event.festival_name}
+        date={event.date}
+        index={pIdx}
+      />
+    ))}
+    <div style={{ marginLeft: (finalSetlists.length > 0 || event.festival_poster_url) ? '-20px' : '0', display: 'flex' }}>
+      {finalPhotos.map((url, pIdx) => (
+        <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
+      ))}
     </div>
+  </div>
+</div>
   );
 }
 // ─── HELPER: COLOR STAIRCASE ────────────────────────────────────────────────
