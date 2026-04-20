@@ -1287,27 +1287,88 @@ const bands = Array.isArray(c.bands) ? c.bands.map(b => getBandName(b)).filter(B
 }
 // ─── ON THIS DAY ──────────────────────────────────────────────────────────────
 function OnThisDay({ concerts }) {
+  // 🟢 Add Mobile Detection
+  const isMobile = window.innerWidth < 768;
+
   const today = new Date(), mm = String(today.getMonth()+1).padStart(2,'0'), dd = String(today.getDate()).padStart(2,'0');
   const matches = concerts.filter(c => c.date?.endsWith(`-${mm}-${dd}`)).sort((a,b) => a.date.localeCompare(b.date));
+  
   if (!matches.length) return null;
   const dateLabel = today.toLocaleDateString('en-US', { month:'long', day:'numeric' });
+
   return (
-    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, margin:'16px 0' }}>
+    <div style={{ 
+      display:'flex', 
+      flexDirection:'column', 
+      alignItems:'center', 
+      gap:8, 
+      // 🟢 INCREASED MARGIN: 40px top margin on mobile to prevent header overlap
+      margin: isMobile ? '40px 0 20px 0' : '16px 0' 
+    }}>
       <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.3em', textTransform:'uppercase', color:C.tealDim }}>📅 On This Day — {dateLabel}</div>
+      
       {matches.map(ev => {
         const bands = (ev.bands||[]).map(b => getBandName(b)).filter(Boolean).join(', ');
         const location = [ev.venue, ev.city, ev.state].filter(Boolean).join(', ');
         const year = getYear(ev.date);
         const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${bands} ${ev.venue||ev.city} ${year} live`)}`;
+        
         return (
-          <div key={ev.id} style={{ display:'inline-flex', alignItems:'center', gap:14, background:`linear-gradient(135deg,${C.bgCard},${hexToRgba(C.teal,0.07)})`, border:`1px solid ${C.teal}44`, borderRadius:40, padding:'10px 18px 10px 14px', boxShadow:`0 0 20px ${C.tealGlow}`, animation:'pulse-teal 3s ease-in-out infinite' }}>
+          <div key={ev.id} style={{ 
+            display:'inline-flex', 
+            // 🟢 STACK ON MOBILE: Switch to column if the text is too long for a single line
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems:'center', 
+            gap: isMobile ? 8 : 14, 
+            background:`linear-gradient(135deg,${C.bgCard},${hexToRgba(C.teal,0.07)})`, 
+            border:`1px solid ${C.teal}44`, 
+            borderRadius: isMobile ? 12 : 40, 
+            padding: isMobile ? '15px' : '10px 18px 10px 14px', 
+            boxShadow:`0 0 20px ${C.tealGlow}`, 
+            animation:'pulse-teal 3s ease-in-out infinite',
+            textAlign: 'center'
+          }}>
             <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.6rem', color:C.teal, lineHeight:1, flexShrink:0 }}>{year}</div>
-            <div style={{ width:1, height:28, background:C.border, flexShrink:0 }} />
-            <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.2rem', letterSpacing:'0.06em', color:C.white, lineHeight:1, flexShrink:0 }}>{bands}</div>
-            <div style={{ width:1, height:28, background:C.border, flexShrink:0 }} />
-            <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, textTransform:'uppercase', letterSpacing:'0.08em', flexShrink:0 }}>{location}</div>
+            
+            {/* 🟢 HIDE DIVIDERS ON MOBILE: They look messy when stacked */}
+            {!isMobile && <div style={{ width:1, height:28, background:C.border, flexShrink:0 }} />}
+            
+            <div style={{ 
+              fontFamily:"'Bebas Neue'", 
+              fontSize: isMobile ? '1.4rem' : '1.2rem', 
+              letterSpacing:'0.06em', 
+              color:C.white, 
+              lineHeight:1, 
+              flexShrink:0 
+            }}>
+              {bands}
+            </div>
+            
+            {!isMobile && <div style={{ width:1, height:28, background:C.border, flexShrink:0 }} />}
+            
+            <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, color:C.gray, textTransform:'uppercase', letterSpacing:'0.08em', flexShrink:0 }}>
+              {location}
+            </div>
+
             <a href={ytUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-              style={{ display:'inline-flex', alignItems:'center', gap:5, background:'rgba(255,0,0,0.15)', border:'1px solid rgba(255,0,0,0.35)', borderRadius:20, padding:'4px 10px', textDecoration:'none', fontFamily:"'Space Mono',monospace", fontSize:7, letterSpacing:'0.1em', textTransform:'uppercase', color:'#ff4444', flexShrink:0, transition:'all 0.15s' }}>
+              style={{ 
+                display:'inline-flex', 
+                alignItems:'center', 
+                gap:5, 
+                background:'rgba(255,0,0,0.15)', 
+                border:'1px solid rgba(255,0,0,0.35)', 
+                borderRadius:20, 
+                padding:'4px 10px', 
+                textDecoration:'none', 
+                fontFamily:"'Space Mono',monospace", 
+                fontSize:7, 
+                letterSpacing:'0.1em', 
+                textTransform:'uppercase', 
+                color:'#ff4444', 
+                flexShrink:0, 
+                transition:'all 0.15s',
+                marginTop: isMobile ? 5 : 0 
+              }}>
               ▶ Search
             </a>
           </div>
@@ -6824,18 +6885,21 @@ async function handleDelete(id) {
 
           {/* ── VERTICAL SIDEBAR ── */}
           <aside style={{
-            width: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
-            minWidth: isMobile ? (navCollapsed ? '0px' : '280px') : (navCollapsed ? '80px' : '280px'),
+            // 🟢 Always 280px wide when visible. No more 0px or 80px on mobile.
+            width: isMobile ? '280px' : (navCollapsed ? '80px' : '280px'),
+            minWidth: isMobile ? '280px' : (navCollapsed ? '80px' : '280px'),
             height: '100%',
             position: isMobile ? 'fixed' : 'relative',
             top: 0,
+            // 🟢 Move the whole drawer off-screen by its full width when collapsed
             left: isMobile && navCollapsed ? '-280px' : '0', 
             background: `linear-gradient(to right, ${C.bgCard} 0%, #050508 100%)`,
             borderRight: `1px solid ${C.border}`,
             display: 'flex',
             flexDirection: 'column',
             padding: '0',
-            zIndex: 5000, 
+            // 🟢 Sit on top of the header/content
+            zIndex: 10000, 
             transition: 'all 0.3s ease-in-out',
             overflow: 'hidden',
             flexShrink: 0 
@@ -7000,13 +7064,18 @@ async function handleDelete(id) {
     }}>
       {/* Left Controls */}
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
+        {/* 🟢 NEW: Mobile Menu Trigger */}
+        {isMobile && (
+          <button 
+            onClick={() => setNavCollapsed(false)}
+            style={{ background: 'none', border: `1px solid ${C.teal}`, color: C.teal, padding: '5px 8px', borderRadius: '4px', marginRight: '5px' }}
+          >
+            ☰
+          </button>
+        )}
         <button onClick={() => setActiveTab('community')} style={navBtnStyle(activeTab === 'community', C.purple)}>
           <span>🚉</span> {!isMobile && "THE STATION"}
         </button>
-        {isAdmin && (
-          <button onClick={() => setEditTarget('new')} style={navBtnStyle(false, C.gold)}>
-            <span>📡</span> {!isMobile && "LOG SIGNAL"}
-          </button>
         )}
       </div>
 
@@ -7061,9 +7130,11 @@ async function handleDelete(id) {
     {/* TIER 3: RE-MASTERED HERO STATS (Neon Outlines) */}
     <div style={{ 
         display: 'grid', 
+        // 🟢 FIX: Allow rows to expand on mobile
         gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr) 1.2fr', 
-        height: isMobile ? '80px' : '110px', 
-        gap: '10px', 
+        height: 'auto', // 🟢 Changed from fixed height
+        minHeight: isMobile ? '160px' : '110px', 
+        gap: '8px', 
         padding: '10px',
         background: '#000' 
     }}>
