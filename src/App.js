@@ -1486,15 +1486,16 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
   );
 };
 // ─── MAIN ARTIFACT SPOTLIGHT COMPONENT (STABILIZED & RANDOMIZED EDITION) ────────────
+// ─── MAIN ARTIFACT SPOTLIGHT COMPONENT (STABILIZED & RANDOMIZED EDITION) ────────────
 function ArtifactSpotlight({ concerts, onVault }) {
-  // 🟢 FIX: Initialize with random indexes so it's not the same show every load
-  const [leftIdx, setLeftIdx] = useState(() => Math.floor(Math.random() * 5));
-  const [rightIdx, setRightIdx] = useState(() => Math.floor(Math.random() * 5) + 1);
+  // 🟢 FIX: Wrapped in extra parentheses to satisfy the Vercel/ESLint parser
+  const [leftIdx, setLeftIdx] = useState(() => (Math.floor(Math.random() * 5)));
+  const [rightIdx, setRightIdx] = useState(() => (Math.floor(Math.random() * 5) + 1));
   
   const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff']; [cite: 231]
 
   const columns = useMemo(() => {
-    if (!concerts || !concerts.length) return [];
+    if (!concerts || !concerts.length) return []; [cite: 231]
     
     const artifacts = [];
     
