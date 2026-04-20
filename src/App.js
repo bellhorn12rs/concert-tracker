@@ -1485,37 +1485,36 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
     </div>
   );
 };
-// ─── MAIN ARTIFACT SPOTLIGHT COMPONENT (STABILIZED & RANDOMIZED EDITION) ────────────
-// ─── MAIN ARTIFACT SPOTLIGHT COMPONENT (STABILIZED & RANDOMIZED EDITION) ────────────
+// ─── MAIN ARTIFACT SPOTLIGHT COMPONENT (SMART GROUPING EDITION) ────────────
 function ArtifactSpotlight({ concerts, onVault }) {
-  // 🟢 FIX: Wrapped in extra parentheses to satisfy the Vercel/ESLint parser
-  const [leftIdx, setLeftIdx] = useState(() => (Math.floor(Math.random() * 5)));
-  const [rightIdx, setRightIdx] = useState(() => (Math.floor(Math.random() * 5) + 1));
+  const [leftIdx, setLeftIdx] = useState(0);
+  const [rightIdx, setRightIdx] = useState(1);
   
-  const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff']; [cite: 231]
+  const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
 
   const columns = useMemo(() => {
-    if (!concerts || !concerts.length) return []; [cite: 231]
+    if (!concerts || !concerts.length) return [];
     
     const artifacts = [];
     
     // 1. Extract all artifacts
     concerts.forEach(c => {
-      // Use existing getBandName helper if available, or fallback to standard logic
-      const headliner = (typeof getBandName === 'function' ? getBandName(c.bands?.[0]) : c.bands?.[0]) || c.artist || 'UNKNOWN ARTIST'; [cite: 9, 10]
-      const venue = c.is_festival ? c.festival_name : c.venue; [cite: 233]
+      const headliner = getBandName(c.bands?.[0]) || c.artist || 'UNKNOWN ARTIST';
+      const venue = c.is_festival ? c.festival_name : c.venue;
       
-      const setlistBands = c.has_setlist_names ? c.has_setlist_names.split(',').map(b => b.trim()) : []; [cite: 232]
+      // 🟢 THE FIX: Grab the specific setlist names array from the database
+      const setlistBands = c.has_setlist_names ? c.has_setlist_names.split(',').map(b => b.trim()) : [];
 
       const extract = (urlStr, type, label) => {
         if (!urlStr) return;
         urlStr.split(',').map(u => u.trim()).filter(Boolean).forEach((url, i) => {
           
+          // 🟢 THE FIX: Map the image index to the correct band name
           let specificBand = headliner;
           if (type === 'SETLIST') {
-            specificBand = setlistBands[i] || headliner; 
+            specificBand = setlistBands[i] || headliner; // Match Image 2 to Band 2
           } else if (c.is_festival && type !== 'SETLIST') {
-            specificBand = c.festival_name || headliner; 
+            specificBand = c.festival_name || headliner; // Posters/Tickets get the Fest Name
           }
 
           artifacts.push({
@@ -1524,7 +1523,7 @@ function ArtifactSpotlight({ concerts, onVault }) {
             rotation: url.includes('#rot=') ? parseInt(url.split('#rot=')[1], 10) : 0,
             type, 
             label, 
-            band: specificBand,
+            band: specificBand, // Using the accurately mapped band
             venue, 
             date: c.date
           });
@@ -1538,10 +1537,10 @@ function ArtifactSpotlight({ concerts, onVault }) {
 
     if (!artifacts.length) return [];
     
-    // 2. Sort EVERYTHING by date descending
+    // 2. Sort EVERYTHING by date descending (newest first)
     artifacts.sort((a, b) => b.date.localeCompare(a.date));
 
-    // 3. Separate into "Talls" and "Shorts"
+    // 3. Separate into "Talls" (Setlists/Posters) and "Shorts" (Tickets)
     const talls = artifacts.filter(a => a.type !== 'TICKET');
     const shorts = artifacts.filter(a => a.type === 'TICKET');
 
@@ -1550,8 +1549,10 @@ function ArtifactSpotlight({ concerts, onVault }) {
     // 4. Smart Grouping: Pair tickets together
     for (let i = 0; i < shorts.length; i += 2) {
       if (shorts[i+1]) {
+        // Full stack of 2 tickets
         cols.push({ id: `col-s-${i}`, items: [shorts[i], shorts[i+1]], newestDate: shorts[i].date });
       } else {
+        // Odd ticket out, sits alone
         cols.push({ id: `col-s-${i}`, items: [shorts[i]], newestDate: shorts[i].date });
       }
     }
@@ -1561,18 +1562,17 @@ function ArtifactSpotlight({ concerts, onVault }) {
       cols.push({ id: `col-t-${i}`, items: [t], newestDate: t.date });
     });
 
-    // 6. Sort by newest date
+    // 6. Sort the completed columns by the newest item inside them
     cols.sort((a, b) => b.newestDate.localeCompare(a.newestDate));
 
-    // 🟢 FIX: Keep absolute newest column first to maintain "Recent" feel, 
-    // but shuffle the rest of the pool for variety.
+    // Keep the absolute newest column first, shuffle the rest
     const newestCol = cols[0];
     const pool = cols.slice(1).sort(() => 0.5 - Math.random());
     
-    return [newestCol, ...pool].slice(0, 20); // Expanded pool for better rotation
+    return [newestCol, ...pool].slice(0, 10); 
   }, [concerts]);
 
-  // Flip Timer Logic (Preserved exactly as requested)
+  // Flip Timer Logic
   useEffect(() => {
     if (columns.length < 2) return;
     let timer;
@@ -1592,21 +1592,21 @@ function ArtifactSpotlight({ concerts, onVault }) {
   }, [columns.length]);
 
   if (!columns.length) return (
-    <div 
-      onClick={() => setEditTarget && setEditTarget('new')}
-      style={{ 
-        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', 
-        justifyContent: 'center', color: C.teal, textAlign: 'center', cursor: 'pointer',
-        padding: '20px', border: `1px dashed ${C.teal}44`, borderRadius: '12px'
-      }}
-    >
-       <div style={{ fontSize: '2.5rem', marginBottom: 15, filter: 'grayscale(1) opacity(0.5)' }}>🎟️</div>
-       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', letterSpacing: 2 }}>CURATE YOUR FIRST EXHIBIT</div>
-       <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, marginTop: 5 }}>
-         UPLOAD A STUB OR SETLIST TO START <br/> YOUR PHYSICAL ARCHIVE
-       </div>
-    </div>
-  );
+  <div 
+    onClick={() => setEditTarget('new')}
+    style={{ 
+      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', 
+      justifyContent: 'center', color: C.teal, textAlign: 'center', cursor: 'pointer',
+      padding: '20px', border: `1px dashed ${C.teal}44`, borderRadius: '12px'
+    }}
+  >
+     <div style={{ fontSize: '2.5rem', marginBottom: 15, filter: 'grayscale(1) opacity(0.5)' }}>🎟️</div>
+     <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', letterSpacing: 2 }}>CURATE YOUR FIRST EXHIBIT</div>
+     <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, marginTop: 5 }}>
+       UPLOAD A STUB OR SETLIST TO START <br/> YOUR PHYSICAL ARCHIVE
+     </div>
+  </div>
+);
 
   const leftCol = columns[leftIdx % columns.length];
   const rightCol = columns[rightIdx % columns.length];
@@ -1622,16 +1622,16 @@ function ArtifactSpotlight({ concerts, onVault }) {
       }}>
         {/* LEFT COLUMN */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {leftCol?.items.map((item) => (
-             <SpotlightScrap key={`L-${item.id}`} data={item} isTop={true} TAPE_COLORS={TAPE_COLORS} />
+          {leftCol?.items.map((item, idx) => (
+             <SpotlightScrap key={`L-${item.id}`} data={item} isTop={idx === 0} TAPE_COLORS={TAPE_COLORS} />
           ))}
         </div>
 
         {/* RIGHT COLUMN */}
         {columns.length > 1 && (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {rightCol?.items.map((item) => (
-               <SpotlightScrap key={`R-${item.id}`} data={item} isTop={false} TAPE_COLORS={TAPE_COLORS} />
+            {rightCol?.items.map((item, idx) => (
+               <SpotlightScrap key={`R-${item.id}`} data={item} isTop={idx === 0} TAPE_COLORS={TAPE_COLORS} />
             ))}
           </div>
         )}
