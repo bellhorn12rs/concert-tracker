@@ -593,9 +593,14 @@ export default function LandingPage({
     INITIALIZE ARCHIVE
   </button>
   <button
-    onClick={() => {
-  if (currentSession) window.location.href = 'https://concert-tracker-eight.vercel.app';
-  else setMode('login');
+  onClick={() => {
+    if (currentSession) {
+      // 🟢 If logged in, just walk through the door
+      onEnterArchive(); 
+    } else {
+      // 🔴 If not logged in, show the login/signup modal
+      setShowLogin(true); 
+    }
 }}
     style={{
       background: 'transparent',
