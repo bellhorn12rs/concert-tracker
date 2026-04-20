@@ -7171,7 +7171,7 @@ async function handleDelete(id) {
         background: hexToRgba(C.teal, 0.05), border: `2px solid ${C.teal}`, borderRadius: '8px',
         display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', 
         padding: '6px', gap: '6px', cursor: 'pointer', boxShadow: `inset 0 0 15px ${hexToRgba(C.teal, 0.2)}`,
-        // 🟢 Span all 3 columns on mobile
+        // 🟢Span all 3 columns on mobile
         gridColumn: isMobile ? 'span 3' : 'span 1',
         minHeight: isMobile ? '60px' : '90px'
     }} onClick={() => setActiveTab('vault')}>
