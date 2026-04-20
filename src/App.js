@@ -7079,13 +7079,7 @@ async function handleDelete(id) {
     borderBottom: `1px solid ${C.border}`,
     flexShrink: 0 
 }}>
-    {/* TIER 1: THE LIVE TICKER (System Pulse) */}
-    <div style={{ 
-        height: '24px', background: '#000', borderBottom: `1px solid ${hexToRgba(C.teal, 0.2)}`,
-        display: 'flex', alignItems: 'center', overflow: 'hidden' 
-    }}>
-        <LiveTicker upcoming={upcoming} />
-    </div>
+    
 
     {/* TIER 2: THE TERMINAL (Navigation & Rank) */}
     <div style={{ 
