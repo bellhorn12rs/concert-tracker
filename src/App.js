@@ -4667,7 +4667,7 @@ function CommunityTab({ onEnterMuseum }) {
     async function fetchCurators() {
       const { data } = await supabase
         .from('profiles')
-        .select('username, avatar_color, last_seen, last_artist, last_venue, total_shows, total_sets, total_venues')
+        .select('id, username, avatar_color, last_seen, last_artist, last_venue, total_shows, total_sets, total_venues')
         .order('last_seen', { ascending: false });
       if (data) setCurators(data);
       setLoading(false);
@@ -6124,6 +6124,7 @@ const QuadStat = ({ val, label, color }) => (
 export default function App() {
   // ── 1. AUTH & SYSTEM STATE ──
   const [session, setSession] = useState(null);
+  const [viewedUserId, setViewedUserId] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
   const [onLanding, setOnLanding] = useState(true);
   const [themeId, setThemeIdRaw] = useState(() => localStorage.getItem('concert-theme') || 'neon-noir');
