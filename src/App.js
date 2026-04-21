@@ -7813,6 +7813,7 @@ async function fetchPosters() {
     .select('*')
     .eq('user_id', targetId)
     .order('date', { ascending: false });
+  console.log('POSTERS FETCHED:', data);
   if (data) setPosters(data);
 }
 
