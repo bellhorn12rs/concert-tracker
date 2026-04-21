@@ -6395,7 +6395,24 @@ function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
       }
       // Real wristbands
       if (c.wristband_image_url) {
-        c.wristband_image_url.split(',').map(u => u.trim()).filter(Boolean).forEach((url, i) => {
+  c.wristband_image_url.split(',').map(u => u.trim()).filter(Boolean).forEach((url, i) => {
+    // Skip if we already have this exact wristband URL in the pile
+    if (pile.some(p => p.url === url)) return;
+    pile.push({
+      id: `wrist-${c.id}-${i}`,
+      url,
+      type: 'wristband',
+      artist: c.festival_name || getBandName(c.bands?.[0]) || 'Unknown',
+      date: c.date,
+      venue: c.venue || c.festival_name,
+      city: c.city,
+      state: c.state,
+      is_festival: true,
+      festival_name: c.festival_name,
+      concertId: c.id
+    });
+  });
+}
           pile.push({
             id: `wrist-${c.id}-${i}`,
             url,
@@ -6603,7 +6620,7 @@ function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
     display: 'block',
     width: item.type === 'wristband' ? '220px' : '160px',
 height: item.type === 'wristband' ? 'auto' : '80px',
-objectFit: 'cover',
+objectFit: 'contain',
     borderRadius: 2,
     boxShadow: '0 8px 30px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5)',
     border: '1px solid rgba(255,255,255,0.08)',
