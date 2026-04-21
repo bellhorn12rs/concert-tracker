@@ -6360,6 +6360,546 @@ const QuadStat = ({ val, label, color }) => (
   </div>
 );
 
+// ─── POSTER WALL TAB ──────────────────────────────────────────────────────────
+function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
+  const [selected, setSelected] = useState(null);
+  const [yearFilter, setYearFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [showUpload, setShowUpload] = useState(false);
+  const [layout, setLayout] = useState([]);
+
+  const years = useMemo(() => {
+    const ySet = new Set(posters.map(p => getYear(p.date)).filter(Boolean));
+    return [...ySet].sort((a, b) => b - a);
+  }, [posters]);
+
+  const filtered = useMemo(() => {
+    let list = [...posters];
+    if (yearFilter !== 'all') list = list.filter(p => String(getYear(p.date)) === yearFilter);
+    if (typeFilter !== 'all') list = list.filter(p => p.poster_type === typeFilter);
+    return list;
+  }, [posters, yearFilter, typeFilter]);
+
+  // Assign random wall physics on filter change
+  useEffect(() => {
+    setLayout(filtered.map((p, i) => ({
+      ...p,
+      rotation: (Math.random() * 8) - 4,
+      // Vary sizes: every 5th poster is hero sized
+      isHero: i % 7 === 0,
+      col: i % 4,
+    })));
+  }, [filtered]);
+
+  const filterBtnStyle = (active, color = C.teal) => ({
+    background: active ? color : 'transparent',
+    border: `1px solid ${active ? color : C.border}`,
+    color: active ? '#000' : C.gray,
+    fontFamily: "'Space Mono'",
+    fontSize: 9,
+    padding: '5px 12px',
+    borderRadius: 4,
+    cursor: 'pointer',
+    fontWeight: active ? 900 : 400,
+    transition: 'all 0.15s'
+  });
+
+  const getLabel = (p) => {
+    if (p.poster_type === 'festival_year') return p.festival_name;
+    if (p.poster_type === 'festival_day') return p.festival_day || p.festival_name;
+    return p.artist;
+  };
+
+  return (
+    <div style={{ position: 'relative', minHeight: '100vh', background: '#0a0806' }}>
+      <style>{`
+        @keyframes posterDrop {
+          0% { opacity: 0; transform: translateY(-40px) rotate(var(--rot)); }
+          70% { opacity: 1; transform: translateY(4px) rotate(var(--rot)); }
+          100% { opacity: 1; transform: translateY(0) rotate(var(--rot)); }
+        }
+        @keyframes wallPulse {
+          0%, 100% { opacity: 0.6; }
+          50% { opacity: 1; }
+        }
+      `}</style>
+
+      {/* WALL TEXTURE BACKGROUND */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+        {/* Base concrete */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: '#0a0806',
+          backgroundImage: `
+            repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.01) 2px, rgba(255,255,255,0.01) 4px),
+            repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.008) 40px, rgba(255,255,255,0.008) 41px)
+          `,
+        }} />
+        {/* Ambient glow top */}
+        <div style={{
+          position: 'absolute', top: 0, left: '20%', right: '20%', height: '30%',
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(255,100,50,0.06) 0%, transparent 70%)',
+        }} />
+        {/* Ambient glow bottom */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: '40%',
+          background: 'radial-gradient(ellipse at 50% 100%, rgba(255,60,100,0.08) 0%, transparent 60%)',
+          animation: 'wallPulse 6s ease-in-out infinite'
+        }} />
+        {/* Vignette */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.6) 100%)',
+        }} />
+      </div>
+
+      {/* HEADER */}
+      <div style={{ position: 'relative', zIndex: 10, padding: '30px 40px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20, marginBottom: 25 }}>
+          <div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#ff6699', letterSpacing: 4, marginBottom: 6 }}>
+              POSTER ARCHIVE // {filtered.length} ON THE WALL
+            </div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3.5rem', color: C.white, lineHeight: 0.9, letterSpacing: 2 }}>
+              POSTER <span style={{ color: '#ff6699' }}>WALL</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            {/* Year filters */}
+            <button style={filterBtnStyle(yearFilter === 'all', '#ff6699')} onClick={() => setYearFilter('all')}>ALL</button>
+            {years.map(y => (
+              <button key={y} style={filterBtnStyle(String(yearFilter) === String(y), '#ff6699')} onClick={() => setYearFilter(String(y))}>{y}</button>
+            ))}
+            <div style={{ width: 1, height: 20, background: C.border }} />
+            {/* Type filters */}
+            <button style={filterBtnStyle(typeFilter === 'all')} onClick={() => setTypeFilter('all')}>ALL TYPES</button>
+            <button style={filterBtnStyle(typeFilter === 'artist')} onClick={() => setTypeFilter('artist')}>ARTIST</button>
+            <button style={filterBtnStyle(typeFilter === 'festival_day')} onClick={() => setTypeFilter('festival_day')}>FEST DAY</button>
+            <button style={filterBtnStyle(typeFilter === 'festival_year')} onClick={() => setTypeFilter('festival_year')}>FEST YEAR</button>
+            {isAdmin && (
+              <button
+                onClick={() => setShowUpload(true)}
+                style={{
+                  background: '#ff6699', border: 'none', color: '#000',
+                  fontFamily: "'Bebas Neue'", fontSize: '1rem', letterSpacing: 1,
+                  padding: '6px 16px', borderRadius: 4, cursor: 'pointer', fontWeight: 900
+                }}
+              >
+                + POSTER
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* THE WALL */}
+      <div style={{
+        position: 'relative', zIndex: 5,
+        columnCount: 4,
+        columnGap: '20px',
+        padding: '0 40px 80px',
+      }}>
+        {layout.map((poster, idx) => (
+          <div
+            key={poster.id}
+            onClick={() => setSelected(poster)}
+            style={{
+              display: 'inline-block',
+              width: '100%',
+              marginBottom: '20px',
+              breakInside: 'avoid',
+              '--rot': `${poster.rotation}deg`,
+              transform: `rotate(${poster.rotation}deg)`,
+              animation: `posterDrop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) ${idx * 0.05}s both`,
+              cursor: 'zoom-in',
+              position: 'relative',
+              transition: 'transform 0.3s ease, z-index 0s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = `rotate(0deg) scale(1.04) translateY(-6px)`;
+              e.currentTarget.style.zIndex = 100;
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = `rotate(${poster.rotation}deg)`;
+              e.currentTarget.style.zIndex = 'auto';
+            }}
+          >
+            {/* STAPLES */}
+            <div style={{ position: 'absolute', top: 6, left: 12, width: 14, height: 6, background: '#888', borderRadius: 1, zIndex: 10, boxShadow: '0 1px 3px rgba(0,0,0,0.8)' }} />
+            <div style={{ position: 'absolute', top: 6, right: 12, width: 14, height: 6, background: '#888', borderRadius: 1, zIndex: 10, boxShadow: '0 1px 3px rgba(0,0,0,0.8)' }} />
+
+            {/* POSTER IMAGE */}
+            <img
+              src={poster.image_url}
+              alt={getLabel(poster)}
+              style={{
+                display: 'block',
+                width: '100%',
+                height: 'auto',
+                boxShadow: '0 15px 40px rgba(0,0,0,0.8), 0 4px 10px rgba(0,0,0,0.6)',
+              }}
+            />
+
+            {/* BOTTOM LABEL */}
+            <div style={{
+              background: 'rgba(0,0,0,0.85)',
+              padding: '8px 10px',
+              backdropFilter: 'blur(4px)',
+            }}>
+              <div style={{
+                fontFamily: "'Space Mono'",
+                fontSize: 8,
+                color: '#ff6699',
+                letterSpacing: 1,
+                textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}>
+                {getLabel(poster)}
+              </div>
+              <div style={{
+                fontFamily: "'Space Mono'",
+                fontSize: 7,
+                color: '#555',
+                marginTop: 2,
+              }}>
+                {fmtDateShort(poster.date)}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* GHOST SLOTS — wall waiting to be filled */}
+        {layout.length < 8 && Array.from({ length: 8 - layout.length }).map((_, i) => (
+          <div key={`ghost-${i}`} style={{
+            display: 'inline-block',
+            width: '100%',
+            marginBottom: '20px',
+            breakInside: 'avoid',
+            aspectRatio: '2/3',
+            border: `1px dashed ${hexToRgba('#ff6699', 0.15)}`,
+            background: hexToRgba('#ff6699', 0.02),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: hexToRgba('#ff6699', 0.2), letterSpacing: 2 }}>
+              AWAITING
+            </div>
+          </div>
+        ))}
+
+        {posters.length === 0 && (
+          <div style={{ columnSpan: 'all', padding: '100px 0', textAlign: 'center', color: C.grayDim }}>
+            <div style={{ fontSize: '3rem', marginBottom: 20 }}>🎨</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', letterSpacing: 3, color: C.white }}>WALL IS BARE</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, marginTop: 10 }}>START UPLOADING YOUR POSTER COLLECTION</div>
+          </div>
+        )}
+      </div>
+
+      {/* LIGHTBOX */}
+      {selected && (
+        <div
+          onClick={() => setSelected(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 20000,
+            background: 'rgba(0,0,0,0.95)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'zoom-out', padding: 40,
+            animation: 'fade-in-kf 0.2s ease both'
+          }}
+        >
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
+            maxWidth: '90vw'
+          }}>
+            <img
+              src={selected.image_url}
+              alt={getLabel(selected)}
+              style={{
+                maxWidth: '70vw',
+                maxHeight: '75vh',
+                objectFit: 'contain',
+                boxShadow: '0 40px 100px rgba(0,0,0,1)',
+              }}
+            />
+            <div style={{
+              background: 'rgba(0,0,0,0.8)',
+              border: `1px solid ${hexToRgba('#ff6699', 0.4)}`,
+              borderRadius: 6,
+              padding: '14px 28px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, letterSpacing: 2, lineHeight: 1 }}>
+                {getLabel(selected)?.toUpperCase()}
+              </div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#ff6699', marginTop: 5, letterSpacing: 2 }}>
+                {fmtDateShort(selected.date)}
+                {selected.venue ? ` · ${selected.venue.toUpperCase()}` : ''}
+              </div>
+              {selected.city && (
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 3 }}>
+                  {selected.city.toUpperCase()}{selected.state ? `, ${selected.state}` : ''}
+                </div>
+              )}
+            </div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2 }}>
+              CLICK ANYWHERE TO CLOSE
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* UPLOAD MODAL */}
+      {showUpload && isAdmin && (
+        <PosterUploadModal
+          concerts={concerts}
+          onClose={() => setShowUpload(false)}
+          onSaved={() => { setShowUpload(false); onRefresh(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── POSTER UPLOAD MODAL ──────────────────────────────────────────────────────
+function PosterUploadModal({ concerts, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    poster_type: 'artist',
+    artist: '',
+    festival_name: '',
+    festival_day: '',
+    date: '',
+    venue: '',
+    city: '',
+    state: '',
+    concert_id: '',
+  });
+  const [imageUrl, setImageUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  // Auto-fill from concert selection
+  const handleConcertSelect = (concertId) => {
+    set('concert_id', concertId);
+    if (!concertId) return;
+    const c = concerts.find(c => c.id === concertId);
+    if (!c) return;
+    set('date', c.date || '');
+    set('venue', c.venue || '');
+    set('city', c.city || '');
+    set('state', c.state || '');
+    set('festival_name', c.festival_name || '');
+    set('festival_day', c.festival_day || '');
+    if (c.is_festival) {
+      set('poster_type', 'festival_day');
+    } else {
+      set('artist', getBandName(c.bands?.[0]) || '');
+      set('poster_type', 'artist');
+    }
+  };
+
+  const handleUpload = async (file) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const filePath = `${session?.user?.id}/${fileName}`;
+      const { error } = await supabase.storage.from('Posters').upload(filePath, file);
+      if (error) throw error;
+      const { data } = supabase.storage.from('Posters').getPublicUrl(filePath);
+      setImageUrl(data.publicUrl);
+    } catch (err) {
+      alert('Upload failed: ' + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!imageUrl) return alert('Please upload an image first');
+    if (!form.date) return alert('Date is required');
+    setSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { error } = await supabase.from('posters').insert([{
+        ...form,
+        image_url: imageUrl,
+        user_id: session?.user?.id,
+        is_public: true,
+      }]);
+      if (error) throw error;
+      onSaved();
+    } catch (err) {
+      alert('Save failed: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputSt = {
+    width: '100%', background: '#000', border: '1px solid #333',
+    color: '#fff', padding: '10px', borderRadius: 6,
+    fontFamily: "'Space Mono'", fontSize: 11, outline: 'none',
+    marginBottom: 10, boxSizing: 'border-box'
+  };
+  const labelSt = {
+    fontFamily: "'Space Mono'", fontSize: 8, color: '#ff6699',
+    letterSpacing: 1, display: 'block', marginBottom: 4
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)',
+      zIndex: 20001, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      backdropFilter: 'blur(10px)', padding: 20
+    }}>
+      <div style={{
+        background: '#0a0a0c', border: '1px solid #ff6699',
+        borderRadius: 16, padding: 35, width: '100%', maxWidth: 600,
+        maxHeight: '90vh', overflowY: 'auto',
+        boxShadow: `0 0 60px ${hexToRgba('#ff6699', 0.2)}`
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#ff6699', letterSpacing: 2 }}>
+            ADD POSTER
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+        </div>
+
+        {/* LINK TO SHOW */}
+        <label style={labelSt}>LINK TO A SHOW (OPTIONAL BUT RECOMMENDED)</label>
+        <select style={inputSt} value={form.concert_id} onChange={e => handleConcertSelect(e.target.value)}>
+          <option value="">— Select a show to auto-fill —</option>
+          {[...concerts].sort((a, b) => b.date.localeCompare(a.date)).map(c => {
+            const label = `${c.date} · ${getBandName(c.bands?.[0]) || c.festival_name || 'Unknown'}`;
+            return <option key={c.id} value={c.id}>{label}</option>;
+          })}
+        </select>
+
+        {/* POSTER TYPE */}
+        <label style={labelSt}>POSTER TYPE</label>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 15 }}>
+          {['artist', 'festival_day', 'festival_year'].map(t => (
+            <button
+              key={t}
+              onClick={() => set('poster_type', t)}
+              style={{
+                flex: 1, padding: '8px', borderRadius: 4, cursor: 'pointer',
+                fontFamily: "'Space Mono'", fontSize: 8, textTransform: 'uppercase',
+                background: form.poster_type === t ? '#ff6699' : 'transparent',
+                border: `1px solid ${form.poster_type === t ? '#ff6699' : '#333'}`,
+                color: form.poster_type === t ? '#000' : '#666',
+              }}
+            >
+              {t.replace('_', ' ')}
+            </button>
+          ))}
+        </div>
+
+        {/* CONDITIONAL FIELDS */}
+        {form.poster_type === 'artist' && (
+          <>
+            <label style={labelSt}>ARTIST</label>
+            <input style={inputSt} value={form.artist} onChange={e => set('artist', e.target.value)} placeholder="e.g. Ween" />
+          </>
+        )}
+        {(form.poster_type === 'festival_day' || form.poster_type === 'festival_year') && (
+          <>
+            <label style={labelSt}>FESTIVAL NAME</label>
+            <input style={inputSt} value={form.festival_name} onChange={e => set('festival_name', e.target.value)} placeholder="e.g. Bonnaroo" />
+          </>
+        )}
+        {form.poster_type === 'festival_day' && (
+          <>
+            <label style={labelSt}>FESTIVAL DAY / LABEL</label>
+            <input style={inputSt} value={form.festival_day} onChange={e => set('festival_day', e.target.value)} placeholder="e.g. Friday" />
+          </>
+        )}
+
+        {/* DATE + VENUE */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={labelSt}>DATE</label>
+            <input type="date" style={{ ...inputSt, colorScheme: 'dark' }} value={form.date} onChange={e => set('date', e.target.value)} />
+          </div>
+          <div>
+            <label style={labelSt}>VENUE</label>
+            <input style={inputSt} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="e.g. Red Rocks" />
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
+          <div>
+            <label style={labelSt}>CITY</label>
+            <input style={inputSt} value={form.city} onChange={e => set('city', e.target.value)} placeholder="City" />
+          </div>
+          <div>
+            <label style={labelSt}>STATE</label>
+            <input style={inputSt} value={form.state} onChange={e => set('state', e.target.value)} placeholder="ST" maxLength={2} />
+          </div>
+        </div>
+
+        {/* IMAGE UPLOAD */}
+        <label style={labelSt}>POSTER IMAGE</label>
+        <div
+          onClick={() => document.getElementById('poster-upload-input').click()}
+          style={{
+            width: '100%', padding: '20px', borderRadius: 8, cursor: 'pointer',
+            border: `2px dashed ${imageUrl ? '#ff6699' : '#333'}`,
+            background: imageUrl ? hexToRgba('#ff6699', 0.05) : '#000',
+            textAlign: 'center', marginBottom: 15,
+            transition: 'all 0.2s'
+          }}
+        >
+          {uploading ? (
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: '#ff6699' }}>UPLOADING...</div>
+          ) : imageUrl ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+              <img src={imageUrl} alt="preview" style={{ maxHeight: 200, maxWidth: '100%', objectFit: 'contain' }} />
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#ff6699' }}>✅ UPLOADED — CLICK TO REPLACE</div>
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontSize: '2rem', marginBottom: 8 }}>🎨</div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#555' }}>CLICK TO UPLOAD POSTER IMAGE</div>
+            </div>
+          )}
+          <input
+            id="poster-upload-input"
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={e => handleUpload(e.target.files[0])}
+          />
+        </div>
+
+        {/* SAVE */}
+        <button
+          onClick={handleSave}
+          disabled={saving || uploading || !imageUrl}
+          style={{
+            width: '100%', padding: '16px', background: saving || !imageUrl ? '#222' : '#ff6699',
+            border: 'none', color: saving || !imageUrl ? '#555' : '#000',
+            borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.5rem',
+            cursor: saving || !imageUrl ? 'not-allowed' : 'pointer', letterSpacing: 2
+          }}
+        >
+          {saving ? 'SAVING...' : 'PIN TO WALL'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
 // ─── STUB CASE TAB ────────────────────────────────────────────────────────────
 function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
   const [selected, setSelected] = useState(null);
