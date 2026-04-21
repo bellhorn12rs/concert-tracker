@@ -3921,10 +3921,14 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
   const primaryColor = clusterColor || C.teal;
   
   // 🛰️ DATA SCAVENGING
-  const finalSetlists = (event.setlist_image_url || "").split(',').map(u => u.trim()).filter(Boolean);
-  const finalPhotos = (event.personal_photo_url || "").split(',').map(u => u.trim()).filter(Boolean);
-  const bands = Array.isArray(event.bands) ? event.bands : [event.artist].filter(Boolean);
-  const headlinerName = (getBandName(bands[0]) || "LIVE").toUpperCase();
+const finalSetlists = (event.setlist_image_url || "").split(',').map(u => u.trim()).filter(Boolean);
+const finalPhotos = (event.personal_photo_url || "").split(',').map(u => u.trim()).filter(Boolean);
+const finalPosters = [
+  ...(event.festival_poster_url || '').split(',').map(u => u.trim()).filter(Boolean).map(url => ({ url, artist: getBandName(event.bands?.[0]) || event.festival_name, date: event.date })),
+  ...(event.matchedPosters || []).map(p => ({ url: p.image_url, artist: p.artist || p.festival_name, date: p.date }))
+];
+const bands = Array.isArray(event.bands) ? event.bands : [event.artist].filter(Boolean);
+const headlinerName = (getBandName(bands[0]) || "LIVE").toUpperCase();
 
   // 🟢 SELF-CONTAINED CLONE LOGIC
   // This grabs the active session and duplicates the event into Tara's DB
@@ -4070,16 +4074,16 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
         {finalSetlists.map((url, sIdx) => (
           <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={finalSetlists.length} />
         ))}
-        {((event.festival_poster_url || '').split(',').map(u => u.trim()).filter(Boolean)).map((url, pIdx) => (
+        {finalPosters.map((poster, pIdx) => (
           <GigPoster
             key={`${event.id}-poster-${pIdx}`}
-            src={url}
-            artist={getBandName(event.bands?.[0]) || event.festival_name}
-            date={event.date}
+            src={poster.url}
+            artist={poster.artist}
+            date={poster.date}
             index={pIdx}
           />
         ))}
-        <div style={{ marginLeft: (finalSetlists.length > 0 || event.festival_poster_url) ? '-20px' : '0', display: 'flex' }}>
+        <div style={{ marginLeft: (finalSetlists.length > 0 || finalPosters.length > 0) ? '-20px' : '0', display: 'flex' }}>
           {finalPhotos.map((url, pIdx) => (
             <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
           ))}
@@ -7592,7 +7596,25 @@ const getCuratorTitle = (stats, concerts) => {
     return Object.values(m).sort((a, b) => b.shows.length - a.shows.length);
   }, [allSetsList, applyFilters]);
 
-  const dayGroups = useMemo(() => applyFilters(concerts) || [], [concerts, applyFilters]);
+  const dayGroups = useMemo(() => {
+  const filtered = applyFilters(concerts) || [];
+  return filtered.map(concert => ({
+    ...concert,
+    matchedPosters: posters.filter(p => {
+      if (p.poster_type === 'artist') {
+        return p.date === concert.date;
+      }
+      if (p.poster_type === 'festival_day') {
+        return p.date === concert.date && p.festival_name === concert.festival_name;
+      }
+      if (p.poster_type === 'festival_year') {
+        return p.festival_name === concert.festival_name && 
+               getYear(p.date) === getYear(concert.date);
+      }
+      return false;
+    })
+  }));
+}, [concerts, applyFilters, posters]);
 
   const headerStats = useMemo(() => ({
     // ── YOUR ORIGINAL LOGIC (UNTOUCHED) ──
@@ -8799,11 +8821,11 @@ async function handleDelete(id) {
   
   {activeTab === 'byDay' && (
   <ByDayTab 
-    dayGroups={dayGroups} 
-    onEdit={isAdmin ? setEditTarget : null} 
-    genreMap={artistGenres} 
-    isAdmin={isAdmin}
-  />
+  dayGroups={dayGroups} 
+  onEdit={isAdmin ? setEditTarget : null} 
+  genreMap={artistGenres} 
+  isAdmin={isAdmin}
+/>
 )}
   {/* 🟢 NEW PAPERTRAIL BLOCK GOES HERE */}
   {activeTab === 'papertrail' && (
