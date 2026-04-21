@@ -5887,50 +5887,46 @@ function ThemeSwitcher({ isMobile }) {
     </div>
   );
 }
-// ─── TAB CONFIG ───────────────────────────────────────────────────────────────
 const TAB_GROUPS = [
   {
-    header: "HEADLINER",
+    header: "YOUR ARCHIVE",
     tabs: [
       ['dashboard', '⚡ CENTER STAGE', '#00e5cc'],
-      ['timeline', '⏳ TIME MACHINE', '#00cfff'],
-    ]
-  },
-  {
-    header: "CHRONICLE",
-    tabs: [
       ['byDay', '📅 PAPER TRAIL', '#00e5cc'],
-      ['browse', '🔍 DIGGING', '#00cfff'],
+      ['timeline', '⏳ TIME MACHINE', '#00cfff'],
+      ['venues', '📍 STAGE DOOR', '#00cfff'],
     ]
   },
   {
-    header: "Festival Season",
+    header: "BROWSE",
+    tabs: [
+      ['browse', '🔍 DIGGING', '#00cfff'],
+      ['hof', '🏆 HEAVY ROTATION', '#9966ff'],
+    ]
+  },
+  {
+    header: "FESTIVAL SEASON",
     tabs: [
       ['passport', '🗺️ STAMP BOOK', '#ffcc00'],
       ['byFest', '🎪 BOX SETS', '#ffcc00'],
     ]
   },
   {
-    header: "ARCHIVE",
+    header: "COLLECTION",
     tabs: [
-      ['hof', '🏆 HEAVY ROTATION', '#9966ff'],
-      ['vault', '📋 ARTIFACTS', '#00cc88'],
+      ['vault', '📋 RELICS', '#00cc88'],
       ['photos', '📸 POLAROIDS', '#9966ff'],
-      ['venues', '📍 STAGE DOOR', '#00cfff'],
+      ['stubs', '🎟️ STUB CASE', '#ffcc00'],
+      ['posterwall', '🎨 POSTER WALL', '#ff6699'],
     ]
   },
   {
-    header: "Hitting the Road",
+    header: "COMMUNITY",
     tabs: [
-      ['community', '🚉 THE STATION', C.purple],
-    ]
-  }, // 🟢 Added missing comma here
-  {
-    header: "STUDIO",
-    tabs: [
+      ['community', '🚉 THE STATION', '#9966ff'],
       ['poster', '🎨 GIG POSTER', '#ff6699'],
     ]
-  }
+  },
 ];
 
 const RIGHT_TABS = [
@@ -7169,6 +7165,17 @@ async function handleDelete(id) {
         }}>
           <MarqueeStyles />
 
+{/* Mobile drawer backdrop */}
+{isMobile && !navCollapsed && (
+  <div 
+    onClick={() => setNavCollapsed(true)}
+    style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+      zIndex: 9999, backdropFilter: 'blur(4px)'
+    }}
+  />
+)}
+
           {/* ── VERTICAL SIDEBAR ── */}
           <aside style={{
             // 🟢 Always 280px wide when visible. No more 0px or 80px on mobile.
@@ -7316,22 +7323,145 @@ async function handleDelete(id) {
 </aside>
           <div style={{ flex: 1, height: '100%', overflowY: 'auto', overflowX: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', background: C.bg }}>
             
-    {/* ─── FIXED NAVIGATION (Tiers 1 & 2) ─── */}
+    {/* ─── FIXED NAVIGATION ─── */}
 <header style={{ 
-    background: '#050508', 
-    position: 'sticky', 
-    top: 0, 
-    zIndex: 10001, // Pinned above everything
-    display: 'flex', 
-    flexDirection: 'column', 
-    borderBottom: `1px solid ${C.border}`,
-    flexShrink: 0 
+  background: '#050508', 
+  position: 'sticky', 
+  top: 0, 
+  zIndex: 10001,
+  display: 'flex', 
+  flexDirection: 'column', 
+  borderBottom: `1px solid ${C.border}`,
+  flexShrink: 0 
 }}>
-    
+  {isMobile ? (
+    <>
+      {/* MOBILE HEADER BAR */}
+      <div style={{ 
+        height: '56px',
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        padding: '0 16px',
+        background: '#050508',
+        borderBottom: `1px solid ${C.border}`,
+      }}>
+        {/* Left: Hamburger */}
+        <button 
+          onClick={() => setNavCollapsed(false)}
+          style={{ 
+            background: 'none', border: 'none', color: C.teal, 
+            fontSize: '22px', cursor: 'pointer', padding: '4px 8px',
+            lineHeight: 1
+          }}
+        >
+          ☰
+        </button>
 
-    {/* TIER 2: THE TERMINAL (Navigation & Rank) */}
+        {/* Center: Logo */}
+        <img 
+          src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/Screenshot%202026-04-20%20at%209.13.55%20AM.png"
+          alt="TrackRecord"
+          style={{ height: '28px', objectFit: 'contain' }}
+        />
+
+        {/* Right: Station + Add Signal */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button 
+            onClick={() => { setActiveTab('community'); setNavCollapsed(true); }}
+            style={{ 
+              background: hexToRgba(C.purple, 0.15), 
+              border: `1px solid ${C.purple}`, 
+              color: C.purple, borderRadius: '4px',
+              padding: '5px 8px', fontSize: '14px', cursor: 'pointer',
+              lineHeight: 1
+            }}
+          >
+            🚉
+          </button>
+          {!viewingUser && (
+            <button 
+              onClick={() => setEditTarget('new')}
+              style={{ 
+                background: C.teal, border: 'none', color: '#000', 
+                borderRadius: '4px', padding: '5px 10px', 
+                fontFamily: "'Bebas Neue'", fontSize: '1.1rem',
+                cursor: 'pointer', fontWeight: 900, letterSpacing: 1
+              }}
+            >
+              + SIGNAL
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* MOBILE CURATOR TITLE */}
+      <div style={{ 
+        textAlign: 'center', 
+        padding: '8px 0 4px',
+        background: '#050508',
+      }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: C.teal, letterSpacing: '4px', opacity: 0.6 }}>
+          CURRENT CURATOR STATUS
+        </div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff', letterSpacing: '3px', lineHeight: 1, textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}` }}>
+          {getCuratorTitle(headerStats, concerts)}
+        </div>
+      </div>
+
+      {/* MOBILE STAT ROW 1 — ARTIFACT COUNTS */}
+      <div style={{ 
+        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', 
+        gap: '6px', padding: '6px 10px 3px',
+        background: '#000',
+      }}>
+        {[
+          { val: headerStats.tickets, lbl: 'TIX', col: C.gold, click: () => setActiveTab('stubs') },
+          { val: headerStats.setlists, lbl: 'LST', col: C.teal, click: () => setActiveTab('vault') },
+          { val: headerStats.posters, lbl: 'PST', col: C.purple, click: () => setActiveTab('posterwall') },
+          { val: headerStats.photos, lbl: 'PHO', col: C.cyan, click: () => setActiveTab('photos') },
+        ].map(s => (
+          <div key={s.lbl} onClick={s.click} style={{
+            background: hexToRgba(s.col, 0.05), border: `1.5px solid ${s.col}`,
+            borderRadius: '6px', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            minHeight: '52px', boxShadow: `inset 0 0 10px ${hexToRgba(s.col, 0.15)}`
+          }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: s.col, lineHeight: 1 }}>{s.val}</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: '#fff', opacity: 0.5, letterSpacing: '1px' }}>{s.lbl}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* MOBILE STAT ROW 2 — SHOW COUNTS */}
+      <div style={{ 
+        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', 
+        gap: '6px', padding: '3px 10px 8px',
+        background: '#000',
+        borderBottom: `1px solid ${C.border}`
+      }}>
+        {[
+          { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
+          { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); }},
+          { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); }},
+          { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
+        ].map(s => (
+          <div key={s.lbl} onClick={s.click} style={{
+            background: hexToRgba(s.col, 0.05), border: `1.5px solid ${s.col}`,
+            borderRadius: '6px', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            minHeight: '52px', boxShadow: `inset 0 0 10px ${hexToRgba(s.col, 0.15)}`
+          }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: s.col, lineHeight: 1 }}>{s.val}</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: '#fff', opacity: 0.5, letterSpacing: '1px' }}>{s.lbl}</div>
+          </div>
+        ))}
+      </div>
+    </>
+  ) : (
+    /* DESKTOP HEADER — unchanged */
     <div style={{ 
-      height: isMobile ? '50px' : '60px', 
+      height: '60px', 
       display: 'flex', 
       alignItems: 'center', 
       justifyContent: 'space-between',
@@ -7340,20 +7470,10 @@ async function handleDelete(id) {
       position: 'relative', 
       gap: 10
     }}>
-      {/* Left Controls */}
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
-        {isMobile && (
-          <button 
-            onClick={() => setNavCollapsed(false)}
-            style={{ background: 'none', border: `1px solid ${C.teal}`, color: C.teal, padding: '5px 8px', borderRadius: '4px', marginRight: '5px' }}
-          >
-            ☰
-          </button>
-        )}
         <button onClick={() => setActiveTab('community')} style={navBtnStyle(activeTab === 'community', C.purple)}>
-          <span>🚉</span> {!isMobile && "THE STATION"}
+          <span>🚉</span> THE STATION
         </button>
-
         {!viewingUser && (
           <button 
             onClick={() => setEditTarget('new')}
@@ -7363,90 +7483,79 @@ async function handleDelete(id) {
               display: 'flex', alignItems: 'center', gap: '5px'
             }}
           >
-            <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span> {!isMobile && "SIGNAL"}
+            <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span> SIGNAL
           </button>
         )}
       </div>
 
-      {/* 🎯 CENTERED CURATOR RANK */}
       <div style={{
         position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
-        width: isMobile ? '150px' : '300px', pointerEvents: 'none', zIndex: 1
+        width: '300px', pointerEvents: 'none', zIndex: 1
       }}>
         <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: C.teal, letterSpacing: '4px', opacity: 0.6, marginBottom: 2 }}>
           CURRENT CURATOR STATUS:
         </div>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.1rem' : '1.4rem', color: '#fff', letterSpacing: '3px', textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`, lineHeight: 1 }}>
-           {getCuratorTitle(headerStats, concerts)}
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSpacing: '3px', textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`, lineHeight: 1 }}>
+          {getCuratorTitle(headerStats, concerts)}
         </div>
       </div>
 
-      {/* Right Controls */}
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
         {!viewingUser && (
-          <button onClick={() => setActiveTab('office')} style={navBtnStyle(activeTab === 'office', C.teal)}>
-            <span>⚙️</span> {!isMobile && "THE OFFICE"}
+          <button onClick={() => setActiveTab('manage')} style={navBtnStyle(activeTab === 'manage', C.teal)}>
+            <span>⚙️</span> THE OFFICE
           </button>
         )}
-        <ThemeSwitcher isMobile={isMobile} />
+        <ThemeSwitcher isMobile={false} />
       </div>
     </div>
+  )}
 </header>
-{/* 🟢 NAVIGATION ENDS. Tiers 1 & 2 are now frozen at top. */}
 
-
-{/* ─── TIER 3: HERO STATS (SCROLLABLE ON MOBILE) ─── */}
-<div style={{ 
+{/* ─── DESKTOP ONLY: HERO STATS BAR ─── */}
+{!isMobile && (
+  <div style={{ 
     display: 'grid', 
-    // 🟢 7 columns for Desktop, 3 columns for Mobile
-    gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(7, 1fr)', 
+    gridTemplateColumns: 'repeat(7, 1fr)', 
     gap: '8px', 
     padding: '10px',
     background: '#000',
     borderBottom: `1px solid ${C.border}`
-}}>
+  }}>
     {[
       { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
       { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); } },
       { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); } },
       { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
-      // 🟢 SPLIT BOXES
       { val: totalFestAttendances, lbl: 'FESTS', col: C.gold, click: () => setActiveTab('passport') },
       { val: uniqueFestBrands, lbl: 'BRANDS', col: C.gold, click: () => setActiveTab('passport') },
     ].map(s => (
       <div key={s.lbl} onClick={s.click} style={{
-        background: hexToRgba(s.col, 0.05),
-        border: `2px solid ${s.col}`,
-        borderRadius: '8px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
+        background: hexToRgba(s.col, 0.05), border: `2px solid ${s.col}`,
+        borderRadius: '8px', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
         boxShadow: `inset 0 0 15px ${hexToRgba(s.col, 0.2)}`,
-        transition: 'transform 0.2s',
-        minHeight: isMobile ? '70px' : '90px' // Slightly shorter on mobile
+        minHeight: '90px'
       }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.5rem' : '2.2rem', color: s.col, lineHeight: 1, textShadow: `0 0 10px ${s.col}` }}>{s.val}</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: s.col, lineHeight: 1, textShadow: `0 0 10px ${s.col}` }}>{s.val}</div>
         <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: '#fff', opacity: 0.6, letterSpacing: '1px' }}>{s.lbl}</div>
       </div>
     ))}
-    
     <div style={{ 
-        background: hexToRgba(C.teal, 0.05), border: `2px solid ${C.teal}`, borderRadius: '8px',
-        display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', 
-        padding: '6px', gap: '6px', cursor: 'pointer', boxShadow: `inset 0 0 15px ${hexToRgba(C.teal, 0.2)}`,
-        // 🟢Span all 3 columns on mobile
-        gridColumn: isMobile ? 'span 3' : 'span 1',
-        minHeight: isMobile ? '60px' : '90px'
+      background: hexToRgba(C.teal, 0.05), border: `2px solid ${C.teal}`, borderRadius: '8px',
+      display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', 
+      padding: '6px', gap: '6px', cursor: 'pointer', 
+      boxShadow: `inset 0 0 15px ${hexToRgba(C.teal, 0.2)}`,
+      minHeight: '90px'
     }} onClick={() => setActiveTab('vault')}>
-        <QuadStat val={headerStats.tickets} label="TIX" color={C.gold} />
-        <QuadStat val={headerStats.setlists} label="LST" color={C.teal} />
-        <QuadStat val={headerStats.posters} label="PST" color={C.purple} />
-        <QuadStat val={headerStats.photos} label="PHO" color={C.cyan} />
+      <QuadStat val={headerStats.tickets} label="TIX" color={C.gold} />
+      <QuadStat val={headerStats.setlists} label="LST" color={C.teal} />
+      <QuadStat val={headerStats.posters} label="PST" color={C.purple} />
+      <QuadStat val={headerStats.photos} label="PHO" color={C.cyan} />
     </div>
-</div>
+  </div>
+)}
 
 <main style={{ padding: '20px', width: '100%', boxSizing: 'border-box' }}>
   {activeTab === 'dashboard' && (
