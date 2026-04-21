@@ -6710,6 +6710,7 @@ export default function App() {
   const [upcoming, setUpcoming] = useState([]);
   const [loading, setLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(true);
+  const [posters, setPosters] = useState([]);
   
   // ── 3. UI & NAVIGATION STATE ──
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -6916,17 +6917,18 @@ useEffect(() => {
     console.log("DATABASE FETCH: Initializing archive...");
     
     try {
-      await Promise.all([
-        fetchConcerts(),
-        fetchUpcoming(),
-        fetchGenres().catch(e => console.warn('Genres failed silently:', e))
-      ]);
-    } catch (e) {
-      console.error('ARCHIVE ERROR:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  await Promise.all([
+    fetchConcerts(),
+    fetchUpcoming(),
+    fetchPosters(),
+    fetchGenres().catch(e => console.warn('Genres failed silently:', e))
+  ]);
+} catch (e) {
+  console.error('ARCHIVE ERROR:', e);
+} finally {
+  setLoading(false);
+}
+};
 
   // Trigger if we have a session OR if we are teleporting to a public user
   if ((session?.user?.id || viewingUser) && !initRan.current && !authLoading) {
@@ -7262,6 +7264,17 @@ const getCuratorTitle = (stats, concerts) => {
       }
     }
   }
+
+async function fetchPosters() {
+  const targetId = viewingUser || session?.user?.id;
+  if (!targetId) return;
+  const { data } = await supabase
+    .from('posters')
+    .select('*')
+    .eq('user_id', targetId)
+    .order('date', { ascending: false });
+  if (data) setPosters(data);
+}
 
   async function fetchGenres() {
     try {
