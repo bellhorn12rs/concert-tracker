@@ -2805,21 +2805,89 @@ function TicketStubCard({ event, onEdit, genreMap, stubIdx }) {
   );
 }
 
-// ─── CLEAN WRISTBAND (Lineup Edition - No Sidecar) ────────────────────────────
 function WristbandCard({ event, genreMap, compact, onEdit }) {
   const gi = getConcertGenreInfo(event, genreMap);
   const themeColor = gi.mixed ? '#9d00ff' : (gi.color || C.teal);
-  
-  // Logic to handle the lineup display
   const bands = event.bands || [];
   const lineup = bands.map(b => getBandName(b)).filter(Boolean).join(' · ').toUpperCase();
+  const hasRealWristband = event.wristband_image_url && event.wristband_image_url.trim() !== '';
+
+  if (hasRealWristband) {
+    return (
+      <div
+        onClick={onEdit ? () => onEdit(event) : null}
+        style={{
+          width: '100%',
+          cursor: onEdit ? 'pointer' : 'default',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8
+        }}
+      >
+        {/* REAL WRISTBAND IMAGE */}
+        <div style={{
+          width: '100%',
+          background: '#000',
+          borderRadius: 4,
+          overflow: 'hidden',
+          border: `1px solid ${hexToRgba(themeColor, 0.4)}`,
+          boxShadow: `0 4px 20px rgba(0,0,0,0.5), 0 0 15px ${hexToRgba(themeColor, 0.2)}`,
+          position: 'relative'
+        }}>
+          <img
+            src={event.wristband_image_url}
+            alt="Wristband"
+            style={{
+              width: '100%',
+              height: 'auto',
+              display: 'block',
+              objectFit: 'contain'
+            }}
+          />
+          {/* Subtle color overlay at bottom */}
+          <div style={{
+            position: 'absolute',
+            bottom: 0, left: 0, right: 0,
+            height: '30%',
+            background: `linear-gradient(to top, ${hexToRgba(themeColor, 0.3)}, transparent)`,
+            pointerEvents: 'none'
+          }} />
+        </div>
+
+        {/* NAMEPLATE */}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            fontFamily: "'Bebas Neue'",
+            fontSize: compact ? '0.9rem' : '1.2rem',
+            color: themeColor,
+            letterSpacing: 2,
+            lineHeight: 1
+          }}>
+            {event.festival_name?.toUpperCase() || 'FESTIVAL'}
+          </div>
+          {event.festival_day && (
+            <div style={{
+              fontFamily: "'Space Mono'",
+              fontSize: '8px',
+              color: '#666',
+              marginTop: 2
+            }}>
+              {event.festival_day.toUpperCase()}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // FALLBACK: existing fake wristband render
   return (
-    <div 
+    <div
       onClick={onEdit ? () => onEdit(event) : null}
-      style={{ 
-        width: '100%', 
-        background: '#1a1a1a', 
-        borderRadius: 8, 
+      style={{
+        width: '100%',
+        background: '#1a1a1a',
+        borderRadius: 8,
         border: `1.5px solid ${themeColor}`,
         boxShadow: `0 0 20px ${hexToRgba(themeColor, 0.15)}`,
         overflow: 'hidden',
@@ -2830,33 +2898,28 @@ function WristbandCard({ event, genreMap, compact, onEdit }) {
       onMouseEnter={onEdit ? (e) => e.currentTarget.style.borderColor = '#fff' : null}
       onMouseLeave={onEdit ? (e) => e.currentTarget.style.borderColor = themeColor : null}
     >
-      {/* Mini Wristband Header */}
       <div style={{ background: themeColor, height: compact ? 6 : 8 }} />
-      
       <div style={{ padding: compact ? '12px' : '20px', textAlign: 'center' }}>
-        <div style={{ 
-          fontFamily: "'Bebas Neue'", 
-          fontSize: compact ? '0.9rem' : '1.4rem', 
-          color: themeColor, 
+        <div style={{
+          fontFamily: "'Bebas Neue'",
+          fontSize: compact ? '0.9rem' : '1.4rem',
+          color: themeColor,
           letterSpacing: '2px',
           lineHeight: 1
         }}>
           {event.festival_name?.toUpperCase() || 'FESTIVAL'}
         </div>
-        
-        <div style={{ 
-          fontFamily: "'Space Mono'", 
-          fontSize: compact ? '9px' : '10px', 
-          color: '#fff', 
-          marginTop: 4, 
-          opacity: 0.6 
+        <div style={{
+          fontFamily: "'Space Mono'",
+          fontSize: compact ? '9px' : '10px',
+          color: '#fff',
+          marginTop: 4,
+          opacity: 0.6
         }}>
           {event.festival_day?.toUpperCase() || 'ALL DAYS'}
         </div>
-
-        {/* 🟢 THE LINEUP BAR (The Fix) */}
         {bands.length > 0 && (
-          <div style={{ 
+          <div style={{
             marginTop: compact ? 10 : 15,
             paddingTop: compact ? 10 : 15,
             borderTop: `1px solid ${hexToRgba(themeColor, 0.2)}`,
@@ -6758,6 +6821,7 @@ const getCuratorTitle = (stats, concerts) => {
         setlist_image_url: payload.setlist_image_url || null,
         personal_photo_url: payload.personal_photo_url || null,
         festival_poster_url: payload.festival_poster_url || null,
+        wristband_image_url: payload.wristband_image_url || null,
         
         has_setlist: Boolean(payload.setlist_image_url || payload.has_setlist_names?.trim()),
         has_setlist_names: payload.has_setlist_names || null,
