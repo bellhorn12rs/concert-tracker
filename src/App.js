@@ -6478,7 +6478,7 @@ function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
   });
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh' }}>
+<div style={{ position: 'relative', minHeight: '100vh', background: '#050508' }}>
       <style>{`
         @keyframes stubDrop {
           0% { opacity: 0; transform: translateY(-30px) rotate(var(--rot)); }
@@ -6649,7 +6649,6 @@ objectFit: 'contain',
               '--ty': `${selected.throwY}px`,
               '--tr': `${selected.throwRot * 3}deg`,
             }}
-            onClick={e => e.stopPropagation()}
           >
             <img
               src={selected.url}
