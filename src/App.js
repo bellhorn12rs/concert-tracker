@@ -6375,9 +6375,12 @@ function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
       // Real ticket stubs
       if (c.image_url) {
         c.image_url.split(',').map(u => u.trim()).filter(Boolean).forEach((url, i) => {
-          pile.push({
-            id: `stub-${c.id}-${i}`,
-            url,
+  const cleanUrl = url.split('#rot=')[0];
+  const rotation = url.includes('#rot=') ? parseInt(url.split('#rot=')[1], 10) : 0;
+  pile.push({
+    id: `stub-${c.id}-${i}`,
+    url: cleanUrl,
+    imgRotation: rotation,
             type: 'stub',
             artist: getBandName(c.bands?.[0]) || c.festival_name || 'Unknown',
             date: c.date,
@@ -6594,19 +6597,20 @@ function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
             }}
           >
             <img
-              src={item.url}
-              alt={item.artist}
-              style={{
-                display: 'block',
-                width: item.type === 'wristband' ? '220px' : '160px',
-                height: 'auto',
-                borderRadius: 2,
-                boxShadow: '0 8px 30px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                userSelect: 'none',
-                pointerEvents: 'none'
-              }}
-            />
+  src={item.url}
+  alt={item.artist}
+  style={{
+    display: 'block',
+    width: item.type === 'wristband' ? '220px' : '160px',
+    height: 'auto',
+    borderRadius: 2,
+    boxShadow: '0 8px 30px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    userSelect: 'none',
+    pointerEvents: 'none',
+    transform: item.imgRotation ? `rotate(${item.imgRotation}deg)` : 'none',
+  }}
+/>
           </div>
         ))}
 
