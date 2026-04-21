@@ -1593,18 +1593,31 @@ function ArtifactSpotlight({ concerts, posters = [], onVault }) {
 
   // Flip timer — left and right always stay 1 apart
   useEffect(() => {
-    if (columns.length < 2) return;
+  if (columns.length < 2) return;
 
-    const timer = setInterval(() => {
-      setLeftIdx(prev => {
-        const next = (prev + 1) % columns.length;
-        setRightIdx((next + 1) % columns.length);
-        return next;
-      });
+  // Left flips every 5s starting immediately
+  const leftTimer = setInterval(() => {
+    setLeftIdx(prev => {
+      const next = (prev + 1) % columns.length;
+      return next;
+    });
+  }, 5000);
+
+  // Right flips every 5s but starts 2.5s offset so they never sync
+  const rightDelay = setTimeout(() => {
+    const rightTimer = setInterval(() => {
+      setRightIdx(prev => (prev + 1) % columns.length);
     }, 5000);
+    // Store for cleanup
+    rightTimerRef.current = rightTimer;
+  }, 2500);
 
-    return () => clearInterval(timer);
-  }, [columns.length]);
+  return () => {
+    clearInterval(leftTimer);
+    clearTimeout(rightDelay);
+    if (rightTimerRef.current) clearInterval(rightTimerRef.current);
+  };
+}, [columns.length]);
 
   if (!columns.length) return (
     <div
