@@ -4189,30 +4189,66 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                      {shows.map((show, idx) => {
-                        const dayColor = getDayColor(themeColor, idx);
-                        const photos = show.personal_photo_url ? show.personal_photo_url.split(',').map(u => u.trim()).filter(Boolean) : [];
-                        const setlists = show.setlist_image_url ? show.setlist_image_url.split(',').map(u => u.trim()).filter(Boolean) : [];
-                        return (
-                          <div key={show.id} onClick={isAdmin ? () => onEdit(show) : null} style={{ width: '100%', background: 'rgba(0,0,0,0.4)', borderRadius: '16px', border: `2px solid ${dayColor}`, overflow: 'visible', cursor: isAdmin ? 'pointer' : 'default', transition: 'all 0.3s ease', display: 'flex', alignItems: 'stretch' }}>
-                            <div style={{ width: '8px', background: dayColor, flexShrink: 0 }} />
-                            <div style={{ padding: '25px 35px', flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: dayColor, lineHeight: 1 }}>{show.festival_day?.toUpperCase() || `DAY ${idx + 1}`}</div>
-                                <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: '5px' }}>{fmtDateShort(show.date)}</div>
-                                <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: '#fff', lineHeight: 1.5, borderTop: `1px solid ${hexToRgba(dayColor, 0.2)}`, marginTop: '15px', paddingTop: '10px' }}>
-                                  {(show.bands || []).map(b => getBandName(b)).filter(Boolean).join(' · ').toUpperCase()}
-                                </div>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', marginLeft: '30px' }}>
-                                {setlists.length > 0 && <div style={{ display: 'flex' }}>{setlists.map((url, sIdx) => <SetlistPaper key={`${show.id}-s-${sIdx}`} src={url} index={sIdx} />)}</div>}
-                                {photos.length > 0 && <div style={{ display: 'flex' }}>{photos.map((url, pIdx) => <PersonalPolaroid key={`${show.id}-p-${pIdx}`} src={url} index={pIdx} caption={fest.name.toUpperCase()} />)}</div>}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+  {shows.map((show, idx) => {
+    const dayColor = getDayColor(themeColor, idx);
+    const photos = show.personal_photo_url ? show.personal_photo_url.split(',').map(u => u.trim()).filter(Boolean) : [];
+    const setlists = show.setlist_image_url ? show.setlist_image_url.split(',').map(u => u.trim()).filter(Boolean) : [];
+    const posters = show.festival_poster_url ? show.festival_poster_url.split(',').map(u => u.trim()).filter(Boolean) : [];
+    const wristband = show.wristband_image_url || null;
+
+    return (
+      <div key={show.id} onClick={isAdmin ? () => onEdit(show) : null} style={{ width: '100%', background: 'rgba(0,0,0,0.4)', borderRadius: '16px', border: `2px solid ${dayColor}`, overflow: 'visible', cursor: isAdmin ? 'pointer' : 'default', transition: 'all 0.3s ease', display: 'flex', alignItems: 'stretch' }}>
+        <div style={{ width: '8px', background: dayColor, flexShrink: 0 }} />
+        <div style={{ padding: '25px 35px', flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          
+          {/* LEFT: DAY INFO */}
+          <div style={{ flex: 1 }}>
+            {/* Wristband image if available */}
+            {wristband && (
+              <div style={{ marginBottom: 15 }}>
+                <img
+                  src={wristband}
+                  alt="Wristband"
+                  style={{
+                    width: '100%',
+                    maxWidth: '280px',
+                    height: 'auto',
+                    display: 'block',
+                    borderRadius: 3,
+                    border: `1px solid ${hexToRgba(dayColor, 0.4)}`,
+                    boxShadow: `0 4px 15px rgba(0,0,0,0.5)`
+                  }}
+                />
+              </div>
+            )}
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: dayColor, lineHeight: 1 }}>{show.festival_day?.toUpperCase() || `DAY ${idx + 1}`}</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: '5px' }}>{fmtDateShort(show.date)}</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: '#fff', lineHeight: 1.5, borderTop: `1px solid ${hexToRgba(dayColor, 0.2)}`, marginTop: '15px', paddingTop: '10px' }}>
+              {(show.bands || []).map(b => getBandName(b)).filter(Boolean).join(' · ').toUpperCase()}
+            </div>
+          </div>
+
+          {/* RIGHT: MEDIA CLUSTER */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', marginLeft: '30px', gap: '10px' }}>
+            {setlists.length > 0 && (
+              <div style={{ display: 'flex' }}>
+                {setlists.map((url, sIdx) => <SetlistPaper key={`${show.id}-s-${sIdx}`} src={url} index={sIdx} />)}
+              </div>
+            )}
+            {posters.map((url, pIdx) => (
+              <GigPoster key={`${show.id}-poster-${pIdx}`} src={url} artist={show.festival_name} date={show.date} index={pIdx} />
+            ))}
+            {photos.length > 0 && (
+              <div style={{ display: 'flex' }}>
+                {photos.map((url, pIdx) => <PersonalPolaroid key={`${show.id}-p-${pIdx}`} src={url} index={pIdx} caption={fest.name.toUpperCase()} />)}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  })}
+</div>
                   </div>
                 );
               })}
