@@ -3761,29 +3761,40 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin, viewingUser, bulkMode,
   const isMobile = window.innerWidth < 768;
 
   const clusters = useMemo(() => {
-    const results = [];
-    let currentFestKey = null;
-    let currentGroup = [];
+  const results = [];
+  let currentFestKey = null;
+  let currentGroup = [];
+  const soloBuffer = []; // holds solo shows encountered mid-festival
 
-    dayGroups.forEach((event) => {
-      const festKey = event.is_festival 
-        ? `${event.festival_name}-${new Date(event.date).getFullYear()}` 
-        : null;
+  dayGroups.forEach((event) => {
+    const festKey = event.is_festival 
+      ? `${event.festival_name}-${new Date(event.date).getFullYear()}` 
+      : null;
 
-      if (festKey && festKey === currentFestKey) {
-        currentGroup.push(event);
-      } else {
-        if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
-        if (festKey) {
-          currentFestKey = festKey;
-          currentGroup = [event];
-        } else {
-          currentFestKey = null;
-          currentGroup = [];
-          results.push({ type: 'solo', event });
-        }
-      }
-    });
+    if (festKey && festKey === currentFestKey) {
+      // Same festival — flush any buffered solos first, then add to group
+      soloBuffer.forEach(s => results.push({ type: 'solo', event: s }));
+      soloBuffer.length = 0;
+      currentGroup.push(event);
+    } else if (festKey && festKey !== currentFestKey) {
+      // New festival — close out old group and solos, start fresh
+      if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
+      soloBuffer.forEach(s => results.push({ type: 'solo', event: s }));
+      soloBuffer.length = 0;
+      currentFestKey = festKey;
+      currentGroup = [event];
+    } else {
+      // Solo show — buffer it in case the same festival resumes
+      soloBuffer.push(event);
+    }
+  });
+
+  // Flush anything remaining
+  if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
+  soloBuffer.forEach(s => results.push({ type: 'solo', event: s }));
+
+  return results;
+}, [dayGroups]);
     if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
     return results;
   }, [dayGroups]);
