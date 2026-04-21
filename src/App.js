@@ -3795,9 +3795,6 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin, viewingUser, bulkMode,
 
   return results;
 }, [dayGroups]);
-    if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
-    return results;
-  }, [dayGroups]);
 
   return (
     <> {/* 🟢 Parent wrapper added here */}
