@@ -1485,9 +1485,44 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
 // ─── MAIN ARTIFACT SPOTLIGHT COMPONENT ────────────────────────────────────────
 function ArtifactSpotlight({ concerts, posters = [], onVault }) {
   const [leftIdx, setLeftIdx] = useState(0);
-  const [rightIdx, setRightIdx] = useState(1);
-  const rightTimerRef = useRef(null);
+const [rightIdx, setRightIdx] = useState(1);
+const leftTimerRef = useRef(null);
+const rightTimerRef = useRef(null);
+const idxRef = useRef({ left: 0, right: 1 });
 
+useEffect(() => {
+  if (columns.length < 2) return;
+
+  const getNext = (exclude1, exclude2) => {
+    const available = Array.from({ length: columns.length }, (_, i) => i)
+      .filter(i => i !== exclude1 && i !== exclude2);
+    if (!available.length) return (exclude1 + 2) % columns.length;
+    return available[Math.floor(Math.random() * available.length)];
+  };
+
+  const flipLeft = () => {
+    const next = getNext(idxRef.current.left, idxRef.current.right);
+    idxRef.current.left = next;
+    setLeftIdx(next);
+    leftTimerRef.current = setTimeout(flipLeft, 7000 + Math.random() * 5000);
+  };
+
+  const flipRight = () => {
+    const next = getNext(idxRef.current.left, idxRef.current.right);
+    idxRef.current.right = next;
+    setRightIdx(next);
+    rightTimerRef.current = setTimeout(flipRight, 8000 + Math.random() * 5000);
+  };
+
+  // Start left immediately, right after a 4s offset
+  leftTimerRef.current = setTimeout(flipLeft, 7000);
+  rightTimerRef.current = setTimeout(flipRight, 11000);
+
+  return () => {
+    clearTimeout(leftTimerRef.current);
+    clearTimeout(rightTimerRef.current);
+  };
+}, [columns.length]);
   
   const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
 
