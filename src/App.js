@@ -5915,7 +5915,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     if (!file) return null;
     setUploading(true);
     
-    if (type === 'POLAROID') {
+    if (type === 'POLAROID' || type === 'TICKET') {
       try {
         if (typeof EXIF !== 'undefined') {
           await new Promise((resolve) => {
