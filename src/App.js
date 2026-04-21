@@ -4195,6 +4195,7 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
     const setlists = show.setlist_image_url ? show.setlist_image_url.split(',').map(u => u.trim()).filter(Boolean) : [];
     const posters = show.festival_poster_url ? show.festival_poster_url.split(',').map(u => u.trim()).filter(Boolean) : [];
     const wristband = show.wristband_image_url || null;
+console.log('WRISTBAND:', show.date, wristband);
 
     return (
       <div key={show.id} onClick={isAdmin ? () => onEdit(show) : null} style={{ width: '100%', background: 'rgba(0,0,0,0.4)', borderRadius: '16px', border: `2px solid ${dayColor}`, overflow: 'visible', cursor: isAdmin ? 'pointer' : 'default', transition: 'all 0.3s ease', display: 'flex', alignItems: 'stretch' }}>
