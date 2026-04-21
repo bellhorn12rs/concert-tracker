@@ -4798,20 +4798,35 @@ function VenuesTab({ concerts }) {
                          
                          {/* 1. THE ARTIFACT HEADER */}
                          {show.is_festival ? (
-                           <div style={{ position: 'relative' }}>
-                             <PhysicalWristband 
-                               color={rowColor} 
-                               label={show.festival_name} 
-                               year={getYear(show.date)} 
-                               size="small" 
-                             />
-                             {/* High-Visibility Day Tag */}
-                             <div style={{ position: 'absolute', top: -5, right: 10, background: '#000', color: rowColor, border: `1px solid ${rowColor}`, padding: '2px 8px', borderRadius: 2, fontFamily: "'Space Mono'", fontSize: 8, fontWeight: 900, boxShadow: '0 4px 10px rgba(0,0,0,0.5)', zIndex: 10 }}>
-                               {show.festival_day?.toUpperCase() || 'LIVE'}
-                             </div>
-                           </div>
-                         ) : hasImg ? (
-  /* 📸 FULL-VIEW PHOTO HEADER (No Cropping) */
+  show.wristband_image_url ? (
+    <div style={{
+      width: '100%',
+      maxWidth: '280px',
+      borderRadius: 3,
+      overflow: 'hidden',
+      border: `1px solid ${hexToRgba(rowColor, 0.4)}`,
+      boxShadow: `0 4px 15px rgba(0,0,0,0.5)`
+    }}>
+      <img
+        src={show.wristband_image_url}
+        alt="Wristband"
+        style={{ width: '100%', height: 'auto', display: 'block' }}
+      />
+    </div>
+  ) : (
+    <div style={{ position: 'relative' }}>
+      <PhysicalWristband 
+        color={rowColor} 
+        label={show.festival_name} 
+        year={getYear(show.date)} 
+        size="small" 
+      />
+      <div style={{ position: 'absolute', top: -5, right: 10, background: '#000', color: rowColor, border: `1px solid ${rowColor}`, padding: '2px 8px', borderRadius: 2, fontFamily: "'Space Mono'", fontSize: 8, fontWeight: 900, boxShadow: '0 4px 10px rgba(0,0,0,0.5)', zIndex: 10 }}>
+        {show.festival_day?.toUpperCase() || 'LIVE'}
+      </div>
+    </div>
+  )
+) : hasImg ? (
   <div style={{ 
     padding: '8px', 
     background: '#fff', 
@@ -4852,8 +4867,8 @@ function VenuesTab({ concerts }) {
     </div>
   </div>
 ) : (
-                           <DecorativeTicket event={show} templateIdx={idx} />
-                         )}
+  <DecorativeTicket event={show} templateIdx={idx} />
+)}
 
                          {/* 2. THE FULL LINEUP LIST (Prevents cutoffs) */}
                          <div style={{ padding: '0 8px' }}>
