@@ -1486,6 +1486,8 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
 function ArtifactSpotlight({ concerts, posters = [], onVault }) {
   const [leftIdx, setLeftIdx] = useState(0);
   const [rightIdx, setRightIdx] = useState(1);
+  const rightTimerRef = useRef(null);
+
   
   const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
 
