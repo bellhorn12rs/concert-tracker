@@ -6602,7 +6602,8 @@ function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
   style={{
     display: 'block',
     width: item.type === 'wristband' ? '220px' : '160px',
-    height: 'auto',
+height: item.type === 'wristband' ? 'auto' : '80px',
+objectFit: 'cover',
     borderRadius: 2,
     boxShadow: '0 8px 30px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5)',
     border: '1px solid rgba(255,255,255,0.08)',
