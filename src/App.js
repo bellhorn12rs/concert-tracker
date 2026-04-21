@@ -1483,7 +1483,7 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
   );
 };
 // ─── MAIN ARTIFACT SPOTLIGHT COMPONENT (SMART GROUPING EDITION) ────────────
-function ArtifactSpotlight({ concerts, onVault }) {
+function ArtifactSpotlight({ concerts, posters = [], onVault }) {
   const [leftIdx, setLeftIdx] = useState(0);
   const [rightIdx, setRightIdx] = useState(1);
   
@@ -1526,6 +1526,20 @@ function ArtifactSpotlight({ concerts, onVault }) {
           });
         });
       };
+
+      // Add posters from posters table
+posters.forEach(p => {
+  artifacts.push({
+    id: `poster-${p.id}`,
+    url: p.image_url,
+    rotation: 0,
+    type: 'POSTER',
+    label: 'GIG POSTER',
+    band: p.artist || p.festival_name || 'UNKNOWN',
+    venue: p.venue,
+    date: p.date
+  });
+});
 
       extract(c.image_url, 'TICKET', 'TICKET STUB');
       extract(c.setlist_image_url, 'SETLIST', 'STAGE ARTIFACT');
@@ -8710,7 +8724,7 @@ async function handleDelete(id) {
 
           {/* 2. ARTIFACT SPOTLIGHT (MIDDLE) */}
           <Card neon style={{ height: 380, display: 'flex', flexDirection: 'column' }}>
-            <ArtifactSpotlight concerts={concerts} onVault={() => setActiveTab('vault')} />
+<ArtifactSpotlight concerts={concerts} posters={posters} onVault={() => setActiveTab('vault')} />
           </Card>
 
           {/* 3. CITY FOOTPRINT (RIGHT) */}
