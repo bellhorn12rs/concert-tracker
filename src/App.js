@@ -6500,7 +6500,8 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
       {/* THE WALL */}
       <div style={{
         position: 'relative', zIndex: 5,
-columnCount: Math.min(4, Math.max(2, layout.length)),        columnGap: '20px',
+columnCount: 3,        
+columnGap: '20px',
         padding: '0 40px 80px',
       }}>
         {layout.map((poster, idx) => (
