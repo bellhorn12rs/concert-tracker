@@ -6425,33 +6425,37 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
       `}</style>
 
       {/* WALL TEXTURE BACKGROUND */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
-        {/* Base concrete */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: '#0a0806',
-          backgroundImage: `
-            repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.01) 2px, rgba(255,255,255,0.01) 4px),
-            repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.008) 40px, rgba(255,255,255,0.008) 41px)
-          `,
-        }} />
-        {/* Ambient glow top */}
-        <div style={{
-          position: 'absolute', top: 0, left: '20%', right: '20%', height: '30%',
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(255,100,50,0.06) 0%, transparent 70%)',
-        }} />
-        {/* Ambient glow bottom */}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, height: '40%',
-          background: 'radial-gradient(ellipse at 50% 100%, rgba(255,60,100,0.08) 0%, transparent 60%)',
-          animation: 'wallPulse 6s ease-in-out infinite'
-        }} />
-        {/* Vignette */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.6) 100%)',
-        }} />
-      </div>
+<div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+  <div style={{
+    position: 'absolute', inset: 0,
+    backgroundColor: '#1a1208',
+    backgroundImage: `
+      url("https://www.transparenttextures.com/patterns/brick-wall.png")
+    `,
+    backgroundRepeat: 'repeat',
+    filter: 'brightness(0.3) sepia(0.4)',
+  }} />
+  {/* Aged paint overlay */}
+  <div style={{
+    position: 'absolute', inset: 0,
+    background: 'rgba(10, 6, 2, 0.55)',
+  }} />
+  {/* Spotlight from above */}
+  <div style={{
+    position: 'absolute', top: 0, left: '15%', right: '15%', height: '60%',
+    background: 'radial-gradient(ellipse at 50% 0%, rgba(255,140,60,0.08) 0%, transparent 65%)',
+  }} />
+  {/* Bottom shadow */}
+  <div style={{
+    position: 'absolute', bottom: 0, left: 0, right: 0, height: '30%',
+    background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)',
+  }} />
+  {/* Vignette */}
+  <div style={{
+    position: 'absolute', inset: 0,
+    background: 'radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(0,0,0,0.7) 100%)',
+  }} />
+</div>
 
       {/* HEADER */}
       <div style={{ position: 'relative', zIndex: 10, padding: '30px 40px 20px' }}>
@@ -6496,8 +6500,7 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
       {/* THE WALL */}
       <div style={{
         position: 'relative', zIndex: 5,
-        columnCount: 4,
-        columnGap: '20px',
+columnCount: Math.min(4, Math.max(2, layout.length)),        columnGap: '20px',
         padding: '0 40px 80px',
       }}>
         {layout.map((poster, idx) => (
@@ -6572,7 +6575,7 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
         ))}
 
         {/* GHOST SLOTS — wall waiting to be filled */}
-        {layout.length < 8 && Array.from({ length: 8 - layout.length }).map((_, i) => (
+{layout.length < 4 && Array.from({ length: Math.min(2, 4 - layout.length) }).map((_, i) => (
           <div key={`ghost-${i}`} style={{
             display: 'inline-block',
             width: '100%',
