@@ -6731,7 +6731,7 @@ const getCuratorTitle = (stats, concerts) => {
     // ── NEW ARTIFACT QUADRANT DATA ──
     tickets: concerts?.filter(c => c.image_url && c.image_url !== '').length || 0,
     setlists: concerts?.filter(c => c.has_setlist || c.has_setlist_names || c.setlist_image_url).length || 0,
-    posters: concerts?.filter(c => c.poster_url && c.poster_url !== '').length || 0,
+    posters: concerts?.filter(c => c.festival_poster_url && c.festival_poster_url !== '').length || 0,
     photos: concerts?.filter(c => c.personal_photo_url && c.personal_photo_url !== '').length || 0,
   }), [concerts, allSetsList]);
 
