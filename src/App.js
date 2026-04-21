@@ -7192,7 +7192,7 @@ async function handleDelete(id) {
             flexDirection: 'column',
             padding: '0',
             // 🟢 Sit on top of the header/content
-            zIndex: 10000, 
+            zIndex: 10002, 
             transition: 'all 0.3s ease-in-out',
             overflow: 'hidden',
             flexShrink: 0 
@@ -7417,7 +7417,8 @@ async function handleDelete(id) {
 }}>
   {/* Row 1 — ARTIFACT COUNTS */}
   <div style={{
-    border: `1px solid ${hexToRgba(C.teal, 0.25)}`,
+    border: `2px solid ${C.teal}`,
+boxShadow: `0 0 20px ${hexToRgba(C.teal, 0.3)}, inset 0 0 20px ${hexToRgba(C.teal, 0.05)}`,
     borderRadius: '8px',
     padding: '6px',
     marginBottom: '6px',
@@ -7445,7 +7446,8 @@ async function handleDelete(id) {
 
   {/* Row 2 — SHOW COUNTS */}
   <div style={{
-    border: `1px solid ${hexToRgba(C.purple, 0.25)}`,
+    border: `2px solid ${C.purple}`,
+boxShadow: `0 0 20px ${hexToRgba(C.purple, 0.3)}, inset 0 0 20px ${hexToRgba(C.purple, 0.05)}`,
     borderRadius: '8px',
     padding: '6px',
     display: 'grid',
