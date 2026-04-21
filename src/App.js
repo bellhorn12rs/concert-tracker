@@ -3784,7 +3784,7 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin, viewingUser, bulkMode,
       currentFestKey = festKey;
       currentGroup = [event];
     } else {
-      // Solo show — buffer it in case the same festival resumes
+      // Solo show buffer it in case the same festival resumes
       soloBuffer.push(event);
     }
   });
