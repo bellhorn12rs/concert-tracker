@@ -6413,24 +6413,6 @@ function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
     });
   });
 }
-          pile.push({
-            id: `wrist-${c.id}-${i}`,
-            url,
-            type: 'wristband',
-            artist: c.festival_name || getBandName(c.bands?.[0]) || 'Unknown',
-            date: c.date,
-            venue: c.venue || c.festival_name,
-            city: c.city,
-            state: c.state,
-            is_festival: true,
-            festival_name: c.festival_name,
-            concertId: c.id
-          });
-        });
-      }
-    });
-    return pile;
-  }, [concerts]);
 
   const years = useMemo(() => {
     const ySet = new Set(allItems.map(i => getYear(i.date)).filter(Boolean));
