@@ -6360,6 +6360,333 @@ const QuadStat = ({ val, label, color }) => (
   </div>
 );
 
+// ─── STUB CASE TAB ────────────────────────────────────────────────────────────
+function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
+  const [selected, setSelected] = useState(null);
+  const [tossing, setTossing] = useState(false);
+  const [yearFilter, setYearFilter] = useState('all');
+  const [festFilter, setFestFilter] = useState('all');
+  const [items, setItems] = useState([]);
+
+  // Build the pile from real images only
+  const allItems = useMemo(() => {
+    const pile = [];
+    concerts.forEach(c => {
+      // Real ticket stubs
+      if (c.image_url) {
+        c.image_url.split(',').map(u => u.trim()).filter(Boolean).forEach((url, i) => {
+          pile.push({
+            id: `stub-${c.id}-${i}`,
+            url,
+            type: 'stub',
+            artist: getBandName(c.bands?.[0]) || c.festival_name || 'Unknown',
+            date: c.date,
+            venue: c.venue || c.festival_name,
+            city: c.city,
+            state: c.state,
+            is_festival: c.is_festival,
+            festival_name: c.festival_name,
+            concertId: c.id
+          });
+        });
+      }
+      // Real wristbands
+      if (c.wristband_image_url) {
+        c.wristband_image_url.split(',').map(u => u.trim()).filter(Boolean).forEach((url, i) => {
+          pile.push({
+            id: `wrist-${c.id}-${i}`,
+            url,
+            type: 'wristband',
+            artist: c.festival_name || getBandName(c.bands?.[0]) || 'Unknown',
+            date: c.date,
+            venue: c.venue || c.festival_name,
+            city: c.city,
+            state: c.state,
+            is_festival: true,
+            festival_name: c.festival_name,
+            concertId: c.id
+          });
+        });
+      }
+    });
+    return pile;
+  }, [concerts]);
+
+  const years = useMemo(() => {
+    const ySet = new Set(allItems.map(i => getYear(i.date)).filter(Boolean));
+    return [...ySet].sort((a, b) => b - a);
+  }, [allItems]);
+
+  // Filter + randomize on load or filter change
+  useEffect(() => {
+    let filtered = [...allItems];
+    if (yearFilter !== 'all') filtered = filtered.filter(i => String(getYear(i.date)) === yearFilter);
+    if (festFilter === 'fest') filtered = filtered.filter(i => i.is_festival);
+    if (festFilter === 'solo') filtered = filtered.filter(i => !i.is_festival);
+    // Shuffle
+    for (let i = filtered.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+    }
+    // Assign random physics to each item
+    setItems(filtered.map((item, idx) => ({
+      ...item,
+      rotation: (Math.random() * 16) - 8,
+      zIndex: idx,
+      throwX: (Math.random() - 0.5) * 200,
+      throwY: (Math.random() * 100) + 100,
+      throwRot: (Math.random() - 0.5) * 40,
+    })));
+  }, [allItems, yearFilter, festFilter]);
+
+  const handleSelect = (item) => {
+    setSelected(item);
+    setTossing(false);
+  };
+
+  const handleDismiss = () => {
+    setTossing(true);
+    setTimeout(() => {
+      setSelected(null);
+      setTossing(false);
+    }, 400);
+  };
+
+  // Escape key to dismiss
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape' && selected) handleDismiss(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selected]);
+
+  const filterBtnStyle = (active) => ({
+    background: active ? C.teal : 'transparent',
+    border: `1px solid ${active ? C.teal : C.border}`,
+    color: active ? '#000' : C.gray,
+    fontFamily: "'Space Mono'",
+    fontSize: 9,
+    padding: '5px 12px',
+    borderRadius: 4,
+    cursor: 'pointer',
+    fontWeight: active ? 900 : 400,
+    transition: 'all 0.15s'
+  });
+
+  return (
+    <div style={{ position: 'relative', minHeight: '100vh' }}>
+      <style>{`
+        @keyframes stubDrop {
+          0% { opacity: 0; transform: translateY(-30px) rotate(var(--rot)); }
+          60% { opacity: 1; transform: translateY(4px) rotate(var(--rot)); }
+          100% { opacity: 1; transform: translateY(0) rotate(var(--rot)); }
+        }
+        @keyframes stubToss {
+          0% { opacity: 1; transform: scale(1.1) rotate(0deg); }
+          100% { opacity: 0; transform: translateX(var(--tx)) translateY(var(--ty)) rotate(var(--tr)); }
+        }
+        @keyframes stubHover {
+          0% { transform: translateY(0) rotate(var(--rot)); }
+          100% { transform: translateY(-8px) rotate(calc(var(--rot) * 0.5)); }
+        }
+        @keyframes neonPulse {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 0.7; }
+        }
+      `}</style>
+
+      {/* GLASS TABLE BACKGROUND */}
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 0,
+        background: '#050508',
+        pointerEvents: 'none'
+      }}>
+        {/* Glass surface */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(180deg, #0a0a12 0%, #050508 40%, #080810 100%)',
+        }} />
+        {/* Neon underglow */}
+        <div style={{
+          position: 'absolute',
+          bottom: 0, left: '10%', right: '10%',
+          height: '40%',
+          background: `radial-gradient(ellipse at 50% 100%, ${hexToRgba(C.teal, 0.12)} 0%, ${hexToRgba(C.purple, 0.08)} 40%, transparent 70%)`,
+          animation: 'neonPulse 4s ease-in-out infinite'
+        }} />
+        {/* Glass reflection line */}
+        <div style={{
+          position: 'absolute',
+          top: '30%', left: 0, right: 0,
+          height: '1px',
+          background: `linear-gradient(90deg, transparent, ${hexToRgba(C.teal, 0.15)}, ${hexToRgba(C.purple, 0.1)}, transparent)`,
+        }} />
+        {/* Subtle grid */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: `linear-gradient(${hexToRgba(C.teal, 0.03)} 1px, transparent 1px), linear-gradient(90deg, ${hexToRgba(C.teal, 0.03)} 1px, transparent 1px)`,
+          backgroundSize: '40px 40px'
+        }} />
+      </div>
+
+      {/* HEADER */}
+      <div style={{ position: 'relative', zIndex: 10, padding: '30px 30px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20, marginBottom: 20 }}>
+          <div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, letterSpacing: 4, marginBottom: 6 }}>
+              PHYSICAL ARCHIVE // {items.length} ITEMS ON TABLE
+            </div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3.5rem', color: C.white, lineHeight: 0.9, letterSpacing: 2 }}>
+              STUB <span style={{ color: C.gold }}>CASE</span>
+            </div>
+          </div>
+
+          {/* FILTERS */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <button style={filterBtnStyle(yearFilter === 'all')} onClick={() => setYearFilter('all')}>ALL YEARS</button>
+            {years.map(y => (
+              <button key={y} style={filterBtnStyle(String(yearFilter) === String(y))} onClick={() => setYearFilter(String(y))}>{y}</button>
+            ))}
+            <div style={{ width: 1, height: 20, background: C.border }} />
+            <button style={filterBtnStyle(festFilter === 'all')} onClick={() => setFestFilter('all')}>ALL</button>
+            <button style={filterBtnStyle(festFilter === 'fest')} onClick={() => setFestFilter('fest')}>FESTS</button>
+            <button style={filterBtnStyle(festFilter === 'solo')} onClick={() => setFestFilter('solo')}>SOLO</button>
+          </div>
+        </div>
+      </div>
+
+      {/* THE PILE */}
+      <div style={{
+        position: 'relative', zIndex: 5,
+        display: 'flex', flexWrap: 'wrap',
+        gap: '0px',
+        padding: '20px 40px 80px',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+      }}>
+        {items.map((item, idx) => (
+          <div
+            key={item.id}
+            onClick={() => handleSelect(item)}
+            style={{
+              position: 'relative',
+              display: 'inline-block',
+              margin: item.type === 'wristband' ? '10px -20px' : '10px -15px',
+              cursor: 'zoom-in',
+              zIndex: item.zIndex,
+              '--rot': `${item.rotation}deg`,
+              '--tx': `${item.throwX}px`,
+              '--ty': `${item.throwY}px`,
+              '--tr': `${item.throwRot}deg`,
+              animation: `stubDrop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) ${idx * 0.03}s both`,
+              transition: 'transform 0.2s ease, z-index 0s',
+              transform: `rotate(${item.rotation}deg)`,
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.zIndex = 1000;
+              e.currentTarget.style.transform = `translateY(-8px) rotate(${item.rotation * 0.5}deg)`;
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.zIndex = item.zIndex;
+              e.currentTarget.style.transform = `rotate(${item.rotation}deg)`;
+            }}
+          >
+            <img
+              src={item.url}
+              alt={item.artist}
+              style={{
+                display: 'block',
+                width: item.type === 'wristband' ? '220px' : '160px',
+                height: 'auto',
+                borderRadius: 2,
+                boxShadow: '0 8px 30px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                userSelect: 'none',
+                pointerEvents: 'none'
+              }}
+            />
+          </div>
+        ))}
+
+        {items.length === 0 && (
+          <div style={{ padding: '100px 0', textAlign: 'center', color: C.grayDim }}>
+            <div style={{ fontSize: '3rem', marginBottom: 20 }}>🎟️</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', letterSpacing: 3 }}>CASE EMPTY</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, marginTop: 10 }}>UPLOAD A TICKET STUB TO START YOUR COLLECTION</div>
+          </div>
+        )}
+      </div>
+
+      {/* LIGHTBOX */}
+      {selected && (
+        <div
+          onClick={handleDismiss}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 20000,
+            background: 'rgba(0,0,0,0.92)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'zoom-out',
+            padding: 40
+          }}
+        >
+          <div
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
+              animation: tossing
+                ? `stubToss 0.4s cubic-bezier(0.4, 0, 1, 1) forwards`
+                : 'fade-in-kf 0.3s ease both',
+              '--tx': `${selected.throwX}px`,
+              '--ty': `${selected.throwY}px`,
+              '--tr': `${selected.throwRot * 3}deg`,
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <img
+              src={selected.url}
+              alt={selected.artist}
+              style={{
+                maxWidth: '85vw',
+                maxHeight: '70vh',
+                objectFit: 'contain',
+                boxShadow: `0 30px 80px rgba(0,0,0,0.9), 0 0 40px ${hexToRgba(C.gold, 0.2)}`,
+                border: '2px solid rgba(255,255,255,0.1)',
+                borderRadius: 3
+              }}
+            />
+            {/* Info plate */}
+            <div style={{
+              background: 'rgba(0,0,0,0.8)',
+              border: `1px solid ${hexToRgba(C.gold, 0.3)}`,
+              borderRadius: 6,
+              padding: '12px 24px',
+              textAlign: 'center',
+              backdropFilter: 'blur(10px)'
+            }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.white, letterSpacing: 2, lineHeight: 1 }}>
+                {selected.artist.toUpperCase()}
+              </div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gold, marginTop: 4, letterSpacing: 2 }}>
+                {fmtDateShort(selected.date)} · {selected.venue?.toUpperCase()}
+              </div>
+              {selected.city && (
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 3 }}>
+                  {selected.city.toUpperCase()}, {selected.state}
+                </div>
+              )}
+            </div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2 }}>
+              CLICK ANYWHERE TO TOSS BACK
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN APP ────────────────────────────────────────────────────
 export default function App() {
   // ── 1. AUTH & SYSTEM STATE ──
@@ -6377,7 +6704,7 @@ export default function App() {
   const [artistGenres, setArtistGenres] = useState({});
   const [upcoming, setUpcoming] = useState([]);
   const [loading, setLoading] = useState(true);
-const [authLoading, setAuthLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
   
   // ── 3. UI & NAVIGATION STATE ──
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -6451,8 +6778,8 @@ const [authLoading, setAuthLoading] = useState(true);
   const [page, setPage] = useState(1);
 
   // ── OWNER CHECK ──
-const isOwner = session?.user?.email === 'bellhorn12rs@gmail.com';
-const isAdmin = !!session?.user && !viewingUser;
+  const isOwner = session?.user?.email === 'bellhorn12rs@gmail.com';
+  const isAdmin = !!session?.user && !viewingUser;
 
   const userValue = useMemo(() => {
     return {
@@ -6470,7 +6797,7 @@ const isAdmin = !!session?.user && !viewingUser;
   
   navigator.clipboard.writeText(url);
   alert("SIGNAL LINK COPIED: Share your museum with the network.");
-};
+ };
 
   // ── 5. SYSTEM HANDLERS & EFFECTS ──
 
@@ -7991,31 +8318,12 @@ async function handleDelete(id) {
   {activeTab === 'photos' && <PhotoVaultTab concerts={concerts} />}
 
   {activeTab === 'stubs' && (
-  <div className="fade-in" style={{ padding: '40px 0' }}>
-    <div style={{ textAlign: 'center', marginBottom: 60 }}>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: C.white, lineHeight: 1 }}>
-        STUB <span style={{ color: C.gold }}>CASE</span>
-      </div>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: 15, letterSpacing: '4px' }}>
-        {concerts.filter(c => c.image_url && c.image_url !== '').length} STUBS ARCHIVED
-      </div>
-    </div>
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '40px', justifyContent: 'center', padding: '0 20px' }}>
-      {concerts
-        .filter(c => c.image_url && c.image_url !== '')
-        .sort((a, b) => b.date.localeCompare(a.date))
-        .map((c, i) => (
-          <TicketStubCard 
-            key={c.id} 
-            event={c} 
-            onEdit={isAdmin ? setEditTarget : null}
-            genreMap={artistGenres}
-            stubIdx={i}
-          />
-        ))
-      }
-    </div>
-  </div>
+  <StubCaseTab 
+    concerts={concerts} 
+    isAdmin={isAdmin} 
+    onEdit={setEditTarget}
+    artistGenres={artistGenres}
+  />
 )}
 
 {activeTab === 'posterwall' && (
