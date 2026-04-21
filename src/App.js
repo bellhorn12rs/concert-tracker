@@ -1482,7 +1482,7 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
     </div>
   );
 };
-// ─── MAIN ARTIFACT SPOTLIGHT COMPONENT (SMART GROUPING EDITION) ────────────
+// ─── MAIN ARTIFACT SPOTLIGHT COMPONENT ────────────────────────────────────────
 function ArtifactSpotlight({ concerts, posters = [], onVault }) {
   const [leftIdx, setLeftIdx] = useState(0);
   const [rightIdx, setRightIdx] = useState(1);
@@ -1494,130 +1494,134 @@ function ArtifactSpotlight({ concerts, posters = [], onVault }) {
     
     const artifacts = [];
     
-    // 1. Extract all artifacts
+    // 1. Extract all artifacts from concerts
     concerts.forEach(c => {
       const headliner = getBandName(c.bands?.[0]) || c.artist || 'UNKNOWN ARTIST';
       const venue = c.is_festival ? c.festival_name : c.venue;
-      
-      // 🟢 THE FIX: Grab the specific setlist names array from the database
       const setlistBands = c.has_setlist_names ? c.has_setlist_names.split(',').map(b => b.trim()) : [];
 
       const extract = (urlStr, type, label) => {
         if (!urlStr) return;
         urlStr.split(',').map(u => u.trim()).filter(Boolean).forEach((url, i) => {
-          
-          // 🟢 THE FIX: Map the image index to the correct band name
           let specificBand = headliner;
           if (type === 'SETLIST') {
-            specificBand = setlistBands[i] || headliner; // Match Image 2 to Band 2
+            specificBand = setlistBands[i] || headliner;
           } else if (c.is_festival && type !== 'SETLIST') {
-            specificBand = c.festival_name || headliner; // Posters/Tickets get the Fest Name
+            specificBand = c.festival_name || headliner;
           }
-
           artifacts.push({
             id: `${c.id}-${type}-${i}`,
             url: url.split('#rot=')[0],
             rotation: url.includes('#rot=') ? parseInt(url.split('#rot=')[1], 10) : 0,
-            type, 
-            label, 
-            band: specificBand, // Using the accurately mapped band
-            venue, 
+            type,
+            label,
+            band: specificBand,
+            venue,
             date: c.date
           });
         });
       };
 
-      // Add posters from posters table
-posters.forEach(p => {
-  artifacts.push({
-    id: `poster-${p.id}`,
-    url: p.image_url,
-    rotation: 0,
-    type: 'POSTER',
-    label: 'GIG POSTER',
-    band: p.artist || p.festival_name || 'UNKNOWN',
-    venue: p.venue,
-    date: p.date
-  });
-});
-
       extract(c.image_url, 'TICKET', 'TICKET STUB');
       extract(c.setlist_image_url, 'SETLIST', 'STAGE ARTIFACT');
-      extract(c.festival_poster_url, 'POSTER', 'GIG POSTER');
+      
+      // Wristbands
+      if (c.wristband_image_url) {
+        const wristUrl = c.wristband_image_url.split(',')[0].trim();
+        if (wristUrl && !artifacts.some(a => a.url === wristUrl)) {
+          artifacts.push({
+            id: `${c.id}-WRISTBAND-0`,
+            url: wristUrl,
+            rotation: 0,
+            type: 'WRISTBAND',
+            label: 'WRISTBAND',
+            band: c.festival_name || headliner,
+            venue,
+            date: c.date
+          });
+        }
+      }
+    });
+
+    // 2. Add posters from posters table
+    posters.forEach(p => {
+      artifacts.push({
+        id: `poster-${p.id}`,
+        url: p.image_url,
+        rotation: 0,
+        type: 'POSTER',
+        label: 'GIG POSTER',
+        band: p.artist || p.festival_name || 'UNKNOWN',
+        venue: p.venue,
+        date: p.date
+      });
     });
 
     if (!artifacts.length) return [];
-    
-    // 2. Sort EVERYTHING by date descending (newest first)
-    artifacts.sort((a, b) => b.date.localeCompare(a.date));
 
-    // 3. Separate into "Talls" (Setlists/Posters) and "Shorts" (Tickets)
+    // 3. Sort by date descending
+    artifacts.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+    // 4. Separate talls and shorts
     const talls = artifacts.filter(a => a.type !== 'TICKET');
     const shorts = artifacts.filter(a => a.type === 'TICKET');
 
     const cols = [];
 
-    // 4. Smart Grouping: Pair tickets together
+    // Pair tickets together
     for (let i = 0; i < shorts.length; i += 2) {
-      if (shorts[i+1]) {
-        // Full stack of 2 tickets
-        cols.push({ id: `col-s-${i}`, items: [shorts[i], shorts[i+1]], newestDate: shorts[i].date });
+      if (shorts[i + 1]) {
+        cols.push({ id: `col-s-${i}`, items: [shorts[i], shorts[i + 1]], newestDate: shorts[i].date });
       } else {
-        // Odd ticket out, sits alone
         cols.push({ id: `col-s-${i}`, items: [shorts[i]], newestDate: shorts[i].date });
       }
     }
 
-    // 5. Smart Grouping: Talls get their own column
+    // Talls get their own column
     talls.forEach((t, i) => {
       cols.push({ id: `col-t-${i}`, items: [t], newestDate: t.date });
     });
 
-    // 6. Sort the completed columns by the newest item inside them
-    cols.sort((a, b) => b.newestDate.localeCompare(a.newestDate));
+    // Sort columns by newest item
+    cols.sort((a, b) => (b.newestDate || '').localeCompare(a.newestDate || ''));
 
-    // Keep the absolute newest column first, shuffle the rest
     const newestCol = cols[0];
     const pool = cols.slice(1).sort(() => 0.5 - Math.random());
-    
-    return [newestCol, ...pool].slice(0, 10); 
-  }, [concerts]);
 
-  // Flip Timer Logic
+    return [newestCol, ...pool].slice(0, 20);
+  }, [concerts, posters]);
+
+  // Flip timer — left and right always stay 1 apart
   useEffect(() => {
-  if (columns.length < 2) return;
-  
-  const leftTimer = setInterval(() => {
-    setLeftIdx(prev => (prev + 1) % columns.length);
-  }, 5000);
+    if (columns.length < 2) return;
 
-  const rightTimer = setInterval(() => {
-    setRightIdx(prev => (prev + 1) % columns.length);
-  }, 7000);
+    const timer = setInterval(() => {
+      setLeftIdx(prev => {
+        const next = (prev + 1) % columns.length;
+        setRightIdx((next + 1) % columns.length);
+        return next;
+      });
+    }, 5000);
 
-  return () => {
-    clearInterval(leftTimer);
-    clearInterval(rightTimer);
-  };
-}, [columns.length]);
+    return () => clearInterval(timer);
+  }, [columns.length]);
 
-  if (!columns.length) 
-    return (
-  <div 
-    onClick={() => setEditTarget('new')}
-    style={{ 
-      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', 
-      justifyContent: 'center', color: C.teal, textAlign: 'center', cursor: 'pointer',
-      padding: '20px', border: `1px dashed ${C.teal}44`, borderRadius: '12px'
-    }}
-  >
-     <div style={{ fontSize: '2.5rem', marginBottom: 15, filter: 'grayscale(1) opacity(0.5)' }}>🎟️</div>
-     <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', letterSpacing: 2 }}>CURATE YOUR FIRST EXHIBIT</div>
-     <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, marginTop: 5 }}>
-       UPLOAD A STUB OR SETLIST TO START <br/> YOUR PHYSICAL ARCHIVE
-     </div>
-  </div>
-);
+  if (!columns.length) return (
+    <div
+      onClick={() => {}}
+      style={{
+        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', color: C.teal, textAlign: 'center', cursor: 'pointer',
+        padding: '20px', border: `1px dashed ${C.teal}44`, borderRadius: '12px'
+      }}
+    >
+      <div style={{ fontSize: '2.5rem', marginBottom: 15, filter: 'grayscale(1) opacity(0.5)' }}>🎟️</div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', letterSpacing: 2 }}>CURATE YOUR FIRST EXHIBIT</div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, marginTop: 5 }}>
+        UPLOAD A STUB OR SETLIST TO START <br/> YOUR PHYSICAL ARCHIVE
+      </div>
+    </div>
+  );
 
   const leftCol = columns[leftIdx % columns.length];
   const rightCol = columns[rightIdx % columns.length];
@@ -1627,14 +1631,14 @@ posters.forEach(p => {
       <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 20, textTransform: 'uppercase', textAlign: 'center', opacity: 0.4 }}>
         📋 ARTIFACT SPOTLIGHT
       </div>
-      
-      <div style={{ 
-        flex: 1, display: 'flex', flexDirection: 'row', gap: '12px', padding: '0 4px', alignItems: 'flex-start' 
+
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'row', gap: '12px', padding: '0 4px', alignItems: 'flex-start'
       }}>
         {/* LEFT COLUMN */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {leftCol?.items.map((item, idx) => (
-             <SpotlightScrap key={`L-${item.id}`} data={item} isTop={idx === 0} TAPE_COLORS={TAPE_COLORS} />
+            <SpotlightScrap key={`L-${item.id}`} data={item} isTop={idx === 0} TAPE_COLORS={TAPE_COLORS} />
           ))}
         </div>
 
@@ -1642,7 +1646,7 @@ posters.forEach(p => {
         {columns.length > 1 && (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {rightCol?.items.map((item, idx) => (
-               <SpotlightScrap key={`R-${item.id}`} data={item} isTop={idx === 0} TAPE_COLORS={TAPE_COLORS} />
+              <SpotlightScrap key={`R-${item.id}`} data={item} isTop={idx === 0} TAPE_COLORS={TAPE_COLORS} />
             ))}
           </div>
         )}
