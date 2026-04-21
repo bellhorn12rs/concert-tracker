@@ -8345,40 +8345,12 @@ async function handleDelete(id) {
 )}
 
 {activeTab === 'posterwall' && (
-  <div className="fade-in" style={{ padding: '40px 0' }}>
-    <div style={{ textAlign: 'center', marginBottom: 60 }}>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: C.white, lineHeight: 1 }}>
-        POSTER <span style={{ color: '#ff6699' }}>WALL</span>
-      </div>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: 15, letterSpacing: '4px' }}>
-        {concerts.filter(c => c.festival_poster_url && c.festival_poster_url !== '').length} POSTERS ARCHIVED
-      </div>
-    </div>
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '60px', justifyContent: 'center', padding: '0 40px', alignItems: 'flex-start' }}>
-      {concerts
-        .filter(c => c.festival_poster_url && c.festival_poster_url !== '')
-        .sort((a, b) => b.date.localeCompare(a.date))
-        .flatMap(c => 
-          c.festival_poster_url.split(',').map((url, i) => ({
-            url: url.trim(),
-            artist: getBandName(c.bands?.[0]) || c.festival_name,
-            date: c.date,
-            venue: c.venue || c.festival_name,
-            id: `${c.id}-${i}`
-          }))
-        )
-        .map((poster, i) => (
-          <GigPoster
-            key={poster.id}
-            src={poster.url}
-            artist={poster.artist}
-            date={poster.date}
-            index={i}
-          />
-        ))
-      }
-    </div>
-  </div>
+  <PosterWallTab 
+    posters={posters}
+    concerts={concerts}
+    isAdmin={isAdmin}
+    onRefresh={fetchPosters}
+  />
 )}
   
   {activeTab === 'venues' && <VenuesTab concerts={concerts} />}
