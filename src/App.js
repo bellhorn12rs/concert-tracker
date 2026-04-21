@@ -5932,7 +5932,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
       } catch (e) { console.log("📡 NO EXIF"); }
     }
 
-    const bucketMap = { 'TICKET': 'Ticket Stubs', 'SETLIST': 'setlists', 'POLAROID': 'polaroids', 'POSTER': 'Posters' };
+    const bucketMap = { 'TICKET': 'Ticket Stubs', 'SETLIST': 'setlists', 'POLAROID': 'polaroids', 'POSTER': 'Posters', 'WRISTBAND': 'Wristbands' };
     
     try {
       const bucket = bucketMap[type];
@@ -6110,7 +6110,8 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                     {k:'image_url', l:'STUB', i:'🎟️', id:'e-stub', t:'TICKET'}, 
                     {k:'personal_photo_url', l:'PHOTO', i:'📸', id:'e-pic', t:'POLAROID'}, 
                     {k:'setlist_image_url', l:'SETLIST', i:'📋', id:'e-set', t:'SETLIST'}, 
-                    {k:'festival_poster_url', l:'POSTER', i:'🎨', id:'e-post', t:'POSTER'} 
+                    {k:'festival_poster_url', l:'POSTER', i:'🎨', id:'e-post', t:'POSTER'},
+...(form.is_festival ? [{k:'wristband_image_url', l:'WRISTBAND', i:'🎫', id:'e-wrist', t:'WRISTBAND'}] : [])
                   ].map(item => (
                     <div key={item.k} onClick={() => document.getElementById(item.id).click()} style={{ background: form[item.k] ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${form[item.k] ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
                       <div style={{ fontSize: '1.2rem' }}>{form[item.k] ? '✅' : item.i}</div>
