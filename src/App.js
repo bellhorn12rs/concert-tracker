@@ -1593,33 +1593,45 @@ function ArtifactSpotlight({ concerts, posters = [], onVault }) {
     return [newestCol, ...pool].slice(0, 20);
   }, [concerts, posters]);
 
-  // Flip timer — left and right always stay 1 apart
+  // Flip timer — randomized, never shows same on both sides
   useEffect(() => {
-  if (columns.length < 2) return;
+    if (columns.length < 2) return;
 
-  // Left flips every 5s starting immediately
-  const leftTimer = setInterval(() => {
-    setLeftIdx(prev => {
-      const next = (prev + 1) % columns.length;
-      return next;
-    });
-  }, 5000);
+    const leftTimerRef = useRef(null);
+    const rightTimerRef = useRef(null);
 
-  // Right flips every 5s but starts 2.5s offset so they never sync
-  const rightDelay = setTimeout(() => {
-    const rightTimer = setInterval(() => {
-      setRightIdx(prev => (prev + 1) % columns.length);
-    }, 5000);
-    // Store for cleanup
-    rightTimerRef.current = rightTimer;
-  }, 2500);
+    const getNext = (exclude1, exclude2) => {
+      const available = Array.from({ length: columns.length }, (_, i) => i)
+        .filter(i => i !== exclude1 && i !== exclude2);
+      if (!available.length) return (exclude1 + 2) % columns.length;
+      return available[Math.floor(Math.random() * available.length)];
+    };
 
-  return () => {
-    clearInterval(leftTimer);
-    clearTimeout(rightDelay);
-    if (rightTimerRef.current) clearInterval(rightTimerRef.current);
-  };
-}, [columns.length]);
+    let currentLeft = leftIdx;
+    let currentRight = rightIdx;
+
+    const flipLeft = () => {
+      const next = getNext(currentLeft, currentRight);
+      currentLeft = next;
+      setLeftIdx(next);
+      leftTimerRef.current = setTimeout(flipLeft, 7000 + Math.random() * 5000);
+    };
+
+    const flipRight = () => {
+      const next = getNext(currentLeft, currentRight);
+      currentRight = next;
+      setRightIdx(next);
+      rightTimerRef.current = setTimeout(flipRight, 8000 + Math.random() * 5000);
+    };
+
+    leftTimerRef.current = setTimeout(flipLeft, 7000);
+    rightTimerRef.current = setTimeout(flipRight, 11000);
+
+    return () => {
+      clearTimeout(leftTimerRef.current);
+      clearTimeout(rightTimerRef.current);
+    };
+  }, [columns.length]);
 
   if (!columns.length) return (
     <div
