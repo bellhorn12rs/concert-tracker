@@ -6405,10 +6405,10 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
   });
 
   const getLabel = (p) => {
-    if (p.poster_type === 'festival_year') return p.festival_name;
-    if (p.poster_type === 'festival_day') return p.festival_day || p.festival_name;
-    return p.artist;
-  };
+  if (p.poster_type === 'festival_year') return p.festival_name;
+  if (p.poster_type === 'festival_day') return p.artist || p.festival_day || p.festival_name;
+  return p.artist;
+};
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh', background: '#0a0806' }}>
