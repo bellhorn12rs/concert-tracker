@@ -1585,24 +1585,24 @@ posters.forEach(p => {
 
   // Flip Timer Logic
   useEffect(() => {
-    if (columns.length < 2) return;
-    let timer;
+  if (columns.length < 2) return;
+  
+  const leftTimer = setInterval(() => {
+    setLeftIdx(prev => (prev + 1) % columns.length);
+  }, 5000);
 
-    const flipLeft = () => {
-      setLeftIdx(prev => (prev + 2) % columns.length);
-      timer = setTimeout(flipRight, 5000); 
-    };
+  const rightTimer = setInterval(() => {
+    setRightIdx(prev => (prev + 1) % columns.length);
+  }, 7000);
 
-    const flipRight = () => {
-      setRightIdx(prev => (prev + 2) % columns.length);
-      timer = setTimeout(flipLeft, 5000); 
-    };
+  return () => {
+    clearInterval(leftTimer);
+    clearInterval(rightTimer);
+  };
+}, [columns.length]);
 
-    timer = setTimeout(flipLeft, 2000); 
-    return () => clearTimeout(timer);
-  }, [columns.length]);
-
-  if (!columns.length) return (
+  if (!columns.length) 
+    return (
   <div 
     onClick={() => setEditTarget('new')}
     style={{ 
