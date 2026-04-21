@@ -6478,7 +6478,7 @@ function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
   });
 
   return (
-<div style={{ position: 'relative', minHeight: '100vh', background: '#050508' }}>
+<div style={{ position: 'relative', minHeight: 'auto', background: '#050508', paddingBottom: 40 }}>
       <style>{`
         @keyframes stubDrop {
           0% { opacity: 0; transform: translateY(-30px) rotate(var(--rot)); }
@@ -6499,42 +6499,41 @@ function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
         }
       `}</style>
 
-      {/* GLASS TABLE BACKGROUND */}
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 0,
-        background: '#050508',
-        pointerEvents: 'none'
-      }}>
-        {/* Glass surface */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(180deg, #0a0a12 0%, #050508 40%, #080810 100%)',
-        }} />
-        {/* Neon underglow */}
-        <div style={{
-          position: 'absolute',
-          bottom: 0, left: '10%', right: '10%',
-          height: '40%',
-          background: `radial-gradient(ellipse at 50% 100%, ${hexToRgba(C.teal, 0.12)} 0%, ${hexToRgba(C.purple, 0.08)} 40%, transparent 70%)`,
-          animation: 'neonPulse 4s ease-in-out infinite'
-        }} />
-        {/* Glass reflection line */}
-        <div style={{
-          position: 'absolute',
-          top: '30%', left: 0, right: 0,
-          height: '1px',
-          background: `linear-gradient(90deg, transparent, ${hexToRgba(C.teal, 0.15)}, ${hexToRgba(C.purple, 0.1)}, transparent)`,
-        }} />
-        {/* Subtle grid */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: `linear-gradient(${hexToRgba(C.teal, 0.03)} 1px, transparent 1px), linear-gradient(90deg, ${hexToRgba(C.teal, 0.03)} 1px, transparent 1px)`,
-          backgroundSize: '40px 40px'
-        }} />
-      </div>
+      {/* Neon underglow — stronger */}
+<div style={{
+  position: 'absolute',
+  bottom: 0, left: 0, right: 0,
+  height: '60%',
+  background: `radial-gradient(ellipse at 30% 100%, ${hexToRgba(C.teal, 0.25)} 0%, transparent 50%), radial-gradient(ellipse at 70% 100%, ${hexToRgba(C.purple, 0.2)} 0%, transparent 50%)`,
+  animation: 'neonPulse 4s ease-in-out infinite'
+}} />
+{/* Glass surface sheen */}
+<div style={{
+  position: 'absolute',
+  top: '20%', left: 0, right: 0,
+  height: '2px',
+  background: `linear-gradient(90deg, transparent 0%, ${hexToRgba(C.teal, 0.4)} 30%, ${hexToRgba(C.purple, 0.3)} 70%, transparent 100%)`,
+  filter: 'blur(1px)'
+}} />
+{/* Grid — more visible */}
+<div style={{
+  position: 'absolute', inset: 0,
+  backgroundImage: `linear-gradient(${hexToRgba(C.teal, 0.07)} 1px, transparent 1px), linear-gradient(90deg, ${hexToRgba(C.teal, 0.07)} 1px, transparent 1px)`,
+  backgroundSize: '40px 40px'
+}} />
+{/* Corner glows */}
+<div style={{
+  position: 'absolute', bottom: 0, left: 0,
+  width: '300px', height: '300px',
+  background: `radial-gradient(circle, ${hexToRgba(C.teal, 0.15)} 0%, transparent 70%)`,
+  pointerEvents: 'none'
+}} />
+<div style={{
+  position: 'absolute', bottom: 0, right: 0,
+  width: '300px', height: '300px',
+  background: `radial-gradient(circle, ${hexToRgba(C.purple, 0.15)} 0%, transparent 70%)`,
+  pointerEvents: 'none'
+}} />
 
       {/* HEADER */}
       <div style={{ position: 'relative', zIndex: 10, padding: '30px 30px 20px' }}>
@@ -6608,8 +6607,8 @@ height: item.type === 'wristband' ? 'auto' : '80px',
 objectFit: 'contain',
     borderRadius: 2,
     boxShadow: '0 8px 30px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    userSelect: 'none',
+border: item.type === 'wristband' ? `2px solid ${hexToRgba(C.teal, 0.5)}` : '1px solid rgba(255,255,255,0.08)',
+boxShadow: item.type === 'wristband' ? `0 8px 30px rgba(0,0,0,0.7), 0 0 15px ${hexToRgba(C.teal, 0.3)}` : '0 8px 30px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5)',    userSelect: 'none',
     pointerEvents: 'none',
     transform: item.imgRotation ? `rotate(${item.imgRotation}deg)` : 'none',
   }}
