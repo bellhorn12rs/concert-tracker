@@ -7409,55 +7409,68 @@ async function handleDelete(id) {
         </div>
       </div>
 
-      {/* MOBILE STAT ROW 1 — ARTIFACT COUNTS */}
-      <div style={{ 
-        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', 
-        gap: '6px', padding: '6px 10px 3px',
-        background: '#000',
+      {/* MOBILE STAT ROWS — GROUPED */}
+<div style={{
+  background: '#000',
+  borderBottom: `1px solid ${C.border}`,
+  padding: '8px 10px',
+}}>
+  {/* Row 1 — ARTIFACT COUNTS */}
+  <div style={{
+    border: `1px solid ${hexToRgba(C.teal, 0.25)}`,
+    borderRadius: '8px',
+    padding: '6px',
+    marginBottom: '6px',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: '6px',
+  }}>
+    {[
+      { val: headerStats.tickets, lbl: 'TICKETS', col: C.gold, click: () => setActiveTab('stubs') },
+      { val: headerStats.setlists, lbl: 'RELICS', col: C.teal, click: () => setActiveTab('vault') },
+      { val: headerStats.posters, lbl: 'POSTERS', col: C.purple, click: () => setActiveTab('posterwall') },
+      { val: headerStats.photos, lbl: 'PHOTOS', col: C.cyan, click: () => setActiveTab('photos') },
+    ].map(s => (
+      <div key={s.lbl} onClick={s.click} style={{
+        background: hexToRgba(s.col, 0.05), border: `1.5px solid ${s.col}`,
+        borderRadius: '6px', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        minHeight: '52px', boxShadow: `inset 0 0 10px ${hexToRgba(s.col, 0.15)}`
       }}>
-        {[
-          { val: headerStats.tickets, lbl: 'TIX', col: C.gold, click: () => setActiveTab('stubs') },
-          { val: headerStats.setlists, lbl: 'LST', col: C.teal, click: () => setActiveTab('vault') },
-          { val: headerStats.posters, lbl: 'PST', col: C.purple, click: () => setActiveTab('posterwall') },
-          { val: headerStats.photos, lbl: 'PHO', col: C.cyan, click: () => setActiveTab('photos') },
-        ].map(s => (
-          <div key={s.lbl} onClick={s.click} style={{
-            background: hexToRgba(s.col, 0.05), border: `1.5px solid ${s.col}`,
-            borderRadius: '6px', display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-            minHeight: '52px', boxShadow: `inset 0 0 10px ${hexToRgba(s.col, 0.15)}`
-          }}>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: s.col, lineHeight: 1 }}>{s.val}</div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: '#fff', opacity: 0.5, letterSpacing: '1px' }}>{s.lbl}</div>
-          </div>
-        ))}
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: s.col, lineHeight: 1 }}>{s.val}</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: '#fff', opacity: 0.5, letterSpacing: '1px' }}>{s.lbl}</div>
       </div>
+    ))}
+  </div>
 
-      {/* MOBILE STAT ROW 2 — SHOW COUNTS */}
-      <div style={{ 
-        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', 
-        gap: '6px', padding: '3px 10px 8px',
-        background: '#000',
-        borderBottom: `1px solid ${C.border}`
+  {/* Row 2 — SHOW COUNTS */}
+  <div style={{
+    border: `1px solid ${hexToRgba(C.purple, 0.25)}`,
+    borderRadius: '8px',
+    padding: '6px',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: '6px',
+  }}>
+    {[
+      { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
+      { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); }},
+      { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); }},
+      { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
+    ].map(s => (
+      <div key={s.lbl} onClick={s.click} style={{
+        background: hexToRgba(s.col, 0.05), border: `1.5px solid ${s.col}`,
+        borderRadius: '6px', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        minHeight: '52px', boxShadow: `inset 0 0 10px ${hexToRgba(s.col, 0.15)}`
       }}>
-        {[
-          { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
-          { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); }},
-          { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); }},
-          { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
-        ].map(s => (
-          <div key={s.lbl} onClick={s.click} style={{
-            background: hexToRgba(s.col, 0.05), border: `1.5px solid ${s.col}`,
-            borderRadius: '6px', display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-            minHeight: '52px', boxShadow: `inset 0 0 10px ${hexToRgba(s.col, 0.15)}`
-          }}>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: s.col, lineHeight: 1 }}>{s.val}</div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: '#fff', opacity: 0.5, letterSpacing: '1px' }}>{s.lbl}</div>
-          </div>
-        ))}
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: s.col, lineHeight: 1 }}>{s.val}</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: '#fff', opacity: 0.5, letterSpacing: '1px' }}>{s.lbl}</div>
       </div>
-    </>
+    ))}
+  </div>
+</div>
+</>
   ) : (
     /* DESKTOP HEADER — unchanged */
     <div style={{ 
