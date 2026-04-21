@@ -2424,7 +2424,7 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
   );
 }
 // ─── HALL OFFAME (RESTORED & ARMORED) ───────────────────────────────────────
-function HallOfFame({ sets, genreMap, onShare }) {
+function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
   const [selected, setSelected] = useState(null);
   const topRef = useRef(null);
 
@@ -2456,37 +2456,48 @@ function HallOfFame({ sets, genreMap, onShare }) {
 
   // 2. 🟢 ROBUST MEDIA ARCHIVE
   const archive = useMemo(() => {
-  if (!selectedData) return { setlists: [], photos: [], posters: [] };
+  if (!selectedData) return { setlists: [], photos: [], archivePosters: [] };
   
   const setlists = [];
   const photos = [];
-  const posters = [];
+  const archivePosters = [];
 
-    selectedData.shows.forEach(s => {
-      // Logic for Setlists: Check new bucket FIRST, then fallback to old image_url
-      const slSource = s.setlist_image_url || s.image_url;
-      if (slSource && typeof slSource === 'string') {
-        slSource.split(',').forEach(url => {
-          if (url.trim()) setlists.push({ url: url.trim(), date: s.date });
-        });
-      }
+  selectedData.shows.forEach(s => {
+    // Setlists
+    const slSource = s.setlist_image_url || s.image_url;
+    if (slSource && typeof slSource === 'string') {
+      slSource.split(',').forEach(url => {
+        if (url.trim()) setlists.push({ url: url.trim(), date: s.date });
+      });
+    }
 
-      if (s.festival_poster_url && typeof s.festival_poster_url === 'string') {
-  s.festival_poster_url.split(',').forEach(url => {
-    if (url.trim()) posters.push({ url: url.trim(), date: s.date });
+    // Posters from old concert field
+    if (s.festival_poster_url && typeof s.festival_poster_url === 'string') {
+      s.festival_poster_url.split(',').forEach(url => {
+        if (url.trim()) archivePosters.push({ url: url.trim(), date: s.date });
+      });
+    }
+
+    // Polaroids
+    if (s.personal_photo_url && typeof s.personal_photo_url === 'string') {
+      s.personal_photo_url.split(',').forEach(url => {
+        if (url.trim()) photos.push({ url: url.trim(), date: s.date });
+      });
+    }
   });
-}
-      
-      // Logic for Polaroids
-      if (s.personal_photo_url && typeof s.personal_photo_url === 'string') {
-        s.personal_photo_url.split(',').forEach(url => {
-          if (url.trim()) photos.push({ url: url.trim(), date: s.date });
-        });
-      }
-    });
 
-    return { setlists, photos, posters };
-  }, [selectedData]);
+  // Posters from posters table
+  posters.filter(p =>
+    p.artist === selectedData.artist ||
+    selectedData.shows.some(show => show.date === p.date)
+  ).forEach(p => {
+    if (!archivePosters.some(ap => ap.url === p.image_url)) {
+      archivePosters.push({ url: p.image_url, date: p.date });
+    }
+  });
+
+  return { setlists, photos, archivePosters };
+}, [selectedData, posters]);
 
   return (
     <div ref={topRef} style={{ padding: '24px 0' }} className="fade-in">
@@ -2544,19 +2555,19 @@ function HallOfFame({ sets, genreMap, onShare }) {
 
               {/* MEDIA VAULT (REPAIRED) */}
 <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '30px' }}>
-  {(archive.setlists.length > 0 || archive.posters.length > 0) && (
-    <div>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: gc, letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// STAGE ARTIFACTS</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'flex-start' }}>
-        {archive.setlists.map((m, idx) => (
-          <SetlistPaper key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.setlists.length} />
-        ))}
-        {archive.posters.map((m, idx) => (
-          <GigPoster key={`poster-${idx}-${m.url}`} src={m.url} artist={selectedData.artist} date={m.date} index={idx} />
-        ))}
-      </div>
+  {(archive.setlists.length > 0 || archive.archivePosters.length > 0) && (
+  <div>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: gc, letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// STAGE ARTIFACTS</div>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'flex-start' }}>
+      {archive.setlists.map((m, idx) => (
+        <SetlistPaper key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.setlists.length} />
+      ))}
+      {archive.archivePosters.map((m, idx) => (
+        <GigPoster key={`poster-${idx}-${m.url}`} src={m.url} artist={selectedData.artist} date={m.date} index={idx} />
+      ))}
     </div>
-  )}
+  </div>
+)}
   
   {archive.photos.length > 0 && (
     <div>
@@ -8896,7 +8907,7 @@ async function handleDelete(id) {
   )}
 
   {/* 3. ARCHIVE TABS */}
-  {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
+{activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} posters={posters} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
   
   {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
   
