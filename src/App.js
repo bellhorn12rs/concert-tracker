@@ -6370,49 +6370,52 @@ function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
 
   // Build the pile from real images only
   const allItems = useMemo(() => {
-    const pile = [];
-    concerts.forEach(c => {
-      // Real ticket stubs
-      if (c.image_url) {
-        c.image_url.split(',').map(u => u.trim()).filter(Boolean).forEach((url, i) => {
-  const cleanUrl = url.split('#rot=')[0];
-  const rotation = url.includes('#rot=') ? parseInt(url.split('#rot=')[1], 10) : 0;
-  pile.push({
-    id: `stub-${c.id}-${i}`,
-    url: cleanUrl,
-    imgRotation: rotation,
-            type: 'stub',
-            artist: getBandName(c.bands?.[0]) || c.festival_name || 'Unknown',
-            date: c.date,
-            venue: c.venue || c.festival_name,
-            city: c.city,
-            state: c.state,
-            is_festival: c.is_festival,
-            festival_name: c.festival_name,
-            concertId: c.id
-          });
+  const pile = [];
+  concerts.forEach(c => {
+    // Real ticket stubs
+    if (c.image_url) {
+      c.image_url.split(',').map(u => u.trim()).filter(Boolean).forEach((url, i) => {
+        const cleanUrl = url.split('#rot=')[0];
+        const rotation = url.includes('#rot=') ? parseInt(url.split('#rot=')[1], 10) : 0;
+        pile.push({
+          id: `stub-${c.id}-${i}`,
+          url: cleanUrl,
+          imgRotation: rotation,
+          type: 'stub',
+          artist: getBandName(c.bands?.[0]) || c.festival_name || 'Unknown',
+          date: c.date,
+          venue: c.venue || c.festival_name,
+          city: c.city,
+          state: c.state,
+          is_festival: c.is_festival,
+          festival_name: c.festival_name,
+          concertId: c.id
         });
-      }
-      // Real wristbands
-      if (c.wristband_image_url) {
-  c.wristband_image_url.split(',').map(u => u.trim()).filter(Boolean).forEach((url, i) => {
-    // Skip if we already have this exact wristband URL in the pile
-    if (pile.some(p => p.url === url)) return;
-    pile.push({
-      id: `wrist-${c.id}-${i}`,
-      url,
-      type: 'wristband',
-      artist: c.festival_name || getBandName(c.bands?.[0]) || 'Unknown',
-      date: c.date,
-      venue: c.venue || c.festival_name,
-      city: c.city,
-      state: c.state,
-      is_festival: true,
-      festival_name: c.festival_name,
-      concertId: c.id
-    });
+      });
+    }
+    // Real wristbands
+    if (c.wristband_image_url) {
+      c.wristband_image_url.split(',').map(u => u.trim()).filter(Boolean).forEach((url, i) => {
+        if (pile.some(p => p.url === url)) return;
+        pile.push({
+          id: `wrist-${c.id}-${i}`,
+          url,
+          imgRotation: 0,
+          type: 'wristband',
+          artist: c.festival_name || getBandName(c.bands?.[0]) || 'Unknown',
+          date: c.date,
+          venue: c.venue || c.festival_name,
+          city: c.city,
+          state: c.state,
+          is_festival: true,
+          festival_name: c.festival_name,
+          concertId: c.id
+        });
+      });
+    }
   });
-}
+  return pile;
+}, [concerts]);
 
   const years = useMemo(() => {
     const ySet = new Set(allItems.map(i => getYear(i.date)).filter(Boolean));
