@@ -7802,49 +7802,65 @@ const getCuratorTitle = (stats, concerts) => {
   };
 
   const handleSave = async (id, payload) => {
-    if (!isAdmin) return;
-    try {
-      // 📡 THE FINAL HANDSHAKE: Mapping payload to DB columns
-      const dataToStamp = {
-        date: payload.date || null,
-        bands: Array.isArray(payload.bands) ? payload.bands : [],
-        venue: payload.venue || null,
-        city: payload.city || null,
-        state: payload.state || null,
-        genre: payload.is_festival ? 'Festival' : (payload.bands[0]?.genre || payload.genre || 'Indie Rock'),
-        is_festival: Boolean(payload.is_festival),
-        festival_name: payload.festival_name || null,
-        festival_day: payload.festival_day || null,
-        
-        // ARCHAEOLOGY MAPPING
-        image_url: payload.image_url || null,
-        setlist_image_url: payload.setlist_image_url || null,
-        personal_photo_url: payload.personal_photo_url || null,
-        festival_poster_url: payload.festival_poster_url || null,
-        wristband_image_url: payload.wristband_image_url || null,
-        
-        has_setlist: Boolean(payload.setlist_image_url || payload.has_setlist_names?.trim()),
-        has_setlist_names: payload.has_setlist_names || null,
-        user_id: session?.user?.id || null,
-      };
+  if (!isAdmin) return;
+  try {
+    const dataToStamp = {
+      date: payload.date || null,
+      bands: Array.isArray(payload.bands) ? payload.bands : [],
+      venue: payload.venue || null,
+      city: payload.city || null,
+      state: payload.state || null,
+      genre: payload.is_festival ? 'Festival' : (payload.bands[0]?.genre || payload.genre || 'Indie Rock'),
+      is_festival: Boolean(payload.is_festival),
+      festival_name: payload.festival_name || null,
+      festival_day: payload.festival_day || null,
+      image_url: payload.image_url || null,
+      setlist_image_url: payload.setlist_image_url || null,
+      personal_photo_url: payload.personal_photo_url || null,
+      festival_poster_url: payload.festival_poster_url || null,
+      wristband_image_url: payload.wristband_image_url || null,
+      has_setlist: Boolean(payload.setlist_image_url || payload.has_setlist_names?.trim()),
+      has_setlist_names: payload.has_setlist_names || null,
+      user_id: session?.user?.id || null,
+    };
 
-      let result;
-      if (id && id !== 'new') {
-        result = await supabase.from('concerts').update(dataToStamp).eq('id', id);
-      } else {
-        result = await supabase.from('concerts').insert([dataToStamp]);
-      }
-
-      if (result.error) throw result.error;
-
-      setEditTarget(null);
-      await fetchConcerts(); 
-
-    } catch (error) {
-      console.error("DATABASE REJECTED SAVE:", error.message);
-      alert('DATABASE REJECTED SAVE: ' + error.message);
+    let result;
+    if (id && id !== 'new') {
+      result = await supabase.from('concerts').update(dataToStamp).eq('id', id);
+    } else {
+      result = await supabase.from('concerts').insert([dataToStamp]);
     }
-  };
+
+    if (result.error) throw result.error;
+
+    // Auto-propagate wristband to all days of same festival year
+    if (payload.wristband_image_url && payload.is_festival && payload.festival_name && payload.date) {
+      const festYear = getYear(payload.date);
+      const { data: festDays } = await supabase
+        .from('concerts')
+        .select('id')
+        .eq('user_id', session?.user?.id)
+        .eq('festival_name', payload.festival_name)
+        .gte('date', `${festYear}-01-01`)
+        .lte('date', `${festYear}-12-31`);
+
+      if (festDays && festDays.length > 1) {
+        const ids = festDays.map(d => d.id);
+        await supabase
+          .from('concerts')
+          .update({ wristband_image_url: payload.wristband_image_url })
+          .in('id', ids);
+      }
+    }
+
+    setEditTarget(null);
+    await fetchConcerts();
+
+  } catch (error) {
+    console.error("DATABASE REJECTED SAVE:", error.message);
+    alert('DATABASE REJECTED SAVE: ' + error.message);
+  }
+};
   // ── 1. MAIN DATA FETCH (THE PIVOT)
   async function fetchConcerts() {
     const targetId = viewingUser || session?.user?.id;
