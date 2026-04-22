@@ -688,8 +688,8 @@ export default function LandingPage({
           </div>
           {/* Wristband mess — top right, overlapping */}
           <div style={{ 
-            position: 'absolute', top: 0, right: 0,
-            width: '75%',
+            position: 'absolute', top: '-10px', right: 0,
+            width: '50%',
             transform: 'rotate(4deg)',
             boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
             border: '3px solid #1a1a1a'
@@ -748,15 +748,50 @@ export default function LandingPage({
           AFTER // THE ARCHIVE
         </div>
 
-        {/* Organized archive display */}
-        <div style={{ 
-          width: isMobile ? 280 : 340,
-          background: '#050508',
-          border: `1px solid ${TEAL}33`,
-          borderRadius: 12,
-          overflow: 'hidden',
-          boxShadow: `0 20px 60px rgba(0,0,0,0.8), 0 0 40px ${TEAL}11`
+        {/* App screenshot in browser frame */}
+        <div style={{ width: isMobile ? 280 : 340, position: 'relative' }}>
+          <div style={{
+            background: '#0a0a0f',
+            border: `1px solid ${TEAL}44`,
+            borderRadius: 12,
+            overflow: 'hidden',
+            boxShadow: `0 20px 60px rgba(0,0,0,0.8), 0 0 40px ${TEAL}11`
+          }}>
+            {/* Browser bar */}
+            <div style={{
+              background: '#050508',
+              padding: '8px 12px',
+              borderBottom: `1px solid ${TEAL}22`,
+              display: 'flex', alignItems: 'center', gap: 6
+            }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff4466' }} />
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: GOLD }} />
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#00cc88' }} />
+              <div style={{ flex: 1, background: '#111', borderRadius: 3, padding: '2px 8px', marginLeft: 8 }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#444', letterSpacing: 1 }}>trackrecord.app</div>
+              </div>
+            </div>
+            <img
+              loading="lazy"
+              src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/Screenshot%202026-04-22%20at%203.03.33%20PM.png"
+              alt="TrackRecord Archive"
+              style={{ width: '100%', height: 'auto', display: 'block' }}
+            />
+          </div>
+          <div style={{
+            position: 'absolute', bottom: -20, left: '10%', right: '10%', height: 40,
+            background: `radial-gradient(ellipse, ${TEAL}33, transparent)`,
+            filter: 'blur(10px)', pointerEvents: 'none'
+          }} />
+        </div>
+
+        <div style={{
+          fontFamily: "'Space Mono'", fontSize: 8, color: TEAL,
+          textAlign: 'center', lineHeight: 2, marginTop: 8
         }}>
+          EVERY ARTIFACT. IN ONE PLACE.<br/>
+          SEARCHABLE. FOREVER.
+        </div>
           {/* Mini header */}
           <div style={{ 
             background: '#0a0a0f', 
