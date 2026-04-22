@@ -660,106 +660,184 @@ export default function LandingPage({
       marginBottom: 80
     }}>
 
-      {/* Stacked chaotic photos */}
-<div style={{ position: 'relative', width: isMobile ? 280 : 340, height: isMobile ? 300 : 360 }}>
-  {/* Ticket pile — fills most of the space */}
-  <div style={{ 
-    position: 'absolute', bottom: 0, left: 0,
-    width: '90%',
-    transform: 'rotate(-2deg)',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
-    border: '3px solid #1a1a1a',
-    zIndex: 2
-  }}>
-    <img 
-      loading="lazy"
-      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/ticketPile.jpeg"
-      alt="Ticket pile"
-      style={{ width: '100%', height: 'auto', display: 'block' }}
-    />
-  </div>
-  {/* Wristband — smaller, top right corner, peeking out */}
-  <div style={{ 
-    position: 'absolute', top: 0, right: 0,
-    width: '55%',
-    transform: 'rotate(5deg)',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
-    border: '3px solid #1a1a1a',
-    zIndex: 3
-  }}>
-    <img 
-      loading="lazy"
-      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/WristbandMess.jpeg"
-      alt="Wristband mess"
-      style={{ width: '100%', height: 'auto', display: 'block' }}
-    />
-  </div>
-</div>
-      {/* RIGHT: THE ARCHIVE */}
-<div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
-  <div style={{ 
-    fontFamily: "'Space Mono'", fontSize: 8, color: TEAL, 
-    letterSpacing: 4, marginBottom: 8, textAlign: 'center'
-  }}>
-    AFTER // THE ARCHIVE
-  </div>
-
-  {/* App screenshot */}
-  <div style={{ 
-    width: isMobile ? 280 : 340,
-    position: 'relative',
-  }}>
-    {/* Device frame */}
-    <div style={{
-      background: '#0a0a0f',
-      border: `1px solid ${TEAL}44`,
-      borderRadius: 12,
-      overflow: 'hidden',
-      boxShadow: `0 20px 60px rgba(0,0,0,0.8), 0 0 40px ${TEAL}11`
-    }}>
-      {/* Mini browser bar */}
-      <div style={{ 
-        background: '#050508', 
-        padding: '8px 12px',
-        borderBottom: `1px solid ${TEAL}22`,
-        display: 'flex', alignItems: 'center', gap: 6
-      }}>
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff4466' }} />
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: GOLD }} />
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#00cc88' }} />
-        <div style={{ flex: 1, background: '#111', borderRadius: 3, padding: '2px 8px', marginLeft: 8 }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#444', letterSpacing: 1 }}>
-            trackrecord.app
+      {/* LEFT: THE CHAOS */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
+        <div style={{ 
+          fontFamily: "'Space Mono'", fontSize: 8, color: '#ff4466', 
+          letterSpacing: 4, marginBottom: 8, textAlign: 'center'
+        }}>
+          BEFORE // THE SHOEBOX
+        </div>
+        
+        {/* Stacked chaotic photos */}
+        <div style={{ position: 'relative', width: isMobile ? 280 : 340, height: isMobile ? 340 : 400 }}>
+          {/* Ticket pile — bottom */}
+          <div style={{ 
+            position: 'absolute', bottom: 0, left: 0,
+            width: '85%',
+            transform: 'rotate(-3deg)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
+            border: '3px solid #1a1a1a'
+          }}>
+            <img 
+              loading="lazy"
+              src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/ticketPile.jpeg"
+              alt="Ticket pile"
+              style={{ width: '100%', height: 'auto', display: 'block' }}
+            />
+          </div>
+          {/* Wristband mess — top right, overlapping */}
+          <div style={{ 
+            position: 'absolute', top: 0, right: 0,
+            width: '75%',
+            transform: 'rotate(4deg)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
+            border: '3px solid #1a1a1a'
+          }}>
+            <img 
+              loading="lazy"
+              src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/WristbandMess.jpeg"
+              alt="Wristband mess"
+              style={{ width: '100%', height: 'auto', display: 'block' }}
+            />
           </div>
         </div>
+
+        {/* Chaos stats */}
+        <div style={{ 
+          fontFamily: "'Space Mono'", fontSize: 8, color: '#666',
+          textAlign: 'center', lineHeight: 2, marginTop: 8
+        }}>
+          BURIED IN BOXES<br/>
+          FADING. FORGOTTEN. LOST.
+        </div>
       </div>
-      {/* Screenshot */}
-      <img
-        loading="lazy"
-        src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/Screenshot%202026-04-22%20at%203.03.33%20PM.png"
-        alt="TrackRecord Archive"
-        style={{ width: '100%', height: 'auto', display: 'block' }}
-      />
+
+      {/* CENTER: ARROW */}
+      <div style={{ 
+        flexShrink: 0,
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 12, padding: isMobile ? '0' : '0 40px'
+      }}>
+        <div style={{ 
+          fontFamily: "'Bebas Neue'", 
+          fontSize: isMobile ? '3rem' : '5rem',
+          color: TEAL,
+          textShadow: `0 0 30px ${TEAL}`,
+          transform: isMobile ? 'rotate(90deg)' : 'none',
+          animation: 'pulse-dot 2s ease-in-out infinite'
+        }}>
+          →
+        </div>
+        <div style={{ 
+          fontFamily: "'Space Mono'", fontSize: 7, 
+          color: TEAL, letterSpacing: 2, textAlign: 'center',
+          opacity: 0.6,
+          transform: isMobile ? 'none' : 'none'
+        }}>
+          DIGITIZE
+        </div>
+      </div>
+
+      {/* RIGHT: THE ARCHIVE */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
+        <div style={{ 
+          fontFamily: "'Space Mono'", fontSize: 8, color: TEAL, 
+          letterSpacing: 4, marginBottom: 8, textAlign: 'center'
+        }}>
+          AFTER // THE ARCHIVE
+        </div>
+
+        {/* Organized archive display */}
+        <div style={{ 
+          width: isMobile ? 280 : 340,
+          background: '#050508',
+          border: `1px solid ${TEAL}33`,
+          borderRadius: 12,
+          overflow: 'hidden',
+          boxShadow: `0 20px 60px rgba(0,0,0,0.8), 0 0 40px ${TEAL}11`
+        }}>
+          {/* Mini header */}
+          <div style={{ 
+            background: '#0a0a0f', 
+            padding: '10px 16px',
+            borderBottom: `1px solid ${TEAL}22`,
+            display: 'flex', alignItems: 'center', gap: 8
+          }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: TEAL, boxShadow: `0 0 6px ${TEAL}` }} />
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: TEAL, letterSpacing: 2 }}>TRACKRECORD // ARCHIVE ONLINE</div>
+          </div>
+
+          {/* Stat grid */}
+          <div style={{ 
+            display: 'grid', gridTemplateColumns: '1fr 1fr',
+            gap: 1, background: '#111'
+          }}>
+            {[
+              { 
+                val: concerts.filter(c => c.image_url && c.image_url !== '').length, 
+                lbl: 'TICKET STUBS', 
+                col: GOLD,
+                icon: '🎟️'
+              },
+              { 
+                val: concerts.filter(c => c.wristband_image_url && c.wristband_image_url !== '').length,
+                lbl: 'WRISTBANDS', 
+                col: TEAL,
+                icon: '📿'
+              },
+              { 
+                val: concerts.filter(c => c.setlist_image_url && c.setlist_image_url !== '').length,
+                lbl: 'RELICS', 
+                col: PURPLE,
+                icon: '📋'
+              },
+              { 
+                val: concerts.filter(c => c.festival_poster_url && c.festival_poster_url !== '').length,
+                lbl: 'POSTERS', 
+                col: '#ff6699',
+                icon: '🎨'
+              },
+            ].map(s => (
+              <div key={s.lbl} style={{ 
+                background: '#050508', padding: '16px 12px',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                gap: 4
+              }}>
+                <div style={{ fontSize: '1.2rem' }}>{s.icon}</div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: s.col, lineHeight: 1, textShadow: `0 0 10px ${s.col}` }}>
+                  {s.val}
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#555', letterSpacing: 1 }}>
+                  {s.lbl}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Mini bottom bar */}
+          <div style={{ 
+            padding: '10px 16px',
+            background: '#0a0a0f',
+            borderTop: `1px solid ${TEAL}22`,
+            fontFamily: "'Space Mono'", fontSize: 6, 
+            color: TEAL, letterSpacing: 2, textAlign: 'center'
+          }}>
+            ORGANIZED // SEARCHABLE // PERMANENT
+          </div>
+        </div>
+
+        {/* Archive stats */}
+        <div style={{ 
+          fontFamily: "'Space Mono'", fontSize: 8, color: TEAL,
+          textAlign: 'center', lineHeight: 2, marginTop: 8
+        }}>
+          EVERY ARTIFACT. IN ONE PLACE.<br/>
+          SEARCHABLE. FOREVER.
+        </div>
+      </div>
     </div>
-
-    {/* Glow under */}
-    <div style={{
-      position: 'absolute', bottom: -20, left: '10%', right: '10%', height: 40,
-      background: `radial-gradient(ellipse, ${TEAL}33, transparent)`,
-      filter: 'blur(10px)',
-      pointerEvents: 'none'
-    }} />
-  </div>
-
-  <div style={{ 
-    fontFamily: "'Space Mono'", fontSize: 8, color: TEAL,
-    textAlign: 'center', lineHeight: 2, marginTop: 8
-  }}>
-    EVERY ARTIFACT. IN ONE PLACE.<br/>
-    SEARCHABLE. FOREVER.
-  </div>
-</div>
-
 
     {/* Bottom copy with real stats */}
     <div style={{ textAlign: 'center' }}>
