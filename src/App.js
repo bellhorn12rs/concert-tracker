@@ -1483,189 +1483,140 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
   );
 };
 // ─── MAIN ARTIFACT SPOTLIGHT COMPONENT ────────────────────────────────────────
+// ─── ARTIFACT SLOT MACHINE ──────────────────────────────────────────────────
 function ArtifactSpotlight({ concerts, posters = [], onVault }) {
-  const [leftIdx, setLeftIdx] = useState(0);
-  const [rightIdx, setRightIdx] = useState(1);
-  const rightTimerRef = useRef(null);
+  const [leftItems, setLeftItems] = useState([]);
+  const [rightItems, setRightItems] = useState([]);
+  const [spinningL, setSpinningL] = useState(false);
+  const [spinningR, setSpinningR] = useState(false);
 
-  
   const TAPE_COLORS = ['#ffcc00', '#00e5cc', '#9966ff', '#ff4466', '#00cfff'];
 
-  const columns = useMemo(() => {
-    if (!concerts || !concerts.length) return [];
-    
+  // 1. Process the pool once
+  const pool = useMemo(() => {
     const artifacts = [];
-    
-    // 1. Extract all artifacts from concerts
     concerts.forEach(c => {
-      const headliner = getBandName(c.bands?.[0]) || c.artist || 'UNKNOWN ARTIST';
-      const venue = c.is_festival ? c.festival_name : c.venue;
-      const setlistBands = c.has_setlist_names ? c.has_setlist_names.split(',').map(b => b.trim()) : [];
-
-      const extract = (urlStr, type, label) => {
-        if (!urlStr) return;
-        urlStr.split(',').map(u => u.trim()).filter(Boolean).forEach((url, i) => {
-          let specificBand = headliner;
-          if (type === 'SETLIST') {
-            specificBand = setlistBands[i] || headliner;
-          } else if (c.is_festival && type !== 'SETLIST') {
-            specificBand = c.festival_name || headliner;
-          }
-          artifacts.push({
-            id: `${c.id}-${type}-${i}`,
-            url: url.split('#rot=')[0],
-            rotation: url.includes('#rot=') ? parseInt(url.split('#rot=')[1], 10) : 0,
-            type,
-            label,
-            band: specificBand,
-            venue,
-            date: c.date
-          });
-        });
-      };
-
-      extract(c.image_url, 'TICKET', 'TICKET STUB');
-      extract(c.setlist_image_url, 'SETLIST', 'STAGE ARTIFACT');
-      
-      // Wristbands
-      if (c.wristband_image_url) {
-        const wristUrl = c.wristband_image_url.split(',')[0].trim();
-        if (wristUrl && !artifacts.some(a => a.url === wristUrl)) {
-          artifacts.push({
-            id: `${c.id}-WRISTBAND-0`,
-            url: wristUrl,
-            rotation: 0,
-            type: 'WRISTBAND',
-            label: 'WRISTBAND',
-            band: c.festival_name || headliner,
-            venue,
-            date: c.date
-          });
-        }
+      const headliner = getBandName(c.bands?.[0]) || c.artist || 'UNKNOWN';
+      // Tickets (Shorts)
+      if (c.image_url) {
+        artifacts.push({ id: `s-${c.id}`, url: c.image_url.split(',')[0], type: 'SHORT', band: headliner, date: c.date });
+      }
+      // Setlists (Talls)
+      if (c.setlist_image_url) {
+        artifacts.push({ id: `t-${c.id}`, url: c.setlist_image_url.split(',')[0], type: 'TALL', band: headliner, date: c.date });
       }
     });
-
-    // 2. Add posters from posters table
     posters.forEach(p => {
-      artifacts.push({
-        id: `poster-${p.id}`,
-        url: p.image_url,
-        rotation: 0,
-        type: 'POSTER',
-        label: 'GIG POSTER',
-        band: p.artist || p.festival_name || 'UNKNOWN',
-        venue: p.venue,
-        date: p.date
-      });
+      artifacts.push({ id: `p-${p.id}`, url: p.image_url, type: 'TALL', band: p.artist || 'POSTER', date: p.date });
     });
-
-    if (!artifacts.length) return [];
-
-    // 3. Sort by date descending
-    artifacts.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-
-    // 4. Separate talls and shorts
-    const talls = artifacts.filter(a => a.type !== 'TICKET');
-    const shorts = artifacts.filter(a => a.type === 'TICKET');
-
-    const cols = [];
-
-    // Pair tickets together
-    for (let i = 0; i < shorts.length; i += 2) {
-      if (shorts[i + 1]) {
-        cols.push({ id: `col-s-${i}`, items: [shorts[i], shorts[i + 1]], newestDate: shorts[i].date });
-      } else {
-        cols.push({ id: `col-s-${i}`, items: [shorts[i]], newestDate: shorts[i].date });
-      }
-    }
-
-    // Talls get their own column
-    talls.forEach((t, i) => {
-      cols.push({ id: `col-t-${i}`, items: [t], newestDate: t.date });
-    });
-
-    // Sort columns by newest item
-    cols.sort((a, b) => (b.newestDate || '').localeCompare(a.newestDate || ''));
-
-    const newestCol = cols[0];
-    const pool = cols.slice(1).sort(() => 0.5 - Math.random());
-
-    return [newestCol, ...pool].slice(0, 20);
+    return artifacts;
   }, [concerts, posters]);
 
-  // Flip timer — left and right always stay 1 apart
-  useEffect(() => {
-  if (columns.length < 2) return;
+  // 2. The logic to pick a "Slot" (Either 1 Tall or 2 Shorts)
+  const getRandomPackage = useCallback(() => {
+    if (!pool.length) return [];
+    const talls = pool.filter(a => a.type === 'TALL');
+    const shorts = pool.filter(a => a.type === 'SHORT');
 
-  // Left flips every 5s starting immediately
-  const leftTimer = setInterval(() => {
-    setLeftIdx(prev => {
-      const next = (prev + 1) % columns.length;
-      return next;
-    });
-  }, 5000);
+    // 50/50 chance for Tall vs Shorts layout
+    if (Math.random() > 0.5 && talls.length > 0) {
+      return [talls[Math.floor(Math.random() * talls.length)]];
+    } else if (shorts.length > 0) {
+      const s1 = shorts[Math.floor(Math.random() * shorts.length)];
+      const s2 = shorts[Math.floor(Math.random() * shorts.length)];
+      return [s1, s2]; // Always try to fill both spots if shorts exist
+    }
+    return [pool[Math.floor(Math.random() * pool.length)]];
+  }, [pool]);
 
-  // Right flips every 5s but starts 2.5s offset so they never sync
-  const rightDelay = setTimeout(() => {
-    const rightTimer = setInterval(() => {
-      setRightIdx(prev => (prev + 1) % columns.length);
-    }, 5000);
-    // Store for cleanup
-    rightTimerRef.current = rightTimer;
-  }, 2500);
+  // 3. The Slot Machine Spin Logic
+  const spin = () => {
+    if (spinningL || spinningR || !pool.length) return;
 
-  return () => {
-    clearInterval(leftTimer);
-    clearTimeout(rightDelay);
-    if (rightTimerRef.current) clearInterval(rightTimerRef.current);
+    setSpinningL(true);
+    setSpinningR(true);
+
+    let iterL = 0;
+    let iterR = 0;
+
+    // Left Reel: Stops at 12 iterations
+    const intervalL = setInterval(() => {
+      setLeftItems(getRandomPackage());
+      iterL++;
+      if (iterL >= 12) {
+        clearInterval(intervalL);
+        setSpinningL(false);
+      }
+    }, 100);
+
+    // Right Reel: Stops at 20 iterations (delays the finish)
+    const intervalR = setInterval(() => {
+      setRightItems(getRandomPackage());
+      iterR++;
+      if (iterR >= 20) {
+        clearInterval(intervalR);
+        setSpinningR(false);
+      }
+    }, 100);
   };
-}, [columns.length]);
 
-  if (!columns.length) return (
-    <div
-      onClick={() => {}}
-      style={{
-        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-        justifyContent: 'center', color: C.teal, textAlign: 'center', cursor: 'pointer',
-        padding: '20px', border: `1px dashed ${C.teal}44`, borderRadius: '12px'
-      }}
-    >
-      <div style={{ fontSize: '2.5rem', marginBottom: 15, filter: 'grayscale(1) opacity(0.5)' }}>🎟️</div>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', letterSpacing: 2 }}>CURATE YOUR FIRST EXHIBIT</div>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, marginTop: 5 }}>
-        UPLOAD A STUB OR SETLIST TO START <br/> YOUR PHYSICAL ARCHIVE
-      </div>
-    </div>
-  );
+  // Initial Spin
+  useEffect(() => { if (pool.length && !leftItems.length) spin(); }, [pool.length]);
 
-  const leftCol = columns[leftIdx % columns.length];
-  const rightCol = columns[rightIdx % columns.length];
+  if (!pool.length) return <EmptyArtifacts onVault={onVault} />;
 
   return (
     <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 20, textTransform: 'uppercase', textAlign: 'center', opacity: 0.4 }}>
-        📋 ARTIFACT SPOTLIGHT
-      </div>
-
-      <div style={{
-        flex: 1, display: 'flex', flexDirection: 'row', gap: '12px', padding: '0 4px', alignItems: 'flex-start'
-      }}>
-        {/* LEFT COLUMN */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {leftCol?.items.map((item, idx) => (
-            <SpotlightScrap key={`L-${item.id}`} data={item} isTop={idx === 0} TAPE_COLORS={TAPE_COLORS} />
-          ))}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, opacity: 0.4 }}>
+           ARTIFACT SPOTLIGHT
         </div>
-
-        {/* RIGHT COLUMN */}
-        {columns.length > 1 && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {rightCol?.items.map((item, idx) => (
-              <SpotlightScrap key={`R-${item.id}`} data={item} isTop={idx === 0} TAPE_COLORS={TAPE_COLORS} />
-            ))}
-          </div>
-        )}
+        <button 
+          onClick={(e) => { e.stopPropagation(); spin(); }} 
+          disabled={spinningL || spinningR}
+          style={{ 
+            background: 'transparent', border: `1px solid ${C.gold}44`, color: C.gold, 
+            fontSize: 7, padding: '2px 8px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'" 
+          }}
+        >
+          {spinningL || spinningR ? "ROLLING..." : "RE-ROLL"}
+        </button>
       </div>
+
+      <div style={{ flex: 1, display: 'flex', gap: '12px', overflow: 'hidden' }}>
+        {/* LEFT REEL */}
+        <Reel items={leftItems} spinning={spinningL} TAPE_COLORS={TAPE_COLORS} />
+        
+        {/* RIGHT REEL */}
+        <Reel items={rightItems} spinning={spinningR} TAPE_COLORS={TAPE_COLORS} />
+      </div>
+    </div>
+  );
+}
+
+// ─── SUB-COMPONENTS ─────────────────────────────────────────────────────────
+
+function Reel({ items, spinning, TAPE_COLORS }) {
+  return (
+    <div style={{ 
+      flex: 1, 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: '12px',
+      opacity: spinning ? 0.7 : 1,
+      filter: spinning ? 'blur(1px)' : 'none',
+      transition: 'filter 0.2s ease'
+    }}>
+      {items.map((item, idx) => (
+        <div key={`${item.id}-${idx}`} style={{ flex: items.length === 1 ? 1 : 0.5, minHeight: 0 }}>
+          <SpotlightScrap 
+            data={item} 
+            isTop={idx === 0} 
+            TAPE_COLORS={TAPE_COLORS} 
+            spinning={spinning} 
+          />
+        </div>
+      ))}
     </div>
   );
 }
