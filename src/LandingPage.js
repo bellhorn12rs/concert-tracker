@@ -757,7 +757,6 @@ export default function LandingPage({
             overflow: 'hidden',
             boxShadow: `0 20px 60px rgba(0,0,0,0.8), 0 0 40px ${TEAL}11`
           }}>
-            {/* Browser bar */}
             <div style={{
               background: '#050508',
               padding: '8px 12px',
@@ -786,85 +785,6 @@ export default function LandingPage({
         </div>
 
         <div style={{
-          fontFamily: "'Space Mono'", fontSize: 8, color: TEAL,
-          textAlign: 'center', lineHeight: 2, marginTop: 8
-        }}>
-          EVERY ARTIFACT. IN ONE PLACE.<br/>
-          SEARCHABLE. FOREVER.
-        </div>
-          {/* Mini header */}
-          <div style={{ 
-            background: '#0a0a0f', 
-            padding: '10px 16px',
-            borderBottom: `1px solid ${TEAL}22`,
-            display: 'flex', alignItems: 'center', gap: 8
-          }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: TEAL, boxShadow: `0 0 6px ${TEAL}` }} />
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: TEAL, letterSpacing: 2 }}>TRACKRECORD // ARCHIVE ONLINE</div>
-          </div>
-
-          {/* Stat grid */}
-          <div style={{ 
-            display: 'grid', gridTemplateColumns: '1fr 1fr',
-            gap: 1, background: '#111'
-          }}>
-            {[
-              { 
-                val: concerts.filter(c => c.image_url && c.image_url !== '').length, 
-                lbl: 'TICKET STUBS', 
-                col: GOLD,
-                icon: '🎟️'
-              },
-              { 
-                val: concerts.filter(c => c.wristband_image_url && c.wristband_image_url !== '').length,
-                lbl: 'WRISTBANDS', 
-                col: TEAL,
-                icon: '📿'
-              },
-              { 
-                val: concerts.filter(c => c.setlist_image_url && c.setlist_image_url !== '').length,
-                lbl: 'RELICS', 
-                col: PURPLE,
-                icon: '📋'
-              },
-              { 
-                val: concerts.filter(c => c.festival_poster_url && c.festival_poster_url !== '').length,
-                lbl: 'POSTERS', 
-                col: '#ff6699',
-                icon: '🎨'
-              },
-            ].map(s => (
-              <div key={s.lbl} style={{ 
-                background: '#050508', padding: '16px 12px',
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                gap: 4
-              }}>
-                <div style={{ fontSize: '1.2rem' }}>{s.icon}</div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: s.col, lineHeight: 1, textShadow: `0 0 10px ${s.col}` }}>
-                  {s.val}
-                </div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#555', letterSpacing: 1 }}>
-                  {s.lbl}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Mini bottom bar */}
-          <div style={{ 
-            padding: '10px 16px',
-            background: '#0a0a0f',
-            borderTop: `1px solid ${TEAL}22`,
-            fontFamily: "'Space Mono'", fontSize: 6, 
-            color: TEAL, letterSpacing: 2, textAlign: 'center'
-          }}>
-            ORGANIZED // SEARCHABLE // PERMANENT
-          </div>
-        </div>
-
-        {/* Archive stats */}
-        <div style={{ 
           fontFamily: "'Space Mono'", fontSize: 8, color: TEAL,
           textAlign: 'center', lineHeight: 2, marginTop: 8
         }}>
