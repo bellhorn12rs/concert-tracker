@@ -620,6 +620,256 @@ export default function LandingPage({
 
 </div> {/* closes hero section */}
 
+
+{/* ── TURN THIS INTO THIS ── */}
+<div style={{ 
+  padding: isMobile ? '80px 20px' : '120px 40px', 
+  background: '#000',
+  borderTop: '1px solid #111',
+  position: 'relative',
+  overflow: 'hidden'
+}}>
+  {/* Background glow */}
+  <div style={{ 
+    position: 'absolute', top: '50%', left: '50%', 
+    transform: 'translate(-50%, -50%)',
+    width: 800, height: 400,
+    background: `radial-gradient(ellipse, rgba(0,229,204,0.04) 0%, transparent 70%)`,
+    pointerEvents: 'none'
+  }} />
+
+  <div style={{ maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+    
+    {/* Header */}
+    <div style={{ textAlign: 'center', marginBottom: 60 }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: TEAL, letterSpacing: 4, marginBottom: 12 }}>
+        // THE TRANSFORMATION
+      </div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '5rem', color: '#fff', lineHeight: 0.9, letterSpacing: 2 }}>
+        TURN <span style={{ color: GOLD }}>THIS</span> INTO <span style={{ color: TEAL }}>THIS</span>
+      </div>
+    </div>
+
+    {/* Main two-panel */}
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: isMobile ? 'column' : 'row',
+      gap: isMobile ? 40 : 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 80
+    }}>
+
+      {/* LEFT: THE CHAOS */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
+        <div style={{ 
+          fontFamily: "'Space Mono'", fontSize: 8, color: '#ff4466', 
+          letterSpacing: 4, marginBottom: 8, textAlign: 'center'
+        }}>
+          BEFORE // THE SHOEBOX
+        </div>
+        
+        {/* Stacked chaotic photos */}
+        <div style={{ position: 'relative', width: isMobile ? 280 : 340, height: isMobile ? 340 : 400 }}>
+          {/* Ticket pile — bottom */}
+          <div style={{ 
+            position: 'absolute', bottom: 0, left: 0,
+            width: '85%',
+            transform: 'rotate(-3deg)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
+            border: '3px solid #1a1a1a'
+          }}>
+            <img 
+              loading="lazy"
+              src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/ticketPile.jpeg"
+              alt="Ticket pile"
+              style={{ width: '100%', height: 'auto', display: 'block' }}
+            />
+          </div>
+          {/* Wristband mess — top right, overlapping */}
+          <div style={{ 
+            position: 'absolute', top: 0, right: 0,
+            width: '75%',
+            transform: 'rotate(4deg)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
+            border: '3px solid #1a1a1a'
+          }}>
+            <img 
+              loading="lazy"
+              src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/WristbandMess.jpeg"
+              alt="Wristband mess"
+              style={{ width: '100%', height: 'auto', display: 'block' }}
+            />
+          </div>
+        </div>
+
+        {/* Chaos stats */}
+        <div style={{ 
+          fontFamily: "'Space Mono'", fontSize: 8, color: '#666',
+          textAlign: 'center', lineHeight: 2, marginTop: 8
+        }}>
+          BURIED IN BOXES<br/>
+          FADING. FORGOTTEN. LOST.
+        </div>
+      </div>
+
+      {/* CENTER: ARROW */}
+      <div style={{ 
+        flexShrink: 0,
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 12, padding: isMobile ? '0' : '0 40px'
+      }}>
+        <div style={{ 
+          fontFamily: "'Bebas Neue'", 
+          fontSize: isMobile ? '3rem' : '5rem',
+          color: TEAL,
+          textShadow: `0 0 30px ${TEAL}`,
+          transform: isMobile ? 'rotate(90deg)' : 'none',
+          animation: 'pulse-dot 2s ease-in-out infinite'
+        }}>
+          →
+        </div>
+        <div style={{ 
+          fontFamily: "'Space Mono'", fontSize: 7, 
+          color: TEAL, letterSpacing: 2, textAlign: 'center',
+          opacity: 0.6,
+          transform: isMobile ? 'none' : 'none'
+        }}>
+          DIGITIZE
+        </div>
+      </div>
+
+      {/* RIGHT: THE ARCHIVE */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
+        <div style={{ 
+          fontFamily: "'Space Mono'", fontSize: 8, color: TEAL, 
+          letterSpacing: 4, marginBottom: 8, textAlign: 'center'
+        }}>
+          AFTER // THE ARCHIVE
+        </div>
+
+        {/* Organized archive display */}
+        <div style={{ 
+          width: isMobile ? 280 : 340,
+          background: '#050508',
+          border: `1px solid ${TEAL}33`,
+          borderRadius: 12,
+          overflow: 'hidden',
+          boxShadow: `0 20px 60px rgba(0,0,0,0.8), 0 0 40px ${TEAL}11`
+        }}>
+          {/* Mini header */}
+          <div style={{ 
+            background: '#0a0a0f', 
+            padding: '10px 16px',
+            borderBottom: `1px solid ${TEAL}22`,
+            display: 'flex', alignItems: 'center', gap: 8
+          }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: TEAL, boxShadow: `0 0 6px ${TEAL}` }} />
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: TEAL, letterSpacing: 2 }}>TRACKRECORD // ARCHIVE ONLINE</div>
+          </div>
+
+          {/* Stat grid */}
+          <div style={{ 
+            display: 'grid', gridTemplateColumns: '1fr 1fr',
+            gap: 1, background: '#111'
+          }}>
+            {[
+              { 
+                val: concerts.filter(c => c.image_url && c.image_url !== '').length, 
+                lbl: 'TICKET STUBS', 
+                col: GOLD,
+                icon: '🎟️'
+              },
+              { 
+                val: concerts.filter(c => c.wristband_image_url && c.wristband_image_url !== '').length,
+                lbl: 'WRISTBANDS', 
+                col: TEAL,
+                icon: '📿'
+              },
+              { 
+                val: concerts.filter(c => c.setlist_image_url && c.setlist_image_url !== '').length,
+                lbl: 'RELICS', 
+                col: PURPLE,
+                icon: '📋'
+              },
+              { 
+                val: concerts.filter(c => c.festival_poster_url && c.festival_poster_url !== '').length,
+                lbl: 'POSTERS', 
+                col: '#ff6699',
+                icon: '🎨'
+              },
+            ].map(s => (
+              <div key={s.lbl} style={{ 
+                background: '#050508', padding: '16px 12px',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                gap: 4
+              }}>
+                <div style={{ fontSize: '1.2rem' }}>{s.icon}</div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: s.col, lineHeight: 1, textShadow: `0 0 10px ${s.col}` }}>
+                  {s.val}
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 6, color: '#555', letterSpacing: 1 }}>
+                  {s.lbl}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Mini bottom bar */}
+          <div style={{ 
+            padding: '10px 16px',
+            background: '#0a0a0f',
+            borderTop: `1px solid ${TEAL}22`,
+            fontFamily: "'Space Mono'", fontSize: 6, 
+            color: TEAL, letterSpacing: 2, textAlign: 'center'
+          }}>
+            ORGANIZED // SEARCHABLE // PERMANENT
+          </div>
+        </div>
+
+        {/* Archive stats */}
+        <div style={{ 
+          fontFamily: "'Space Mono'", fontSize: 8, color: TEAL,
+          textAlign: 'center', lineHeight: 2, marginTop: 8
+        }}>
+          EVERY ARTIFACT. IN ONE PLACE.<br/>
+          SEARCHABLE. FOREVER.
+        </div>
+      </div>
+    </div>
+
+    {/* Bottom copy with real stats */}
+    <div style={{ textAlign: 'center' }}>
+      <div style={{ 
+        fontFamily: "'Bebas Neue'", 
+        fontSize: isMobile ? '1.8rem' : '3rem',
+        color: '#fff', lineHeight: 1.3, letterSpacing: 2,
+        marginBottom: 20
+      }}>
+        <span style={{ color: GOLD }}>
+          {concerts.filter(c => c.image_url && c.image_url !== '').length} TICKET STUBS.
+        </span>{' '}
+        <span style={{ color: TEAL }}>
+          {concerts.filter(c => c.wristband_image_url && c.wristband_image_url !== '').length} WRISTBANDS.
+        </span>{' '}
+        <span style={{ color: PURPLE }}>
+          {concerts.filter(c => c.setlist_image_url && c.setlist_image_url !== '').length} RELICS.
+        </span>{' '}
+        <span style={{ color: '#ff6699' }}>
+          {concerts.filter(c => c.festival_poster_url && c.festival_poster_url !== '').length} POSTERS.
+        </span>
+      </div>
+      <div style={{ 
+        fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.2rem' : '2rem',
+        color: '#333', letterSpacing: 4
+      }}>
+        STILL IN A BOX. NOT FOR LONG.
+      </div>
+    </div>
+  </div>
+</div>
+
 {/* ── THE SHOEBOX NARRATIVE ── */}
 <div style={{ padding: isMobile ? '80px 20px' : '120px 40px', background: '#080808', borderTop: '1px solid #111', position: 'relative' }}>
   <div style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: 60, alignItems: 'center' }}>
