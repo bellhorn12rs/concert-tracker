@@ -621,6 +621,39 @@ export default function LandingPage({
 </div> {/* closes hero section */}
 
 
+{/* ── THE SHOEBOX NARRATIVE ── */}
+<div style={{ padding: isMobile ? '80px 20px' : '120px 40px', background: '#080808', borderTop: '1px solid #111', position: 'relative' }}>
+  <div style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: 60, alignItems: 'center' }}>
+    
+    <div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: GOLD, letterSpacing: 5, marginBottom: 20 }}>// THE PROBLEM</div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', lineHeight: 1, color: '#fff' }}>
+        STILL DIGGING THROUGH <span style={{ color: GOLD }}>SHOEBOXES?</span>
+      </div>
+      <p style={{ fontFamily: "'Space Mono'", fontSize: 12, color: GRAY, lineHeight: 2, marginTop: 24 }}>
+        The physical world is messy. Faded stubs, lost wristbands, and photos buried in a camera roll of 40,000 images. Your musical legacy deserves more than a cardboard box in the closet.
+      </p>
+    </div>
+
+    <div style={{ background: '#000', border: `1px solid ${GOLD}22`, padding: 40, borderRadius: 12, textAlign: 'center', boxShadow: `0 20px 50px rgba(0,0,0,0.5)` }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 20, marginBottom: 20 }}>
+        <div style={{ fontSize: '2rem', opacity: 0.4 }}>📦</div>
+        <div style={{ fontSize: '1.5rem', color: GOLD }}>→</div>
+        <div style={{ fontSize: '2.5rem', textShadow: `0 0 20px ${TEAL}` }}>🏛️</div>
+      </div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: TEAL, letterSpacing: 2 }}>
+        [ DEPLOYING DIGITAL PRESERVATION ]
+      </div>
+      <div style={{ width: '100%', height: 1, background: 'linear-gradient(90deg, transparent, #222, transparent)', margin: '20px 0' }} />
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, lineHeight: 2 }}>
+        CONVERTING ANALOG CLUTTER<br/>
+        TO ARCHIVAL SIGNALS
+      </div>
+    </div>
+
+  </div>
+</div>
+
 {/* ── TURN THIS INTO THIS ── */}
 <div style={{ 
   padding: isMobile ? '80px 20px' : '120px 40px', 
@@ -825,38 +858,6 @@ export default function LandingPage({
   </div>
 </div>
 
-{/* ── THE SHOEBOX NARRATIVE ── */}
-<div style={{ padding: isMobile ? '80px 20px' : '120px 40px', background: '#080808', borderTop: '1px solid #111', position: 'relative' }}>
-  <div style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: 60, alignItems: 'center' }}>
-    
-    <div>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: GOLD, letterSpacing: 5, marginBottom: 20 }}>// THE PROBLEM</div>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', lineHeight: 1, color: '#fff' }}>
-        STILL DIGGING THROUGH <span style={{ color: GOLD }}>SHOEBOXES?</span>
-      </div>
-      <p style={{ fontFamily: "'Space Mono'", fontSize: 12, color: GRAY, lineHeight: 2, marginTop: 24 }}>
-        The physical world is messy. Faded stubs, lost wristbands, and photos buried in a camera roll of 40,000 images. Your musical legacy deserves more than a cardboard box in the closet.
-      </p>
-    </div>
-
-    <div style={{ background: '#000', border: `1px solid ${GOLD}22`, padding: 40, borderRadius: 12, textAlign: 'center', boxShadow: `0 20px 50px rgba(0,0,0,0.5)` }}>
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 20, marginBottom: 20 }}>
-        <div style={{ fontSize: '2rem', opacity: 0.4 }}>📦</div>
-        <div style={{ fontSize: '1.5rem', color: GOLD }}>→</div>
-        <div style={{ fontSize: '2.5rem', textShadow: `0 0 20px ${TEAL}` }}>🏛️</div>
-      </div>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: TEAL, letterSpacing: 2 }}>
-        [ DEPLOYING DIGITAL PRESERVATION ]
-      </div>
-      <div style={{ width: '100%', height: 1, background: 'linear-gradient(90deg, transparent, #222, transparent)', margin: '20px 0' }} />
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, lineHeight: 2 }}>
-        CONVERTING ANALOG CLUTTER<br/>
-        TO ARCHIVAL SIGNALS
-      </div>
-    </div>
-
-  </div>
-</div>
 
       {/* ── SECTION 1: TEMPORAL DRIFT ── */}
 <div style={{ padding: isMobile ? '60px 20px' : '80px 40px', background: '#050508', borderTop: '1px solid #111', borderBottom: '1px solid #111', position: 'relative', overflow: 'hidden' }}>
