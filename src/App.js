@@ -2878,7 +2878,7 @@ function WristbandCard({ event, genreMap, compact, onEdit }) {
           boxShadow: `0 4px 20px rgba(0,0,0,0.5), 0 0 15px ${hexToRgba(themeColor, 0.2)}`,
           position: 'relative'
         }}>
-          <img
+          <img loading="lazy"
             src={event.wristband_image_url}
             alt="Wristband"
             style={{
@@ -3689,7 +3689,7 @@ function GigPoster({ src, artist, date, index = 0 }) {
             border: '1px solid #2a2a2a',
           }}>
             {/* IMAGE */}
-            <img
+            <img loading="lazy"
               src={cleanSrc}
               alt={artist}
               style={{
@@ -4255,7 +4255,7 @@ console.log('WRISTBAND:', show.date, wristband);
             {/* Wristband image if available */}
             {wristband && (
               <div style={{ marginBottom: 15 }}>
-                <img
+                <img loading="lazy"
                   src={wristband}
                   alt="Wristband"
                   style={{
@@ -4855,7 +4855,7 @@ function VenuesTab({ concerts }) {
       border: `1px solid ${hexToRgba(rowColor, 0.4)}`,
       boxShadow: `0 4px 15px rgba(0,0,0,0.5)`
     }}>
-      <img
+      <img loading="lazy"
         src={show.wristband_image_url}
         alt="Wristband"
         style={{ width: '100%', height: 'auto', display: 'block' }}
@@ -6582,7 +6582,7 @@ columnGap: '20px',
             <div style={{ position: 'absolute', top: 6, right: 12, width: 14, height: 6, background: '#888', borderRadius: 1, zIndex: 10, boxShadow: '0 1px 3px rgba(0,0,0,0.8)' }} />
 
             {/* POSTER IMAGE */}
-            <img
+            <img loading="lazy"
               src={poster.image_url}
               alt={getLabel(poster)}
               style={{
@@ -6669,7 +6669,7 @@ columnGap: '20px',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
             maxWidth: '90vw'
           }}>
-            <img
+            <img loading="lazy"
               src={selected.image_url}
               alt={getLabel(selected)}
               style={{
@@ -7189,7 +7189,7 @@ function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
               e.currentTarget.style.transform = `rotate(${item.rotation}deg)`;
             }}
           >
-            <img
+            <img loading="lazy"
   src={item.url}
   alt={item.artist}
   style={{
@@ -7241,7 +7241,7 @@ boxShadow: item.type === 'wristband' ? `0 8px 30px rgba(0,0,0,0.7), 0 0 15px ${h
               '--tr': `${selected.throwRot * 3}deg`,
             }}
           >
-            <img
+            <img loading="lazy"
               src={selected.url}
               alt={selected.artist}
               style={{
