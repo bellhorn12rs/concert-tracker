@@ -180,13 +180,14 @@ export default function LandingPage({
   const [concerts, setConcerts] = useState([]);
   const [userCount, setUserCount] = useState(0);
 
-  useEffect(() => {
-    const fetchPublicConcerts = async () => {
-      const { data } = await supabase.from('concerts').select('*').order('date', { ascending: false });
-      if (data) setConcerts(data);
-    };
-    fetchPublicConcerts();
-  }, []);
+  const fetchPublicConcerts = async () => {
+  const { data } = await supabase
+    .from('concerts')
+    .select('id, date, bands, venue, city, state, genre, is_festival, festival_name, image_url, personal_photo_url, setlist_image_url, festival_poster_url, wristband_image_url')
+    .order('date', { ascending: false })
+    .limit(600);
+  if (data) setConcerts(data);
+};
 
   useEffect(() => {
     const fetchRecentUsers = async () => {
@@ -209,9 +210,9 @@ export default function LandingPage({
 
   const artifacts = useMemo(() =>
   concerts
-    .filter(c => c.image_url || c.personal_photo_url || c.setlist_image_url)
+    .filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && (c.image_url || c.personal_photo_url || c.setlist_image_url))
     .sort(() => 0.5 - Math.random())
-    .slice(0, 20)
+    .slice(0, 8)
 , [concerts]);
 
   const years = useMemo(() => {
@@ -232,9 +233,12 @@ export default function LandingPage({
   }, [concerts, sliderYear]);
 
   const sliderArtifact = useMemo(() => {
-    const withImg = sliderConcerts.filter(c => c.image_url || c.personal_photo_url);
-    return withImg[0] || sliderConcerts[0] || null;
-  }, [sliderConcerts]);
+  const withImg = sliderConcerts.filter(c => 
+    c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && 
+    (c.image_url || c.personal_photo_url)
+  );
+  return withImg[0] || null;
+}, [sliderConcerts]);
 
   useEffect(() => {
     if (!artifacts.length) return;
@@ -258,13 +262,12 @@ export default function LandingPage({
     concerts.filter(c => c.image_url || c.setlist_image_url).slice(0, 5).forEach(c => {
       const band = getBandName(c.bands?.[0]) || 'UNKNOWN';
       bits.push(`[ARTIFACT_ARCHIVED] ${band.toUpperCase()} — ${fmtDateShort(c.date).toUpperCase()}`);
-    });
     bits.push(`[NETWORK_STAT] ${concerts.length} SIGNALS IN ARCHIVE`);
-    bits.push(`[NETWORK_STAT] ${new Set(concerts.map(c => c.venue).filter(Boolean)).size} UNIQUE STAGES DOCUMENTED`);
-    bits.push(`[NETWORK_STAT] ${new Set(concerts.map(c => c.state).filter(Boolean)).size} STATES ON THE MAP`);
+    bits.push(`[NETWORK_STAT] ${uniqueVenues} UNIQUE STAGES DOCUMENTED`);
+    bits.push(`[NETWORK_STAT] ${uniqueStates} STATES ON THE MAP`);
     const txt = bits.join('   ///   ') + '   ///   ';
     return txt + txt;
-  }, [concerts]);
+  }, [concerts, uniqueVenues, uniqueStates]);
 
   const permanentRecord = useMemo(() => {
     return concerts
@@ -323,6 +326,10 @@ export default function LandingPage({
   const sliderBand = sliderArtifact ? (getBandName(sliderArtifact.bands?.[0]) || sliderArtifact.festival_name || '') : '';
 
   const uniqueArtists = new Set(concerts.flatMap(c => (c.bands || []).map(getBandName)).filter(Boolean)).size;
+const uniqueVenues = useMemo(() => new Set(concerts.map(c => c.venue).filter(Boolean)).size, [concerts]);
+const uniqueStates = useMemo(() => new Set(concerts.map(c => c.state).filter(Boolean)).size, [concerts]);
+const uniqueGenres = useMemo(() => new Set(concerts.map(c => c.genre).filter(Boolean)).size, [concerts]);
+
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#fff', fontFamily: "'Space Mono', monospace", overflowX: 'hidden', position: 'relative' }}>
@@ -549,12 +556,12 @@ export default function LandingPage({
         THE ARCHIVE // LIVE READOUT
       </div>
       <div className="stats-row" style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start', marginBottom: 32 }}>
-        {[
-          [concerts.length, 'SHOWS'],
-          [uniqueArtists, 'ARTISTS'],
-          [new Set(concerts.map(c => c.venue).filter(Boolean)).size, 'VENUES'],
-          [new Set(concerts.map(c => c.state).filter(Boolean)).size, 'STATES'],
-        ].map(([val, label]) => (
+  {[
+    [concerts.length, 'SHOWS'],
+    [uniqueArtists, 'ARTISTS'],
+    [uniqueVenues, 'VENUES'],
+    [uniqueStates, 'STATES'],
+  ].map(([val, label]) => (
           <div key={label} style={{ textAlign: 'center' }}>
             <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '3rem', color: TEAL, lineHeight: 1, textShadow: `0 0 20px rgba(0,229,204,0.4)` }}>{val}</div>
             <div style={{ fontSize: 7, color: GRAY, letterSpacing: 2, marginTop: 4 }}>{label}</div>
@@ -562,11 +569,11 @@ export default function LandingPage({
         ))}
       </div>
       <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.4rem' : '2rem', color: '#fff', lineHeight: 1.2, marginBottom: 8, opacity: 0.9 }}>
-        {concerts.length} SHOWS.<br />
-        {uniqueArtists} ARTISTS.<br />
-        {new Set(concerts.map(c => c.state).filter(Boolean)).size} STATES.<br />
-        <span style={{ color: TEAL }}>ONE ARCHIVE.</span>
-      </div>
+  {concerts.length} SHOWS.<br />
+  {uniqueArtists} ARTISTS.<br />
+  {uniqueStates} STATES.<br />
+  <span style={{ color: TEAL }}>ONE ARCHIVE.</span>
+</div>
     </div>
   </div>
 
@@ -836,17 +843,17 @@ export default function LandingPage({
         marginBottom: 20
       }}>
         <span style={{ color: GOLD }}>
-          {concerts.filter(c => c.image_url && c.image_url !== '').length} TICKET STUBS.
-        </span>{' '}
-        <span style={{ color: TEAL }}>
-          {concerts.filter(c => c.wristband_image_url && c.wristband_image_url !== '').length} WRISTBANDS.
-        </span>{' '}
-        <span style={{ color: PURPLE }}>
-          {concerts.filter(c => c.setlist_image_url && c.setlist_image_url !== '').length} RELICS.
-        </span>{' '}
-        <span style={{ color: '#ff6699' }}>
-          {concerts.filter(c => c.festival_poster_url && c.festival_poster_url !== '').length} POSTERS.
-        </span>
+  {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.image_url && c.image_url !== '').length} TICKET STUBS.
+</span>{' '}
+<span style={{ color: TEAL }}>
+  {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.wristband_image_url && c.wristband_image_url !== '').length} WRISTBANDS.
+</span>{' '}
+<span style={{ color: PURPLE }}>
+  {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.setlist_image_url && c.setlist_image_url !== '').length} RELICS.
+</span>{' '}
+<span style={{ color: '#ff6699' }}>
+  {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.festival_poster_url && c.festival_poster_url !== '').length} POSTERS.
+</span>
       </div>
       <div style={{ 
         fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.2rem' : '2rem',
@@ -976,17 +983,19 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
                 }}>
                   {/* Image — blurred until hover */}
                   <img
-                    src={artifact.url}
-                    alt={band}
-                    style={{
-                      width: '100%',
-                      height: isMobile ? 100 : 130,
-                      objectFit: 'cover',
-                      display: 'block',
-                      filter: isHovered ? 'none' : 'blur(8px) brightness(0.5)',
-                      transition: 'filter 0.5s ease',
-                    }}
-                  />
+  src={isHovered ? artifact.url : undefined}
+  alt={band}
+  loading="lazy"
+  style={{
+    width: '100%',
+    height: isMobile ? 100 : 130,
+    objectFit: 'cover',
+    display: 'block',
+    filter: isHovered ? 'none' : 'blur(8px) brightness(0.5)',
+    transition: 'filter 0.5s ease',
+    background: '#111',
+  }}
+/>
 
                   {/* Encrypted overlay */}
                   {!isHovered && (
@@ -1147,7 +1156,7 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
     <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'center' }}>
       {sliderImg && (
         <div style={{ position: 'relative', background: '#fff', padding: '8px 8px 40px 8px', boxShadow: '0 20px 60px rgba(0,0,0,0.8)', borderRadius: 2, width: isMobile ? 140 : 180, flexShrink: 0, transform: 'rotate(-1.5deg)', transition: 'all 0.5s' }}>
-          <img src={sliderImg} alt={sliderBand} style={{ width: '100%', height: isMobile ? 100 : 130, objectFit: 'cover', display: 'block' }} />
+          <img src={sliderImg} alt={sliderBand} loading="lazy" style={{ width: '100%', height: isMobile ? 100 : 130, objectFit: 'cover', display: 'block' }} />
           <div style={{ position: 'absolute', bottom: 8, left: 0, right: 0, textAlign: 'center', fontFamily: "'Bebas Neue'", fontSize: '0.85rem', color: '#111' }}>
             {sliderBand.toUpperCase()}
           </div>
@@ -1410,12 +1419,12 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
 
     {/* Stat strip */}
     <div style={{ display: 'flex', gap: isMobile ? 24 : 80, justifyContent: 'center', flexWrap: 'wrap', padding: '40px 0', borderTop: `1px solid #111`, borderBottom: `1px solid #111`, marginBottom: 48 }}>
-      {[
-        [concerts.length, 'SHOWS', TEAL],
-        [new Set(concerts.flatMap(c => (c.bands || []).map(getBandName)).filter(Boolean)).size, 'ARTISTS', GOLD],
-        [new Set(concerts.map(c => c.venue).filter(Boolean)).size, 'VENUES', PURPLE],
-        [new Set(concerts.map(c => c.state).filter(Boolean)).size, 'STATES', '#ff4466'],
-      ].map(([val, label, color]) => (
+  {[
+    [concerts.length, 'SHOWS', TEAL],
+    [uniqueArtists, 'ARTISTS', GOLD],
+    [uniqueVenues, 'VENUES', PURPLE],
+    [uniqueStates, 'STATES', '#ff4466'],
+  ].map(([val, label, color]) => (
         <div key={label} style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '3rem' : '5rem', color, lineHeight: 1, textShadow: `0 0 30px ${color}88` }}>{val}</div>
           <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, letterSpacing: 4, marginTop: 8 }}>{label}</div>
@@ -1441,8 +1450,8 @@ const displayed = shuffled.slice(0, isMobile ? 6 : 10);
         </div>
         <div style={{ overflow: 'hidden', flex: 1 }}>
           <div className="ticker-scroll" style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GOLD, paddingLeft: 20, letterSpacing: 1, opacity: 0.6, animationDuration: '60s' }}>
-            {`ARCHIVE STATUS: ACTIVE /// TOTAL SIGNALS: ${concerts.length} /// MUSEUMS INITIALIZED: ${userCount} /// GENRES MAPPED: ${new Set(concerts.map(c => c.genre).filter(Boolean)).size} /// STATES COVERED: ${new Set(concerts.map(c => c.state).filter(Boolean)).size} /// ARTIFACTS STORED: ${concerts.filter(c => c.image_url || c.personal_photo_url).length} /// SYSTEM: NOMINAL /// `.repeat(3)}
-          </div>
+  {`ARCHIVE STATUS: ACTIVE /// TOTAL SIGNALS: ${concerts.length} /// MUSEUMS INITIALIZED: ${userCount} /// GENRES MAPPED: ${uniqueGenres} /// STATES COVERED: ${uniqueStates} /// ARTIFACTS STORED: ${concerts.filter(c => c.image_url || c.personal_photo_url).length} /// SYSTEM: NOMINAL /// `.repeat(3)}
+</div>
         </div>
       </div>
 
