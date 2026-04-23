@@ -513,9 +513,11 @@ return txt + txt;
 
   {/* Wordmark */}
   <div className="fade-in" style={{ textAlign: 'center', marginBottom: 48, position: 'relative', zIndex: 1 }}>
-    <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '3.5rem' : 'clamp(3rem, 8vw, 6rem)', letterSpacing: 8, color: '#fff', lineHeight: 0.9, textShadow: `0 0 40px rgba(0,229,204,0.3)` }}>
-      TRACK<span style={{ color: TEAL }}>RECORD</span>
-    </div>
+    <img
+  src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/Screenshot%202026-04-20%20at%209.13.55%20AM.png"
+  alt="TrackRecord"
+  style={{ height: isMobile ? '60px' : '90px', objectFit: 'contain' }}
+/>
     <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 4, marginTop: 12 }}>
       YOUR CONCERT HISTORY. MUSEUM GRADE.
     </div>
