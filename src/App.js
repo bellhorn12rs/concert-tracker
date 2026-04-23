@@ -1717,7 +1717,7 @@ function ArtistInsights({ concerts }) {
 
 // ─── RANDOM SHOW (FULL FESTIVAL & SCROLLABLE EDITION) ────────────────────────
 // ─── RANDOM SHOW (SPECIFIC FESTIVAL & SYSTEM PLACEHOLDER) ────────────────────────
-function RandomShow({ concerts }) {
+function RandomShow({ concerts, onAdd }) {
   const [show, setShow] = useState(null);
   const [spinning, setSpinning] = useState(false);
 
@@ -1747,7 +1747,9 @@ function RandomShow({ concerts }) {
 
   // 🛰️ SYSTEM PLACEHOLDER: Shown when no image exists in the archive
   const SignalPlaceholder = () => (
-    <div style={{
+    <div 
+      onClick={onAdd}
+      style={{
       width: '100%',
       height: '100%',
       background: '#050508',
@@ -1757,7 +1759,8 @@ function RandomShow({ concerts }) {
       justifyContent: 'center',
       border: `1px dashed ${hexToRgba(themeColor, 0.3)}`,
       borderRadius: '4px',
-      opacity: 0.6
+      opacity: 0.6,
+      cursor: 'pointer'
     }}>
       <div style={{ opacity: 0.4 }}><TrackRecordLogo size={30} /></div>
       <div style={{ 
@@ -1795,14 +1798,20 @@ function RandomShow({ concerts }) {
           animation: 'fade-in 0.5s ease'
         }}>
           {displayImg ? (
-            <div style={{
-              width: '100%',
-              height: '100%',
-              background: `url(${displayImg}) center/cover no-repeat`,
-              borderRadius: '4px',
-              border: `1px solid ${hexToRgba(themeColor, 0.4)}`,
-              boxShadow: `0 0 20px rgba(0,0,0,0.6)`
-            }} />
+  <div style={{
+    width: '100%',
+    height: '100%',
+    background: '#000',
+    borderRadius: '4px',
+    border: `1px solid ${hexToRgba(themeColor, 0.4)}`,
+    boxShadow: `0 0 20px rgba(0,0,0,0.6)`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden'
+  }}>
+    <img src={displayImg} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+  </div>
           ) : (
             <SignalPlaceholder />
           )}
@@ -8645,7 +8654,8 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr', gap: 20 }}>
           
           {/* 🟢 1. RANDOM SHOW (NOW TOP LEFT / FIRST ON MOBILE) */}
-          <RandomShow concerts={concerts} />
+          <RandomShow concerts={concerts} onAdd={() => setEditTarget('new')} />
+
 
           {/* ⚪ 2. THEATER MARQUEE (REMAINS MIDDLE) */}
           <TheaterMarquee 
