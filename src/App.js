@@ -6386,13 +6386,16 @@ const QuadStat = ({ val, label, color }) => (
   </div>
 );
 
-// ─── POSTER WALL TAB ──────────────────────────────────────────────────────────
 function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
   const [selected, setSelected] = useState(null);
   const [yearFilter, setYearFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [showUpload, setShowUpload] = useState(false);
-  const [layout, setLayout] = useState([]);
+  const [featuredIdx, setFeaturedIdx] = useState(0);
+  const [featuredSpinning, setFeaturedSpinning] = useState(false);
+  const [spotlight, setSpotlight] = useState({ x: 50, y: 0 });
+
+  const ACCENT = '#ff6699';
 
   const years = useMemo(() => {
     const ySet = new Set(posters.map(p => getYear(p.date)).filter(Boolean));
@@ -6406,21 +6409,73 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
     return list;
   }, [posters, yearFilter, typeFilter]);
 
-  // Assign random wall physics on filter change
+  const [layout, setLayout] = useState([]);
   useEffect(() => {
-    setLayout(filtered.map((p, i) => ({
+    setLayout(filtered.map((p) => ({
       ...p,
-      rotation: (Math.random() * 8) - 4,
-      // Vary sizes: every 5th poster is hero sized
-      isHero: i % 7 === 0,
-      col: i % 4,
+      rotation: (Math.random() * 10) - 5,
     })));
+    setFeaturedIdx(Math.floor(Math.random() * Math.max(filtered.length, 1)));
   }, [filtered]);
 
-  const filterBtnStyle = (active, color = C.teal) => ({
+  const featured = layout[featuredIdx] || null;
+
+  const spinFeatured = () => {
+    if (layout.length < 2) return;
+    setFeaturedSpinning(true);
+    let count = 0;
+    const interval = setInterval(() => {
+      setFeaturedIdx(Math.floor(Math.random() * layout.length));
+      count++;
+      if (count > 10) { clearInterval(interval); setFeaturedSpinning(false); }
+    }, 80);
+  };
+
+  const getLabel = (p) => {
+    if (!p) return '';
+    if (p.poster_type === 'festival_year') return p.festival_name;
+    if (p.poster_type === 'festival_day') return p.artist || p.festival_day || p.festival_name;
+    return p.artist;
+  };
+
+  const getMatchedWristband = (poster) => {
+    if (poster.poster_type !== 'festival_year' || !poster.festival_name) return null;
+    const festYear = getYear(poster.date);
+    const match = concerts.find(c =>
+      c.festival_name === poster.festival_name &&
+      getYear(c.date) === festYear &&
+      c.wristband_image_url
+    );
+    return match?.wristband_image_url || null;
+  };
+
+  const getDetailLines = (p) => {
+    if (!p) return [];
+    const lines = [];
+    if (p.poster_type === 'festival_year') {
+      const festYear = getYear(p.date);
+      const days = concerts.filter(c =>
+        c.festival_name === p.festival_name && getYear(c.date) === festYear
+      ).sort((a, b) => a.date.localeCompare(b.date));
+      days.forEach(d => {
+        const bands = (d.bands || []).map(b => getBandName(b)).filter(Boolean);
+        lines.push({ day: d.festival_day || fmtDateShort(d.date), bands });
+      });
+    }
+    return lines;
+  };
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setSpotlight({ x, y });
+  };
+
+  const filterBtnStyle = (active, color = ACCENT) => ({
     background: active ? color : 'transparent',
-    border: `1px solid ${active ? color : C.border}`,
-    color: active ? '#000' : C.gray,
+    border: `1px solid ${active ? color : '#333'}`,
+    color: active ? '#000' : '#888',
     fontFamily: "'Space Mono'",
     fontSize: 9,
     padding: '5px 12px',
@@ -6430,202 +6485,305 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
     transition: 'all 0.15s'
   });
 
-  const getLabel = (p) => {
-  if (p.poster_type === 'festival_year') return p.festival_name;
-  if (p.poster_type === 'festival_day') return p.artist || p.festival_day || p.festival_name;
-  return p.artist;
-};
-
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', background: '#0a0806' }}>
+    <div
+      onMouseMove={handleMouseMove}
+      style={{ position: 'relative', minHeight: '100vh', background: '#0d0905', overflow: 'hidden' }}
+    >
       <style>{`
         @keyframes posterDrop {
-          0% { opacity: 0; transform: translateY(-40px) rotate(var(--rot)); }
-          70% { opacity: 1; transform: translateY(4px) rotate(var(--rot)); }
+          0% { opacity: 0; transform: translateY(-30px) rotate(var(--rot)); }
+          70% { opacity: 1; transform: translateY(3px) rotate(var(--rot)); }
           100% { opacity: 1; transform: translateY(0) rotate(var(--rot)); }
         }
-        @keyframes wallPulse {
-          0%, 100% { opacity: 0.6; }
-          50% { opacity: 1; }
+        @keyframes featuredPulse {
+          0%, 100% { box-shadow: 0 0 40px rgba(255,102,153,0.3), 0 30px 80px rgba(0,0,0,0.9); }
+          50% { box-shadow: 0 0 80px rgba(255,102,153,0.5), 0 30px 80px rgba(0,0,0,0.9); }
         }
+        .poster-card:hover { z-index: 100 !important; }
       `}</style>
 
-      {/* WALL TEXTURE BACKGROUND */}
-<div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
-  <div style={{
-    position: 'absolute', inset: 0,
-    backgroundColor: '#1a1208',
-    backgroundImage: `
-      url("https://www.transparenttextures.com/patterns/brick-wall.png")
-    `,
-    backgroundRepeat: 'repeat',
-    filter: 'brightness(0.3) sepia(0.4)',
-  }} />
-  {/* Aged paint overlay */}
-  <div style={{
-    position: 'absolute', inset: 0,
-    background: 'rgba(10, 6, 2, 0.55)',
-  }} />
-  {/* Spotlight from above */}
-  <div style={{
-    position: 'absolute', top: 0, left: '15%', right: '15%', height: '60%',
-    background: 'radial-gradient(ellipse at 50% 0%, rgba(255,140,60,0.08) 0%, transparent 65%)',
-  }} />
-  {/* Bottom shadow */}
-  <div style={{
-    position: 'absolute', bottom: 0, left: 0, right: 0, height: '30%',
-    background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)',
-  }} />
-  {/* Vignette */}
-  <div style={{
-    position: 'absolute', inset: 0,
-    background: 'radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(0,0,0,0.7) 100%)',
-  }} />
-</div>
+      {/* WALL LAYERS */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundColor: '#1c110a',
+          backgroundImage: `url("https://www.transparenttextures.com/patterns/brick-wall.png")`,
+          backgroundRepeat: 'repeat',
+          filter: 'brightness(0.45) contrast(1.2) sepia(0.5)',
+        }} />
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: `url("https://www.transparenttextures.com/patterns/dark-brick-wall.png")`,
+          backgroundRepeat: 'repeat',
+          opacity: 0.3,
+          mixBlendMode: 'multiply'
+        }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(8,4,2,0.5)' }} />
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: `radial-gradient(ellipse 600px 500px at ${spotlight.x}% ${spotlight.y}%, rgba(255,180,80,0.12) 0%, rgba(255,120,40,0.06) 30%, transparent 70%)`,
+          transition: 'background 0.15s ease',
+          pointerEvents: 'none'
+        }} />
+        <div style={{
+          position: 'absolute', top: 0, left: '10%', right: '10%', height: '50%',
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(255,160,60,0.1) 0%, transparent 60%)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: '35%',
+          background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)',
+        }} />
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(ellipse 90% 80% at 50% 40%, transparent 40%, rgba(0,0,0,0.75) 100%)',
+        }} />
+      </div>
 
       {/* HEADER */}
       <div style={{ position: 'relative', zIndex: 10, padding: '30px 40px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20, marginBottom: 25 }}>
           <div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#ff6699', letterSpacing: 4, marginBottom: 6 }}>
-              POSTER ARCHIVE // {filtered.length} ON THE WALL
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: ACCENT, letterSpacing: 4, marginBottom: 6 }}>
+              GALLERY // {filtered.length} ON THE WALL
             </div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3.5rem', color: C.white, lineHeight: 0.9, letterSpacing: 2 }}>
-              POSTER <span style={{ color: '#ff6699' }}>WALL</span>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3.5rem', color: '#fff', lineHeight: 0.9, letterSpacing: 2 }}>
+              POSTER <span style={{ color: ACCENT }}>WALL</span>
             </div>
           </div>
-
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            {/* Year filters */}
-            <button style={filterBtnStyle(yearFilter === 'all', '#ff6699')} onClick={() => setYearFilter('all')}>ALL</button>
+            <button style={filterBtnStyle(yearFilter === 'all', ACCENT)} onClick={() => setYearFilter('all')}>ALL</button>
             {years.map(y => (
-              <button key={y} style={filterBtnStyle(String(yearFilter) === String(y), '#ff6699')} onClick={() => setYearFilter(String(y))}>{y}</button>
+              <button key={y} style={filterBtnStyle(String(yearFilter) === String(y), ACCENT)} onClick={() => setYearFilter(String(y))}>{y}</button>
             ))}
-            <div style={{ width: 1, height: 20, background: C.border }} />
-            {/* Type filters */}
-            <button style={filterBtnStyle(typeFilter === 'all')} onClick={() => setTypeFilter('all')}>ALL TYPES</button>
+            <div style={{ width: 1, height: 20, background: '#333' }} />
+            <button style={filterBtnStyle(typeFilter === 'all')} onClick={() => setTypeFilter('all')}>ALL</button>
             <button style={filterBtnStyle(typeFilter === 'artist')} onClick={() => setTypeFilter('artist')}>ARTIST</button>
-            <button style={filterBtnStyle(typeFilter === 'festival_day')} onClick={() => setTypeFilter('festival_day')}>FEST DAY</button>
-            <button style={filterBtnStyle(typeFilter === 'festival_year')} onClick={() => setTypeFilter('festival_year')}>FEST YEAR</button>
+            <button style={filterBtnStyle(typeFilter === 'festival_year')} onClick={() => setTypeFilter('festival_year')}>FESTIVAL</button>
             {isAdmin && (
-              <button
-                onClick={() => setShowUpload(true)}
-                style={{
-                  background: '#ff6699', border: 'none', color: '#000',
-                  fontFamily: "'Bebas Neue'", fontSize: '1rem', letterSpacing: 1,
-                  padding: '6px 16px', borderRadius: 4, cursor: 'pointer', fontWeight: 900
-                }}
-              >
-                + POSTER
-              </button>
+              <button onClick={() => setShowUpload(true)} style={{
+                background: ACCENT, border: 'none', color: '#000',
+                fontFamily: "'Bebas Neue'", fontSize: '1rem', letterSpacing: 1,
+                padding: '6px 16px', borderRadius: 4, cursor: 'pointer', fontWeight: 900
+              }}>+ POSTER</button>
             )}
           </div>
         </div>
       </div>
 
+      {/* FEATURED POSTER */}
+      {featured && (
+        <div style={{ position: 'relative', zIndex: 10, padding: '0 40px 50px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#ffcc00', letterSpacing: 4 }}>// FEATURED</div>
+            <button
+              onClick={spinFeatured}
+              disabled={featuredSpinning}
+              style={{
+                background: featuredSpinning ? '#333' : '#ffcc00', border: 'none', color: '#000',
+                fontFamily: "'Space Mono'", fontSize: 8, padding: '4px 12px',
+                borderRadius: 4, cursor: 'pointer', fontWeight: 900
+              }}
+            >
+              {featuredSpinning ? '...' : 'SPIN'}
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: 40, alignItems: 'flex-start', maxWidth: 900, width: '100%', justifyContent: 'center' }}>
+            <div
+              onClick={() => setSelected(featured)}
+              style={{
+                flexShrink: 0,
+                width: 280,
+                cursor: 'zoom-in',
+                transform: `rotate(${featured.rotation * 0.3}deg)`,
+                animation: 'featuredPulse 4s ease-in-out infinite',
+                boxShadow: '0 0 40px rgba(255,102,153,0.3), 0 30px 80px rgba(0,0,0,0.9)',
+                position: 'relative'
+              }}
+            >
+              <div style={{ position: 'absolute', top: 6, left: 14, width: 18, height: 7, background: '#aaa', borderRadius: 1, zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.3)' }} />
+              <div style={{ position: 'absolute', top: 6, right: 14, width: 18, height: 7, background: '#aaa', borderRadius: 1, zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.3)' }} />
+              <img
+                src={featured.image_url}
+                alt={getLabel(featured)}
+                style={{ display: 'block', width: '100%', height: 'auto' }}
+              />
+            </div>
+
+            <div style={{ flex: 1, paddingTop: 20 }}>
+              <div style={{
+                background: 'rgba(0,0,0,0.7)',
+                border: `1px solid ${hexToRgba(ACCENT, 0.4)}`,
+                borderRadius: 8,
+                padding: '20px 24px',
+                marginBottom: 20,
+                backdropFilter: 'blur(8px)'
+              }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: ACCENT, letterSpacing: 3, marginBottom: 8 }}>
+                  {featured.poster_type === 'festival_year' ? 'FESTIVAL POSTER' : 'ARTIST POSTER'}
+                </div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', lineHeight: 1, letterSpacing: 2, marginBottom: 8 }}>
+                  {getLabel(featured)?.toUpperCase()}
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: ACCENT, marginBottom: 4 }}>
+                  {fmtDateShort(featured.date)}
+                  {featured.venue ? ` · ${featured.venue.toUpperCase()}` : ''}
+                </div>
+                {featured.city && (
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#666' }}>
+                    {featured.city.toUpperCase()}{featured.state ? `, ${featured.state}` : ''}
+                  </div>
+                )}
+                {(() => {
+                  const lines = getDetailLines(featured);
+                  if (!lines.length) return null;
+                  return (
+                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid rgba(255,102,153,0.2)` }}>
+                      {lines.map((l, i) => (
+                        <div key={i} style={{ marginBottom: 8 }}>
+                          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#ffcc00', letterSpacing: 2, marginBottom: 3 }}>
+                            {l.day?.toUpperCase()}
+                          </div>
+                          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#ccc', letterSpacing: 1, lineHeight: 1.3 }}>
+                            {l.bands.join(' · ').toUpperCase()}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {(() => {
+                const wb = getMatchedWristband(featured);
+                if (!wb) return null;
+                return (
+                  <div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#666', letterSpacing: 3, marginBottom: 8 }}>// WRISTBAND</div>
+                    <img
+                      src={wb}
+                      alt="wristband"
+                      style={{
+                        width: '100%',
+                        height: 'auto',
+                        borderRadius: 4,
+                        border: `1px solid rgba(255,102,153,0.3)`,
+                        boxShadow: '0 8px 30px rgba(0,0,0,0.7)'
+                      }}
+                    />
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DIVIDER */}
+      {layout.length > 1 && (
+        <div style={{ position: 'relative', zIndex: 10, padding: '0 40px 30px' }}>
+          <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${ACCENT}44, transparent)` }} />
+          <div style={{ textAlign: 'center', marginTop: 12, fontFamily: "'Space Mono'", fontSize: 7, color: '#444', letterSpacing: 4 }}>
+            THE COLLECTION
+          </div>
+        </div>
+      )}
+
       {/* THE WALL */}
       <div style={{
         position: 'relative', zIndex: 5,
-columnCount: 3,        
-columnGap: '20px',
+        columnCount: 3,
+        columnGap: '20px',
         padding: '0 40px 80px',
       }}>
-        {layout.map((poster, idx) => (
-          <div
-            key={poster.id}
-            onClick={() => setSelected(poster)}
-            style={{
-              display: 'inline-block',
-              width: '100%',
-              marginBottom: '20px',
-              breakInside: 'avoid',
-              '--rot': `${poster.rotation}deg`,
-              transform: `rotate(${poster.rotation}deg)`,
-              animation: `posterDrop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) ${idx * 0.05}s both`,
-              cursor: 'zoom-in',
-              position: 'relative',
-              transition: 'transform 0.3s ease, z-index 0s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = `rotate(0deg) scale(1.04) translateY(-6px)`;
-              e.currentTarget.style.zIndex = 100;
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = `rotate(${poster.rotation}deg)`;
-              e.currentTarget.style.zIndex = 'auto';
-            }}
-          >
-            {/* STAPLES */}
-            <div style={{ position: 'absolute', top: 6, left: 12, width: 14, height: 6, background: '#888', borderRadius: 1, zIndex: 10, boxShadow: '0 1px 3px rgba(0,0,0,0.8)' }} />
-            <div style={{ position: 'absolute', top: 6, right: 12, width: 14, height: 6, background: '#888', borderRadius: 1, zIndex: 10, boxShadow: '0 1px 3px rgba(0,0,0,0.8)' }} />
-
-            {/* POSTER IMAGE */}
-            <img loading="lazy"
-              src={poster.image_url}
-              alt={getLabel(poster)}
+        {layout.filter((_, i) => i !== featuredIdx).map((poster, idx) => {
+          const wristband = getMatchedWristband(poster);
+          return (
+            <div
+              key={poster.id}
+              className="poster-card"
+              onClick={() => setSelected(poster)}
               style={{
-                display: 'block',
+                display: 'inline-block',
                 width: '100%',
-                height: 'auto',
-                boxShadow: '0 15px 40px rgba(0,0,0,0.8), 0 4px 10px rgba(0,0,0,0.6)',
+                marginBottom: '24px',
+                breakInside: 'avoid',
+                '--rot': `${poster.rotation}deg`,
+                transform: `rotate(${poster.rotation}deg)`,
+                animation: `posterDrop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) ${idx * 0.04}s both`,
+                cursor: 'zoom-in',
+                position: 'relative',
+                transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
               }}
-            />
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = `rotate(0deg) scale(1.05) translateY(-8px)`;
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = `rotate(${poster.rotation}deg)`;
+              }}
+            >
+              <div style={{ position: 'absolute', top: 5, left: 12, width: 14, height: 6, background: '#999', borderRadius: 1, zIndex: 10, boxShadow: '0 2px 5px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.25)' }} />
+              <div style={{ position: 'absolute', top: 5, right: 12, width: 14, height: 6, background: '#999', borderRadius: 1, zIndex: 10, boxShadow: '0 2px 5px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.25)' }} />
 
-            {/* BOTTOM LABEL */}
-            <div style={{
-              background: 'rgba(0,0,0,0.85)',
-              padding: '8px 10px',
-              backdropFilter: 'blur(4px)',
-            }}>
+              <img
+                loading="lazy"
+                src={poster.image_url}
+                alt={getLabel(poster)}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  height: 'auto',
+                  boxShadow: '0 20px 50px rgba(0,0,0,0.9), 0 4px 12px rgba(0,0,0,0.7)',
+                }}
+              />
+
+              {wristband && (
+                <img
+                  loading="lazy"
+                  src={wristband}
+                  alt="wristband"
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    height: 'auto',
+                    marginTop: 4,
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.7)',
+                    border: `1px solid rgba(255,102,153,0.2)`
+                  }}
+                />
+              )}
+
               <div style={{
-                fontFamily: "'Space Mono'",
-                fontSize: 8,
-                color: '#ff6699',
-                letterSpacing: 1,
-                textTransform: 'uppercase',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                background: 'rgba(0,0,0,0.88)',
+                padding: '7px 10px',
+                backdropFilter: 'blur(6px)',
               }}>
-                {getLabel(poster)}
-              </div>
-              <div style={{
-                fontFamily: "'Space Mono'",
-                fontSize: 7,
-                color: '#555',
-                marginTop: 2,
-              }}>
-                {fmtDateShort(poster.date)}
+                <div style={{
+                  fontFamily: "'Space Mono'",
+                  fontSize: 8,
+                  color: ACCENT,
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}>
+                  {getLabel(poster)}
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#444', marginTop: 2 }}>
+                  {fmtDateShort(poster.date)}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-
-        {/* GHOST SLOTS — wall waiting to be filled */}
-{layout.length < 4 && Array.from({ length: Math.min(2, 4 - layout.length) }).map((_, i) => (
-          <div key={`ghost-${i}`} style={{
-            display: 'inline-block',
-            width: '100%',
-            marginBottom: '20px',
-            breakInside: 'avoid',
-            aspectRatio: '2/3',
-            border: `1px dashed ${hexToRgba('#ff6699', 0.15)}`,
-            background: hexToRgba('#ff6699', 0.02),
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: hexToRgba('#ff6699', 0.2), letterSpacing: 2 }}>
-              AWAITING
-            </div>
-          </div>
-        ))}
+          );
+        })}
 
         {posters.length === 0 && (
-          <div style={{ columnSpan: 'all', padding: '100px 0', textAlign: 'center', color: C.grayDim }}>
+          <div style={{ columnSpan: 'all', padding: '100px 0', textAlign: 'center' }}>
             <div style={{ fontSize: '3rem', marginBottom: 20 }}>🎨</div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', letterSpacing: 3, color: C.white }}>WALL IS BARE</div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, marginTop: 10 }}>START UPLOADING YOUR POSTER COLLECTION</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', letterSpacing: 3, color: '#fff' }}>WALL IS BARE</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, marginTop: 10, color: '#555' }}>START UPLOADING YOUR POSTER COLLECTION</div>
           </div>
         )}
       </div>
@@ -6636,49 +6794,76 @@ columnGap: '20px',
           onClick={() => setSelected(null)}
           style={{
             position: 'fixed', inset: 0, zIndex: 20000,
-            background: 'rgba(0,0,0,0.95)',
-            backdropFilter: 'blur(10px)',
+            background: 'rgba(0,0,0,0.96)',
+            backdropFilter: 'blur(12px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'zoom-out', padding: 40,
-            animation: 'fade-in-kf 0.2s ease both'
           }}
         >
-          <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
-            maxWidth: '90vw'
-          }}>
-            <img loading="lazy"
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ display: 'flex', gap: 40, alignItems: 'flex-start', maxWidth: '90vw', cursor: 'default' }}
+          >
+            <img
               src={selected.image_url}
               alt={getLabel(selected)}
               style={{
-                maxWidth: '70vw',
-                maxHeight: '75vh',
+                maxWidth: '55vw',
+                maxHeight: '80vh',
                 objectFit: 'contain',
-                boxShadow: '0 40px 100px rgba(0,0,0,1)',
+                boxShadow: '0 40px 100px rgba(0,0,0,1), 0 0 60px rgba(255,102,153,0.2)',
               }}
             />
-            <div style={{
-              background: 'rgba(0,0,0,0.8)',
-              border: `1px solid ${hexToRgba('#ff6699', 0.4)}`,
-              borderRadius: 6,
-              padding: '14px 28px',
-              textAlign: 'center',
-            }}>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, letterSpacing: 2, lineHeight: 1 }}>
+
+            <div style={{ minWidth: 260, maxWidth: 320, paddingTop: 10 }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: ACCENT, letterSpacing: 3, marginBottom: 10 }}>
+                {selected.poster_type === 'festival_year' ? 'FESTIVAL POSTER' : 'ARTIST POSTER'}
+              </div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.8rem', color: '#fff', lineHeight: 0.9, letterSpacing: 2, marginBottom: 12 }}>
                 {getLabel(selected)?.toUpperCase()}
               </div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#ff6699', marginTop: 5, letterSpacing: 2 }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: ACCENT, marginBottom: 4 }}>
                 {fmtDateShort(selected.date)}
                 {selected.venue ? ` · ${selected.venue.toUpperCase()}` : ''}
               </div>
               {selected.city && (
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 3 }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#555', marginBottom: 20 }}>
                   {selected.city.toUpperCase()}{selected.state ? `, ${selected.state}` : ''}
                 </div>
               )}
-            </div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2 }}>
-              CLICK ANYWHERE TO CLOSE
+
+              {(() => {
+                const lines = getDetailLines(selected);
+                if (!lines.length) return null;
+                return (
+                  <div style={{ borderTop: `1px solid rgba(255,102,153,0.2)`, paddingTop: 16 }}>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#555', letterSpacing: 3, marginBottom: 12 }}>LINEUP</div>
+                    {lines.map((l, i) => (
+                      <div key={i} style={{ marginBottom: 14 }}>
+                        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#ffcc00', letterSpacing: 2, marginBottom: 4 }}>{l.day?.toUpperCase()}</div>
+                        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#ccc', lineHeight: 1.4 }}>
+                          {l.bands.join(' · ').toUpperCase()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {(() => {
+                const wb = getMatchedWristband(selected);
+                if (!wb) return null;
+                return (
+                  <div style={{ marginTop: 20 }}>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#555', letterSpacing: 3, marginBottom: 8 }}>WRISTBAND</div>
+                    <img src={wb} alt="wristband" style={{ width: '100%', height: 'auto', borderRadius: 4, border: `1px solid rgba(255,102,153,0.3)` }} />
+                  </div>
+                );
+              })()}
+
+              <div style={{ marginTop: 30, fontFamily: "'Space Mono'", fontSize: 7, color: '#333', letterSpacing: 2 }}>
+                CLICK OUTSIDE TO CLOSE
+              </div>
             </div>
           </div>
         </div>
@@ -6695,7 +6880,6 @@ columnGap: '20px',
     </div>
   );
 }
-
 // ─── POSTER UPLOAD MODAL ──────────────────────────────────────────────────────
 function PosterUploadModal({ concerts, onClose, onSaved }) {
   const [form, setForm] = useState({
