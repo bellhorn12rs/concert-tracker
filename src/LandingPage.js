@@ -836,41 +836,12 @@ return txt + txt;
         </div>
       </div>
     </div>
-
-    {/* Bottom copy with real stats */}
-    <div style={{ textAlign: 'center' }}>
-      <div style={{ 
-        fontFamily: "'Bebas Neue'", 
-        fontSize: isMobile ? '1.8rem' : '3rem',
-        color: '#fff', lineHeight: 1.3, letterSpacing: 2,
-        marginBottom: 20
-      }}>
-        <span style={{ color: GOLD }}>
-  {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.image_url && c.image_url !== '').length} TICKET STUBS.
-</span>{' '}
-<span style={{ color: TEAL }}>
-  {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.wristband_image_url && c.wristband_image_url !== '').length} WRISTBANDS.
-</span>{' '}
-<span style={{ color: PURPLE }}>
-  {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.setlist_image_url && c.setlist_image_url !== '').length} RELICS.
-</span>{' '}
-<span style={{ color: '#ff6699' }}>
-  {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.festival_poster_url && c.festival_poster_url !== '').length} POSTERS.
-</span>
-      </div>
-      <div style={{ 
-        fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.2rem' : '2rem',
-        color: '#333', letterSpacing: 4
-      }}>
-        STILL IN A BOX. NOT FOR LONG.
-      </div>
-    </div>
   </div>
 </div>
 
 
 
-      {/* ── SECTION 2: THE PHYSICAL ARCHIVE ── */}
+{/* ── SECTION 2: THE PHYSICAL ARCHIVE ── */}
 <div style={{ padding: isMobile ? '80px 20px' : '80px 40px', background: '#000', position: 'relative', overflow: 'hidden' }}>
 
   {/* Big background watermark */}
@@ -900,7 +871,7 @@ return txt + txt;
         THE PHYSICAL <span style={{ color: GOLD }}>ARCHIVE</span>
       </div>
       <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, marginTop: 12, letterSpacing: 2 }}>
-        TICKET STUBS. SETLISTS. POLAROIDS. POSTERS. // HOVER TO DEVELOP
+        TICKET STUBS. SETLISTS. POLAROIDS. POSTERS. WRISTBANDS.
       </div>
     </div>
 
@@ -913,6 +884,43 @@ return txt + txt;
         THE ARCHIVE IS <span style={{ color: GOLD }}>FOREVER.</span>
       </div>
       <div style={{ width: 60, height: 2, background: GOLD, margin: '20px auto 0', boxShadow: `0 0 10px ${GOLD}` }} />
+    </div>
+
+    {/* Real stats */}
+    <div style={{ textAlign: 'center', marginBottom: 40 }}>
+      <div style={{
+        fontFamily: "'Bebas Neue'",
+        fontSize: isMobile ? '2rem' : '3.5rem',
+        lineHeight: 1.3, letterSpacing: 2,
+      }}>
+        <span style={{ color: GOLD }}>
+          {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.image_url && c.image_url !== '').length} TICKET STUBS.
+        </span>{' '}
+        <span style={{ color: TEAL }}>
+          {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.wristband_image_url && c.wristband_image_url !== '').length} WRISTBANDS.
+        </span>{' '}
+        <span style={{ color: PURPLE }}>
+          {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.setlist_image_url && c.setlist_image_url !== '').length} RELICS.
+        </span>{' '}
+        <span style={{ color: '#ff6699' }}>
+          {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.festival_poster_url && c.festival_poster_url !== '').length} POSTERS.
+        </span>
+      </div>
+    </div>
+
+    {/* Still in a box */}
+    <div style={{ textAlign: 'center', marginBottom: 80 }}>
+      <div style={{
+        fontFamily: "'Bebas Neue'",
+        fontSize: isMobile ? '1.8rem' : '3rem',
+        letterSpacing: 6,
+        background: `linear-gradient(90deg, ${GOLD}, ${TEAL})`,
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+      }}>
+        STILL IN A BOX. NOT FOR LONG.
+      </div>
     </div>
 
   </div>
