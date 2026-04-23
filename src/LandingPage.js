@@ -475,9 +475,9 @@ return txt + txt;
 )}
 
   {/* Active Archivists — top right */}
-  {recentUsers.length > 0 && (
-    <div style={{ position: 'absolute', top: 20, right: isMobile ? 16 : 40, zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, letterSpacing: 3, marginBottom: 4 }}>// ACTIVE ARCHIVISTS</div>
+  recentUsers.length > 0 && !isMobile && (
+  <div style={{ position: 'absolute', top: 20, right: 40, zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}> 
+    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, letterSpacing: 3, marginBottom: 4 }}>// ACTIVE ARCHIVISTS</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {sessionChecked && recentUsers.slice(0, 5).map(u => (
           <button
@@ -632,7 +632,7 @@ return txt + txt;
 
 
 {/* ── THE SHOEBOX NARRATIVE ── */}
-<div style={{ padding: isMobile ? '80px 20px' : '120px 40px', background: '#080808', borderTop: '1px solid #111', position: 'relative' }}>
+<div style={{ padding: isMobile ? '50px 20px' : '70px 40px', background: '#080808', borderTop: '1px solid #111', position: 'relative' }}>
   <div style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: 60, alignItems: 'center' }}>
     
     <div>
@@ -666,7 +666,7 @@ return txt + txt;
 
 
 {/* ── SECTION 2: THE PHYSICAL ARCHIVE ── */}
-<div style={{ padding: isMobile ? '80px 20px' : '80px 40px', background: '#000', position: 'relative', overflow: 'hidden' }}>
+<div style={{ padding: isMobile ? '50px 20px' : '60px 40px', background: '#000', position: 'relative', overflow: 'hidden' }}>
 
   {/* Big background watermark */}
   {!isMobile && (
@@ -926,7 +926,7 @@ return txt + txt;
 </div>
 
 {/* ── SECTION 1: TEMPORAL DRIFT ── */}
-<div style={{ padding: isMobile ? '60px 20px' : '80px 40px', background: '#050508', borderTop: '1px solid #111', borderBottom: '1px solid #111', position: 'relative', overflow: 'hidden' }}>
+<div style={{ padding: isMobile ? '40px 20px' : '60px 40px', background: '#050508', borderTop: '1px solid #111', borderBottom: '1px solid #111', position: 'relative', overflow: 'hidden' }}>
 
   {/* Side quote — left */}
   {!isMobile && (
@@ -1213,7 +1213,7 @@ return txt + txt;
 </div>
 
 {/* ── FINAL CTA ── */}
-<div style={{ padding: isMobile ? '100px 20px' : '100px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#000' }}>
+<div style={{ padding: isMobile ? '16px 20px' : '80px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#000' }}>
 
   {/* Radial glow */}
   <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 900, height: 900, background: 'radial-gradient(circle, rgba(0,229,204,0.07) 0%, rgba(153,102,255,0.04) 35%, transparent 65%)', pointerEvents: 'none' }} />
