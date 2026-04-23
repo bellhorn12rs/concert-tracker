@@ -3749,50 +3749,109 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
 // ─── 4. BY DAY TAB (SCRAPBOOK EDITION - FULL MULTI-MEDIA) ────────────────────
 // ─── 4. BY DAY TAB (SCRAPBOOK TIMELINE & FESTIVAL CLUSTERS) ──────────────────
 
-// ─── 4. BY DAY TAB (SCRAPBOOK TIMELINE & MULTI-SET LOGIC) ──────────────────
-
 function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin, viewingUser, bulkMode, setBulkMode, selectedSignals, setSelectedSignals, onSync }) {
-  // 🟢 Mobile Detection
   const isMobile = window.innerWidth < 768;
 
+  // ─── TELEPORT PROTOCOL LOGIC ────────────────────────────────────────────────
+  const [showJumpMenu, setShowJumpMenu] = useState(false);
+
+  // ─── CLUSTERING LOGIC ───────────────────────────────────────────────────────
   const clusters = useMemo(() => {
-  const results = [];
-  let currentFestKey = null;
-  let currentGroup = [];
-  const soloBuffer = []; // holds solo shows encountered mid-festival
+    const results = [];
+    let currentFestKey = null;
+    let currentGroup = [];
+    const soloBuffer = [];
 
-  dayGroups.forEach((event) => {
-    const festKey = event.is_festival 
-      ? `${event.festival_name}-${new Date(event.date).getFullYear()}` 
-      : null;
+    dayGroups.forEach((event) => {
+      const festKey = event.is_festival 
+        ? `${event.festival_name}-${new Date(event.date).getFullYear()}` 
+        : null;
 
-    if (festKey && festKey === currentFestKey) {
-      // Same festival — flush any buffered solos first, then add to group
-      soloBuffer.forEach(s => results.push({ type: 'solo', event: s }));
-      soloBuffer.length = 0;
-      currentGroup.push(event);
-    } else if (festKey && festKey !== currentFestKey) {
-      // New festival — close out old group and solos, start fresh
-      if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
-      soloBuffer.forEach(s => results.push({ type: 'solo', event: s }));
-      soloBuffer.length = 0;
-      currentFestKey = festKey;
-      currentGroup = [event];
-    } else {
-      // Solo show buffer it in case the same festival resumes
-      soloBuffer.push(event);
+      if (festKey && festKey === currentFestKey) {
+        soloBuffer.forEach(s => results.push({ type: 'solo', event: s }));
+        soloBuffer.length = 0;
+        currentGroup.push(event);
+      } else if (festKey && festKey !== currentFestKey) {
+        if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
+        soloBuffer.forEach(s => results.push({ type: 'solo', event: s }));
+        soloBuffer.length = 0;
+        currentFestKey = festKey;
+        currentGroup = [event];
+      } else {
+        soloBuffer.push(event);
+      }
+    });
+
+    if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
+    soloBuffer.forEach(s => results.push({ type: 'solo', event: s }));
+
+    return results;
+  }, [dayGroups]);
+
+  // Teleport Function: Smooth scrolls to a cluster ID and gives it a "glow"
+  const teleportTo = (targetId) => {
+    const el = document.getElementById(targetId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.style.transition = 'box-shadow 0.5s ease, transform 0.5s ease';
+      el.style.boxShadow = `0 0 40px ${hexToRgba(C.gold, 0.4)}`;
+      el.style.transform = 'scale(1.01)';
+      setTimeout(() => {
+        el.style.boxShadow = 'none';
+        el.style.transform = 'scale(1)';
+      }, 2000);
     }
-  });
+    setShowJumpMenu(false);
+  };
 
-  // Flush anything remaining
-  if (currentGroup.length) results.push({ type: 'festival', events: currentGroup });
-  soloBuffer.forEach(s => results.push({ type: 'solo', event: s }));
-
-  return results;
-}, [dayGroups]);
+  const handleRandomTeleport = () => {
+    if (!clusters.length) return;
+    const randomIdx = Math.floor(Math.random() * clusters.length);
+    teleportTo(`cluster-${randomIdx}`);
+  };
 
   return (
-    <> {/* 🟢 Parent wrapper added here */}
+    <div style={{ padding: isMobile ? '10px' : '24px 0' }} className="fade-in">
+      
+      {/* 🛸 TELEPORT SYSTEM BAR */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px', position: 'relative', zIndex: 1000 }}>
+        <div style={{ position: 'relative' }}>
+          <button 
+            onClick={() => setShowJumpMenu(!showJumpMenu)}
+            style={{ 
+              background: 'rgba(255,255,255,0.03)', border: `1px solid ${hexToRgba(C.teal, 0.3)}`, color: C.teal, 
+              fontFamily: "'Space Mono'", fontSize: 10, padding: '8px 16px', borderRadius: '4px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 10, letterSpacing: 1
+            }}
+          >
+            TAKE ME TO... <span style={{ opacity: 0.5, fontSize: 8 }}>{showJumpMenu ? '▲' : '▼'}</span>
+          </button>
+
+          {showJumpMenu && (
+            <div style={{ 
+              position: 'absolute', top: '100%', right: 0, marginTop: 10, background: '#0d0d12', 
+              border: `1px solid ${C.border}`, borderRadius: '8px', width: '220px', overflow: 'hidden',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.8)', zIndex: 1001
+            }}>
+              {[
+                { label: '📡 LATEST SIGNAL', action: () => teleportTo('cluster-0') },
+                { label: '🏺 THE BEGINNING', action: () => teleportTo(`cluster-${clusters.length - 1}`) },
+                { label: '🎲 RANDOM RECALL', action: handleRandomTeleport }
+              ].map((opt, i) => (
+                <div 
+                  key={i} onClick={opt.action}
+                  style={{ padding: '14px 18px', color: '#fff', fontFamily: "'Space Mono'", fontSize: 9, cursor: 'pointer', borderBottom: `1px solid ${C.border}`, transition: 'all 0.2s' }}
+                  onMouseEnter={(e) => { e.target.style.background = hexToRgba(C.teal, 0.1); e.target.style.color = C.teal; }}
+                  onMouseLeave={(e) => { e.target.style.background = 'none'; e.target.style.color = '#fff'; }}
+                >
+                  {opt.label}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* 📡 BULK SYNC RAIL */}
       {viewingUser && (
         <div style={{ 
@@ -3808,19 +3867,12 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin, viewingUser, bulkMode,
             </div>
             {bulkMode && <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold }}>{selectedSignals.length} SIGNALS CAPTURED</div>}
           </div>
-          
           <div style={{ display: 'flex', gap: 10 }}>
-            <button 
-              onClick={() => { setBulkMode(!bulkMode); setSelectedSignals([]); }}
-              style={{ background: 'none', border: `1px solid ${bulkMode ? C.gold : C.teal}`, color: bulkMode ? C.gold : C.teal, padding: '8px 16px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 10, cursor: 'pointer' }}
-            >
+            <button onClick={() => { setBulkMode(!bulkMode); setSelectedSignals([]); }} style={{ background: 'none', border: `1px solid ${bulkMode ? C.gold : C.teal}`, color: bulkMode ? C.gold : C.teal, padding: '8px 16px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 10, cursor: 'pointer' }}>
               {bulkMode ? '[ ABORT ]' : '[ INITIALIZE SYNC ]'}
             </button>
             {bulkMode && selectedSignals.length > 0 && (
-              <button 
-                onClick={onSync}
-                style={{ background: C.gold, border: 'none', color: '#000', padding: '8px 20px', borderRadius: 4, fontFamily: "'Bebas Neue'", fontSize: '1.1rem', fontWeight: 900, cursor: 'pointer', boxShadow: `0 0 20px ${hexToRgba(C.gold, 0.4)}` }}
-              >
+              <button onClick={onSync} style={{ background: C.gold, border: 'none', color: '#000', padding: '8px 20px', borderRadius: 4, fontFamily: "'Bebas Neue'", fontSize: '1.1rem', fontWeight: 900, cursor: 'pointer', boxShadow: `0 0 20px ${hexToRgba(C.gold, 0.4)}` }}>
                 COMMIT TO ARCHIVE
               </button>
             )}
@@ -3828,81 +3880,43 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin, viewingUser, bulkMode,
         </div>
       )}
 
-      <div style={{ padding: isMobile ? '10px' : '24px 0' }} className="fade-in">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '30px' : '60px' }}>
-          {clusters.map((cluster, ci) => {
-            if (cluster.type === 'solo') {
-              return (
-                <ScrapbookRow 
-                  key={cluster.event.id} 
-                  event={cluster.event} 
-                  idx={ci} 
-                  isAdmin={isAdmin} 
-                  onEdit={onEdit} 
-                  genreMap={genreMap}
-                  bulkMode={bulkMode} 
-                  selectedSignals={selectedSignals} 
-                  setSelectedSignals={setSelectedSignals}
-                />
-              );
-            }
-
-            const firstEvent = cluster.events[0];
-            const festColor = GENRE_COLORS[genreMap[firstEvent.bands?.[0]]] || C.teal;
-
-            return (
-              <div key={`cluster-${ci}`} style={{ 
-                position: 'relative', 
-                padding: isMobile ? '20px 15px' : '40px', 
-                background: 'rgba(255,255,255,0.01)', 
-                border: `1px solid ${hexToRgba(festColor, 0.2)}`, 
-                borderRadius: isMobile ? '12px' : '24px',
-                boxShadow: `inset 0 0 60px ${hexToRgba(festColor, 0.03)}`
+      {/* 📜 CLUSTER LIST RENDER */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '30px' : '60px' }}>
+        {clusters.map((cluster, ci) => (
+          <div key={`cluster-${ci}`} id={`cluster-${ci}`}>
+            {cluster.type === 'solo' ? (
+              <ScrapbookRow 
+                event={cluster.event} idx={ci} isAdmin={isAdmin} onEdit={onEdit} genreMap={genreMap}
+                bulkMode={bulkMode} selectedSignals={selectedSignals} setSelectedSignals={setSelectedSignals}
+              />
+            ) : (
+              <div style={{ 
+                position: 'relative', padding: isMobile ? '20px 15px' : '40px', background: 'rgba(255,255,255,0.01)', 
+                border: `1px solid ${hexToRgba(GENRE_COLORS[genreMap[cluster.events[0].bands?.[0]]] || C.teal, 0.2)}`, borderRadius: isMobile ? '12px' : '24px'
               }}>
-                <div style={{ 
-                  display: 'flex', 
-                  flexDirection: isMobile ? 'column' : 'row', 
-                  alignItems: isMobile ? 'flex-start' : 'baseline', 
-                  gap: isMobile ? '5px' : '25px', 
-                  marginBottom: isMobile ? '25px' : '40px' 
-                }}>
-                  <div style={{ 
-                    fontFamily: "'Bebas Neue'", 
-                    fontSize: isMobile ? '2.5rem' : '5rem', 
-                    color: festColor, 
-                    lineHeight: 1, 
-                    textShadow: `0 0 30px ${hexToRgba(festColor, 0.3)}` 
-                  }}>
-                    {firstEvent.festival_name.toUpperCase()}
+                <div style={{ display: 'flex', gap: '25px', marginBottom: '40px', alignItems: 'baseline' }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '5rem', color: GENRE_COLORS[genreMap[cluster.events[0].bands?.[0]]] || C.teal, lineHeight: 1 }}>
+                    {cluster.events[0].festival_name.toUpperCase()}
                   </div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, letterSpacing: '2px', fontWeight: 900 }}>
-                    {new Date(firstEvent.date).getFullYear()} // {cluster.events.length} DAYS
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray }}>
+                    {new Date(cluster.events[0].date).getFullYear()} // {cluster.events.length} DAYS
                   </div>
                 </div>
-
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                   {cluster.events.map((event, ei) => (
                     <ScrapbookRow 
-                      key={event.id} 
-                      event={event} 
-                      idx={ei} 
-                      isAdmin={isAdmin} 
-                      onEdit={onEdit} 
-                      genreMap={genreMap} 
-                      isClustered={true}
-                      clusterColor={festColor}
-                      bulkMode={bulkMode} 
-                      selectedSignals={selectedSignals} 
-                      setSelectedSignals={setSelectedSignals}
+                      key={event.id} event={event} idx={ei} isAdmin={isAdmin} onEdit={onEdit} genreMap={genreMap} 
+                      isClustered={true} clusterColor={GENRE_COLORS[genreMap[event.bands?.[0]]] || C.teal}
+                      bulkMode={bulkMode} selectedSignals={selectedSignals} setSelectedSignals={setSelectedSignals}
                     />
                   ))}
                 </div>
               </div>
-            );
-          })}
-        </div>
+            )}
+          </div>
+        ))}
       </div>
-    </> 
+    </div>
   );
 }
 
