@@ -1041,17 +1041,6 @@ return txt + txt;
       </div>
     </div>
 
-    {/* Show list below timeline */}
-    <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'center' }}>
-      {sliderImg && (
-        <div style={{ position: 'relative', background: '#fff', padding: '8px 8px 40px 8px', boxShadow: '0 20px 60px rgba(0,0,0,0.8)', borderRadius: 2, width: isMobile ? 140 : 180, flexShrink: 0, transform: 'rotate(-1.5deg)', transition: 'all 0.5s' }}>
-          <img src={sliderImg} alt={sliderBand} loading="lazy" style={{ width: '100%', height: isMobile ? 100 : 130, objectFit: 'cover', display: 'block' }} />
-          <div style={{ position: 'absolute', bottom: 8, left: 0, right: 0, textAlign: 'center', fontFamily: "'Bebas Neue'", fontSize: '0.85rem', color: '#111' }}>
-            {sliderBand.toUpperCase()}
-          </div>
-        </div>
-      )}
-
       <div style={{ flex: 1, minWidth: 200 }}>
         {sliderConcerts.slice(0, 6).map((c, i) => {
           const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
