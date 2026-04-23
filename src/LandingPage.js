@@ -249,6 +249,11 @@ export default function LandingPage({
   }, [artifacts.length, tickerPaused]);
 
   const featured = artifacts[featuredIdx] || concerts[0];
+  const uniqueArtists = new Set(concerts.flatMap(c => (c.bands || []).map(getBandName)).filter(Boolean)).size;
+  const uniqueVenues = useMemo(() => new Set(concerts.map(c => c.venue).filter(Boolean)).size, [concerts]);
+  const uniqueStates = useMemo(() => new Set(concerts.map(c => c.state).filter(Boolean)).size, [concerts]);
+  const uniqueGenres = useMemo(() => new Set(concerts.map(c => c.genre).filter(Boolean)).size, [concerts]);
+
 
   const tickerItems = useMemo(() => {
     if (!concerts.length) return 'INITIALIZING GLOBAL SIGNAL...';
@@ -325,12 +330,6 @@ return txt + txt;
     ? (sliderArtifact.image_url?.split(',')[0] || sliderArtifact.personal_photo_url?.split(',')[0])
     : null;
   const sliderBand = sliderArtifact ? (getBandName(sliderArtifact.bands?.[0]) || sliderArtifact.festival_name || '') : '';
-
-  const uniqueArtists = new Set(concerts.flatMap(c => (c.bands || []).map(getBandName)).filter(Boolean)).size;
-const uniqueVenues = useMemo(() => new Set(concerts.map(c => c.venue).filter(Boolean)).size, [concerts]);
-const uniqueStates = useMemo(() => new Set(concerts.map(c => c.state).filter(Boolean)).size, [concerts]);
-const uniqueGenres = useMemo(() => new Set(concerts.map(c => c.genre).filter(Boolean)).size, [concerts]);
-
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#fff', fontFamily: "'Space Mono', monospace", overflowX: 'hidden', position: 'relative' }}>
