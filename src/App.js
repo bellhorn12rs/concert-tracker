@@ -8056,7 +8056,7 @@ async function handleDelete(id) {
 
   // Gate B: The Entry Hall (Landing Page)
   // 🟢 GATEKEEPER: Show landing page UNLESS they are viewing a public user
-  if ((!session && !viewingUser) || onLanding) {
+if ((!session && !viewingUser && !viewingUsername) || onLanding) {
     return (
       <LandingPage 
         currentSession={session}
