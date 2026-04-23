@@ -1066,7 +1066,7 @@ return txt + txt;
 </div>
 
 
-      {/* ── WHAT'S INSIDE ── */}
+      {/* ── WHAT'S INSIDE ── */ }
 <div style={{ padding: isMobile ? '80px 20px' : '80px 40px', background: '#000', position: 'relative', overflow: 'hidden' }}>
   
   {/* Side quotes */}
