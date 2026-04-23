@@ -626,8 +626,7 @@ return txt + txt;
   </button>
 </div>
 
-<FounderEntrance onEnter={() => onNavigateToUser('The Founder')} />
-
+<FounderEntrance onEnter={() => onNavigateToUser('eric')} />
 
 </div> {/* closes hero section */}
 
