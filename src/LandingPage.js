@@ -664,6 +664,92 @@ return txt + txt;
   </div>
 </div>
 
+
+{/* ── SECTION 2: THE PHYSICAL ARCHIVE ── */}
+<div style={{ padding: isMobile ? '80px 20px' : '80px 40px', background: '#000', position: 'relative', overflow: 'hidden' }}>
+
+  {/* Big background watermark */}
+  {!isMobile && (
+    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontFamily: "'Bebas Neue'", fontSize: '20rem', color: GOLD, opacity: 0.025, pointerEvents: 'none', whiteSpace: 'nowrap', letterSpacing: -10, userSelect: 'none', lineHeight: 1 }}>
+      ARTIFACTS
+    </div>
+  )}
+
+  {/* Side quotes */}
+  {!isMobile && (
+    <div style={{ position: 'absolute', left: -50, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: GOLD, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+      THE SHOEBOX DIGITIZED
+    </div>
+  )}
+  {!isMobile && (
+    <div style={{ position: 'absolute', right: -70, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: GOLD, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
+      EVERY SHOW LEAVES A MARK
+    </div>
+  )}
+
+  <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+
+    {/* Header */}
+    <div style={{ textAlign: 'center', marginBottom: 24 }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff', letterSpacing: 2, lineHeight: 0.9 }}>
+        THE PHYSICAL <span style={{ color: GOLD }}>ARCHIVE</span>
+      </div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, marginTop: 12, letterSpacing: 2 }}>
+        TICKET STUBS. SETLISTS. POLAROIDS. POSTERS. WRISTBANDS.
+      </div>
+    </div>
+
+    {/* Emotional copy */}
+    <div style={{ textAlign: 'center', marginBottom: 64 }}>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.1rem' : '1.6rem', color: GRAY, letterSpacing: 3, lineHeight: 1.6 }}>
+        Social media feeds disappear.
+      </div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.6rem' : '2.5rem', color: '#fff', letterSpacing: 3, textShadow: `0 0 30px rgba(255,204,0,0.3)` }}>
+        THE ARCHIVE IS <span style={{ color: GOLD }}>FOREVER.</span>
+      </div>
+      <div style={{ width: 60, height: 2, background: GOLD, margin: '20px auto 0', boxShadow: `0 0 10px ${GOLD}` }} />
+    </div>
+
+    {/* Real stats */}
+    <div style={{ textAlign: 'center', marginBottom: 40 }}>
+      <div style={{
+        fontFamily: "'Bebas Neue'",
+        fontSize: isMobile ? '2rem' : '3.5rem',
+        lineHeight: 1.3, letterSpacing: 2,
+      }}>
+        <span style={{ color: GOLD }}>
+          {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.image_url && c.image_url !== '').length} TICKET STUBS.
+        </span>{' '}
+        <span style={{ color: TEAL }}>
+          {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.wristband_image_url && c.wristband_image_url !== '').length} WRISTBANDS.
+        </span>{' '}
+        <span style={{ color: PURPLE }}>
+          {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.setlist_image_url && c.setlist_image_url !== '').length} RELICS.
+        </span>{' '}
+        <span style={{ color: '#ff6699' }}>
+          {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.festival_poster_url && c.festival_poster_url !== '').length} POSTERS.
+        </span>
+      </div>
+    </div>
+
+    {/* Still in a box */}
+    <div style={{ textAlign: 'center', marginBottom: 80 }}>
+      <div style={{
+        fontFamily: "'Bebas Neue'",
+        fontSize: isMobile ? '1.8rem' : '3rem',
+        letterSpacing: 6,
+        background: `linear-gradient(90deg, ${GOLD}, ${TEAL})`,
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+      }}>
+        STILL IN A BOX. NOT FOR LONG.
+      </div>
+    </div>
+
+  </div>
+</div>
+
 {/* ── TURN THIS INTO THIS ── */}
 <div style={{ 
   padding: isMobile ? '80px 20px' : '120px 40px', 
@@ -836,93 +922,6 @@ return txt + txt;
         </div>
       </div>
     </div>
-  </div>
-</div>
-
-
-
-{/* ── SECTION 2: THE PHYSICAL ARCHIVE ── */}
-<div style={{ padding: isMobile ? '80px 20px' : '80px 40px', background: '#000', position: 'relative', overflow: 'hidden' }}>
-
-  {/* Big background watermark */}
-  {!isMobile && (
-    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontFamily: "'Bebas Neue'", fontSize: '20rem', color: GOLD, opacity: 0.025, pointerEvents: 'none', whiteSpace: 'nowrap', letterSpacing: -10, userSelect: 'none', lineHeight: 1 }}>
-      ARTIFACTS
-    </div>
-  )}
-
-  {/* Side quotes */}
-  {!isMobile && (
-    <div style={{ position: 'absolute', left: -50, top: '50%', transform: 'translateY(-50%) rotate(-90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: GOLD, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
-      THE SHOEBOX DIGITIZED
-    </div>
-  )}
-  {!isMobile && (
-    <div style={{ position: 'absolute', right: -70, top: '50%', transform: 'translateY(-50%) rotate(90deg)', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: GOLD, letterSpacing: 8, opacity: 0.7, whiteSpace: 'nowrap' }}>
-      EVERY SHOW LEAVES A MARK
-    </div>
-  )}
-
-  <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-
-    {/* Header */}
-    <div style={{ textAlign: 'center', marginBottom: 24 }}>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff', letterSpacing: 2, lineHeight: 0.9 }}>
-        THE PHYSICAL <span style={{ color: GOLD }}>ARCHIVE</span>
-      </div>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, marginTop: 12, letterSpacing: 2 }}>
-        TICKET STUBS. SETLISTS. POLAROIDS. POSTERS. WRISTBANDS.
-      </div>
-    </div>
-
-    {/* Emotional copy */}
-    <div style={{ textAlign: 'center', marginBottom: 64 }}>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.1rem' : '1.6rem', color: GRAY, letterSpacing: 3, lineHeight: 1.6 }}>
-        Social media feeds disappear.
-      </div>
-      <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.6rem' : '2.5rem', color: '#fff', letterSpacing: 3, textShadow: `0 0 30px rgba(255,204,0,0.3)` }}>
-        THE ARCHIVE IS <span style={{ color: GOLD }}>FOREVER.</span>
-      </div>
-      <div style={{ width: 60, height: 2, background: GOLD, margin: '20px auto 0', boxShadow: `0 0 10px ${GOLD}` }} />
-    </div>
-
-    {/* Real stats */}
-    <div style={{ textAlign: 'center', marginBottom: 40 }}>
-      <div style={{
-        fontFamily: "'Bebas Neue'",
-        fontSize: isMobile ? '2rem' : '3.5rem',
-        lineHeight: 1.3, letterSpacing: 2,
-      }}>
-        <span style={{ color: GOLD }}>
-          {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.image_url && c.image_url !== '').length} TICKET STUBS.
-        </span>{' '}
-        <span style={{ color: TEAL }}>
-          {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.wristband_image_url && c.wristband_image_url !== '').length} WRISTBANDS.
-        </span>{' '}
-        <span style={{ color: PURPLE }}>
-          {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.setlist_image_url && c.setlist_image_url !== '').length} RELICS.
-        </span>{' '}
-        <span style={{ color: '#ff6699' }}>
-          {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.festival_poster_url && c.festival_poster_url !== '').length} POSTERS.
-        </span>
-      </div>
-    </div>
-
-    {/* Still in a box */}
-    <div style={{ textAlign: 'center', marginBottom: 80 }}>
-      <div style={{
-        fontFamily: "'Bebas Neue'",
-        fontSize: isMobile ? '1.8rem' : '3rem',
-        letterSpacing: 6,
-        background: `linear-gradient(90deg, ${GOLD}, ${TEAL})`,
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text',
-      }}>
-        STILL IN A BOX. NOT FOR LONG.
-      </div>
-    </div>
-
   </div>
 </div>
 
