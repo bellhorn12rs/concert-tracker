@@ -6010,6 +6010,8 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   const [form, setForm] = useState(initialState);
   const [uploading, setUploading] = useState(false);
   const [entryStep, setEntryStep] = useState(concert === 'new' ? 'gate' : 'form');
+  
+
 
   // 🟢 HELPER: Find most frequent location
   const getHomeTurf = () => {
@@ -6242,7 +6244,6 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                     {k:'image_url', l:'STUB', i:'🎟️', id:'e-stub', t:'TICKET'}, 
                     {k:'personal_photo_url', l:'PHOTO', i:'📸', id:'e-pic', t:'POLAROID'}, 
                     {k:'setlist_image_url', l:'SETLIST', i:'📋', id:'e-set', t:'SETLIST'}, 
-                    {k:'festival_poster_url', l:'POSTER', i:'🎨', id:'e-post', t:'POSTER'},
 ...(form.is_festival ? [{k:'wristband_image_url', l:'WRISTBAND', i:'🎫', id:'e-wrist', t:'WRISTBAND'}] : [])
                   ].map(item => (
                     <div key={item.k} onClick={() => document.getElementById(item.id).click()} style={{ background: form[item.k] ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${form[item.k] ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
@@ -6252,6 +6253,20 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                     </div>
                   ))}
                 </div>
+                <button
+  onClick={() => setShowPosterUpload(true)}
+  style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #ff6699', color: '#ff6699', borderRadius: 8, fontFamily: "'Space Mono'", fontSize: 9, cursor: 'pointer', marginTop: 10 }}
+>
+  🎨 ADD POSTER TO WALL
+</button>
+
+{showPosterUpload && (
+  <PosterUploadModal
+    concerts={allConcerts}
+    onClose={() => setShowPosterUpload(false)}
+    onSaved={() => setShowPosterUpload(false)}
+  />
+)}
 
                 <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <button onClick={() => onSave((concert && concert !== 'new') ? concert.id : null, form)} disabled={uploading} style={{ width: '100%', padding: '18px', background: uploading ? '#222' : C.teal, color: '#000', borderRadius: '8px', fontFamily: "'Bebas Neue'", fontSize: '1.5rem', cursor: 'pointer' }}>
@@ -6699,6 +6714,7 @@ function PosterUploadModal({ concerts, onClose, onSaved }) {
   const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showPosterUpload, setShowPosterUpload] = useState(false);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
