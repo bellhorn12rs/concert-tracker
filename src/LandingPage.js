@@ -180,14 +180,17 @@ export default function LandingPage({
   const [concerts, setConcerts] = useState([]);
   const [userCount, setUserCount] = useState(0);
 
+  useEffect(() => {
   const fetchPublicConcerts = async () => {
-  const { data } = await supabase
-    .from('concerts')
-    .select('id, date, bands, venue, city, state, genre, is_festival, festival_name, image_url, personal_photo_url, setlist_image_url, festival_poster_url, wristband_image_url')
-    .order('date', { ascending: false })
-    .limit(600);
-  if (data) setConcerts(data);
-};
+    const { data } = await supabase
+      .from('concerts')
+      .select('id, date, bands, venue, city, state, genre, is_festival, festival_name, image_url, personal_photo_url, setlist_image_url, festival_poster_url, wristband_image_url, user_id')
+      .order('date', { ascending: false })
+      .limit(600);
+    if (data) setConcerts(data);
+  };
+  fetchPublicConcerts();
+}, []);
 
   useEffect(() => {
     const fetchRecentUsers = async () => {
