@@ -915,6 +915,8 @@ return txt + txt;
       <div style={{ width: 60, height: 2, background: GOLD, margin: '20px auto 0', boxShadow: `0 0 10px ${GOLD}` }} />
     </div>
 
+  </div>
+</div>
 
 {/* ── SECTION 1: TEMPORAL DRIFT ── */}
 <div style={{ padding: isMobile ? '60px 20px' : '80px 40px', background: '#050508', borderTop: '1px solid #111', borderBottom: '1px solid #111', position: 'relative', overflow: 'hidden' }}>
