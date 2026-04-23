@@ -1745,37 +1745,6 @@ function RandomShow({ concerts, onAdd }) {
   const festLabel = show.festival_name || "FESTIVAL";
   const themeColor = show.is_festival ? C.gold : C.purple;
 
-  // 🛰️ SYSTEM PLACEHOLDER: Shown when no image exists in the archive
-  const SignalPlaceholder = () => (
-    <div 
-      onClick={onAdd}
-      style={{
-      width: '100%',
-      height: '100%',
-      background: '#050508',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      border: `1px dashed ${hexToRgba(themeColor, 0.3)}`,
-      borderRadius: '4px',
-      opacity: 0.6,
-      cursor: 'pointer'
-    }}>
-      <div style={{ opacity: 0.4 }}><TrackRecordLogo size={30} /></div>
-      <div style={{ 
-        fontFamily: "'Space Mono'", 
-        fontSize: 7, 
-        color: themeColor, 
-        marginTop: 12, 
-        letterSpacing: 2,
-        textAlign: 'center'
-      }}>
-        NO_VISUAL_SIGNAL<br/>[ AWAITING_UPLOAD ]
-      </div>
-    </div>
-  );
-
   return (
     <Card neon className="card-texture" style={{ 
       minHeight: 240, 
@@ -1813,7 +1782,27 @@ function RandomShow({ concerts, onAdd }) {
     <img src={displayImg} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
   </div>
           ) : (
-            <SignalPlaceholder />
+            <div 
+  onClick={onAdd}
+  style={{
+    width: '100%',
+    height: '100%',
+    background: '#050508',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: `1px dashed ${hexToRgba(themeColor, 0.3)}`,
+    borderRadius: '4px',
+    opacity: 0.6,
+    cursor: 'pointer'
+  }}
+>
+  <div style={{ opacity: 0.4 }}><TrackRecordLogo size={30} /></div>
+  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: themeColor, marginTop: 12, letterSpacing: 2, textAlign: 'center' }}>
+    NO_VISUAL_SIGNAL<br/>[ CLICK TO ADD ]
+  </div>
+</div>
           )}
         </div>
       )}
