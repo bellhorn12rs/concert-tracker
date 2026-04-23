@@ -1041,6 +1041,7 @@ return txt + txt;
       </div>
     </div>
 
+      <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'center' }}>
       <div style={{ flex: 1, minWidth: 200 }}>
         {sliderConcerts.slice(0, 6).map((c, i) => {
           const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
