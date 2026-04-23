@@ -260,14 +260,15 @@ export default function LandingPage({
       bits.push(`[NEW_SIGNAL] ${band.toUpperCase()} @ ${venue.toUpperCase()}${city ? ` (${city.toUpperCase()})` : ''}`);
     });
     concerts.filter(c => c.image_url || c.setlist_image_url).slice(0, 5).forEach(c => {
-      const band = getBandName(c.bands?.[0]) || 'UNKNOWN';
-      bits.push(`[ARTIFACT_ARCHIVED] ${band.toUpperCase()} — ${fmtDateShort(c.date).toUpperCase()}`);
-    bits.push(`[NETWORK_STAT] ${concerts.length} SIGNALS IN ARCHIVE`);
-    bits.push(`[NETWORK_STAT] ${uniqueVenues} UNIQUE STAGES DOCUMENTED`);
-    bits.push(`[NETWORK_STAT] ${uniqueStates} STATES ON THE MAP`);
-    const txt = bits.join('   ///   ') + '   ///   ';
-    return txt + txt;
-  }, [concerts, uniqueVenues, uniqueStates]);
+  const band = getBandName(c.bands?.[0]) || 'UNKNOWN';
+  bits.push(`[ARTIFACT_ARCHIVED] ${band.toUpperCase()} — ${fmtDateShort(c.date).toUpperCase()}`);
+});
+bits.push(`[NETWORK_STAT] ${concerts.length} SIGNALS IN ARCHIVE`);
+bits.push(`[NETWORK_STAT] ${uniqueVenues} UNIQUE STAGES DOCUMENTED`);
+bits.push(`[NETWORK_STAT] ${uniqueStates} STATES ON THE MAP`);
+const txt = bits.join('   ///   ') + '   ///   ';
+return txt + txt;
+}, [concerts, uniqueVenues, uniqueStates]);
 
   const permanentRecord = useMemo(() => {
     return concerts
