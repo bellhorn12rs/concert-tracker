@@ -6008,7 +6008,8 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   const [form, setForm] = useState(initialState);
   const [uploading, setUploading] = useState(false);
   const [entryStep, setEntryStep] = useState(concert === 'new' ? 'gate' : 'form');
-  
+  const [showPosterUpload, setShowPosterUpload] = useState(false);
+
 
 
   // 🟢 HELPER: Find most frequent location
