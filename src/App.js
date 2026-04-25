@@ -9272,7 +9272,7 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
         </div> {/* Closes Sidebar + Stage Flexbox */}
 
         {/* ── MODALS LAYER ── */}
-        <>
+        <React.Fragment>
           {isAdmin && nudgeTarget && (
             <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
               <div style={{ textAlign: 'center', maxWidth: 500, padding: 40 }}>
@@ -9319,11 +9319,11 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
               onDelete={handleUpcomingDelete} 
             />
           )}
-        </>
+        </React.Fragment>
       </div> {/* Closes Global Wrapper div */}
     </ThemeContext.Provider>
   );
-} // <--- End of App Component
+} // <--- END OF APP COMPONENT
 
 // ── AUTHENTICATION COMPONENT (Defined ONCE) ──
 function LoginModal({ onClose }) {
