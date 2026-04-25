@@ -6305,23 +6305,23 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
               </div>
 
               {/* RIGHT COLUMN: ARTIFACTS */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
-                <label style={labelStyle}>// PHYSICAL ARTIFACTS</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  {[ 
-                    {k:'image_url', l:'STUB', i:'🎟️', id:'e-stub', t:'TICKET'}, 
-                    {k:'personal_photo_url', l:'PHOTO', i:'📸', id:'e-pic', t:'POLAROID'}, 
-                    {k:'setlist_image_url', l:'SETLIST', i:'📋', id:'e-set', t:'SETLIST'}, 
-...(form.is_festival ? [{k:'wristband_image_url', l:'WRISTBAND', i:'🎫', id:'e-wrist', t:'WRISTBAND'}] : [])
-                  ].map(item => (
-                    <div key={item.k} onClick={() => document.getElementById(item.id).click()} style={{ background: form[item.k] ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${form[item.k] ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
-                      <div style={{ fontSize: '1.2rem' }}>{form[item.k] ? '✅' : item.i}</div>
-                      <div style={{ fontSize: 7, marginTop: 5, color: '#666' }}>{item.l}</div>
-                      <input id={item.id} type="file" hidden onChange={async (e) => { const url = await uploadToArchive(e.target.files[0], item.t); if (url) set(item.k, url); }} />
-                    </div>
-                  ))}
-                </div>
-                <button
+<div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+  <label style={labelStyle}>// PHYSICAL ARTIFACTS</label>
+  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+    {[ 
+      {k:'image_url', l:'STUB', i:'🎟️', id:'e-stub', t:'TICKET'}, 
+      {k:'personal_photo_url', l:'PHOTO', i:'📸', id:'e-pic', t:'POLAROID'}, 
+      {k:'setlist_image_url', l:'SETLIST', i:'📋', id:'e-set', t:'SETLIST'}, 
+      ...(form.is_festival ? [{k:'wristband_image_url', l:'WRISTBAND', i:'🎫', id:'e-wrist', t:'WRISTBAND'}] : [])
+    ].map(item => (
+      <div key={item.k} onClick={() => document.getElementById(item.id).click()} style={{ background: form[item.k] ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${form[item.k] ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
+        <div style={{ fontSize: '1.2rem' }}>{form[item.k] ? '✅' : item.i}</div>
+        <div style={{ fontSize: 7, marginTop: 5, color: '#666' }}>{item.l}</div>
+        <input id={item.id} type="file" hidden onChange={async (e) => { const url = await uploadToArchive(e.target.files[0], item.t); if (url) set(item.k, url); }} />
+      </div>
+    ))}
+  </div>
+
   {/* 🎨 DIRECT POSTER PINNING */}
   <div style={{ marginTop: 10 }}>
     <label style={{ 
@@ -6345,7 +6345,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
         type="file" 
         accept="image/*" 
         hidden 
-        disabled={uploading || !form.date} // Prevent upload without a date anchor
+        disabled={uploading || !form.date} 
         onChange={(e) => handlePosterDirectUpload(e.target.files[0])} 
       />
     </label>
@@ -6356,32 +6356,25 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     )}
   </div>
 
-{showPosterUpload && (
-  <PosterUploadModal
-    concerts={allConcerts}
-    onClose={() => setShowPosterUpload(false)}
-    onSaved={() => setShowPosterUpload(false)}
-  />
-)}
-
-                <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <button onClick={() => onSave((concert && concert !== 'new') ? concert.id : null, form)} disabled={uploading} style={{ width: '100%', padding: '18px', background: uploading ? '#222' : C.teal, color: '#000', borderRadius: '8px', fontFamily: "'Bebas Neue'", fontSize: '1.5rem', cursor: 'pointer' }}>
-                    {uploading ? 'SYNCING...' : 'COMMIT TO ARCHIVE'}
-                  </button>
-                  {concert !== 'new' && (
-                    <button onClick={() => onDelete(concert.id)} style={{ background: 'none', border: '1px solid #441111', color: '#ff4444', padding: '10px', borderRadius: '6px', fontSize: '9px', cursor: 'pointer' }}>
-                      DELETE SIGNAL PERMANENTLY
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+  {/* FOOTER ACTIONS */}
+  <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <button 
+      onClick={() => onSave((concert && concert !== 'new') ? concert.id : null, form)} 
+      disabled={uploading} 
+      style={{ width: '100%', padding: '18px', background: uploading ? '#222' : C.teal, color: '#000', borderRadius: '8px', fontFamily: "'Bebas Neue'", fontSize: '1.5rem', cursor: 'pointer' }}
+    >
+      {uploading ? 'SYNCING...' : 'COMMIT TO ARCHIVE'}
+    </button>
+    {concert !== 'new' && (
+      <button 
+        onClick={() => onDelete(concert.id)} 
+        style={{ background: 'none', border: '1px solid #441111', color: '#ff4444', padding: '10px', borderRadius: '6px', fontSize: '9px', cursor: 'pointer' }}
+      >
+        DELETE SIGNAL PERMANENTLY
+      </button>
+    )}
+  </div>
+</div>
 // 🟢 Helper 1: Navigation Button Styling
 // This handles the "Active" glow and color switching for the Terminal row
 const navBtnStyle = (isActive, color) => ({
