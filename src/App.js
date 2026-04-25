@@ -882,13 +882,13 @@ const MarqueeStyles = () => (
 // ─── SHARED ATOMS ─────────────────────────────────────────────────────────────
 // ─── UPGRADED SONIC DNA WEB (THE "GEODE" EDITION) ──────────────────────────
 const SetlistDNA = ({ genreScores }) => {
-  // 1. Filter for valid scores and pick the Top 8 to keep the shape clean [cite: 286]
+  // 1. Filter for valid scores and pick the Top 8 to keep the shape clean
   const sortedEntries = Object.entries(genreScores)
     .filter(([_, score]) => score > 0)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8); 
 
-  if (sortedEntries.length < 3) return <div style={{color: '#555', fontSize: 10, fontFamily: "'Space Mono'"}}>AWAITING MORE DATA...</div>;
+  if (sortedEntries.length < 3) return <div style={{color: '#555', fontSize: 10}}>AWAITING MORE DATA...</div>;
 
   // 2. Map labels to shorter versions so they don't overlap
   const labels = sortedEntries.map(([name]) => 
@@ -902,9 +902,9 @@ const SetlistDNA = ({ genreScores }) => {
   
   const values = sortedEntries.map(([, score]) => score);
   const topGenre = sortedEntries[0][0];
-  const mainColor = GENRE_COLORS[topGenre] || '#00f2ff'; [cite: 26]
+  const mainColor = GENRE_COLORS[topGenre] || '#00f2ff';
 
-  const size = 260; 
+  const size = 260; // Slightly larger for better readability
   const center = size / 2;
   const radius = size * 0.32;
   const numPoints = labels.length;
@@ -934,7 +934,7 @@ const SetlistDNA = ({ genreScores }) => {
           </radialGradient>
         </defs>
 
-        {/* Background Grid Rings [cite: 154, 155] */}
+        {/* Background Grid Rings */}
         {webLevels.map(level => (
           <polygon
             key={level}
@@ -948,7 +948,7 @@ const SetlistDNA = ({ genreScores }) => {
           />
         ))}
 
-        {/* The Pulsing Data Shape [cite: 156, 157] */}
+        {/* The Pulsing Data Shape */}
         <polygon 
           points={dataPoints} 
           fill="url(#dnaGradient)" 
@@ -958,14 +958,14 @@ const SetlistDNA = ({ genreScores }) => {
           style={{ filter: `drop-shadow(0 0 12px ${mainColor}66)`, transition: 'all 0.8s ease' }}
         />
 
-        {/* Axis Labels [cite: 158, 159] */}
+        {/* Axis Labels */}
         {labels.map((label, i) => {
-          const p = getPoint(i, 100, 20); 
+          const p = getPoint(i, 100, 20); // Push labels 20px outside the 100% ring
           const isTop = i === 0;
           return (
             <text
               key={i} x={p.x} y={p.y}
-              fill={isTop ? mainColor : C.gray}
+              fill={isTop ? mainColor : "#666"}
               fontSize={isTop ? "10" : "8"}
               fontFamily="'Space Mono'"
               textAnchor="middle"
@@ -983,30 +983,36 @@ const SetlistDNA = ({ genreScores }) => {
     </div>
   );
 };
-
 const Badge = ({ children, color = C.teal, bg = C.tealFaint }) => (
-  <span style={{ display:'inline-block', fontFamily:"'Space Mono',monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color, background:bg, border:`1px solid ${color}44`, padding:'2px 6px', borderRadius:3 }}>{children}</span> [cite: 161]
+  <span style={{ display:'inline-block', fontFamily:"'Space Mono',monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color, background:bg, border:`1px solid ${color}44`, padding:'2px 6px', borderRadius:3 }}>{children}</span>
 );
 
+const NEON_BORDERS = [
+  { border:C.teal, glow:'rgba(0,229,204,0.18)' }, { border:C.cyan, glow:'rgba(0,207,255,0.18)' },
+  { border:C.purple, glow:'rgba(153,102,255,0.18)' }, { border:C.gold, glow:'rgba(255,204,0,0.18)' },
+  { border:C.green, glow:'rgba(0,204,136,0.18)' }, { border:'#ff6699', glow:'rgba(255,102,153,0.18)' },
+];
+let _cardIdx = 0;
+
 const Card = ({ children, style = {}, glow = false, neon = false, genreColor = null, onClick }) => {
-  const nb = neon && !genreColor ? NEON_BORDERS[_cardIdx++ % NEON_BORDERS.length] : null; [cite: 164]
-  const bc = genreColor || (glow ? C.teal : neon ? nb.border : C.border); [cite: 165]
-  const gc = genreColor ? hexToRgba(genreColor, 0.2) : glow ? C.tealGlow : neon ? nb?.glow : null; [cite: 166]
+  const nb = neon && !genreColor ? NEON_BORDERS[_cardIdx++ % NEON_BORDERS.length] : null;
+  const bc = genreColor || (glow ? C.teal : neon ? nb.border : C.border);
+  const gc = genreColor ? hexToRgba(genreColor, 0.2) : glow ? C.tealGlow : neon ? nb?.glow : null;
   return (
-    <div onClick={onClick} style={{ background: genreColor ? `linear-gradient(135deg,${C.bgCard},${hexToRgba(genreColor,0.07)})` : C.bgCard, border:`1px solid ${bc}`, borderRadius:8, padding:16, cursor:onClick?'pointer':'default', boxShadow:gc?`0 0 16px ${gc},0 2px 8px rgba(0,0,0,0.4)`:'0 2px 8px rgba(0,0,0,0.4)', ...style }}>{children}</div> [cite: 166]
+    <div onClick={onClick} style={{ background: genreColor ? `linear-gradient(135deg,${C.bgCard},${hexToRgba(genreColor,0.07)})` : C.bgCard, border:`1px solid ${bc}`, borderRadius:8, padding:16, cursor:onClick?'pointer':'default', boxShadow:gc?`0 0 16px ${gc},0 2px 8px rgba(0,0,0,0.4)`:'0 2px 8px rgba(0,0,0,0.4)', ...style }}>{children}</div>
   );
 };
 
 const CardTitle = ({ children, style = {} }) => (
-  <div style={{ fontFamily:"'Space Mono',monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:C.tealDim, marginBottom:12, paddingBottom:8, borderBottom:`1px solid ${C.border}`, ...style }}>{children}</div> [cite: 167]
+  <div style={{ fontFamily:"'Space Mono',monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:C.tealDim, marginBottom:12, paddingBottom:8, borderBottom:`1px solid ${C.border}`, ...style }}>{children}</div>
 );
 
 const Btn = ({ children, onClick, variant = 'primary', style = {}, disabled = false }) => {
   const V = { 
-    primary: { background: C.teal, color: C.bg }, [cite: 168]
-    secondary: { background: C.bgCardAlt, color: C.gray, border: `1px solid ${C.border}` }, [cite: 168]
-    danger: { background: C.red + '22', color: C.red, border: `1px solid ${C.red}44` }, [cite: 168]
-    ghost: { background: 'transparent', color: C.teal, border: `1px solid ${C.borderLit}` } [cite: 168]
+    primary: { background: C.teal, color: C.bg }, 
+    secondary: { background: C.bgCardAlt, color: C.gray, border: `1px solid ${C.border}` }, 
+    danger: { background: C.red + '22', color: C.red, border: `1px solid ${C.red}44` }, 
+    ghost: { background: 'transparent', color: C.teal, border: `1px solid ${C.borderLit}` } 
   };
   return (
     <button 
@@ -1020,21 +1026,21 @@ const Btn = ({ children, onClick, variant = 'primary', style = {}, disabled = fa
         border: 'none', 
         borderRadius: 4, 
         padding: '8px 16px', 
-        [cite_start]cursor: disabled ? 'not-allowed' : 'pointer', [cite: 170]
-        opacity: disabled ? [cite_start]0.5 : 1, [cite: 170]
-        [cite_start]transition: 'all 0.15s', [cite: 170]
-        [cite_start]...V[variant], [cite: 170]
-        [cite_start]...style [cite: 170]
+        cursor: disabled ? 'not-allowed' : 'pointer', 
+        opacity: disabled ? 0.5 : 1, 
+        transition: 'all 0.15s', 
+        ...V[variant], 
+        ...style 
       }}
     >
       {children}
     </button>
   );
 };
-
+// ─── COUNT-UP STAT ─────────────────────────────────────────────────────────────
 function CountUpStat({ value, label, sub, color = C.white }) {
-  const [display, setDisplay] = useState(0); [cite: 171]
-  const ref = useRef(null); [cite: 172]
+  const [display, setDisplay] = useState(0);
+  const ref = useRef(null);
   useEffect(() => {
     let start = 0;
     const end = Number(String(value).replace(/,/g,''));
@@ -1049,10 +1055,10 @@ function CountUpStat({ value, label, sub, color = C.white }) {
     return () => clearInterval(timer);
   }, [value]);
   return (
-    <div ref={ref} style={{ padding:'20px 24px', borderRight:`1px solid ${C.border}`, textAlign:'center' }}> [cite: 173]
-      <div style={{ fontFamily:"'Bebas Neue'", fontSize:'clamp(2rem,4vw,3rem)', color, lineHeight:1 }}>{display.toLocaleString()}</div> [cite: 173]
-      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:C.tealDim, margin:'6px 0 3px' }}>{label}</div> [cite: 173]
-      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:C.grayDim, fontStyle:'italic' }}>{sub}</div> [cite: 173]
+    <div ref={ref} style={{ padding:'20px 24px', borderRight:`1px solid ${C.border}`, textAlign:'center' }}>
+      <div style={{ fontFamily:"'Bebas Neue'", fontSize:'clamp(2rem,4vw,3rem)', color, lineHeight:1, animation:'count-up 0.6s ease both' }}>{display.toLocaleString()}</div>
+      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:C.tealDim, margin:'6px 0 3px' }}>{label}</div>
+      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:C.grayDim, fontStyle:'italic' }}>{sub}</div>
     </div>
   );
 }
@@ -2416,6 +2422,7 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
       const masterGenre = genreMap[a.artist];
       return { ...a, genre: masterGenre || null };
     })
+    // Use a fallback for the MIN constant if it's missing
     .filter(a => a.shows.length >= (typeof HALL_OF_FAME_MIN !== 'undefined' ? HALL_OF_FAME_MIN : 3))
     .sort((a, b) => b.shows.length - a.shows.length);
   }, [sets, genreMap]);
@@ -2431,48 +2438,48 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
 
   // 2. 🟢 ROBUST MEDIA ARCHIVE
   const archive = useMemo(() => {
-    if (!selectedData) return { setlists: [], photos: [], archivePosters: [] };
-    
-    const setlists = [];
-    const photos = [];
-    const archivePosters = [];
+  if (!selectedData) return { setlists: [], photos: [], archivePosters: [] };
+  
+  const setlists = [];
+  const photos = [];
+  const archivePosters = [];
 
-    selectedData.shows.forEach(s => {
-      // Setlists logic
-      const slSource = s.setlist_image_url || s.image_url;
-      if (slSource && typeof slSource === 'string') {
-        slSource.split(',').forEach(url => {
-          if (url.trim()) setlists.push({ url: url.trim(), date: s.date });
-        });
-      }
+  selectedData.shows.forEach(s => {
+    // Setlists
+    const slSource = s.setlist_image_url || s.image_url;
+    if (slSource && typeof slSource === 'string') {
+      slSource.split(',').forEach(url => {
+        if (url.trim()) setlists.push({ url: url.trim(), date: s.date });
+      });
+    }
 
-      // Legacy Posters
-      if (s.festival_poster_url && typeof s.festival_poster_url === 'string') {
-        s.festival_poster_url.split(',').forEach(url => {
-          if (url.trim()) archivePosters.push({ url: url.trim(), date: s.date });
-        });
-      }
+    // Posters from old concert field
+    if (s.festival_poster_url && typeof s.festival_poster_url === 'string') {
+      s.festival_poster_url.split(',').forEach(url => {
+        if (url.trim()) archivePosters.push({ url: url.trim(), date: s.date });
+      });
+    }
 
-      // Polaroids
-      if (s.personal_photo_url && typeof s.personal_photo_url === 'string') {
-        s.personal_photo_url.split(',').forEach(url => {
-          if (url.trim()) photos.push({ url: url.trim(), date: s.date });
-        });
-      }
-    });
+    // Polaroids
+    if (s.personal_photo_url && typeof s.personal_photo_url === 'string') {
+      s.personal_photo_url.split(',').forEach(url => {
+        if (url.trim()) photos.push({ url: url.trim(), date: s.date });
+      });
+    }
+  });
 
-    // Posters from posters table (Relational Scavenger)
-    posters.filter(p =>
-      p.artist === selectedData.artist ||
-      selectedData.shows.some(show => show.date === p.date)
-    ).forEach(p => {
-      if (!archivePosters.some(ap => ap.url === p.image_url)) {
-        archivePosters.push({ url: p.image_url, date: p.date });
-      }
-    });
+  // Posters from posters table
+  posters.filter(p =>
+    p.artist === selectedData.artist ||
+    selectedData.shows.some(show => show.date === p.date)
+  ).forEach(p => {
+    if (!archivePosters.some(ap => ap.url === p.image_url)) {
+      archivePosters.push({ url: p.image_url, date: p.date });
+    }
+  });
 
-    return { setlists, photos, archivePosters };
-  }, [selectedData, posters]);
+  return { setlists, photos, archivePosters };
+}, [selectedData, posters]);
 
   return (
     <div ref={topRef} style={{ padding: '24px 0' }} className="fade-in">
@@ -2529,77 +2536,36 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
               </div>
 
               {/* MEDIA VAULT (REPAIRED) */}
-              <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '30px' }}>
-                {(archive.setlists.length > 0 || archive.archivePosters.length > 0) && (
-                  <div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: gc, letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// STAGE ARTIFACTS</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'flex-start' }}>
-                      {archive.setlists.map((m, idx) => (
-                        <SetlistPaper key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.setlists.length} />
-                      ))}
-                      {archive.archivePosters.map((m, idx) => (
-                        <GigPoster key={`poster-${idx}-${m.url}`} src={m.url} artist={selectedData.artist} date={m.date} index={idx} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {archive.photos.length > 0 && (
-                  <div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#9d00ff', letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// PERSONAL MEMORIES</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
-                      {archive.photos.map((m, idx) => (
-                        <PersonalPolaroid key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.photos.length} caption={fmtDateShort(m.date)} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* 3. THE GRID VIEW */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 15 }}>
-        {artists.map((a, i) => {
-          const gc = a.genre ? (GENRE_COLORS[a.genre] || C.teal) : null;
-          const isSelected = selected === a.artist;
-          const cardColor = isSelected ? (gc || C.teal) : gc;
-          
-          const setlistCount = a.shows.filter(s => 
-            s.has_setlist || 
-            (s.has_setlist_names && s.has_setlist_names.trim().length > 0) || 
-            s.setlist_image_url || 
-            s.image_url
-          ).length;
-
-          return (
-            <div key={a.artist} onClick={() => handleSelect(a.artist, isSelected)}
-              style={{ 
-                background: cardColor ? `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(cardColor, 0.12)})` : C.bgCard, 
-                border: `1px solid ${cardColor ? hexToRgba(cardColor, 0.5) : C.border}`, 
-                borderRadius: 12, padding: '20px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative'
-              }}>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: cardColor || C.tealDim, marginBottom: 8, fontWeight: 900 }}>{MEDAL[i] || 'RECORD'} #{i + 1}</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: C.white, marginBottom: 4, lineHeight: 1 }}>{a.artist.toUpperCase()}</div>
-              {a.genre && <GenreBadge genre={a.genre} color={gc} small />}
-              
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: cardColor || C.white, lineHeight: 1, marginTop: 10 }}>{a.shows.length}×</div>
-              
-              {setlistCount > 0 && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10, background: `${C.gold}15`, border: `1px solid ${C.gold}44`, borderRadius: 10, padding: '4px 10px' }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.gold, boxShadow: `0 0 8px ${C.gold}` }} />
-                  <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, fontWeight: 900, textTransform: 'uppercase' }}>{setlistCount} SETLISTS</span>
-                </div>
-              )}
-            </div>
-          );
-        })}
+<div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '30px' }}>
+  {(archive.setlists.length > 0 || archive.archivePosters.length > 0) && (
+  <div>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: gc, letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// STAGE ARTIFACTS</div>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'flex-start' }}>
+      {archive.setlists.map((m, idx) => (
+        <SetlistPaper key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.setlists.length} />
+      ))}
+      {archive.archivePosters.map((m, idx) => (
+        <GigPoster key={`poster-${idx}-${m.url}`} src={m.url} artist={selectedData.artist} date={m.date} index={idx} />
+      ))}
+    </div>
+  </div>
+)}
+  
+  {archive.photos.length > 0 && (
+    <div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#9d00ff', letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// PERSONAL MEMORIES</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+        {archive.photos.map((m, idx) => (
+          <PersonalPolaroid key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.photos.length} caption={fmtDateShort(m.date)} />
+        ))}
       </div>
     </div>
-  );
-}
+  )}
+</div>
+</div>
+</div>
+        );
+      })()}
 
       {/* 3. 🟡 THE GRID VIEW (Restored Badge & Counter) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 15 }}>
@@ -7840,47 +7806,22 @@ const getCuratorTitle = (stats, concerts) => {
 
   const dayGroups = useMemo(() => {
   const filtered = applyFilters(concerts) || [];
-  
-  return filtered.map(concert => {
-    // 🛡️ Safety: Skip calculations if concert date is missing
-    if (!concert.date) return { ...concert, matchedPosters: [] };
-
-    const concertYear = getYear(concert.date);
-    
-    return {
-      ...concert,
-      // 🛰️ THE POSTER SCAVENGER (Relational Mapping)
-      matchedPosters: posters.filter(p => {
-        // Ensure the poster has a valid date before comparing
-        if (!p.date) return false;
-        const posterYear = getYear(p.date);
-
-        // Rule A: MULTI-DAY (Festival Year)
-        // Maps to ANY day of the festival for that specific year
-        if (p.poster_type === 'festival_year') {
-          return (
-            concert.is_festival &&
-            p.festival_name === concert.festival_name && 
-            posterYear === concertYear
-          );
-        }
-
-        // Rule B: SINGLE DAY (Festival Day or Artist Gig)
-        // Maps strictly to that specific date in history
-        if (p.poster_type === 'festival_day' || p.poster_type === 'artist') {
-          // If it's a festival day, match on name AND date
-          if (p.poster_type === 'festival_day') {
-            return p.date === concert.date && p.festival_name === concert.festival_name;
-          }
-          // If it's a standard gig, match on date
-          // (This covers your "Ween Sept 1, 2006" multi-band example)
-          return p.date === concert.date;
-        }
-
-        return false;
-      })
-    };
-  });
+  return filtered.map(concert => ({
+    ...concert,
+    matchedPosters: posters.filter(p => {
+      if (p.poster_type === 'artist') {
+        return p.date === concert.date;
+      }
+      if (p.poster_type === 'festival_day') {
+        return p.date === concert.date && p.festival_name === concert.festival_name;
+      }
+      if (p.poster_type === 'festival_year') {
+        return p.festival_name === concert.festival_name && 
+               getYear(p.date) === getYear(concert.date);
+      }
+      return false;
+    })
+  }));
 }, [concerts, applyFilters, posters]);
 
   const headerStats = useMemo(() => ({
@@ -9259,62 +9200,35 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
   />
 )}
 </main>
-          </div> {/* Closes Stage Scroll Area */}
-        </div> {/* Closes Sidebar + Stage Flexbox */}
 
-        {/* ── MODALS LAYER ── */}
-        <React.Fragment>
-          {isAdmin && nudgeTarget && (
-            <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
-              <div style={{ textAlign: 'center', maxWidth: 500, padding: 40 }}>
-                <div style={{ fontSize: '4rem', marginBottom: 20, animation: 'pulse 2s infinite' }}>📡</div>
-                <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: C.teal, lineHeight: 1 }}>SIGNAL DETECTED</h2>
-                <p style={{ fontFamily: "'Space Mono'", fontSize: 12, color: '#fff', marginBottom: 30 }}>
-                  THE ARCHIVE DETECTED A RECENT SHOW: <br/>
-                  <span style={{ color: C.gold, fontSize: '1.5rem' }}>{nudgeTarget.artist.toUpperCase()}</span><br/>
-                  WAS AT {nudgeTarget.venue.toUpperCase()} ON {nudgeTarget.date}.
-                </p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
-                  <button onClick={() => { setEditTarget({ ...nudgeTarget, isNudge: true }); setNudgeTarget(null); }} style={{ padding: '20px', background: C.teal, color: '#000', border: 'none', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}>ARCHIVE NOW</button>
-                  <button onClick={() => setNudgeTarget(null)} style={{ padding: '20px', background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}>IGNORE SIGNAL</button>
+            {/* ── MODALS LAYER ── */}
+            {isAdmin && nudgeTarget && (
+              <div style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)' }}>
+                <div style={{ textAlign: 'center', maxWidth: 500, padding: 40 }}>
+                  <div style={{ fontSize: '4rem', marginBottom: 20, animation: 'pulse 2s infinite' }}>📡</div>
+                  <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: C.teal, lineHeight: 1 }}>SIGNAL DETECTED</h2>
+                  <p style={{ fontFamily: "'Space Mono'", fontSize: 12, color: '#fff', marginBottom: 30 }}>
+                    THE ARCHIVE DETECTED A RECENT SHOW: <br/>
+                    <span style={{ color: C.gold, fontSize: '1.5rem' }}>{nudgeTarget.artist.toUpperCase()}</span><br/>
+                    WAS AT {nudgeTarget.venue.toUpperCase()} ON {nudgeTarget.date}.
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
+                    <button onClick={() => { setEditTarget({ ...nudgeTarget, isNudge: true }); setNudgeTarget(null); }} style={{ padding: '20px', background: C.teal, color: '#000', border: 'none', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}>ARCHIVE NOW</button>
+                    <button onClick={() => setNudgeTarget(null)} style={{ padding: '20px', background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', cursor: 'pointer' }}>IGNORE SIGNAL</button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-
-          {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
-          
-          {shareCard && (
-            <ShareCard 
-              artist={shareCard.artist} 
-              shows={shareCard.shows} 
-              onClose={() => setShareCard(null)} 
-            />
-          )}
-
-          {editTarget && (
-            <EditModal 
-              concert={editTarget === 'new' ? 'new' : editTarget} 
-              onClose={() => setEditTarget(null)} 
-              onSave={editTarget?.isNudge ? (id, payload) => handleReconcile(editTarget.id, payload) : handleSave} 
-              onDelete={handleDelete} 
-              allConcerts={concerts} 
-            />
-          )}
-
-          {upcomingModal !== null && (
-            <UpcomingModal 
-              show={upcomingModal === 'new' ? null : upcomingModal} 
-              onClose={() => setUpcomingModal(null)} 
-              onSave={handleUpcomingSave} 
-              onDelete={handleUpcomingDelete} 
-            />
-          )}
-        </React.Fragment>
-      </div> {/* Closes Global Wrapper div */}
+            )}
+            {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+            {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
+            {editTarget && <EditModal concert={editTarget === 'new' ? 'new' : editTarget} onClose={() => setEditTarget(null)} onSave={editTarget?.isNudge ? (id, payload) => handleReconcile(editTarget.id, payload) : handleSave} onDelete={handleDelete} allConcerts={concerts} />}
+            {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
+          </div>
+        </div>
+      </div>
     </ThemeContext.Provider>
   );
-} // <--- END OF APP COMPONENT
+} // <--- Properly closes the App component
 
 // ── AUTHENTICATION COMPONENT (Defined ONCE) ──
 function LoginModal({ onClose }) {
