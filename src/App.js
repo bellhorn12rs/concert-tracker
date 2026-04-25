@@ -6149,14 +6149,17 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   const handlePosterDirectUpload = async (file) => {
     if (!file) return;
     
-    // 1. Upload the physical file to the 'Posters' bucket
+    // 🟢 1. GET SESSION INSIDE THE FUNCTION
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return alert("SESSION EXPIRED // RE-LOGIN REQUIRED");
+
+    // 2. Upload the file
     const url = await uploadToArchive(file, 'POSTER');
     
     if (url) {
-      // 2. Automatically create the relational record using current form data
+      // 🟢 3. ATTACH THE USER ID TO THE INSERT
       const { error } = await supabase.from('posters').insert([{
         image_url: url,
-        // Rules we established: Multi-day vs Single-day
         poster_type: form.is_festival ? 'festival_year' : 'artist',
         artist: form.artist,
         festival_name: form.festival_name,
@@ -6164,16 +6167,17 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
         venue: form.venue,
         city: form.city,
         state: form.state,
-        user_id: session?.user?.id, // Tied to your UUID [cite: 886]
+        user_id: session.user.id, // Mandatory for RLS
         is_public: true,
       }]);
 
       if (error) {
+        console.error("Supabase Error:", error);
         alert("POSTER SYNC FAILED: " + error.message);
       } else {
-        alert("🎨 POSTER PINNED TO WALL // COORDINATES SYNCED");
-        // Trigger a refresh so the wall updates immediately
-        if (typeof onRefresh === 'function') onRefresh();
+        alert("🎨 POSTER PINNED TO WALL");
+        // Trigger the refresh prop we will add in Step 2
+        if (onRefreshPosters) onRefreshPosters();
       }
     }
   };
