@@ -882,13 +882,13 @@ const MarqueeStyles = () => (
 // ─── SHARED ATOMS ─────────────────────────────────────────────────────────────
 // ─── UPGRADED SONIC DNA WEB (THE "GEODE" EDITION) ──────────────────────────
 const SetlistDNA = ({ genreScores }) => {
-  // 1. Filter for valid scores and pick the Top 8 to keep the shape clean
+  // 1. Filter for valid scores and pick the Top 8 to keep the shape clean [cite: 286]
   const sortedEntries = Object.entries(genreScores)
     .filter(([_, score]) => score > 0)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8); 
 
-  if (sortedEntries.length < 3) return <div style={{color: '#555', fontSize: 10}}>AWAITING MORE DATA...</div>;
+  if (sortedEntries.length < 3) return <div style={{color: '#555', fontSize: 10, fontFamily: "'Space Mono'"}}>AWAITING MORE DATA...</div>;
 
   // 2. Map labels to shorter versions so they don't overlap
   const labels = sortedEntries.map(([name]) => 
@@ -902,9 +902,9 @@ const SetlistDNA = ({ genreScores }) => {
   
   const values = sortedEntries.map(([, score]) => score);
   const topGenre = sortedEntries[0][0];
-  const mainColor = GENRE_COLORS[topGenre] || '#00f2ff';
+  const mainColor = GENRE_COLORS[topGenre] || '#00f2ff'; [cite: 26]
 
-  const size = 260; // Slightly larger for better readability
+  const size = 260; 
   const center = size / 2;
   const radius = size * 0.32;
   const numPoints = labels.length;
@@ -934,7 +934,7 @@ const SetlistDNA = ({ genreScores }) => {
           </radialGradient>
         </defs>
 
-        {/* Background Grid Rings */}
+        {/* Background Grid Rings [cite: 154, 155] */}
         {webLevels.map(level => (
           <polygon
             key={level}
@@ -948,7 +948,7 @@ const SetlistDNA = ({ genreScores }) => {
           />
         ))}
 
-        {/* The Pulsing Data Shape */}
+        {/* The Pulsing Data Shape [cite: 156, 157] */}
         <polygon 
           points={dataPoints} 
           fill="url(#dnaGradient)" 
@@ -958,14 +958,14 @@ const SetlistDNA = ({ genreScores }) => {
           style={{ filter: `drop-shadow(0 0 12px ${mainColor}66)`, transition: 'all 0.8s ease' }}
         />
 
-        {/* Axis Labels */}
+        {/* Axis Labels [cite: 158, 159] */}
         {labels.map((label, i) => {
-          const p = getPoint(i, 100, 20); // Push labels 20px outside the 100% ring
+          const p = getPoint(i, 100, 20); 
           const isTop = i === 0;
           return (
             <text
               key={i} x={p.x} y={p.y}
-              fill={isTop ? mainColor : "#666"}
+              fill={isTop ? mainColor : C.gray}
               fontSize={isTop ? "10" : "8"}
               fontFamily="'Space Mono'"
               textAnchor="middle"
@@ -983,36 +983,30 @@ const SetlistDNA = ({ genreScores }) => {
     </div>
   );
 };
+
 const Badge = ({ children, color = C.teal, bg = C.tealFaint }) => (
-  <span style={{ display:'inline-block', fontFamily:"'Space Mono',monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color, background:bg, border:`1px solid ${color}44`, padding:'2px 6px', borderRadius:3 }}>{children}</span>
+  <span style={{ display:'inline-block', fontFamily:"'Space Mono',monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color, background:bg, border:`1px solid ${color}44`, padding:'2px 6px', borderRadius:3 }}>{children}</span> [cite: 161]
 );
 
-const NEON_BORDERS = [
-  { border:C.teal, glow:'rgba(0,229,204,0.18)' }, { border:C.cyan, glow:'rgba(0,207,255,0.18)' },
-  { border:C.purple, glow:'rgba(153,102,255,0.18)' }, { border:C.gold, glow:'rgba(255,204,0,0.18)' },
-  { border:C.green, glow:'rgba(0,204,136,0.18)' }, { border:'#ff6699', glow:'rgba(255,102,153,0.18)' },
-];
-let _cardIdx = 0;
-
 const Card = ({ children, style = {}, glow = false, neon = false, genreColor = null, onClick }) => {
-  const nb = neon && !genreColor ? NEON_BORDERS[_cardIdx++ % NEON_BORDERS.length] : null;
-  const bc = genreColor || (glow ? C.teal : neon ? nb.border : C.border);
-  const gc = genreColor ? hexToRgba(genreColor, 0.2) : glow ? C.tealGlow : neon ? nb?.glow : null;
+  const nb = neon && !genreColor ? NEON_BORDERS[_cardIdx++ % NEON_BORDERS.length] : null; [cite: 164]
+  const bc = genreColor || (glow ? C.teal : neon ? nb.border : C.border); [cite: 165]
+  const gc = genreColor ? hexToRgba(genreColor, 0.2) : glow ? C.tealGlow : neon ? nb?.glow : null; [cite: 166]
   return (
-    <div onClick={onClick} style={{ background: genreColor ? `linear-gradient(135deg,${C.bgCard},${hexToRgba(genreColor,0.07)})` : C.bgCard, border:`1px solid ${bc}`, borderRadius:8, padding:16, cursor:onClick?'pointer':'default', boxShadow:gc?`0 0 16px ${gc},0 2px 8px rgba(0,0,0,0.4)`:'0 2px 8px rgba(0,0,0,0.4)', ...style }}>{children}</div>
+    <div onClick={onClick} style={{ background: genreColor ? `linear-gradient(135deg,${C.bgCard},${hexToRgba(genreColor,0.07)})` : C.bgCard, border:`1px solid ${bc}`, borderRadius:8, padding:16, cursor:onClick?'pointer':'default', boxShadow:gc?`0 0 16px ${gc},0 2px 8px rgba(0,0,0,0.4)`:'0 2px 8px rgba(0,0,0,0.4)', ...style }}>{children}</div> [cite: 166]
   );
 };
 
 const CardTitle = ({ children, style = {} }) => (
-  <div style={{ fontFamily:"'Space Mono',monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:C.tealDim, marginBottom:12, paddingBottom:8, borderBottom:`1px solid ${C.border}`, ...style }}>{children}</div>
+  <div style={{ fontFamily:"'Space Mono',monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:C.tealDim, marginBottom:12, paddingBottom:8, borderBottom:`1px solid ${C.border}`, ...style }}>{children}</div> [cite: 167]
 );
 
 const Btn = ({ children, onClick, variant = 'primary', style = {}, disabled = false }) => {
   const V = { 
-    primary: { background: C.teal, color: C.bg }, 
-    secondary: { background: C.bgCardAlt, color: C.gray, border: `1px solid ${C.border}` }, 
-    danger: { background: C.red + '22', color: C.red, border: `1px solid ${C.red}44` }, 
-    ghost: { background: 'transparent', color: C.teal, border: `1px solid ${C.borderLit}` } 
+    primary: { background: C.teal, color: C.bg }, [cite: 168]
+    secondary: { background: C.bgCardAlt, color: C.gray, border: `1px solid ${C.border}` }, [cite: 168]
+    danger: { background: C.red + '22', color: C.red, border: `1px solid ${C.red}44` }, [cite: 168]
+    ghost: { background: 'transparent', color: C.teal, border: `1px solid ${C.borderLit}` } [cite: 168]
   };
   return (
     <button 
@@ -1026,24 +1020,21 @@ const Btn = ({ children, onClick, variant = 'primary', style = {}, disabled = fa
         border: 'none', 
         borderRadius: 4, 
         padding: '8px 16px', 
-        // 🟢 Logic for cursor and state
         [cite_start]cursor: disabled ? 'not-allowed' : 'pointer', [cite: 170]
         opacity: disabled ? [cite_start]0.5 : 1, [cite: 170]
         [cite_start]transition: 'all 0.15s', [cite: 170]
-        // 🎨 Applying the specific variant colors from the V map
         [cite_start]...V[variant], [cite: 170]
-        // 🛠️ Allowing custom style overrides
         [cite_start]...style [cite: 170]
       }}
     >
       {children}
     </button>
-);
+  );
 };
-// ─── COUNT-UP STAT ─────────────────────────────────────────────────────────────
+
 function CountUpStat({ value, label, sub, color = C.white }) {
-  const [display, setDisplay] = useState(0);
-  const ref = useRef(null);
+  const [display, setDisplay] = useState(0); [cite: 171]
+  const ref = useRef(null); [cite: 172]
   useEffect(() => {
     let start = 0;
     const end = Number(String(value).replace(/,/g,''));
@@ -1058,10 +1049,10 @@ function CountUpStat({ value, label, sub, color = C.white }) {
     return () => clearInterval(timer);
   }, [value]);
   return (
-    <div ref={ref} style={{ padding:'20px 24px', borderRight:`1px solid ${C.border}`, textAlign:'center' }}>
-      <div style={{ fontFamily:"'Bebas Neue'", fontSize:'clamp(2rem,4vw,3rem)', color, lineHeight:1, animation:'count-up 0.6s ease both' }}>{display.toLocaleString()}</div>
-      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:C.tealDim, margin:'6px 0 3px' }}>{label}</div>
-      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:C.grayDim, fontStyle:'italic' }}>{sub}</div>
+    <div ref={ref} style={{ padding:'20px 24px', borderRight:`1px solid ${C.border}`, textAlign:'center' }}> [cite: 173]
+      <div style={{ fontFamily:"'Bebas Neue'", fontSize:'clamp(2rem,4vw,3rem)', color, lineHeight:1 }}>{display.toLocaleString()}</div> [cite: 173]
+      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:C.tealDim, margin:'6px 0 3px' }}>{label}</div> [cite: 173]
+      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:7, color:C.grayDim, fontStyle:'italic' }}>{sub}</div> [cite: 173]
     </div>
   );
 }
