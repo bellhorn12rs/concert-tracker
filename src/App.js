@@ -2422,7 +2422,6 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
       const masterGenre = genreMap[a.artist];
       return { ...a, genre: masterGenre || null };
     })
-    // Use a fallback for the MIN constant if it's missing
     .filter(a => a.shows.length >= (typeof HALL_OF_FAME_MIN !== 'undefined' ? HALL_OF_FAME_MIN : 3))
     .sort((a, b) => b.shows.length - a.shows.length);
   }, [sets, genreMap]);
@@ -2438,48 +2437,48 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
 
   // 2. 🟢 ROBUST MEDIA ARCHIVE
   const archive = useMemo(() => {
-  if (!selectedData) return { setlists: [], photos: [], archivePosters: [] };
-  
-  const setlists = [];
-  const photos = [];
-  const archivePosters = [];
+    if (!selectedData) return { setlists: [], photos: [], archivePosters: [] };
+    
+    const setlists = [];
+    const photos = [];
+    const archivePosters = [];
 
-  selectedData.shows.forEach(s => {
-    // Setlists
-    const slSource = s.setlist_image_url || s.image_url;
-    if (slSource && typeof slSource === 'string') {
-      slSource.split(',').forEach(url => {
-        if (url.trim()) setlists.push({ url: url.trim(), date: s.date });
-      });
-    }
+    selectedData.shows.forEach(s => {
+      // Setlists logic
+      const slSource = s.setlist_image_url || s.image_url;
+      if (slSource && typeof slSource === 'string') {
+        slSource.split(',').forEach(url => {
+          if (url.trim()) setlists.push({ url: url.trim(), date: s.date });
+        });
+      }
 
-    // Posters from old concert field
-    if (s.festival_poster_url && typeof s.festival_poster_url === 'string') {
-      s.festival_poster_url.split(',').forEach(url => {
-        if (url.trim()) archivePosters.push({ url: url.trim(), date: s.date });
-      });
-    }
+      // Legacy Posters
+      if (s.festival_poster_url && typeof s.festival_poster_url === 'string') {
+        s.festival_poster_url.split(',').forEach(url => {
+          if (url.trim()) archivePosters.push({ url: url.trim(), date: s.date });
+        });
+      }
 
-    // Polaroids
-    if (s.personal_photo_url && typeof s.personal_photo_url === 'string') {
-      s.personal_photo_url.split(',').forEach(url => {
-        if (url.trim()) photos.push({ url: url.trim(), date: s.date });
-      });
-    }
-  });
+      // Polaroids
+      if (s.personal_photo_url && typeof s.personal_photo_url === 'string') {
+        s.personal_photo_url.split(',').forEach(url => {
+          if (url.trim()) photos.push({ url: url.trim(), date: s.date });
+        });
+      }
+    });
 
-  // Posters from posters table
-  posters.filter(p =>
-    p.artist === selectedData.artist ||
-    selectedData.shows.some(show => show.date === p.date)
-  ).forEach(p => {
-    if (!archivePosters.some(ap => ap.url === p.image_url)) {
-      archivePosters.push({ url: p.image_url, date: p.date });
-    }
-  });
+    // Posters from posters table (Relational Scavenger)
+    posters.filter(p =>
+      p.artist === selectedData.artist ||
+      selectedData.shows.some(show => show.date === p.date)
+    ).forEach(p => {
+      if (!archivePosters.some(ap => ap.url === p.image_url)) {
+        archivePosters.push({ url: p.image_url, date: p.date });
+      }
+    });
 
-  return { setlists, photos, archivePosters };
-}, [selectedData, posters]);
+    return { setlists, photos, archivePosters };
+  }, [selectedData, posters]);
 
   return (
     <div ref={topRef} style={{ padding: '24px 0' }} className="fade-in">
@@ -2536,36 +2535,77 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
               </div>
 
               {/* MEDIA VAULT (REPAIRED) */}
-<div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '30px' }}>
-  {(archive.setlists.length > 0 || archive.archivePosters.length > 0) && (
-  <div>
-    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: gc, letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// STAGE ARTIFACTS</div>
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'flex-start' }}>
-      {archive.setlists.map((m, idx) => (
-        <SetlistPaper key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.setlists.length} />
-      ))}
-      {archive.archivePosters.map((m, idx) => (
-        <GigPoster key={`poster-${idx}-${m.url}`} src={m.url} artist={selectedData.artist} date={m.date} index={idx} />
-      ))}
-    </div>
-  </div>
-)}
-  
-  {archive.photos.length > 0 && (
-    <div>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#9d00ff', letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// PERSONAL MEMORIES</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
-        {archive.photos.map((m, idx) => (
-          <PersonalPolaroid key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.photos.length} caption={fmtDateShort(m.date)} />
-        ))}
-      </div>
-    </div>
-  )}
-</div>
-</div>
-</div>
+              <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '30px' }}>
+                {(archive.setlists.length > 0 || archive.archivePosters.length > 0) && (
+                  <div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: gc, letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// STAGE ARTIFACTS</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'flex-start' }}>
+                      {archive.setlists.map((m, idx) => (
+                        <SetlistPaper key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.setlists.length} />
+                      ))}
+                      {archive.archivePosters.map((m, idx) => (
+                        <GigPoster key={`poster-${idx}-${m.url}`} src={m.url} artist={selectedData.artist} date={m.date} index={idx} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {archive.photos.length > 0 && (
+                  <div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#9d00ff', letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// PERSONAL MEMORIES</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+                      {archive.photos.map((m, idx) => (
+                        <PersonalPolaroid key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.photos.length} caption={fmtDateShort(m.date)} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         );
       })()}
+
+      {/* 3. THE GRID VIEW */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 15 }}>
+        {artists.map((a, i) => {
+          const gc = a.genre ? (GENRE_COLORS[a.genre] || C.teal) : null;
+          const isSelected = selected === a.artist;
+          const cardColor = isSelected ? (gc || C.teal) : gc;
+          
+          const setlistCount = a.shows.filter(s => 
+            s.has_setlist || 
+            (s.has_setlist_names && s.has_setlist_names.trim().length > 0) || 
+            s.setlist_image_url || 
+            s.image_url
+          ).length;
+
+          return (
+            <div key={a.artist} onClick={() => handleSelect(a.artist, isSelected)}
+              style={{ 
+                background: cardColor ? `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(cardColor, 0.12)})` : C.bgCard, 
+                border: `1px solid ${cardColor ? hexToRgba(cardColor, 0.5) : C.border}`, 
+                borderRadius: 12, padding: '20px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative'
+              }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: cardColor || C.tealDim, marginBottom: 8, fontWeight: 900 }}>{MEDAL[i] || 'RECORD'} #{i + 1}</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: C.white, marginBottom: 4, lineHeight: 1 }}>{a.artist.toUpperCase()}</div>
+              {a.genre && <GenreBadge genre={a.genre} color={gc} small />}
+              
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: cardColor || C.white, lineHeight: 1, marginTop: 10 }}>{a.shows.length}×</div>
+              
+              {setlistCount > 0 && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10, background: `${C.gold}15`, border: `1px solid ${C.gold}44`, borderRadius: 10, padding: '4px 10px' }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.gold, boxShadow: `0 0 8px ${C.gold}` }} />
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, fontWeight: 900, textTransform: 'uppercase' }}>{setlistCount} SETLISTS</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
       {/* 3. 🟡 THE GRID VIEW (Restored Badge & Counter) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 15 }}>
@@ -7806,22 +7846,47 @@ const getCuratorTitle = (stats, concerts) => {
 
   const dayGroups = useMemo(() => {
   const filtered = applyFilters(concerts) || [];
-  return filtered.map(concert => ({
-    ...concert,
-    matchedPosters: posters.filter(p => {
-      if (p.poster_type === 'artist') {
-        return p.date === concert.date;
-      }
-      if (p.poster_type === 'festival_day') {
-        return p.date === concert.date && p.festival_name === concert.festival_name;
-      }
-      if (p.poster_type === 'festival_year') {
-        return p.festival_name === concert.festival_name && 
-               getYear(p.date) === getYear(concert.date);
-      }
-      return false;
-    })
-  }));
+  
+  return filtered.map(concert => {
+    // 🛡️ Safety: Skip calculations if concert date is missing
+    if (!concert.date) return { ...concert, matchedPosters: [] };
+
+    const concertYear = getYear(concert.date);
+    
+    return {
+      ...concert,
+      // 🛰️ THE POSTER SCAVENGER (Relational Mapping)
+      matchedPosters: posters.filter(p => {
+        // Ensure the poster has a valid date before comparing
+        if (!p.date) return false;
+        const posterYear = getYear(p.date);
+
+        // Rule A: MULTI-DAY (Festival Year)
+        // Maps to ANY day of the festival for that specific year
+        if (p.poster_type === 'festival_year') {
+          return (
+            concert.is_festival &&
+            p.festival_name === concert.festival_name && 
+            posterYear === concertYear
+          );
+        }
+
+        // Rule B: SINGLE DAY (Festival Day or Artist Gig)
+        // Maps strictly to that specific date in history
+        if (p.poster_type === 'festival_day' || p.poster_type === 'artist') {
+          // If it's a festival day, match on name AND date
+          if (p.poster_type === 'festival_day') {
+            return p.date === concert.date && p.festival_name === concert.festival_name;
+          }
+          // If it's a standard gig, match on date
+          // (This covers your "Ween Sept 1, 2006" multi-band example)
+          return p.date === concert.date;
+        }
+
+        return false;
+      })
+    };
+  });
 }, [concerts, applyFilters, posters]);
 
   const headerStats = useMemo(() => ({
