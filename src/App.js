@@ -3928,39 +3928,38 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
   const primaryColor = clusterColor || C.teal;
   
   // 🛰️ DATA SCAVENGING
-  // Move naming logic up so it's available for media fallbacks
-  const bands = Array.isArray(event.bands) ? event.bands : [event.artist].filter(Boolean); [cite: 548]
-  const headlinerName = (getBandName(bands[0]) || "LIVE").toUpperCase(); [cite: 548]
+  // 1. Establish Naming Hierarchy
+  const bands = Array.isArray(event.bands) ? event.bands : [event.artist].filter(Boolean);
+  const headlinerName = (getBandName(bands[0]) || "LIVE").toUpperCase();
 
-  // Standardize artifact sources
-  const rawSetlists = (event.setlist_image_url || "").split(',').map(u => u.trim()).filter(Boolean); [cite: 547]
-  const rawPhotos = (event.personal_photo_url || "").split(',').map(u => u.trim()).filter(Boolean); [cite: 547]
+  // 2. Standardize Media Sources
+  const rawSetlists = (event.setlist_image_url || "").split(',').map(u => u.trim()).filter(Boolean);
+  const rawPhotos = (event.personal_photo_url || "").split(',').map(u => u.trim()).filter(Boolean);
   
-  // 🛡️ Safety: Ensure personal photos don't duplicate setlist images 
-  const finalPhotos = rawPhotos.filter(url => !rawSetlists.includes(url)); [cite: 548]
+  // 🛡️ Safety: Ensure personal photos don't duplicate setlist images
+  const finalPhotos = rawPhotos.filter(url => !rawSetlists.includes(url));
   const finalSetlists = rawSetlists;
 
   // 🎨 RELATIONAL POSTER CONSOLIDATION
   const finalPosters = useMemo(() => {
     const list = [];
     
-    // 1. Legacy Check: Grab posters stored directly on this specific show row
+    // Check legacy posters stored directly on this show row
     if (event.festival_poster_url) {
-      event.festival_poster_url.split(',').forEach(url => {
-        if (url.trim()) {
-          list.push({ 
-            url: url.trim(), 
-            artist: headlinerName, 
-            date: event.date 
-          });
-        }
+      const legacyPosters = event.festival_poster_url.split(',').map(u => u.trim()).filter(Boolean);
+      legacyPosters.forEach(url => {
+        list.push({ 
+          url: url, 
+          artist: headlinerName, 
+          date: event.date 
+        });
       });
     }
 
-    // 2. Scavenger Check: Add relational posters matched in Step 1 (the App "Brain")
+    // Add relational posters matched in the App "Brain" (Step 1)
     if (event.matchedPosters) {
       event.matchedPosters.forEach(p => {
-        // Prevent duplication if the URL is already in the legacy list
+        // Prevent duplication if the same URL was already caught in the legacy check
         if (!list.some(item => item.url === p.image_url)) {
           list.push({ 
             url: p.image_url, 
