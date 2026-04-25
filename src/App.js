@@ -6145,6 +6145,39 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     }
   }, [concert]);
 
+  // 🎨 THE ONE-CLICK PIN (Relational Poster Logic)
+  const handlePosterDirectUpload = async (file) => {
+    if (!file) return;
+    
+    // 1. Upload the physical file to the 'Posters' bucket
+    const url = await uploadToArchive(file, 'POSTER');
+    
+    if (url) {
+      // 2. Automatically create the relational record using current form data
+      const { error } = await supabase.from('posters').insert([{
+        image_url: url,
+        // Rules we established: Multi-day vs Single-day
+        poster_type: form.is_festival ? 'festival_year' : 'artist',
+        artist: form.artist,
+        festival_name: form.festival_name,
+        date: form.date,
+        venue: form.venue,
+        city: form.city,
+        state: form.state,
+        user_id: session?.user?.id, // Tied to your UUID [cite: 886]
+        is_public: true,
+      }]);
+
+      if (error) {
+        alert("POSTER SYNC FAILED: " + error.message);
+      } else {
+        alert("🎨 POSTER PINNED TO WALL // COORDINATES SYNCED");
+        // Trigger a refresh so the wall updates immediately
+        if (typeof onRefresh === 'function') onRefresh();
+      }
+    }
+  };
+
   // Render logic remains similar but uses the updated 'set' and 'form' state
 
   const gateBtn = (color) => ({
@@ -6289,11 +6322,39 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                   ))}
                 </div>
                 <button
-  onClick={() => setShowPosterUpload(true)}
-  style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #ff6699', color: '#ff6699', borderRadius: 8, fontFamily: "'Space Mono'", fontSize: 9, cursor: 'pointer', marginTop: 10 }}
->
-  🎨 ADD POSTER TO WALL
-</button>
+  {/* 🎨 DIRECT POSTER PINNING */}
+  <div style={{ marginTop: 10 }}>
+    <label style={{ 
+      width: '100%', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      gap: '10px',
+      padding: '12px', 
+      background: 'rgba(255, 102, 153, 0.1)', 
+      border: '1px dashed #ff6699', 
+      color: '#ff6699', 
+      borderRadius: 8, 
+      fontFamily: "'Space Mono'", 
+      fontSize: 10, 
+      cursor: 'pointer',
+      transition: '0.2s'
+    }}>
+      <span>{uploading ? '📡 UPLOADING SIGNAL...' : '🎨 PIN POSTER TO WALL'}</span>
+      <input 
+        type="file" 
+        accept="image/*" 
+        hidden 
+        disabled={uploading || !form.date} // Prevent upload without a date anchor
+        onChange={(e) => handlePosterDirectUpload(e.target.files[0])} 
+      />
+    </label>
+    {!form.date && (
+      <div style={{ fontSize: 7, color: '#666', textAlign: 'center', marginTop: 5 }}>
+        [ DATE REQUIRED TO ANCHOR POSTER ]
+      </div>
+    )}
+  </div>
 
 {showPosterUpload && (
   <PosterUploadModal
