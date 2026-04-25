@@ -6148,40 +6148,40 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   // 🎨 THE ONE-CLICK PIN (Relational Poster Logic)
   const handlePosterDirectUpload = async (file) => {
     if (!file) return;
+    if (!form.date) return alert("DATE REQUIRED: Set a show date before pinning a poster.");
     
-    // 🟢 1. GET SESSION INSIDE THE FUNCTION
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return alert("SESSION EXPIRED // RE-LOGIN REQUIRED");
 
-    // 2. Upload the file
+    // Diagnostic: Log what we are sending
+    console.log("POSTER ATTEMPT:", { artist: form.artist, fest: form.festival_name, date: form.date });
+
     const url = await uploadToArchive(file, 'POSTER');
     
     if (url) {
-      // 🟢 3. ATTACH THE USER ID TO THE INSERT
-      const { error } = await supabase.from('posters').insert([{
+      // 🛡️ DATA FALLBACKS: Ensure no 'null' values are sent to required columns
+      const insertData = {
         image_url: url,
         poster_type: form.is_festival ? 'festival_year' : 'artist',
-        artist: form.artist,
-        festival_name: form.festival_name,
+        // Fallback: If form.artist is empty, try the first band in the list
+        artist: form.artist || (form.bands?.[0]?.name) || 'Unknown Artist',
+        festival_name: form.festival_name || '',
         date: form.date,
-        venue: form.venue,
-        city: form.city,
-        state: form.state,
-        user_id: session.user.id, // Mandatory for RLS
+        venue: form.venue || 'Unknown Venue',
+        city: form.city || '',
+        state: form.state || '',
+        user_id: session.user.id,
         is_public: true,
-      }]);
+      };
+
+      const { error } = await supabase.from('posters').insert([insertData]);
 
       if (error) {
-        console.error("Supabase Error:", error);
-        alert("POSTER SYNC FAILED: " + error.message);
+        console.error("Supabase DB Error:", error);
+        alert(`POSTER SYNC FAILED: ${error.message || 'Database connection error'}`);
       } else {
-        // 1. Alert the success
-        alert("🎨 POSTER PINNED TO WALL");
-        
-        // 2. Refresh the master poster list in the App "Brain"
+        console.log("✅ POSTER PINNED SUCCESSFULLY");
         if (onRefreshPosters) onRefreshPosters();
-        
-        // 🟢 3. THE FIX: Auto-close the Edit Modal
         onClose(); 
       }
     }
