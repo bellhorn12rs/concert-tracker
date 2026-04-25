@@ -7806,24 +7806,42 @@ const getCuratorTitle = (stats, concerts) => {
 
   const dayGroups = useMemo(() => {
   const filtered = applyFilters(concerts) || [];
-  return filtered.map(concert => ({
-    ...concert,
-    matchedPosters: posters.filter(p => {
-      if (p.poster_type === 'artist') {
-        return p.date === concert.date;
-      }
-      if (p.poster_type === 'festival_day') {
-        return p.date === concert.date && p.festival_name === concert.festival_name;
-      }
-      if (p.poster_type === 'festival_year') {
-        return p.festival_name === concert.festival_name && 
-               getYear(p.date) === getYear(concert.date);
-      }
-      return false;
-    })
-  }));
-}, [concerts, applyFilters, posters]);
+  
+  return filtered.map(concert => {
+    // Safety check for missing dates
+    if (!concert.date) return { ...concert, matchedPosters: [] };
 
+    const concertYear = getYear(concert.date);
+    
+    return {
+      ...concert,
+      // 🛰️ POSTER SCAVENGER: Link master posters to this specific concert
+      matchedPosters: posters.filter(p => {
+        if (!p.date) return false;
+        const posterYear = getYear(p.date);
+
+        // Rule A: MULTI-DAY (Festival Year Anchor)
+        if (p.poster_type === 'festival_year') {
+          return (
+            concert.is_festival &&
+            p.festival_name === concert.festival_name && 
+            posterYear === concertYear
+          );
+        }
+
+        // Rule B: SINGLE DAY (Festival Day or Artist Gig Anchor)
+        if (p.poster_type === 'festival_day' || p.poster_type === 'artist') {
+          // festival_day needs a name + date match; artist just needs the date
+          return p.poster_type === 'festival_day' 
+            ? (p.date === concert.date && p.festival_name === concert.festival_name)
+            : (p.date === concert.date);
+        }
+
+        return false;
+      })
+    };
+  });
+}, [concerts, applyFilters, posters]);
   const headerStats = useMemo(() => ({
     // ── YOUR ORIGINAL LOGIC (UNTOUCHED) ──
     totalShows: concerts?.length || 0,
