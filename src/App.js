@@ -6375,6 +6375,13 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     )}
   </div>
 </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 // 🟢 Helper 1: Navigation Button Styling
 // This handles the "Active" glow and color switching for the Terminal row
 const navBtnStyle = (isActive, color) => ({
