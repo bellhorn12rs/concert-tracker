@@ -6175,9 +6175,14 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
         console.error("Supabase Error:", error);
         alert("POSTER SYNC FAILED: " + error.message);
       } else {
+        // 1. Alert the success
         alert("🎨 POSTER PINNED TO WALL");
-        // Trigger the refresh prop we will add in Step 2
+        
+        // 2. Refresh the master poster list in the App "Brain"
         if (onRefreshPosters) onRefreshPosters();
+        
+        // 🟢 3. THE FIX: Auto-close the Edit Modal
+        onClose(); 
       }
     }
   };
