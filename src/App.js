@@ -1026,16 +1026,19 @@ const Btn = ({ children, onClick, variant = 'primary', style = {}, disabled = fa
         border: 'none', 
         borderRadius: 4, 
         padding: '8px 16px', 
-        cursor: disabled ? 'not-allowed' : 'pointer', 
-        opacity: disabled ? 0.5 : 1, 
-        transition: 'all 0.15s', 
-        ...V[variant], 
-        ...style 
+        // 🟢 Logic for cursor and state
+        [cite_start]cursor: disabled ? 'not-allowed' : 'pointer', [cite: 170]
+        opacity: disabled ? [cite_start]0.5 : 1, [cite: 170]
+        [cite_start]transition: 'all 0.15s', [cite: 170]
+        // 🎨 Applying the specific variant colors from the V map
+        [cite_start]...V[variant], [cite: 170]
+        // 🛠️ Allowing custom style overrides
+        [cite_start]...style [cite: 170]
       }}
     >
       {children}
     </button>
-  );
+);
 };
 // ─── COUNT-UP STAT ─────────────────────────────────────────────────────────────
 function CountUpStat({ value, label, sub, color = C.white }) {
