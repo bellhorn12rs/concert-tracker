@@ -6557,7 +6557,7 @@ const QuadStat = ({ val, label, color }) => (
   </div>
 );
 
-function PostersTab({ posters = [], concerts = [], isAdmin, onRefresh }) {
+function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
   const [selected, setSelected] = useState(null);
   const [yearFilter, setYearFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -6567,15 +6567,6 @@ function PostersTab({ posters = [], concerts = [], isAdmin, onRefresh }) {
   const [spotlight, setSpotlight] = useState({ x: 50, y: 0 });
 
   const ACCENT = '#ff6699';
-
-  // 🛰️ ADDED: Local Helper to prevent the "ReferenceError" crash
-  const hexToRgba = (hex, alpha) => {
-    if (!hex || typeof hex !== 'string') return `rgba(0,0,0,${alpha})`;
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  };
 
   const years = useMemo(() => {
     const ySet = new Set(posters.map(p => getYear(p.date)).filter(Boolean));
@@ -6622,8 +6613,7 @@ function PostersTab({ posters = [], concerts = [], isAdmin, onRefresh }) {
     if (poster.poster_type !== 'festival_year' || !poster.festival_name) return null;
     const festYear = getYear(poster.date);
     const match = concerts.find(c =>
-      (c.festival_name?.toLowerCase().trim() === poster.festival_name?.toLowerCase().trim() ||
-       poster.festival_name?.toLowerCase().includes(c.festival_name?.toLowerCase())) &&
+      c.festival_name === poster.festival_name &&
       getYear(c.date) === festYear &&
       c.wristband_image_url
     );
@@ -6636,9 +6626,7 @@ function PostersTab({ posters = [], concerts = [], isAdmin, onRefresh }) {
     if (p.poster_type === 'festival_year') {
       const festYear = getYear(p.date);
       const days = concerts.filter(c =>
-        (c.festival_name?.toLowerCase().trim() === p.festival_name?.toLowerCase().trim() ||
-         p.festival_name?.toLowerCase().includes(c.festival_name?.toLowerCase())) &&
-        getYear(c.date) === festYear
+        c.festival_name === p.festival_name && getYear(c.date) === festYear
       ).sort((a, b) => a.date.localeCompare(b.date));
       days.forEach(d => {
         const bands = (d.bands || []).map(b => getBandName(b)).filter(Boolean);
@@ -6863,10 +6851,20 @@ function PostersTab({ posters = [], concerts = [], isAdmin, onRefresh }) {
         </div>
       )}
 
+      {/* DIVIDER */}
+      {layout.length > 1 && (
+        <div style={{ position: 'relative', zIndex: 10, padding: '0 40px 30px' }}>
+          <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${ACCENT}44, transparent)` }} />
+          <div style={{ textAlign: 'center', marginTop: 12, fontFamily: "'Space Mono'", fontSize: 7, color: '#444', letterSpacing: 4 }}>
+            THE COLLECTION
+          </div>
+        </div>
+      )}
+
       {/* THE WALL */}
       <div style={{
         position: 'relative', zIndex: 5,
-        columnCount: window.innerWidth < 768 ? 2 : 3,
+        columnCount: 3,
         columnGap: '20px',
         padding: '0 40px 80px',
       }}>
@@ -6926,6 +6924,28 @@ function PostersTab({ posters = [], concerts = [], isAdmin, onRefresh }) {
                   }}
                 />
               )}
+
+              <div style={{
+                background: 'rgba(0,0,0,0.88)',
+                padding: '7px 10px',
+                backdropFilter: 'blur(6px)',
+              }}>
+                <div style={{
+                  fontFamily: "'Space Mono'",
+                  fontSize: 8,
+                  color: ACCENT,
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}>
+                  {getLabel(poster)}
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#444', marginTop: 2 }}>
+                  {fmtDateShort(poster.date)}
+                </div>
+              </div>
             </div>
           );
         })}
@@ -6934,6 +6954,7 @@ function PostersTab({ posters = [], concerts = [], isAdmin, onRefresh }) {
           <div style={{ columnSpan: 'all', padding: '100px 0', textAlign: 'center' }}>
             <div style={{ fontSize: '3rem', marginBottom: 20 }}>🎨</div>
             <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', letterSpacing: 3, color: '#fff' }}>WALL IS BARE</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, marginTop: 10, color: '#555' }}>START UPLOADING YOUR POSTER COLLECTION</div>
           </div>
         )}
       </div>
@@ -6967,17 +6988,65 @@ function PostersTab({ posters = [], concerts = [], isAdmin, onRefresh }) {
 
             <div style={{ minWidth: 260, maxWidth: 320, paddingTop: 10 }}>
               <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: ACCENT, letterSpacing: 3, marginBottom: 10 }}>
-                {selected.poster_type?.toUpperCase()}
+                {selected.poster_type === 'festival_year' ? 'FESTIVAL POSTER' : 'ARTIST POSTER'}
               </div>
               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.8rem', color: '#fff', lineHeight: 0.9, letterSpacing: 2, marginBottom: 12 }}>
                 {getLabel(selected)?.toUpperCase()}
               </div>
               <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: ACCENT, marginBottom: 4 }}>
-                {fmtDateShort(selected.date)} {selected.venue ? `· ${selected.venue.toUpperCase()}` : ''}
+                {fmtDateShort(selected.date)}
+                {selected.venue ? ` · ${selected.venue.toUpperCase()}` : ''}
+              </div>
+              {selected.city && (
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#555', marginBottom: 20 }}>
+                  {selected.city.toUpperCase()}{selected.state ? `, ${selected.state}` : ''}
+                </div>
+              )}
+
+              {(() => {
+                const lines = getDetailLines(selected);
+                if (!lines.length) return null;
+                return (
+                  <div style={{ borderTop: `1px solid rgba(255,102,153,0.2)`, paddingTop: 16 }}>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#555', letterSpacing: 3, marginBottom: 12 }}>LINEUP</div>
+                    {lines.map((l, i) => (
+                      <div key={i} style={{ marginBottom: 14 }}>
+                        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#ffcc00', letterSpacing: 2, marginBottom: 4 }}>{l.day?.toUpperCase()}</div>
+                        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#ccc', lineHeight: 1.4 }}>
+                          {l.bands.join(' · ').toUpperCase()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {(() => {
+                const wb = getMatchedWristband(selected);
+                if (!wb) return null;
+                return (
+                  <div style={{ marginTop: 20 }}>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#555', letterSpacing: 3, marginBottom: 8 }}>WRISTBAND</div>
+                    <img src={wb} alt="wristband" style={{ width: '100%', height: 'auto', borderRadius: 4, border: `1px solid rgba(255,102,153,0.3)` }} />
+                  </div>
+                );
+              })()}
+
+              <div style={{ marginTop: 30, fontFamily: "'Space Mono'", fontSize: 7, color: '#333', letterSpacing: 2 }}>
+                CLICK OUTSIDE TO CLOSE
               </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* UPLOAD MODAL */}
+      {showUpload && isAdmin && (
+        <PosterUploadModal
+          concerts={concerts}
+          onClose={() => setShowUpload(false)}
+          onSaved={() => { setShowUpload(false); onRefresh(); }}
+        />
       )}
     </div>
   );
@@ -7944,18 +8013,19 @@ const getCuratorTitle = (stats, concerts) => {
   });
 }, [concerts, applyFilters, posters]);
   const headerStats = useMemo(() => ({
-    // ── LEGACY TRACKING ──
+    // ── YOUR ORIGINAL LOGIC (UNTOUCHED) ──
     totalShows: concerts?.length || 0,
     totalSets: allSetsList?.length || 0,
     uniqueArtists: new Set(allSetsList?.map(s => s.artist)).size,
     festDays: concerts?.filter(c => c.is_festival).length || 0,
+    setlistCount: concerts?.filter(c => c.has_setlist || c.has_setlist_names).length || 0,
 
-    // ── NEW ARTIFACT QUADRANT DATA (THE BLEED FIX) ──
+    // ── NEW ARTIFACT QUADRANT DATA ──
     tickets: concerts?.filter(c => c.image_url && c.image_url !== '').length || 0,
-    relics: concerts?.filter(c => c.setlist_image_url && c.setlist_image_url !== '').length || 0, // 🟢 Consistent branding
-    posters: posters?.length || 0, // 🟢 This now strictly uses your 11 posters
+    setlists: concerts?.filter(c => c.has_setlist || c.has_setlist_names || c.setlist_image_url).length || 0,
+   posters: posters?.length || 0,
     photos: concerts?.filter(c => c.personal_photo_url && c.personal_photo_url !== '').length || 0,
-  }), [concerts, allSetsList, posters]); // 🟢 CRITICAL: posters added here
+  }), [concerts, allSetsList]);
 
   const artistCounts = useMemo(() => {
     const m = {};
@@ -8173,45 +8243,17 @@ const getCuratorTitle = (stats, concerts) => {
     }
   }
 
-useEffect(() => {
-  // 🟢 1. Define the function so it can be called by name
-const fetchPosters = async (targetId) => {
-  if (!targetId) {
-    setPosters([]);
-    return;
-  }
-  const { data, error } = await supabase
+async function fetchPosters() {
+  const targetId = viewingUser || session?.user?.id;
+  if (!targetId) return;
+  const { data } = await supabase
     .from('posters')
     .select('*')
-    .eq('user_id', targetId) // 🔒 LOCK: Only fetch posters for this ID
+    .eq('user_id', targetId)
     .order('date', { ascending: false });
-
-  if (error) console.error('POSTER_FETCH_ERROR:', error);
-  else setPosters(data || []);
-};
-
-// 🟢 2. Trigger it automatically when the user changes
-useEffect(() => {
-  const currentId = viewingUser?.id || session?.user?.id;
-  fetchPosters(currentId);
-}, [viewingUser?.id, session?.user?.id]);
-
-    const { data, error } = await supabase
-      .from('posters')
-      .select('*')
-      .eq('user_id', targetUserId) // 🔒 Strictly locks fetch to the viewed user
-      .order('date', { ascending: false });
-
-    if (error) {
-      console.error('ARCHIVE_FETCH_FAILURE:', error);
-    } else {
-      setPosters(data || []);
-      console.log(`POSTERS LOADED FOR ${targetUserId}:`, data?.length);
-    }
-  };
-
-  fetchPosters();
-}, [viewingUser?.id, session?.user?.id]); // 🔄 Re-runs only when the ID actually changes
+  console.log('POSTERS FETCHED:', data);
+  if (data) setPosters(data);
+}
 
   async function fetchGenres() {
     try {
@@ -9298,10 +9340,11 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
 )}
 
 {activeTab === 'posterwall' && (
-  <PostersTab 
-    posters={posters} // This is now the 11 posters belonging ONLY to you
-    isAdmin={isAdmin} 
-    onDelete={handleDeletePoster} 
+  <PosterWallTab 
+    posters={posters}
+    concerts={concerts}
+    isAdmin={isAdmin}
+    onRefresh={fetchPosters}
   />
 )}
   
