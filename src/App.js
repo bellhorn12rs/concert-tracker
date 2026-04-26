@@ -4166,17 +4166,8 @@ const getDayColor = (baseHex, index) => {
 // ─── 1. BY FEST TAB (BOX SET EDITION + MEDIA CLUSTER) ───────────────────────
 // ─── 1. BY FEST TAB (BOX SET EDITION + MEDIA CLUSTER) ───────────────────────
 // ─── 1. BY FEST TAB (BOX SET EDITION + MEDIA CLUSTER) ───────────────────────
-// ─── BY FEST TAB (HEROIC BOX SET EDITION) ──────────────────────────────────
 function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = [] }) {
   const FEST_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699', '#ff4400', '#a2ff00'];
-
-  // Helper for transparency (prevents 'not defined' errors)
-  const hexToRgba = (hex, alpha) => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  };
 
   if (!festGroupings.length) return <div style={{ textAlign: 'center', color: C.gray, padding: 60 }}>No festival data yet.</div>;
 
@@ -4186,110 +4177,140 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = []
         const themeColor = FEST_COLORS[fi % FEST_COLORS.length];
         const yearsSorted = Object.keys(fest.years).sort((a, b) => b.localeCompare(a));
         
-        // 🛰️ MASTER POSTER SCAVENGER
+        // 🛰️ SUPER FUZZY MASTER POSTER SCAVENGER
         const getMasterPoster = (year) => {
-          return posters.find(p => 
-            p.poster_type === 'festival_year' && 
-            (
-              p.festival_name?.toLowerCase().trim() === fest.name?.toLowerCase().trim() || 
-              p.festival_name?.toLowerCase().includes(fest.name?.toLowerCase()) ||
-              fest.name?.toLowerCase().includes(p.festival_name?.toLowerCase())
-            ) && 
-            getYear(p.date) === parseInt(year)
-          )?.image_url;
+          return posters.find(p => {
+            const pName = (p.festival_name || "").toLowerCase().trim();
+            const fName = (fest.name || "").toLowerCase().trim();
+            const pYear = p.date ? new Date(p.date).getFullYear() : null;
+            
+            // 1. Check Year Match
+            if (pYear !== parseInt(year)) return false;
+            if (p.poster_type !== 'festival_year') return false;
+
+            // 2. Direct Match (ACL === ACL)
+            if (pName === fName) return true;
+
+            // 3. Partial Match (Austin City Limits includes ACL?)
+            if (pName.includes(fName) || fName.includes(pName)) return true;
+
+            // 4. Acronym Match (ACL matches first letters of Austin City Limits)
+            const acronym = pName.split(/\s+/).map(word => word[0]).join('');
+            if (acronym === fName) return true;
+
+            return false;
+          })?.image_url;
         };
 
         const latestPoster = getMasterPoster(yearsSorted[0]);
         const festSlug = `fest-${fest.name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')}`;
 
         return (
-          <div key={fest.name} id={festSlug} style={{ marginBottom: 150, scrollMarginTop: '120px' }}>
+          <div key={fest.name} id={festSlug} style={{ marginBottom: 120, scrollMarginTop: '120px' }}>
             
             {/* 🏆 FESTIVAL BOXSET HEADER */}
             <div style={{ 
               display: 'flex', 
-              flexDirection: window.innerWidth < 768 ? 'column-reverse' : 'row',
-              gap: '60px', 
-              alignItems: 'center', 
-              marginBottom: '80px', 
-              borderLeft: `12px solid ${themeColor}`, 
-              paddingLeft: '40px'
+              flexDirection: window.innerWidth < 768 ? 'column' : 'row',
+              gap: '40px', 
+              alignItems: window.innerWidth < 768 ? 'flex-start' : 'center', 
+              marginBottom: '60px', 
+              borderLeft: `10px solid ${themeColor}`, 
+              paddingLeft: '30px',
+              position: 'relative'
             }}>
               
               <div style={{ flex: 1 }}>
                 <div style={{ 
                   fontFamily: "'Bebas Neue'", 
-                  fontSize: 'clamp(4rem, 10vw, 8rem)', 
-                  lineHeight: 0.8, 
+                  fontSize: 'clamp(3.5rem, 8vw, 6.5rem)', 
+                  lineHeight: 0.85, 
                   color: C.white, 
-                  textShadow: `0 0 50px ${hexToRgba(themeColor, 0.3)}` 
+                  textShadow: `0 0 40px ${hexToRgba(themeColor, 0.4)}` 
                 }}>
                   {fest.name.toUpperCase()}
                 </div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: themeColor, marginTop: '25px', letterSpacing: '6px', fontWeight: 900 }}>
-                  {Object.values(fest.years).flat().length} DAYS ARCHIVED // {yearsSorted.length} BOX SETS
+                <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: themeColor, marginTop: '20px', letterSpacing: '5px', fontWeight: 900 }}>
+                  {Object.values(fest.years).flat().length} DAYS ATTENDED // {yearsSorted.length} YEARS ARCHIVED
                 </div>
               </div>
 
-              {/* 🖼️ THE BIG POSTER (Hero Size) */}
+              {/* 🖼️ RELATIONAL POSTER (The ACL Fix) */}
               {latestPoster && (
                 <div style={{ 
-                  width: window.innerWidth < 768 ? '100%' : '380px', // Massive Upscale
-                  height: window.innerWidth < 768 ? 'auto' : '530px', 
-                  aspectRatio: window.innerWidth < 768 ? '3/4' : 'auto',
+                  width: '200px', 
+                  height: '280px', 
                   background: `url(${latestPoster}) center/cover no-repeat`,
-                  borderRadius: '6px',
-                  boxShadow: `0 40px 100px rgba(0,0,0,0.9), 0 0 30px ${hexToRgba(themeColor, 0.2)}`,
+                  borderRadius: '4px',
+                  boxShadow: `0 30px 60px rgba(0,0,0,0.8), 0 0 20px ${hexToRgba(themeColor, 0.2)}`,
                   border: '1px solid rgba(255,255,255,0.1)',
-                  transform: window.innerWidth < 768 ? 'none' : 'rotate(2deg) translateY(-20px)',
+                  transform: window.innerWidth < 768 ? 'none' : 'rotate(2deg)',
                   flexShrink: 0
                 }} />
               )}
             </div>
 
             {/* 📦 THE YEAR BOX SETS */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '100px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '80px' }}>
               {yearsSorted.map(yr => {
                 const shows = fest.years[yr].sort((a, b) => a.date.localeCompare(b.date));
+                const yearPoster = getMasterPoster(yr); // Poster for this specific year
+
                 return (
                   <div key={yr} style={{ 
-                    position: 'relative', border: `6px solid ${hexToRgba(themeColor, 0.15)}`, borderRadius: '24px',
+                    position: 'relative', border: `6px solid ${hexToRgba(themeColor, 0.2)}`, borderRadius: '24px',
                     padding: '80px 40px 40px 40px', background: 'rgba(255,255,255,0.01)',
-                    boxShadow: `0 30px 100px rgba(0,0,0,0.5)`,
+                    boxShadow: `0 30px 100px rgba(0,0,0,0.5), inset 0 0 50px ${hexToRgba(themeColor, 0.05)}`,
                     overflow: 'visible' 
                   }}>
                     
-                    <div style={{ position: 'absolute', top: '-45px', left: '40px', display: 'flex', alignItems: 'baseline', gap: '15px' }}>
-                      <div style={{ background: themeColor, color: '#000', fontFamily: "'Bebas Neue'", fontSize: '4.5rem', padding: '0 35px', borderRadius: '8px' }}>{yr}</div>
-                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: C.white, opacity: 0.4 }}>{fest.name.toUpperCase()}</div>
+                    {/* Floating Year Tab */}
+                    <div style={{ position: 'absolute', top: '-40px', left: '40px', display: 'flex', alignItems: 'baseline', gap: '15px' }}>
+                      <div style={{ background: themeColor, color: '#000', fontFamily: "'Bebas Neue'", fontSize: '4rem', padding: '0 30px', borderRadius: '8px', boxShadow: `0 10px 30px rgba(0,0,0,0.5)` }}>{yr}</div>
+                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, opacity: 0.5 }}>{fest.name.toUpperCase()}</div>
                     </div>
+
+                    {/* 🟢 NEW: Small poster icon next to the year if multiple years have different posters */}
+                    {yearPoster && yearPoster !== latestPoster && (
+                       <img src={yearPoster} style={{ position: 'absolute', top: 10, right: 20, height: 60, borderRadius: 2, border: `1px solid ${themeColor}` }} />
+                    )}
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                       {shows.map((show, idx) => {
                         const dayColor = getDayColor(themeColor, idx);
                         const photos = show.personal_photo_url ? show.personal_photo_url.split(',').map(u => u.trim()).filter(Boolean) : [];
-                        const relics = show.setlist_image_url ? show.setlist_image_url.split(',').map(u => u.trim()).filter(Boolean) : [];
+                        const setlists = show.setlist_image_url ? show.setlist_image_url.split(',').map(u => u.trim()).filter(Boolean) : [];
                         const wristband = show.wristband_image_url || null;
 
                         return (
-                          <div key={show.id} onClick={isAdmin ? () => onEdit(show) : null} style={{ width: '100%', background: 'rgba(0,0,0,0.4)', borderRadius: '16px', border: `2px solid ${dayColor}`, cursor: isAdmin ? 'pointer' : 'default', display: 'flex', alignItems: 'stretch' }}>
+                          <div key={show.id} onClick={isAdmin ? () => onEdit(show) : null} style={{ width: '100%', background: 'rgba(0,0,0,0.4)', borderRadius: '16px', border: `2px solid ${dayColor}`, overflow: 'visible', cursor: isAdmin ? 'pointer' : 'default', transition: 'all 0.3s ease', display: 'flex', alignItems: 'stretch' }}>
                             <div style={{ width: '8px', background: dayColor, flexShrink: 0 }} />
                             <div style={{ padding: '25px 35px', flex: 1, display: 'flex', flexDirection: window.innerWidth < 768 ? 'column' : 'row', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
                               
                               <div style={{ flex: 1, width: '100%' }}>
                                 {wristband && (
-                                  <img src={wristband} alt="Wristband" style={{ width: '100%', maxWidth: '280px', marginBottom: 15, borderRadius: 3, border: `1px solid ${hexToRgba(dayColor, 0.4)}` }} />
+                                  <div style={{ marginBottom: 15 }}>
+                                    <img src={wristband} alt="Wristband" style={{ width: '100%', maxWidth: '280px', borderRadius: 3, border: `1px solid ${hexToRgba(dayColor, 0.4)}`, boxShadow: `0 4px 15px rgba(0,0,0,0.5)` }} />
+                                  </div>
                                 )}
-                                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: dayColor, lineHeight: 1 }}>{show.festival_day?.toUpperCase() || `DAY ${idx + 1}`}</div>
+                                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: dayColor, lineHeight: 1 }}>{show.festival_day?.toUpperCase() || `DAY ${idx + 1}`}</div>
                                 <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: '5px' }}>{fmtDateShort(show.date)}</div>
-                                <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: '#fff', borderTop: `1px solid ${hexToRgba(dayColor, 0.2)}`, marginTop: '15px', paddingTop: '10px' }}>
+                                <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: '#fff', lineHeight: 1.5, borderTop: `1px solid ${hexToRgba(dayColor, 0.2)}`, marginTop: '15px', paddingTop: '10px' }}>
                                   {(show.bands || []).map(b => getBandName(b)).filter(Boolean).join(' · ').toUpperCase()}
                                 </div>
                               </div>
 
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', justifyContent: 'flex-end' }}>
-                                {relics.length > 0 && <div style={{ display: 'flex' }}>{relics.map((url, sIdx) => <SetlistPaper key={`${show.id}-s-${sIdx}`} src={url} index={sIdx} total={relics.length} />)}</div>}
-                                {photos.length > 0 && <div style={{ display: 'flex' }}>{photos.map((url, pIdx) => <PersonalPolaroid key={`${show.id}-p-${pIdx}`} src={url} index={pIdx} caption={fest.name.toUpperCase()} />)}</div>}
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                {setlists.length > 0 && (
+                                  <div style={{ display: 'flex' }}>
+                                    {setlists.map((url, sIdx) => <SetlistPaper key={`${show.id}-s-${sIdx}`} src={url} index={sIdx} total={setlists.length} />)}
+                                  </div>
+                                )}
+                                {photos.length > 0 && (
+                                  <div style={{ display: 'flex' }}>
+                                    {photos.map((url, pIdx) => <PersonalPolaroid key={`${show.id}-p-${pIdx}`} src={url} index={pIdx} caption={fest.name.toUpperCase()} />)}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
