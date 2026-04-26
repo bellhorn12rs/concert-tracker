@@ -8013,19 +8013,18 @@ const getCuratorTitle = (stats, concerts) => {
   });
 }, [concerts, applyFilters, posters]);
   const headerStats = useMemo(() => ({
-    // ── YOUR ORIGINAL LOGIC (UNTOUCHED) ──
+    // ── LEGACY TRACKING ──
     totalShows: concerts?.length || 0,
     totalSets: allSetsList?.length || 0,
     uniqueArtists: new Set(allSetsList?.map(s => s.artist)).size,
     festDays: concerts?.filter(c => c.is_festival).length || 0,
-    setlistCount: concerts?.filter(c => c.has_setlist || c.has_setlist_names).length || 0,
 
-    // ── NEW ARTIFACT QUADRANT DATA ──
+    // ── NEW ARTIFACT QUADRANT DATA (THE BLEED FIX) ──
     tickets: concerts?.filter(c => c.image_url && c.image_url !== '').length || 0,
-    setlists: concerts?.filter(c => c.has_setlist || c.has_setlist_names || c.setlist_image_url).length || 0,
-   posters: posters?.length || 0,
+    relics: concerts?.filter(c => c.setlist_image_url && c.setlist_image_url !== '').length || 0, // 🟢 Consistent branding
+    posters: posters?.length || 0, // 🟢 This now strictly uses your 11 posters
     photos: concerts?.filter(c => c.personal_photo_url && c.personal_photo_url !== '').length || 0,
-  }), [concerts, allSetsList]);
+  }), [concerts, allSetsList, posters]); // 🟢 CRITICAL: posters added here
 
   const artistCounts = useMemo(() => {
     const m = {};
@@ -8243,17 +8242,33 @@ const getCuratorTitle = (stats, concerts) => {
     }
   }
 
-async function fetchPosters() {
-  const targetId = viewingUser || session?.user?.id;
-  if (!targetId) return;
-  const { data } = await supabase
-    .from('posters')
-    .select('*')
-    .eq('user_id', targetId)
-    .order('date', { ascending: false });
-  console.log('POSTERS FETCHED:', data);
-  if (data) setPosters(data);
-}
+useEffect(() => {
+  const fetchPosters = async () => {
+    // 🟢 THE FIX: viewingUser is often the full profile object.
+    // We need just the .id string. If that's null, we use your session ID.
+    const targetUserId = viewingUser?.id || session?.user?.id;
+
+    if (!targetUserId) {
+      setPosters([]); // Clear the wall if no user is detected
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('posters')
+      .select('*')
+      .eq('user_id', targetUserId) // 🔒 Strictly locks fetch to the viewed user
+      .order('date', { ascending: false });
+
+    if (error) {
+      console.error('ARCHIVE_FETCH_FAILURE:', error);
+    } else {
+      setPosters(data || []);
+      console.log(`POSTERS LOADED FOR ${targetUserId}:`, data?.length);
+    }
+  };
+
+  fetchPosters();
+}, [viewingUser?.id, session?.user?.id]); // 🔄 Re-runs only when the ID actually changes
 
   async function fetchGenres() {
     try {
@@ -9340,11 +9355,10 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
 )}
 
 {activeTab === 'posterwall' && (
-  <PosterWallTab 
-    posters={posters}
-    concerts={concerts}
-    isAdmin={isAdmin}
-    onRefresh={fetchPosters}
+  <PostersTab 
+    posters={posters} // This is now the 11 posters belonging ONLY to you
+    isAdmin={isAdmin} 
+    onDelete={handleDeletePoster} 
   />
 )}
   
