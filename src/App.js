@@ -4233,11 +4233,11 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = []
         
         // 🛰️ MASTER POSTER SCAVENGER
         // Checks the master 'posters' table for a 'festival_year' match for the latest year seen
-        const getMasterPoster = (year) => {
+       const getMasterPoster = (year) => {
   return posters.find(p => 
     p.poster_type === 'festival_year' && 
-    // 🟢 IMPROVED MATCHING:
-    p.festival_name?.toLowerCase().trim() === fest.name?.toLowerCase().trim() && 
+    (p.festival_name?.toLowerCase().trim() === fest.name?.toLowerCase().trim() || 
+     fest.name?.toLowerCase().includes(p.festival_name?.toLowerCase())) && 
     getYear(p.date) === parseInt(year)
   )?.image_url;
 };
