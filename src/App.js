@@ -3751,6 +3751,7 @@ function ByDayTab({
   const isMobile = window.innerWidth < 768;
   const [showJumpMenu, setShowJumpMenu] = useState(false);
 
+  // ─── 1. CLUSTERING LOGIC ───────────────────────────────────────────────────
   const clusters = useMemo(() => {
     const results = [];
     let currentFestKey = null;
@@ -3782,66 +3783,7 @@ function ByDayTab({
     return results;
   }, [dayGroups]);
 
-  return (
-    <div style={{ padding: isMobile ? '10px' : '24px 0' }} className="fade-in">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '30px' : '60px' }}>
-        {clusters.map((cluster, ci) => {
-          if (cluster.type === 'solo') {
-            return (
-              <div key={`cluster-${ci}`} id={`cluster-${ci}`}>
-                <ScrapbookRow event={cluster.event} idx={ci} isAdmin={isAdmin} onEdit={onEdit} genreMap={genreMap} bulkMode={bulkMode} selectedSignals={selectedSignals} setSelectedSignals={setSelectedSignals} />
-              </div>
-            );
-          }
-
-          // 🛰️ FESTIVAL CLUSTER LOGIC
-          const firstEvent = cluster.events[0];
-          const festYear = new Date(firstEvent.date).getFullYear();
-          const themeColor = GENRE_COLORS[genreMap[firstEvent.bands?.[0]]] || C.teal;
-          
-          // 🟢 FUZZY MATCH: Find 'festival_year' poster
-          const masterPoster = posters.find(p => 
-            p.poster_type === 'festival_year' && 
-            (p.festival_name?.toLowerCase().trim() === firstEvent.festival_name?.toLowerCase().trim() || 
-             firstEvent.festival_name?.toLowerCase().includes(p.festival_name?.toLowerCase()) ||
-             p.festival_name?.toLowerCase().includes(firstEvent.festival_name?.toLowerCase())) &&
-            getYear(p.date) === festYear
-          )?.image_url;
-
-          return (
-            <div key={`cluster-${ci}`} id={`cluster-${ci}`} style={{ 
-              position: 'relative', padding: isMobile ? '20px 15px' : '40px', background: 'rgba(255,255,255,0.01)', 
-              border: `1px solid ${hexToRgba(themeColor, 0.2)}`, borderRadius: isMobile ? '12px' : '24px'
-            }}>
-              <div style={{ display: 'flex', gap: '30px', marginBottom: '40px', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', gap: '25px', alignItems: 'baseline' }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '5rem', color: themeColor, lineHeight: 1 }}>
-                    {firstEvent.festival_name.toUpperCase()}
-                  </div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray }}>
-                    {festYear} // {cluster.events.length} DAYS
-                  </div>
-                </div>
-
-                {/* 🖼️ CLUSTER POSTER (The ACL 2007 Fix) */}
-                {masterPoster && (
-                  <img src={masterPoster} style={{ width: isMobile ? '80px' : '120px', height: 'auto', borderRadius: 4, border: `1px solid ${themeColor}`, boxShadow: `0 10px 30px rgba(0,0,0,0.5)`, transform: 'rotate(2deg)' }} alt="Header Poster" />
-                )}
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                {cluster.events.map((event, ei) => (
-                  <ScrapbookRow key={event.id} event={event} idx={ei} isAdmin={isAdmin} onEdit={onEdit} genreMap={genreMap} isClustered={true} clusterColor={themeColor} bulkMode={bulkMode} selectedSignals={selectedSignals} setSelectedSignals={setSelectedSignals} />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
+  // ─── 2. HELPER FUNCTIONS ───────────────────────────────────────────────────
   const teleportTo = (targetId) => {
     const el = document.getElementById(targetId);
     if (el) {
@@ -3863,6 +3805,7 @@ function ByDayTab({
     teleportTo(`cluster-${randomIdx}`);
   };
 
+  // ─── 3. THE RENDER BLOCK ───────────────────────────────────────────────────
   return (
     <div style={{ padding: isMobile ? '10px' : '24px 0' }} className="fade-in">
       
@@ -3952,10 +3895,12 @@ function ByDayTab({
           const festYear = new Date(firstEvent.date).getFullYear();
           const themeColor = GENRE_COLORS[genreMap[firstEvent.bands?.[0]]] || C.teal;
           
-          // Look for the Master Poster for this specific festival year
+          // 🟢 FUZZY MATCH: Find 'festival_year' poster for header
           const masterPoster = posters.find(p => 
             p.poster_type === 'festival_year' && 
-            p.festival_name?.toLowerCase().trim() === firstEvent.festival_name?.toLowerCase().trim() &&
+            (p.festival_name?.toLowerCase().trim() === firstEvent.festival_name?.toLowerCase().trim() || 
+             firstEvent.festival_name?.toLowerCase().includes(p.festival_name?.toLowerCase()) ||
+             p.festival_name?.toLowerCase().includes(firstEvent.festival_name?.toLowerCase())) &&
             getYear(p.date) === festYear
           )?.image_url;
 
@@ -3974,7 +3919,7 @@ function ByDayTab({
                   </div>
                 </div>
 
-                {/* 🟢 THE FIX: Master Poster in the Cluster Header */}
+                {/* 🖼️ CLUSTER POSTER (The Header Fix) */}
                 {masterPoster && (
                   <img 
                     src={masterPoster} 
@@ -4007,7 +3952,6 @@ function ByDayTab({
     </div>
   );
 }
-
 // ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With Multi-Artist Setlinks) ─────────────
 
 // ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With "I Was There" Trigger) ─────────────
