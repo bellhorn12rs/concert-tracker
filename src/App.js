@@ -1741,7 +1741,33 @@ function RandomShow({ concerts, onAdd }) {
   if (!show) return null;
 
   const bands = show.bands || [show.artist];
-  const displayImg = (show.personal_photo_url?.split(',')[0]) || (show.image_url?.split(',')[0]);
+  // 🛰️ ARTIFACT SELECTION PROTOCOL
+  const displayImg = useMemo(() => {
+    if (!show) return null;
+
+    // 1. First choice: Master Poster (High fidelity)
+    if (show.is_festival && show.festival_name && posters) {
+      const festYear = new Date(show.date.replace(/-/g, '/')).getFullYear();
+      const masterPoster = posters.find(p => 
+        p.poster_type === 'festival_year' && 
+        (p.festival_name?.toLowerCase().trim() === show.festival_name?.toLowerCase().trim() || 
+         show.festival_name?.toLowerCase().includes(p.festival_name?.toLowerCase())) &&
+        getYear(p.date) === festYear
+      );
+      if (masterPoster) return masterPoster.image_url;
+    }
+
+    // 2. Second choice: Personal Polaroid
+    if (show.personal_photo_url) return show.personal_photo_url.split(',')[0];
+
+    // 3. Third choice: Ticket Stub
+    if (show.image_url) return show.image_url.split(',')[0];
+
+    // 4. Fourth choice: Relic/Setlist
+    if (show.setlist_image_url) return show.setlist_image_url.split(',')[0];
+
+    return null;
+  }, [show, posters]);
   const festLabel = show.festival_name || "FESTIVAL";
   const themeColor = show.is_festival ? C.gold : C.purple;
 
