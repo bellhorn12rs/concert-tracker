@@ -1716,10 +1716,18 @@ function ArtistInsights({ concerts }) {
 }
 
 // ─── RANDOM SHOW (FULL FESTIVAL & SCROLLABLE EDITION) ────────────────────────
-// ─── RANDOM SHOW (SPECIFIC FESTIVAL & SYSTEM PLACEHOLDER) ────────────────────────
-function RandomShow({ concerts, onAdd }) {
+// ─── RANDOM SHOW (HEROIC RECALL EDITION) ───────────────────────────────────────
+function RandomShow({ concerts, posters = [], onAdd }) {
   const [show, setShow] = useState(null);
   const [spinning, setSpinning] = useState(false);
+
+  // Helper for transparency logic
+  const hexToRgba = (hex, alpha) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
 
   const spin = () => {
     if (!concerts.length) return;
@@ -1736,99 +1744,113 @@ function RandomShow({ concerts, onAdd }) {
     }, 80);
   };
 
-  useEffect(() => { if (concerts.length && !show) spin(); }, [concerts.length]);
+  useEffect(() => { 
+    if (concerts.length && !show) spin(); 
+  }, [concerts.length]);
 
-  if (!show) return null;
-
-  const bands = show.bands || [show.artist];
   // 🛰️ ARTIFACT SELECTION PROTOCOL
   const displayImg = useMemo(() => {
     if (!show) return null;
 
-    // 1. First choice: Master Poster (High fidelity)
-    if (show.is_festival && show.festival_name && posters) {
+    // 1. Priority: Relational Master Poster (The ACL/Okeechobee Fix)
+    if (show.is_festival && show.festival_name && posters.length > 0) {
       const festYear = new Date(show.date.replace(/-/g, '/')).getFullYear();
       const masterPoster = posters.find(p => 
         p.poster_type === 'festival_year' && 
-        (p.festival_name?.toLowerCase().trim() === show.festival_name?.toLowerCase().trim() || 
-         show.festival_name?.toLowerCase().includes(p.festival_name?.toLowerCase())) &&
+        (
+          p.festival_name?.toLowerCase().trim() === show.festival_name?.toLowerCase().trim() || 
+          show.festival_name?.toLowerCase().includes(p.festival_name?.toLowerCase()) ||
+          p.festival_name?.toLowerCase().includes(show.festival_name?.toLowerCase())
+        ) &&
         getYear(p.date) === festYear
       );
       if (masterPoster) return masterPoster.image_url;
     }
 
-    // 2. Second choice: Personal Polaroid
+    // 2. Choice: Personal Photo (Polaroid)
     if (show.personal_photo_url) return show.personal_photo_url.split(',')[0];
 
-    // 3. Third choice: Ticket Stub
+    // 3. Choice: Ticket Stub
     if (show.image_url) return show.image_url.split(',')[0];
 
-    // 4. Fourth choice: Relic/Setlist
+    // 4. Choice: Relic/Setlist
     if (show.setlist_image_url) return show.setlist_image_url.split(',')[0];
 
     return null;
   }, [show, posters]);
+
+  if (!show) return null;
+
+  const bands = show.bands || [show.artist];
   const festLabel = show.festival_name || "FESTIVAL";
   const themeColor = show.is_festival ? C.gold : C.purple;
 
   return (
     <Card neon className="card-texture" style={{ 
-      minHeight: 240, 
+      minHeight: 280, 
       position: 'relative', 
       overflow: 'hidden',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'column',
+      background: '#050508'
     }}>
       
       {/* 📸 IMAGE SLOT (REAL OR PLACEHOLDER) */}
       {!spinning && (
         <div style={{
           position: 'absolute',
-          right: 15,
+          right: 20,
           top: '50%',
           transform: 'translateY(-50%)',
-          width: '140px',
-          height: '160px',
-          zIndex: 1,
+          width: '160px',
+          height: '210px',
+          zIndex: 5,
           animation: 'fade-in 0.5s ease'
         }}>
           {displayImg ? (
-  <div style={{
-    width: '100%',
-    height: '100%',
-    background: '#000',
-    borderRadius: '4px',
-    border: `1px solid ${hexToRgba(themeColor, 0.4)}`,
-    boxShadow: `0 0 20px rgba(0,0,0,0.6)`,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden'
-  }}>
-    <img src={displayImg} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-  </div>
+            <div style={{
+              width: '100%',
+              height: '100%',
+              background: '#000',
+              borderRadius: '4px',
+              border: `1px solid ${hexToRgba(themeColor, 0.5)}`,
+              boxShadow: `0 20px 50px rgba(0,0,0,0.8), 0 0 20px ${hexToRgba(themeColor, 0.2)}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              transform: 'rotate(2deg)'
+            }}>
+              <img src={displayImg} alt="Artifact" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', top: 5, right: 5, background: 'rgba(0,0,0,0.7)', padding: '2px 6px', fontSize: 6, fontFamily: "'Space Mono'", color: themeColor }}>
+                // SIGNAL_RECOVERED
+              </div>
+            </div>
           ) : (
             <div 
-  onClick={onAdd}
-  style={{
-    width: '100%',
-    height: '100%',
-    background: '#050508',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: `1px dashed ${hexToRgba(themeColor, 0.3)}`,
-    borderRadius: '4px',
-    opacity: 0.6,
-    cursor: 'pointer'
-  }}
->
-  <div style={{ opacity: 0.4 }}><TrackRecordLogo size={30} /></div>
-  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: themeColor, marginTop: 12, letterSpacing: 2, textAlign: 'center' }}>
-    NO_VISUAL_SIGNAL<br/>[ CLICK TO ADD ]
-  </div>
-</div>
+              onClick={onAdd}
+              style={{
+                width: '100%',
+                height: '100%',
+                background: '#0a0a0f',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: `1px dashed ${hexToRgba(themeColor, 0.3)}`,
+                borderRadius: '4px',
+                opacity: 0.6,
+                cursor: 'pointer',
+                transition: 'all 0.3s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.opacity = 1}
+              onMouseLeave={e => e.currentTarget.style.opacity = 0.6}
+            >
+              <div style={{ opacity: 0.4 }}><TrackRecordLogo size={30} /></div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: themeColor, marginTop: 12, letterSpacing: 2, textAlign: 'center' }}>
+                NO_VISUAL_SIGNAL<br/>[ CLICK TO ADD ]
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -1837,12 +1859,12 @@ function RandomShow({ concerts, onAdd }) {
       <div style={{ 
         position: 'absolute', 
         right: 10, 
-        bottom: -10, 
+        bottom: -20, 
         fontFamily: "'Bebas Neue'",
-        fontSize: '10rem',
-        zIndex: 2,
+        fontSize: '12rem',
+        zIndex: 1,
         color: themeColor,
-        opacity: 0.1,
+        opacity: 0.07,
         pointerEvents: 'none',
         lineHeight: 1,
         userSelect: 'none'
@@ -1850,25 +1872,22 @@ function RandomShow({ concerts, onAdd }) {
         {getYear(show.date)}
       </div>
 
-      <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
+      <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column', flex: 1, padding: '5px' }}>
         {/* Header Row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: themeColor, letterSpacing: 2, fontWeight: 700 }}>
-            {spinning ? "🧠 RECALLING..." : "🎲 RANDOM RECALL"}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: themeColor, letterSpacing: 3, fontWeight: 900 }}>
+            {spinning ? ">> RECALLING_SIGNAL..." : "// RANDOM_RECALL"}
           </div>
-          <button onClick={spin} disabled={spinning} style={{ background: spinning ? C.white : themeColor, border: 'none', color: '#000', fontSize: 8, padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontWeight: 900 }}>
-            {spinning ? "•••" : "SPIN"}
+          <button onClick={spin} disabled={spinning} style={{ background: spinning ? '#222' : themeColor, border: 'none', color: '#000', fontSize: 9, padding: '6px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontWeight: 900, boxShadow: spinning ? 'none' : `0 0 15px ${hexToRgba(themeColor, 0.4)}` }}>
+            {spinning ? "..." : "RE-SPIN"}
           </button>
         </div>
 
         <div className={spinning ? "spinning-text" : "fade-in"} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           {/* DATE & FESTIVAL */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <span style={{ background: C.white, color: C.bg, fontFamily: "'Bebas Neue'", fontSize: '1.4rem', padding: '0 8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 15 }}>
+            <span style={{ background: C.white, color: '#000', fontFamily: "'Bebas Neue'", fontSize: '1.6rem', padding: '0 10px', borderRadius: 2 }}>
               {getYear(show.date)}
-            </span>
-            <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.white, opacity: 0.8 }}>
-              {fmtDateShort(show.date).toUpperCase()}
             </span>
             {show.is_festival && (
               <span style={{ 
@@ -1876,8 +1895,8 @@ function RandomShow({ concerts, onAdd }) {
                 color: C.gold, 
                 border: `1px solid ${C.gold}`, 
                 fontFamily: "'Space Mono'", 
-                fontSize: '7px', 
-                padding: '2px 8px', 
+                fontSize: '8px', 
+                padding: '3px 10px', 
                 borderRadius: '4px',
                 fontWeight: 900,
                 letterSpacing: '1px'
@@ -1891,24 +1910,24 @@ function RandomShow({ concerts, onAdd }) {
           <div style={{ 
             display: 'flex', 
             flexDirection: 'column', 
-            gap: 4, 
-            marginBottom: 10, 
-            maxWidth: '52%', // Keeps text from overlapping the image/placeholder
-            maxHeight: '110px',
+            gap: 6, 
+            marginBottom: 15, 
+            maxWidth: '55%', 
+            maxHeight: '120px',
             overflowY: 'auto',
-            paddingRight: '5px',
+            paddingRight: '10px',
             scrollbarWidth: 'none'
           }}>
             {bands.map((b, i) => (
               <div key={i} style={{ 
                 fontFamily: "'Bebas Neue'", 
-                fontSize: bands.length > 3 ? '1.3rem' : '1.8rem', 
+                fontSize: bands.length > 3 ? '1.4rem' : '2.2rem', 
                 color: C.white, 
-                lineHeight: 1, 
+                lineHeight: 0.9, 
                 letterSpacing: '0.05em',
-                textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                borderLeft: `2px solid ${themeColor}`,
-                paddingLeft: '8px'
+                textShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                borderLeft: `3px solid ${themeColor}`,
+                paddingLeft: '12px'
               }}>
                 {getBandName(b).toUpperCase()}
               </div>
@@ -1916,17 +1935,17 @@ function RandomShow({ concerts, onAdd }) {
           </div>
 
           {/* VENUE PIN */}
-          <div style={{ marginTop: 'auto' }}>
+          <div style={{ marginTop: 'auto', paddingBottom: 5 }}>
             <div style={{ 
               fontFamily: "'Bebas Neue'", 
-              fontSize: '1.5rem', 
+              fontSize: '1.8rem', 
               color: themeColor, 
               letterSpacing: '1px',
-              lineHeight: 1.1 
+              lineHeight: 1 
             }}>
               📍 {show.venue?.toUpperCase() || 'UNKNOWN VENUE'}
             </div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, textTransform: 'uppercase', marginTop: 2 }}>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, textTransform: 'uppercase', marginTop: 4, letterSpacing: 1 }}>
               {show.city}, {show.state}
             </div>
           </div>
