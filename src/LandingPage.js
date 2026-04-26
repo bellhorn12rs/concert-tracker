@@ -192,6 +192,19 @@ export default function LandingPage({
   fetchPublicConcerts();
 }, []);
 
+const [posters, setPosters] = useState([]); // 🟢 New state for master posters
+
+  useEffect(() => {
+    const fetchAllPosters = async () => {
+      const { data } = await supabase
+        .from('posters')
+        .select('*')
+        .eq('user_id', 'e6497375-65df-4187-8767-1093dd13f97c'); // Your UUID
+      if (data) setPosters(data);
+    };
+    fetchAllPosters();
+  }, []);
+
   useEffect(() => {
     const fetchRecentUsers = async () => {
       const { data } = await supabase
@@ -729,8 +742,8 @@ return txt + txt;
           {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.setlist_image_url && c.setlist_image_url !== '').length} RELICS.
         </span>{' '}
         <span style={{ color: '#ff6699' }}>
-          {concerts.filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && c.festival_poster_url && c.festival_poster_url !== '').length} POSTERS.
-        </span>
+         {posters.length} POSTERS.        
+         </span>
       </div>
     </div>
 
