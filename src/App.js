@@ -4165,6 +4165,7 @@ const getDayColor = (baseHex, index) => {
 
 // ─── 1. BY FEST TAB (BOX SET EDITION + MEDIA CLUSTER) ───────────────────────
 // ─── 1. BY FEST TAB (BOX SET EDITION + MEDIA CLUSTER) ───────────────────────
+// ─── 1. BY FEST TAB (BOX SET EDITION + MEDIA CLUSTER) ───────────────────────
 function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = [] }) {
   const FEST_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699', '#ff4400', '#a2ff00'];
 
@@ -4176,20 +4177,29 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = []
         const themeColor = FEST_COLORS[fi % FEST_COLORS.length];
         const yearsSorted = Object.keys(fest.years).sort((a, b) => b.localeCompare(a));
         
-        // 🛰️ MASTER POSTER SCAVENGER (The "ACL" to "Austin City Limits" Bridge)
+        // 🛰️ SUPER FUZZY MASTER POSTER SCAVENGER
         const getMasterPoster = (year) => {
-          return posters.find(p => 
-            p.poster_type === 'festival_year' && 
-            (
-              // Direct Match
-              p.festival_name?.toLowerCase().trim() === fest.name?.toLowerCase().trim() || 
-              // Poster name contains "ACL"
-              p.festival_name?.toLowerCase().includes(fest.name?.toLowerCase()) ||
-              // "ACL" is part of the poster name
-              fest.name?.toLowerCase().includes(p.festival_name?.toLowerCase())
-            ) && 
-            getYear(p.date) === parseInt(year)
-          )?.image_url;
+          return posters.find(p => {
+            const pName = (p.festival_name || "").toLowerCase().trim();
+            const fName = (fest.name || "").toLowerCase().trim();
+            const pYear = p.date ? new Date(p.date).getFullYear() : null;
+            
+            // 1. Check Year Match
+            if (pYear !== parseInt(year)) return false;
+            if (p.poster_type !== 'festival_year') return false;
+
+            // 2. Direct Match (ACL === ACL)
+            if (pName === fName) return true;
+
+            // 3. Partial Match (Austin City Limits includes ACL?)
+            if (pName.includes(fName) || fName.includes(pName)) return true;
+
+            // 4. Acronym Match (ACL matches first letters of Austin City Limits)
+            const acronym = pName.split(/\s+/).map(word => word[0]).join('');
+            if (acronym === fName) return true;
+
+            return false;
+          })?.image_url;
         };
 
         const latestPoster = getMasterPoster(yearsSorted[0]);
@@ -4225,7 +4235,7 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = []
                 </div>
               </div>
 
-              {/* 🖼️ RELATIONAL POSTER (Header Art) */}
+              {/* 🖼️ RELATIONAL POSTER (The ACL Fix) */}
               {latestPoster && (
                 <div style={{ 
                   width: '200px', 
@@ -4244,6 +4254,8 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = []
             <div style={{ display: 'flex', flexDirection: 'column', gap: '80px' }}>
               {yearsSorted.map(yr => {
                 const shows = fest.years[yr].sort((a, b) => a.date.localeCompare(b.date));
+                const yearPoster = getMasterPoster(yr); // Poster for this specific year
+
                 return (
                   <div key={yr} style={{ 
                     position: 'relative', border: `6px solid ${hexToRgba(themeColor, 0.2)}`, borderRadius: '24px',
@@ -4258,7 +4270,11 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = []
                       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, opacity: 0.5 }}>{fest.name.toUpperCase()}</div>
                     </div>
 
-                    {/* Day Rows */}
+                    {/* 🟢 NEW: Small poster icon next to the year if multiple years have different posters */}
+                    {yearPoster && yearPoster !== latestPoster && (
+                       <img src={yearPoster} style={{ position: 'absolute', top: 10, right: 20, height: 60, borderRadius: 2, border: `1px solid ${themeColor}` }} />
+                    )}
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                       {shows.map((show, idx) => {
                         const dayColor = getDayColor(themeColor, idx);
@@ -4284,14 +4300,12 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = []
                                 </div>
                               </div>
 
-                              {/* MEDIA CLUSTER */}
                               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                 {setlists.length > 0 && (
                                   <div style={{ display: 'flex' }}>
                                     {setlists.map((url, sIdx) => <SetlistPaper key={`${show.id}-s-${sIdx}`} src={url} index={sIdx} total={setlists.length} />)}
                                   </div>
                                 )}
-                                {/* We hide posters inside the rows for fests to keep the header as the focus */}
                                 {photos.length > 0 && (
                                   <div style={{ display: 'flex' }}>
                                     {photos.map((url, pIdx) => <PersonalPolaroid key={`${show.id}-p-${pIdx}`} src={url} index={pIdx} caption={fest.name.toUpperCase()} />)}
