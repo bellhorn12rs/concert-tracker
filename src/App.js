@@ -2438,48 +2438,44 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
 
   // 2. 🟢 ROBUST MEDIA ARCHIVE
   const archive = useMemo(() => {
-  if (!selectedData) return { setlists: [], photos: [], archivePosters: [] };
-  
-  const setlists = [];
-  const photos = [];
-  const archivePosters = [];
+    if (!selectedData) return { setlists: [], photos: [], archivePosters: [] };
+    
+    const setlists = [];
+    const photos = [];
+    const archivePosters = [];
 
-  selectedData.shows.forEach(s => {
-    // Setlists
-    const slSource = s.setlist_image_url || s.image_url;
-    if (slSource && typeof slSource === 'string') {
-      slSource.split(',').forEach(url => {
-        if (url.trim()) setlists.push({ url: url.trim(), date: s.date });
-      });
-    }
+    selectedData.shows.forEach(s => {
+      // 1. Standard Relic Scan
+      const slSource = s.setlist_image_url || s.image_url;
+      if (slSource) slSource.split(',').forEach(url => { if(url.trim()) setlists.push({ url: url.trim(), date: s.date }); });
 
-    // Posters from old concert field
-    if (s.festival_poster_url && typeof s.festival_poster_url === 'string') {
-      s.festival_poster_url.split(',').forEach(url => {
-        if (url.trim()) archivePosters.push({ url: url.trim(), date: s.date });
-      });
-    }
+      // 2. Personal Photo Scan
+      if (s.personal_photo_url) s.personal_photo_url.split(',').forEach(url => { if(url.trim()) photos.push({ url: url.trim(), date: s.date }); });
 
-    // Polaroids
-    if (s.personal_photo_url && typeof s.personal_photo_url === 'string') {
-      s.personal_photo_url.split(',').forEach(url => {
-        if (url.trim()) photos.push({ url: url.trim(), date: s.date });
-      });
-    }
-  });
+      // 🟢 3. THE RELATIONAL FIX: Festival Poster Scavenging
+      if (s.is_festival && s.festival_name) {
+        const festYear = getYear(s.date);
+        const masterFestPoster = posters.find(p => 
+          p.poster_type === 'festival_year' && 
+          p.festival_name === s.festival_name && 
+          getYear(p.date) === festYear
+        );
+        
+        if (masterFestPoster && !archivePosters.some(p => p.url === masterFestPoster.image_url)) {
+          archivePosters.push({ url: masterFestPoster.image_url, date: s.date });
+        }
+      }
+    });
 
-  // Posters from posters table
-  posters.filter(p =>
-    p.artist === selectedData.artist ||
-    selectedData.shows.some(show => show.date === p.date)
-  ).forEach(p => {
-    if (!archivePosters.some(ap => ap.url === p.image_url)) {
-      archivePosters.push({ url: p.image_url, date: p.date });
-    }
-  });
+    // 4. Artist-Specific Poster Scan (Regular Gigs)
+    posters.filter(p => p.artist === selectedData.artist).forEach(p => {
+      if (!archivePosters.some(ap => ap.url === p.image_url)) {
+        archivePosters.push({ url: p.image_url, date: p.date });
+      }
+    });
 
-  return { setlists, photos, archivePosters };
-}, [selectedData, posters]);
+    return { setlists, photos, archivePosters };
+  }, [selectedData, posters]);
 
   return (
     <div ref={topRef} style={{ padding: '24px 0' }} className="fade-in">
@@ -4141,10 +4137,8 @@ const getDayColor = (baseHex, index) => {
   return hexToRgba(baseHex || C.teal, variants[index % variants.length]);
 };
 
-// ─── 1. THE DRILL-DOWN (BYFESTTAB - THE BOX SET ARCHIVE) ────────────────────
 // ─── 1. BY FEST TAB (BOX SET EDITION + MEDIA CLUSTER) ───────────────────────
-
-function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
+function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = [] }) {
   const FEST_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699', '#ff4400', '#a2ff00'];
 
   if (!festGroupings.length) return <div style={{ textAlign: 'center', color: C.gray, padding: 60 }}>No festival data yet.</div>;
@@ -4154,11 +4148,18 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
       {festGroupings.map((fest, fi) => {
         const themeColor = FEST_COLORS[fi % FEST_COLORS.length];
         const yearsSorted = Object.keys(fest.years).sort((a, b) => b.localeCompare(a));
-        const allShows = Object.values(fest.years).flat();
         
-        // 🎨 BOXSET COVER LOGIC: Scavenge the cluster for a poster signal
-        const boxsetPoster = allShows.find(s => s.festival_poster_url)?.festival_poster_url;
-        
+        // 🛰️ MASTER POSTER SCAVENGER
+        // Checks the master 'posters' table for a 'festival_year' match for the latest year seen
+        const getMasterPoster = (year) => {
+          return posters.find(p => 
+            p.poster_type === 'festival_year' && 
+            p.festival_name === fest.name && 
+            getYear(p.date) === parseInt(year)
+          )?.image_url;
+        };
+
+        const latestPoster = getMasterPoster(yearsSorted[0]);
         const festSlug = `fest-${fest.name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')}`;
 
         return (
@@ -4176,32 +4177,13 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
               display: 'flex', 
               flexDirection: window.innerWidth < 768 ? 'column' : 'row',
               gap: '40px', 
-              alignItems: window.innerWidth < 768 ? 'flex-start' : 'flex-end', 
+              alignItems: window.innerWidth < 768 ? 'flex-start' : 'center', 
               marginBottom: '60px', 
               borderLeft: `10px solid ${themeColor}`, 
-              paddingLeft: '30px' 
+              paddingLeft: '30px',
+              position: 'relative'
             }}>
               
-              {/* THE COVER ART (High-Fidelity Physical Look) */}
-              {boxsetPoster && (
-                <div style={{ 
-                  width: '220px', 
-                  height: '310px', 
-                  background: `url(${boxsetPoster}) center/cover no-repeat`,
-                  borderRadius: '4px',
-                  boxShadow: `0 30px 60px rgba(0,0,0,0.8), 0 0 20px ${hexToRgba(themeColor, 0.2)}`,
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  transform: 'rotate(-1.5deg)',
-                  flexShrink: 0,
-                  position: 'relative'
-                }}>
-                  {/* Visual Detail: Archive Identification Sticker */}
-                  <div style={{ position: 'absolute', top: 15, right: -20, background: C.gold, color: '#000', padding: '5px 12px', fontFamily: "'Space Mono'", fontSize: '9px', fontWeight: 900, borderRadius: '2px', transform: 'rotate(12deg)', boxShadow: '0 5px 15px rgba(0,0,0,0.4)', border: '1px solid rgba(0,0,0,0.1)' }}>
-                    SIGNAL MASTER
-                  </div>
-                </div>
-              )}
-
               <div style={{ flex: 1 }}>
                 <div style={{ 
                   fontFamily: "'Bebas Neue'", 
@@ -4213,12 +4195,32 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
                   {fest.name.toUpperCase()}
                 </div>
                 <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: themeColor, marginTop: '20px', letterSpacing: '5px', fontWeight: 900 }}>
-                  {allShows.length} DAYS ATTENDED // {yearsSorted.length} YEARS ARCHIVED
+                  {Object.values(fest.years).flat().length} DAYS ATTENDED // {yearsSorted.length} YEARS ARCHIVED
                 </div>
               </div>
+
+              {/* 🟢 THE FIX: Relational Poster appears to the right of the title */}
+              {latestPoster && (
+                <div style={{ 
+                  width: '200px', 
+                  height: '280px', 
+                  background: `url(${latestPoster}) center/cover no-repeat`,
+                  borderRadius: '4px',
+                  boxShadow: `0 30px 60px rgba(0,0,0,0.8), 0 0 20px ${hexToRgba(themeColor, 0.2)}`,
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  transform: window.innerWidth < 768 ? 'none' : 'rotate(2deg)',
+                  flexShrink: 0,
+                  position: 'relative'
+                }}>
+                  {/* Archive Identification Sticker */}
+                  <div style={{ position: 'absolute', top: 15, left: -15, background: C.gold, color: '#000', padding: '5px 10px', fontFamily: "'Space Mono'", fontSize: '8px', fontWeight: 900, borderRadius: '2px', transform: 'rotate(-10deg)', boxShadow: '0 5px 15px rgba(0,0,0,0.4)' }}>
+                    FESTIVAL_MASTER
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* 📦 THE YEAR BOX SETS (Remaining code same as before) */}
+            {/* 📦 THE YEAR BOX SETS */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '80px' }}>
               {yearsSorted.map(yr => {
                 const shows = fest.years[yr].sort((a, b) => a.date.localeCompare(b.date));
@@ -4229,74 +4231,74 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin }) {
                     boxShadow: `0 30px 100px rgba(0,0,0,0.5), inset 0 0 50px ${hexToRgba(themeColor, 0.05)}`,
                     overflow: 'visible' 
                   }}>
-                    {/* ... (Existing Year Tab and Day Rows Logic) ... */}
+                    
+                    {/* Floating Year Tab */}
                     <div style={{ position: 'absolute', top: '-40px', left: '40px', display: 'flex', alignItems: 'baseline', gap: '15px' }}>
                       <div style={{ background: themeColor, color: '#000', fontFamily: "'Bebas Neue'", fontSize: '4rem', padding: '0 30px', borderRadius: '8px', boxShadow: `0 10px 30px rgba(0,0,0,0.5)` }}>{yr}</div>
                       <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.white, opacity: 0.5 }}>{fest.name.toUpperCase()}</div>
                     </div>
 
+                    {/* Day Rows */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-  {shows.map((show, idx) => {
-    const dayColor = getDayColor(themeColor, idx);
-    const photos = show.personal_photo_url ? show.personal_photo_url.split(',').map(u => u.trim()).filter(Boolean) : [];
-    const setlists = show.setlist_image_url ? show.setlist_image_url.split(',').map(u => u.trim()).filter(Boolean) : [];
-    const posters = show.festival_poster_url ? show.festival_poster_url.split(',').map(u => u.trim()).filter(Boolean) : [];
-    const wristband = show.wristband_image_url || null;
-console.log('WRISTBAND:', show.date, wristband);
+                      {shows.map((show, idx) => {
+                        const dayColor = getDayColor(themeColor, idx);
+                        const photos = show.personal_photo_url ? show.personal_photo_url.split(',').map(u => u.trim()).filter(Boolean) : [];
+                        const setlists = show.setlist_image_url ? show.setlist_image_url.split(',').map(u => u.trim()).filter(Boolean) : [];
+                        const posters = show.festival_poster_url ? show.festival_poster_url.split(',').map(u => u.trim()).filter(Boolean) : [];
+                        const wristband = show.wristband_image_url || null;
 
-    return (
-      <div key={show.id} onClick={isAdmin ? () => onEdit(show) : null} style={{ width: '100%', background: 'rgba(0,0,0,0.4)', borderRadius: '16px', border: `2px solid ${dayColor}`, overflow: 'visible', cursor: isAdmin ? 'pointer' : 'default', transition: 'all 0.3s ease', display: 'flex', alignItems: 'stretch' }}>
-        <div style={{ width: '8px', background: dayColor, flexShrink: 0 }} />
-        <div style={{ padding: '25px 35px', flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          
-          {/* LEFT: DAY INFO */}
-          <div style={{ flex: 1 }}>
-            {/* Wristband image if available */}
-            {wristband && (
-              <div style={{ marginBottom: 15 }}>
-                <img loading="lazy"
-                  src={wristband}
-                  alt="Wristband"
-                  style={{
-                    width: '100%',
-                    maxWidth: '280px',
-                    height: 'auto',
-                    display: 'block',
-                    borderRadius: 3,
-                    border: `1px solid ${hexToRgba(dayColor, 0.4)}`,
-                    boxShadow: `0 4px 15px rgba(0,0,0,0.5)`
-                  }}
-                />
-              </div>
-            )}
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: dayColor, lineHeight: 1 }}>{show.festival_day?.toUpperCase() || `DAY ${idx + 1}`}</div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: '5px' }}>{fmtDateShort(show.date)}</div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: '#fff', lineHeight: 1.5, borderTop: `1px solid ${hexToRgba(dayColor, 0.2)}`, marginTop: '15px', paddingTop: '10px' }}>
-              {(show.bands || []).map(b => getBandName(b)).filter(Boolean).join(' · ').toUpperCase()}
-            </div>
-          </div>
+                        return (
+                          <div key={show.id} onClick={isAdmin ? () => onEdit(show) : null} style={{ width: '100%', background: 'rgba(0,0,0,0.4)', borderRadius: '16px', border: `2px solid ${dayColor}`, overflow: 'visible', cursor: isAdmin ? 'pointer' : 'default', transition: 'all 0.3s ease', display: 'flex', alignItems: 'stretch' }}>
+                            <div style={{ width: '8px', background: dayColor, flexShrink: 0 }} />
+                            <div style={{ padding: '25px 35px', flex: 1, display: 'flex', flexDirection: window.innerWidth < 768 ? 'column' : 'row', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
+                              
+                              {/* LEFT: DAY INFO */}
+                              <div style={{ flex: 1, width: '100%' }}>
+                                {wristband && (
+                                  <div style={{ marginBottom: 15 }}>
+                                    <img loading="lazy"
+                                      src={wristband}
+                                      alt="Wristband"
+                                      style={{
+                                        width: '100%',
+                                        maxWidth: '280px',
+                                        height: 'auto',
+                                        display: 'block',
+                                        borderRadius: 3,
+                                        border: `1px solid ${hexToRgba(dayColor, 0.4)}`,
+                                        boxShadow: `0 4px 15px rgba(0,0,0,0.5)`
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: dayColor, lineHeight: 1 }}>{show.festival_day?.toUpperCase() || `DAY ${idx + 1}`}</div>
+                                <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: '5px' }}>{fmtDateShort(show.date)}</div>
+                                <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: '#fff', lineHeight: 1.5, borderTop: `1px solid ${hexToRgba(dayColor, 0.2)}`, marginTop: '15px', paddingTop: '10px' }}>
+                                  {(show.bands || []).map(b => getBandName(b)).filter(Boolean).join(' · ').toUpperCase()}
+                                </div>
+                              </div>
 
-          {/* RIGHT: MEDIA CLUSTER */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', marginLeft: '30px', gap: '10px' }}>
-            {setlists.length > 0 && (
-              <div style={{ display: 'flex' }}>
-                {setlists.map((url, sIdx) => <SetlistPaper key={`${show.id}-s-${sIdx}`} src={url} index={sIdx} />)}
-              </div>
-            )}
-            {posters.map((url, pIdx) => (
-              <GigPoster key={`${show.id}-poster-${pIdx}`} src={url} artist={show.festival_name} date={show.date} index={pIdx} />
-            ))}
-            {photos.length > 0 && (
-              <div style={{ display: 'flex' }}>
-                {photos.map((url, pIdx) => <PersonalPolaroid key={`${show.id}-p-${pIdx}`} src={url} index={pIdx} caption={fest.name.toUpperCase()} />)}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  })}
-</div>
+                              {/* RIGHT: MEDIA CLUSTER */}
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                {setlists.length > 0 && (
+                                  <div style={{ display: 'flex' }}>
+                                    {setlists.map((url, sIdx) => <SetlistPaper key={`${show.id}-s-${sIdx}`} src={url} index={sIdx} total={setlists.length} />)}
+                                  </div>
+                                )}
+                                {posters.map((url, pIdx) => (
+                                  <GigPoster key={`${show.id}-poster-${pIdx}`} src={url} artist={show.festival_name} date={show.date} index={pIdx} />
+                                ))}
+                                {photos.length > 0 && (
+                                  <div style={{ display: 'flex' }}>
+                                    {photos.map((url, pIdx) => <PersonalPolaroid key={`${show.id}-p-${pIdx}`} src={url} index={pIdx} caption={fest.name.toUpperCase()} />)}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })}
@@ -4307,7 +4309,6 @@ console.log('WRISTBAND:', show.date, wristband);
     </div>
   );
 }
-
 // ─── 2. THE OVERVIEW (PASSPORTTAB - THE GRID) ───────────────────────────────
 // ─── PASSPORT TAB (REPAIRED STATS EDITION) ──────────────────────────────────
 function PassportTab({ passport, onNavigateToFest }) {  
@@ -9229,7 +9230,15 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
     </div>
   )}
 
-  {activeTab === 'byFest' && <ByFestTab festGroupings={festGroupings} genreMap={artistGenres} isAdmin={isAdmin} onEdit={isAdmin ? setEditTarget : null} />}
+  {activeTab === 'byFest' && (
+  <ByFestTab 
+    festGroupings={festGroupings} 
+    genreMap={artistGenres} 
+    isAdmin={isAdmin} 
+    onEdit={isAdmin ? setEditTarget : null} 
+    posters={posters} // 🟢 Ensure this is passed
+  />
+)}
   {activeTab === 'community' && <CommunityTab onEnterMuseum={handleNavigateToUser} />}
   {activeTab === 'passport' && (
     <PassportTab 
