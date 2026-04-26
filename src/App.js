@@ -4237,18 +4237,23 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = []
 
               {/* 🖼️ RELATIONAL POSTER (The ACL Fix) */}
               {latestPoster && (
-                <div style={{ 
-                  width: '200px', 
-                  height: '280px', 
-                  background: `url(${latestPoster}) center/cover no-repeat`,
-                  borderRadius: '4px',
-                  boxShadow: `0 30px 60px rgba(0,0,0,0.8), 0 0 20px ${hexToRgba(themeColor, 0.2)}`,
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  transform: window.innerWidth < 768 ? 'none' : 'rotate(2deg)',
-                  flexShrink: 0
-                }} />
-              )}
-            </div>
+  <div style={{ 
+    width: window.innerWidth < 768 ? '100%' : '380px', // Substantial presence
+    height: window.innerWidth < 768 ? 'auto' : '530px', 
+    aspectRatio: window.innerWidth < 768 ? '3/4' : 'auto',
+    background: `url(${latestPoster}) center/cover no-repeat`,
+    borderRadius: '8px',
+    boxShadow: `
+      0 50px 100px rgba(0,0,0,0.9), 
+      0 0 40px ${hexToRgba(themeColor, 0.3)},
+      inset 0 0 0 1px rgba(255,255,255,0.1)
+    `,
+    border: '1px solid rgba(255,255,255,0.05)',
+    transform: window.innerWidth < 768 ? 'none' : 'rotate(3deg) translateY(-20px)',
+    flexShrink: 0,
+    zIndex: 10
+  }} />
+)}
 
             {/* 📦 THE YEAR BOX SETS */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '80px' }}>
