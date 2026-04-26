@@ -3743,7 +3743,11 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
 // ─── 4. BY DAY TAB (SCRAPBOOK EDITION - FULL MULTI-MEDIA) ────────────────────
 // ─── 4. BY DAY TAB (SCRAPBOOK TIMELINE & FESTIVAL CLUSTERS) ──────────────────
 
-function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin, viewingUser, bulkMode, setBulkMode, selectedSignals, setSelectedSignals, onSync }) {
+function ByDayTab({ 
+  dayGroups, onEdit, genreMap, isAdmin, viewingUser, 
+  bulkMode, setBulkMode, selectedSignals, setSelectedSignals, 
+  onSync, posters = [] 
+}) {
   const isMobile = window.innerWidth < 768;
 
   // ─── TELEPORT PROTOCOL LOGIC ────────────────────────────────────────────────
@@ -3782,7 +3786,6 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin, viewingUser, bulkMode,
     return results;
   }, [dayGroups]);
 
-  // Teleport Function: Smooth scrolls to a cluster ID and gives it a "glow"
   const teleportTo = (targetId) => {
     const el = document.getElementById(targetId);
     if (el) {
@@ -3876,39 +3879,74 @@ function ByDayTab({ dayGroups, onEdit, genreMap, isAdmin, viewingUser, bulkMode,
 
       {/* 📜 CLUSTER LIST RENDER */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '30px' : '60px' }}>
-        {clusters.map((cluster, ci) => (
-          <div key={`cluster-${ci}`} id={`cluster-${ci}`}>
-            {cluster.type === 'solo' ? (
-              <ScrapbookRow 
-                event={cluster.event} idx={ci} isAdmin={isAdmin} onEdit={onEdit} genreMap={genreMap}
-                bulkMode={bulkMode} selectedSignals={selectedSignals} setSelectedSignals={setSelectedSignals}
-              />
-            ) : (
-              <div style={{ 
-                position: 'relative', padding: isMobile ? '20px 15px' : '40px', background: 'rgba(255,255,255,0.01)', 
-                border: `1px solid ${hexToRgba(GENRE_COLORS[genreMap[cluster.events[0].bands?.[0]]] || C.teal, 0.2)}`, borderRadius: isMobile ? '12px' : '24px'
-              }}>
-                <div style={{ display: 'flex', gap: '25px', marginBottom: '40px', alignItems: 'baseline' }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '5rem', color: GENRE_COLORS[genreMap[cluster.events[0].bands?.[0]]] || C.teal, lineHeight: 1 }}>
-                    {cluster.events[0].festival_name.toUpperCase()}
+        {clusters.map((cluster, ci) => {
+          if (cluster.type === 'solo') {
+            return (
+              <div key={`cluster-${ci}`} id={`cluster-${ci}`}>
+                <ScrapbookRow 
+                  event={cluster.event} idx={ci} isAdmin={isAdmin} onEdit={onEdit} genreMap={genreMap}
+                  bulkMode={bulkMode} selectedSignals={selectedSignals} setSelectedSignals={setSelectedSignals}
+                />
+              </div>
+            );
+          }
+
+          // 🛰️ FESTIVAL CLUSTER LOGIC
+          const firstEvent = cluster.events[0];
+          const festYear = new Date(firstEvent.date).getFullYear();
+          const themeColor = GENRE_COLORS[genreMap[firstEvent.bands?.[0]]] || C.teal;
+          
+          // Look for the Master Poster for this specific festival year
+          const masterPoster = posters.find(p => 
+            p.poster_type === 'festival_year' && 
+            p.festival_name?.toLowerCase().trim() === firstEvent.festival_name?.toLowerCase().trim() &&
+            getYear(p.date) === festYear
+          )?.image_url;
+
+          return (
+            <div key={`cluster-${ci}`} id={`cluster-${ci}`} style={{ 
+              position: 'relative', padding: isMobile ? '20px 15px' : '40px', background: 'rgba(255,255,255,0.01)', 
+              border: `1px solid ${hexToRgba(themeColor, 0.2)}`, borderRadius: isMobile ? '12px' : '24px'
+            }}>
+              <div style={{ display: 'flex', gap: '30px', marginBottom: '40px', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', gap: '25px', alignItems: 'baseline' }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '5rem', color: themeColor, lineHeight: 1 }}>
+                    {firstEvent.festival_name.toUpperCase()}
                   </div>
                   <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray }}>
-                    {new Date(cluster.events[0].date).getFullYear()} // {cluster.events.length} DAYS
+                    {festYear} // {cluster.events.length} DAYS
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {cluster.events.map((event, ei) => (
-                    <ScrapbookRow 
-                      key={event.id} event={event} idx={ei} isAdmin={isAdmin} onEdit={onEdit} genreMap={genreMap} 
-                      isClustered={true} clusterColor={GENRE_COLORS[genreMap[event.bands?.[0]]] || C.teal}
-                      bulkMode={bulkMode} selectedSignals={selectedSignals} setSelectedSignals={setSelectedSignals}
-                    />
-                  ))}
-                </div>
+
+                {/* 🟢 THE FIX: Master Poster in the Cluster Header */}
+                {masterPoster && (
+                  <img 
+                    src={masterPoster} 
+                    style={{ 
+                      width: isMobile ? '80px' : '120px', 
+                      height: 'auto', 
+                      borderRadius: 4, 
+                      border: `1px solid ${themeColor}`, 
+                      boxShadow: `0 10px 30px rgba(0,0,0,0.5)`,
+                      transform: 'rotate(2deg)'
+                    }} 
+                    alt="Poster" 
+                  />
+                )}
               </div>
-            )}
-          </div>
-        ))}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                {cluster.events.map((event, ei) => (
+                  <ScrapbookRow 
+                    key={event.id} event={event} idx={ei} isAdmin={isAdmin} onEdit={onEdit} genreMap={genreMap} 
+                    isClustered={true} clusterColor={themeColor}
+                    bulkMode={bulkMode} selectedSignals={selectedSignals} setSelectedSignals={setSelectedSignals}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -3939,34 +3977,22 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
   // 🎨 RELATIONAL POSTER CONSOLIDATION
   const finalPosters = useMemo(() => {
     const list = [];
-    
-    // Check legacy posters stored directly on this show row
     if (event.festival_poster_url) {
-      const legacyPosters = event.festival_poster_url.split(',').map(u => u.trim()).filter(Boolean);
-      legacyPosters.forEach(url => {
-        list.push({ 
-          url: url, 
-          artist: headlinerName, 
-          date: event.date 
-        });
+      event.festival_poster_url.split(',').forEach(url => {
+        if (url.trim()) list.push({ url: url.trim(), artist: headlinerName, date: event.date, poster_type: 'artist' });
       });
     }
-
-    // Add relational posters matched in the App "Brain" (Step 1)
     if (event.matchedPosters) {
       event.matchedPosters.forEach(p => {
-        // Prevent duplication if the same URL was already caught in the legacy check
         if (!list.some(item => item.url === p.image_url)) {
-          list.push({ 
-            url: p.image_url, 
-            artist: p.artist || headlinerName, 
-            date: p.date 
-          });
+          list.push({ url: p.image_url, artist: p.artist || headlinerName, date: p.date, poster_type: p.poster_type });
         }
       });
     }
     
-    return list;
+    // 🟢 THE FIX: Only show day-specific posters (artist or festival_day) in the row.
+    // Festival-wide posters are now handled by the Cluster Header.
+    return list.filter(p => p.poster_type !== 'festival_year');
   }, [event.festival_poster_url, event.matchedPosters, event.date, headlinerName]);
 
   // 🟢 SELF-CONTAINED CLONE LOGIC
@@ -4152,12 +4178,13 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = []
         // 🛰️ MASTER POSTER SCAVENGER
         // Checks the master 'posters' table for a 'festival_year' match for the latest year seen
         const getMasterPoster = (year) => {
-          return posters.find(p => 
-            p.poster_type === 'festival_year' && 
-            p.festival_name === fest.name && 
-            getYear(p.date) === parseInt(year)
-          )?.image_url;
-        };
+  return posters.find(p => 
+    p.poster_type === 'festival_year' && 
+    // 🟢 IMPROVED MATCHING:
+    p.festival_name?.toLowerCase().trim() === fest.name?.toLowerCase().trim() && 
+    getYear(p.date) === parseInt(year)
+  )?.image_url;
+};
 
         const latestPoster = getMasterPoster(yearsSorted[0]);
         const festSlug = `fest-${fest.name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '')}`;
@@ -9171,11 +9198,12 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
   
   {activeTab === 'byDay' && (
   <ByDayTab 
-  dayGroups={dayGroups} 
-  onEdit={isAdmin ? setEditTarget : null} 
-  genreMap={artistGenres} 
-  isAdmin={isAdmin}
-/>
+    dayGroups={dayGroups} 
+    onEdit={isAdmin ? setEditTarget : null} 
+    genreMap={artistGenres} 
+    isAdmin={isAdmin}
+    posters={posters} // 🟢 ADD THIS PROP
+  />
 )}
   {/* 🟢 NEW PAPERTRAIL BLOCK GOES HERE */}
   {activeTab === 'papertrail' && (
