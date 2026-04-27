@@ -1720,6 +1720,7 @@ function ArtistInsights({ concerts }) {
 function RandomShow({ concerts, posters = [], onAdd }) {
   const [show, setShow] = useState(null);
   const [spinning, setSpinning] = useState(false);
+  const [imageRotation, setImageRotation] = useState(2);
 
   // Helper for transparency logic
   const hexToRgba = (hex, alpha) => {
@@ -1727,6 +1728,13 @@ function RandomShow({ concerts, posters = [], onAdd }) {
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+  
+  // Detect image orientation and set rotation
+  const handleImageLoad = (e) => {
+    const img = e.target;
+    const isWide = img.naturalWidth > img.naturalHeight;
+    setImageRotation(isWide ? 2 : -2);
   };
 
   const spin = () => {
@@ -1819,9 +1827,19 @@ function RandomShow({ concerts, posters = [], onAdd }) {
               alignItems: 'center',
               justifyContent: 'center',
               overflow: 'hidden',
-              transform: 'rotate(2deg)'
+              transform: `rotate(${imageRotation}deg)`,
+              transition: 'transform 0.3s ease'
             }}>
-              <img src={displayImg} alt="Artifact" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img 
+                src={displayImg} 
+                alt="Artifact" 
+                onLoad={handleImageLoad}
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'contain'
+                }} 
+              />
               <div style={{ position: 'absolute', top: 5, right: 5, background: 'rgba(0,0,0,0.7)', padding: '2px 6px', fontSize: 6, fontFamily: "'Space Mono'", color: themeColor }}>
                 // SIGNAL_RECOVERED
               </div>
