@@ -8246,6 +8246,10 @@ const getCuratorTitle = (stats, concerts) => {
 async function fetchPosters() {
   const targetId = viewingUser || session?.user?.id;
   if (!targetId) return;
+  
+  // 🛡️ DEFENSIVE: Clear old posters immediately when switching users
+  setPosters([]);
+  
   const { data } = await supabase
     .from('posters')
     .select('*')
