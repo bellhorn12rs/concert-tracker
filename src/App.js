@@ -6694,34 +6694,24 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
         .poster-card:hover { z-index: 100 !important; }
       `}</style>
 
-      {/* 🔥 FIX #3: BRIGHTENED BRICK WALL */}
+      {/* 🔥 UNIFORM BRIGHT RED BRICK WALL */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
         <div style={{
           position: 'absolute', inset: 0,
-          backgroundColor: '#2a1810',
+          backgroundColor: '#8B3A2B', // Bright brick red base
           backgroundImage: `url("https://www.transparenttextures.com/patterns/brick-wall.png")`,
           backgroundRepeat: 'repeat',
-          filter: 'brightness(0.85) contrast(1.3) saturate(1.2)',
-          opacity: 0.6
+          filter: 'brightness(1.1) contrast(1.2) saturate(1.4)',
+          opacity: 1
         }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(13,9,5,0.3)' }} />
         
-        {/* 🔥 FIX #4: STRONGER SPOTLIGHT */}
+        {/* 🔥 SPOTLIGHT ONLY (no darkening gradients) */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: `radial-gradient(ellipse 700px 600px at ${spotlight.x}% ${spotlight.y}%, rgba(255,200,100,0.25) 0%, rgba(255,150,60,0.15) 25%, rgba(255,102,153,0.08) 50%, transparent 75%)`,
+          background: `radial-gradient(ellipse 700px 600px at ${spotlight.x}% ${spotlight.y}%, rgba(255,220,120,0.3) 0%, rgba(255,180,100,0.2) 25%, rgba(255,140,80,0.1) 50%, transparent 75%)`,
           transition: 'background 0.2s ease',
           pointerEvents: 'none',
           mixBlendMode: 'screen'
-        }} />
-        
-        <div style={{
-          position: 'absolute', top: 0, left: '10%', right: '10%', height: '40%',
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(255,180,80,0.15) 0%, transparent 70%)',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, height: '35%',
-          background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)',
         }} />
       </div>
 
@@ -6758,7 +6748,15 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
 
       {/* FEATURED POSTER */}
       {featured && (
-        <div style={{ position: 'relative', zIndex: 10, padding: '0 40px 50px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ 
+          position: 'relative', 
+          zIndex: 10, 
+          padding: '0 40px 50px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center',
+          minHeight: '600px' // 🔥 LOCKS HEIGHT TO PREVENT SHIFTING
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
             <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#ffcc00', letterSpacing: 4 }}>// FEATURED</div>
             <button
