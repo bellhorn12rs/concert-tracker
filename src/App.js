@@ -6751,16 +6751,17 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
         </div>
       </div>
 
-      {/* FEATURED POSTER */}
+      {/* FEATURED POSTER - LOCKED CONTAINER */}
       {featured && (
         <div style={{ 
           position: 'relative', 
           zIndex: 10, 
-          padding: '0 40px 50px', 
+          padding: '0 40px 60px', 
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'center',
-          minHeight: '600px' // 🔥 LOCKS HEIGHT TO PREVENT SHIFTING
+          minHeight: '480px', // 🔥 SMALLER LOCKED HEIGHT
+          marginBottom: '40px' // 🔥 BUFFER ZONE - prevents cascade
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
             <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#ffcc00', letterSpacing: 4 }}>// FEATURED</div>
@@ -6777,12 +6778,20 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
             </button>
           </div>
 
-          <div style={{ display: 'flex', gap: 40, alignItems: 'flex-start', maxWidth: 900, width: '100%', justifyContent: 'center' }}>
+          <div style={{ 
+            display: 'flex', 
+            gap: 30, 
+            alignItems: 'flex-start', 
+            maxWidth: 800, 
+            width: '100%', 
+            justifyContent: 'center',
+            minHeight: '350px' // 🔥 INNER LOCK - prevents content shifting
+          }}>
             <div
               onClick={() => setSelected(featured)}
               style={{
                 flexShrink: 0,
-                width: 280,
+                width: 200, // 🔥 SMALLER - was 280
                 cursor: 'zoom-in',
                 transform: `rotate(${featured.rotation * 0.3}deg)`,
                 animation: 'featuredPulse 4s ease-in-out infinite',
