@@ -6596,21 +6596,19 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
     return list;
   }, [posters, yearFilter, typeFilter]);
 
-  // 🔥 FIX #1: Layout only regenerates when filtered posters change, NOT when spinning
   const [layout, setLayout] = useState([]);
   useEffect(() => {
     setLayout(filtered.map((p) => ({
       ...p,
-      rotation: (Math.random() * 16) - 8, // 🔥 Stronger rotation range
-      scale: 0.85 + (Math.random() * 0.3), // 🔥 Random sizes for chaos
-      depth: Math.random(), // 🔥 For shadow intensity
+      rotation: (Math.random() * 16) - 8,
+      scale: 0.85 + (Math.random() * 0.3),
+      depth: Math.random(),
     })));
     setFeaturedIdx(Math.floor(Math.random() * Math.max(filtered.length, 1)));
   }, [filtered]);
 
   const featured = layout[featuredIdx] || null;
 
-  // 🔥 FIX #1: Spin only changes the index, doesn't regenerate layout
   const spinFeatured = () => {
     if (layout.length < 2) return;
     setFeaturedSpinning(true);
@@ -6664,16 +6662,17 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
   };
 
   const filterBtnStyle = (active, color = ACCENT) => ({
-    background: active ? color : 'transparent',
-    border: `1px solid ${active ? color : '#333'}`,
-    color: active ? '#000' : '#888',
+    background: active ? color : 'rgba(0,0,0,0.7)',
+    border: `1px solid ${active ? color : '#555'}`,
+    color: active ? '#000' : '#fff',
     fontFamily: "'Space Mono'",
     fontSize: 9,
     padding: '5px 12px',
     borderRadius: 4,
     cursor: 'pointer',
     fontWeight: active ? 900 : 400,
-    transition: 'all 0.15s'
+    transition: 'all 0.15s',
+    backdropFilter: 'blur(4px)'
   });
 
   return (
@@ -6694,18 +6693,17 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
         .poster-card:hover { z-index: 100 !important; }
       `}</style>
 
-      {/* 🔥 UNIFORM BRIGHT RED BRICK WALL */}
+      {/* UNIFORM BRIGHT RED BRICK WALL */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
         <div style={{
           position: 'absolute', inset: 0,
-          backgroundColor: '#8B3A2B', // Bright brick red base
+          backgroundColor: '#8B3A2B',
           backgroundImage: `url("https://www.transparenttextures.com/patterns/brick-wall.png")`,
           backgroundRepeat: 'repeat',
           filter: 'brightness(1.1) contrast(1.2) saturate(1.4)',
           opacity: 1
         }} />
         
-        {/* 🔥 SPOTLIGHT ONLY (no darkening gradients) */}
         <div style={{
           position: 'absolute', inset: 0,
           background: `radial-gradient(ellipse 700px 600px at ${spotlight.x}% ${spotlight.y}%, rgba(255,220,120,0.3) 0%, rgba(255,180,100,0.2) 25%, rgba(255,140,80,0.1) 50%, transparent 75%)`,
@@ -6751,7 +6749,7 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
         </div>
       </div>
 
-      {/* FEATURED POSTER - CONTAINER WITH FIXED HEIGHT */}
+      {/* FEATURED POSTER SECTION */}
       {featured && (
         <div style={{ 
           position: 'relative',
@@ -6759,140 +6757,139 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
           width: '100%',
           marginBottom: '40px'
         }}>
-          {/* FEATURED POSTER - ABSOLUTELY POSITIONED INSIDE */}
-          {featured && (
+          <div style={{ 
+            position: 'absolute',
+            top: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 15,
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center',
+            width: '100%',
+            maxWidth: '1200px',
+            pointerEvents: 'none'
+          }}>
             <div style={{ 
-              position: 'absolute',
-              top: 0,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 15,
               display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center',
-              width: '100%',
-              maxWidth: '1200px',
-              pointerEvents: 'none'
+              alignItems: 'center', 
+              gap: 20, 
+              marginBottom: 20,
+              pointerEvents: 'auto'
             }}>
-
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 20, 
-            marginBottom: 20,
-            pointerEvents: 'auto'
-          }}>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#ffcc00', letterSpacing: 4 }}>// FEATURED</div>
-            <button
-              onClick={spinFeatured}
-              disabled={featuredSpinning}
-              style={{
-                background: featuredSpinning ? '#333' : '#ffcc00', border: 'none', color: '#000',
-                fontFamily: "'Space Mono'", fontSize: 8, padding: '4px 12px',
-                borderRadius: 4, cursor: 'pointer', fontWeight: 900
-              }}
-            >
-              {featuredSpinning ? '...' : 'SPIN'}
-            </button>
-          </div>
-
-          <div style={{ 
-            display: 'flex', 
-            gap: 30, 
-            alignItems: 'flex-start', 
-            maxWidth: 800, 
-            width: '100%', 
-            justifyContent: 'center',
-            minHeight: '350px'
-          }}>
-            <div
-              onClick={() => setSelected(featured)}
-              style={{
-                flexShrink: 0,
-                width: 200,
-                cursor: 'zoom-in',
-                transform: `rotate(${featured.rotation * 0.3}deg)`,
-                animation: 'featuredPulse 4s ease-in-out infinite',
-                position: 'relative',
-                pointerEvents: 'auto'
-              }}
-            >
-              <img
-                src={featured.image_url}
-                alt={getLabel(featured)}
-                style={{ display: 'block', width: '100%', height: 'auto' }}
-              />
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#ffcc00', letterSpacing: 4 }}>// FEATURED</div>
+              <button
+                onClick={spinFeatured}
+                disabled={featuredSpinning}
+                style={{
+                  background: featuredSpinning ? '#333' : '#ffcc00', border: 'none', color: '#000',
+                  fontFamily: "'Space Mono'", fontSize: 8, padding: '4px 12px',
+                  borderRadius: 4, cursor: 'pointer', fontWeight: 900
+                }}
+              >
+                {featuredSpinning ? '...' : 'SPIN'}
+              </button>
             </div>
 
-            <div style={{ flex: 1, paddingTop: 20, pointerEvents: 'auto' }}>
-              <div style={{
-                background: 'rgba(0,0,0,0.7)',
-                border: `1px solid ${hexToRgba(ACCENT, 0.4)}`,
-                borderRadius: 8,
-                padding: '20px 24px',
-                marginBottom: 20,
-                backdropFilter: 'blur(8px)'
-              }}>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: ACCENT, letterSpacing: 3, marginBottom: 8 }}>
-                  {featured.poster_type === 'festival_year' ? 'FESTIVAL POSTER' : 'ARTIST POSTER'}
-                </div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', lineHeight: 1, letterSpacing: 2, marginBottom: 8 }}>
-                  {getLabel(featured)?.toUpperCase()}
-                </div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: ACCENT, marginBottom: 4 }}>
-                  {fmtDateShort(featured.date)}
-                  {featured.venue ? ` · ${featured.venue.toUpperCase()}` : ''}
-                </div>
-                {featured.city && (
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#666' }}>
-                    {featured.city.toUpperCase()}{featured.state ? `, ${featured.state}` : ''}
+            <div style={{ 
+              display: 'flex', 
+              gap: 30, 
+              alignItems: 'flex-start', 
+              maxWidth: 800, 
+              width: '100%', 
+              justifyContent: 'center',
+              minHeight: '350px'
+            }}>
+              <div
+                onClick={() => setSelected(featured)}
+                style={{
+                  flexShrink: 0,
+                  width: 200,
+                  cursor: 'zoom-in',
+                  transform: `rotate(${featured.rotation * 0.3}deg)`,
+                  animation: 'featuredPulse 4s ease-in-out infinite',
+                  position: 'relative',
+                  pointerEvents: 'auto'
+                }}
+              >
+                <img
+                  src={featured.image_url}
+                  alt={getLabel(featured)}
+                  style={{ display: 'block', width: '100%', height: 'auto' }}
+                />
+              </div>
+
+              <div style={{ flex: 1, paddingTop: 20, pointerEvents: 'auto' }}>
+                <div style={{
+                  background: 'rgba(0,0,0,0.7)',
+                  border: `1px solid ${hexToRgba(ACCENT, 0.4)}`,
+                  borderRadius: 8,
+                  padding: '20px 24px',
+                  marginBottom: 20,
+                  backdropFilter: 'blur(8px)'
+                }}>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: ACCENT, letterSpacing: 3, marginBottom: 8 }}>
+                    {featured.poster_type === 'festival_year' ? 'FESTIVAL POSTER' : 'ARTIST POSTER'}
                   </div>
-                )}
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', lineHeight: 1, letterSpacing: 2, marginBottom: 8 }}>
+                    {getLabel(featured)?.toUpperCase()}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: ACCENT, marginBottom: 4 }}>
+                    {fmtDateShort(featured.date)}
+                    {featured.venue ? ` · ${featured.venue.toUpperCase()}` : ''}
+                  </div>
+                  {featured.city && (
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#666' }}>
+                      {featured.city.toUpperCase()}{featured.state ? `, ${featured.state}` : ''}
+                    </div>
+                  )}
+                  {(() => {
+                    const lines = getDetailLines(featured);
+                    if (!lines.length) return null;
+                    return (
+                      <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid rgba(255,102,153,0.2)` }}>
+                        {lines.map((l, i) => (
+                          <div key={i} style={{ marginBottom: 8 }}>
+                            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#ffcc00', letterSpacing: 2, marginBottom: 3 }}>
+                              {l.day?.toUpperCase()}
+                            </div>
+                            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#ccc', letterSpacing: 1, lineHeight: 1.3 }}>
+                              {l.bands.join(' · ').toUpperCase()}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+
                 {(() => {
-                  const lines = getDetailLines(featured);
-                  if (!lines.length) return null;
+                  const wb = getMatchedWristband(featured);
+                  if (!wb) return null;
                   return (
-                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid rgba(255,102,153,0.2)` }}>
-                      {lines.map((l, i) => (
-                        <div key={i} style={{ marginBottom: 8 }}>
-                          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#ffcc00', letterSpacing: 2, marginBottom: 3 }}>
-                            {l.day?.toUpperCase()}
-                          </div>
-                          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#ccc', letterSpacing: 1, lineHeight: 1.3 }}>
-                            {l.bands.join(' · ').toUpperCase()}
-                          </div>
-                        </div>
-                      ))}
+                    <div>
+                      <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#666', letterSpacing: 3, marginBottom: 8 }}>// WRISTBAND</div>
+                      <img
+                        src={wb}
+                        alt="wristband"
+                        style={{
+                          width: '100%',
+                          height: 'auto',
+                          borderRadius: 4,
+                          border: `1px solid rgba(255,102,153,0.3)`,
+                          boxShadow: '0 8px 30px rgba(0,0,0,0.7)'
+                        }}
+                      />
                     </div>
                   );
                 })()}
               </div>
-
-              {(() => {
-                const wb = getMatchedWristband(featured);
-                if (!wb) return null;
-                return (
-                  <div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#666', letterSpacing: 3, marginBottom: 8 }}>// WRISTBAND</div>
-                    <img
-                      src={wb}
-                      alt="wristband"
-                      style={{
-                        width: '100%',
-                        height: 'auto',
-                        borderRadius: 4,
-                        border: `1px solid rgba(255,102,153,0.3)`,
-                        boxShadow: '0 8px 30px rgba(0,0,0,0.7)'
-                      }}
-                    />
-                  </div>
-                );
-              })()}
-              </div>
+            </div>
           </div>
-        )}
+        </div>
       )}
-            {/* DIVIDER */}
+
+      {/* DIVIDER */}
       {layout.length > 1 && (
         <div style={{ position: 'relative', zIndex: 10, padding: '0 40px 30px' }}>
           <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${ACCENT}44, transparent)` }} />
@@ -6902,7 +6899,7 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
         </div>
       )}
 
-      {/* 🔥 FIX #5: CHAOTIC MASONRY WALL WITH VARYING SIZES */}
+      {/* THE WALL */}
       <div style={{
         position: 'relative', zIndex: 5,
         columnCount: 3,
@@ -6911,7 +6908,7 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
       }}>
         {layout.filter((_, i) => i !== featuredIdx).map((poster, idx) => {
           const wristband = getMatchedWristband(poster);
-          const shadowIntensity = poster.depth; // Closer = darker shadow
+          const shadowIntensity = poster.depth;
           
           return (
             <div
@@ -6938,7 +6935,6 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
                 e.currentTarget.style.transform = `rotate(${poster.rotation}deg) scale(${poster.scale})`;
               }}
             >
-              {/* 🔥 FIX #2: NO MAGNETS ON MOBILE */}
               <img
                 loading="lazy"
                 src={poster.image_url}
