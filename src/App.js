@@ -6716,7 +6716,12 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
       </div>
 
       {/* HEADER */}
-      <div style={{ position: 'relative', zIndex: 10, padding: '30px 40px 20px' }}>
+      <div style={{ 
+        position: 'relative', 
+        zIndex: 10, 
+        padding: '30px 40px 20px',
+        background: 'linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.6) 60%, transparent 100%)'
+      }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20, marginBottom: 25 }}>
           <div>
             <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: ACCENT, letterSpacing: 4, marginBottom: 6 }}>
@@ -7401,17 +7406,18 @@ function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
     return () => window.removeEventListener('keydown', handler);
   }, [selected]);
 
-  const filterBtnStyle = (active) => ({
-    background: active ? C.teal : 'transparent',
-    border: `1px solid ${active ? C.teal : C.border}`,
-    color: active ? '#000' : C.gray,
+  const filterBtnStyle = (active, color = ACCENT) => ({
+    background: active ? color : 'rgba(0,0,0,0.7)',
+    border: `1px solid ${active ? color : '#555'}`,
+    color: active ? '#000' : '#fff',
     fontFamily: "'Space Mono'",
     fontSize: 9,
     padding: '5px 12px',
     borderRadius: 4,
     cursor: 'pointer',
     fontWeight: active ? 900 : 400,
-    transition: 'all 0.15s'
+    transition: 'all 0.15s',
+    backdropFilter: 'blur(4px)'
   });
 
   return (
