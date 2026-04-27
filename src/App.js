@@ -9016,7 +9016,8 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr', gap: 20 }}>
           
           {/* 🟢 1. RANDOM SHOW (NOW TOP LEFT / FIRST ON MOBILE) */}
-          <RandomShow concerts={concerts} onAdd={() => setEditTarget('new')} />
+          <RandomShow concerts={concerts} posters={posters} onAdd={() => setEditTarget('new')} />
+
 
 
           {/* ⚪ 2. THEATER MARQUEE (REMAINS MIDDLE) */}
