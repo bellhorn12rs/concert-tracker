@@ -1715,9 +1715,7 @@ function ArtistInsights({ concerts }) {
   );
 }
 
-// ─── RANDOM SHOW (FULL FESTIVAL & SCROLLABLE EDITION) ────────────────────────
-// ─── RANDOM SHOW (HEROIC RECALL EDITION) ───────────────────────────────────────
-<RandomShow concerts={concerts} posters={posters} onAdd={() => setEditTarget('new')} />
+function RandomShow({ concerts, posters = [], onAdd }) {
   const [show, setShow] = useState(null);
   const [spinning, setSpinning] = useState(false);
   const [imageRotation, setImageRotation] = useState(2);
