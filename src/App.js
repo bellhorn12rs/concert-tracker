@@ -7873,12 +7873,14 @@ useEffect(() => {
 };
 
   // Trigger if we have a session OR if we are teleporting to a public user
-  if ((session?.user?.id || viewingUser) && !initRan.current && !authLoading) {
-    initRan.current = true;
-    init();
+  // Reset initRan when viewingUser changes to allow re-fetching
+  if ((session?.user?.id || viewingUser) && !authLoading) {
+    if (!initRan.current || initRan.viewingUser !== viewingUser) {
+      initRan.current = true;
+      initRan.viewingUser = viewingUser;
+      init();
+    }
   }
-}, [session, authLoading, themeId, viewingUser]); // 🟢 Added viewingUser to watchers
-
 // --- END OF REPAIRED SYSTEM BLOCK ---
 
 
@@ -8041,7 +8043,7 @@ const getCuratorTitle = (stats, concerts) => {
     setlists: concerts?.filter(c => c.has_setlist || c.has_setlist_names || c.setlist_image_url).length || 0,
    posters: posters?.length || 0,
     photos: concerts?.filter(c => c.personal_photo_url && c.personal_photo_url !== '').length || 0,
-  }), [concerts, allSetsList]);
+  }), [concerts, allSetsList, posters]);
 
   const artistCounts = useMemo(() => {
     const m = {};
