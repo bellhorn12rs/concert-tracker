@@ -6751,30 +6751,30 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
         </div>
       </div>
 
-      {/* FEATURED POSTER - SPACER (reserves space) */}
+      {/* FEATURED POSTER - CONTAINER WITH FIXED HEIGHT */}
       {featured && (
         <div style={{ 
           position: 'relative',
           height: '480px',
           width: '100%',
           marginBottom: '40px'
-        }} />
-      )}
-
-      {/* FEATURED POSTER - ABSOLUTELY POSITIONED INSIDE */}
-          <div style={{ 
-            position: 'absolute',
-            top: 0,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 15,
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center',
-          width: '100%',
-          maxWidth: '1200px',
-          pointerEvents: 'none'
         }}>
+          {/* FEATURED POSTER - ABSOLUTELY POSITIONED INSIDE */}
+          {featured && (
+            <div style={{ 
+              position: 'absolute',
+              top: 0,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 15,
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              width: '100%',
+              maxWidth: '1200px',
+              pointerEvents: 'none'
+            }}>
+              
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
