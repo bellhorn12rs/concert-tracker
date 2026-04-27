@@ -6774,7 +6774,7 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
               maxWidth: '1200px',
               pointerEvents: 'none'
             }}>
-              
+
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -6888,9 +6888,9 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
                   </div>
                 );
               })()}
-            </div>
+              </div>
           </div>
-        </div>
+        )}
       )}
             {/* DIVIDER */}
       {layout.length > 1 && (
