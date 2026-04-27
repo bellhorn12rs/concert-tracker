@@ -6751,17 +6751,38 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
         </div>
       </div>
 
-      {/* FEATURED POSTER - LOCKED CONTAINER */}
+      {/* FEATURED POSTER - SPACER (reserves space) */}
       {featured && (
         <div style={{ 
-          position: 'relative', 
-          zIndex: 10, 
-          padding: '0 40px 60px', 
+          position: 'relative',
+          height: '480px', // 🔥 FIXED HEIGHT SPACER
+          width: '100%',
+          marginBottom: '40px'
+        }} />
+      )}
+
+      {/* FEATURED POSTER - FLOATING (doesn't affect layout) */}
+      {featured && (
+        <div style={{ 
+          position: 'fixed', // 🔥 FIXED = totally removed from flow
+          top: '200px', // 🔥 Position from top of viewport
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 15, 
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'center',
-          minHeight: '480px', // 🔥 SMALLER LOCKED HEIGHT
-          marginBottom: '40px' // 🔥 BUFFER ZONE - prevents cascade
+          width: '100%',
+          maxWidth: '1200px',
+          pointerEvents: 'none' // 🔥 Let clicks pass through container
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 20, 
+            marginBottom: 20,
+            pointerEvents: 'auto' // 🔥 But SPIN button is clickable
+          }}>
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
             <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#ffcc00', letterSpacing: 4 }}>// FEATURED</div>
@@ -6791,11 +6812,12 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
               onClick={() => setSelected(featured)}
               style={{
                 flexShrink: 0,
-                width: 200, // 🔥 SMALLER - was 280
+                width: 200,
                 cursor: 'zoom-in',
                 transform: `rotate(${featured.rotation * 0.3}deg)`,
                 animation: 'featuredPulse 4s ease-in-out infinite',
-                position: 'relative'
+                position: 'relative',
+                pointerEvents: 'auto' // 🔥 Poster is clickable
               }}
             >
               {/* 🔥 FIX #2: REMOVED MAGNETS - No more tape pieces */}
@@ -6806,7 +6828,7 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
               />
             </div>
 
-            <div style={{ flex: 1, paddingTop: 20 }}>
+            <div style={{ flex: 1, paddingTop: 20, pointerEvents: 'auto' }}>
               <div style={{
                 background: 'rgba(0,0,0,0.7)',
                 border: `1px solid ${hexToRgba(ACCENT, 0.4)}`,
