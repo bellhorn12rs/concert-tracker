@@ -6714,7 +6714,7 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
           mixBlendMode: 'screen'
         }} />
       </div>
-
+      
       {/* HEADER */}
       <div style={{ 
         position: 'relative', 
@@ -6751,15 +6751,17 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
         </div>
       </div>
 
-      {/* FEATURED POSTER - CONTAINER WITH FIXED HEIGHT */}
+      {/* FEATURED POSTER - SPACER (reserves space) */}
       {featured && (
         <div style={{ 
           position: 'relative',
           height: '480px',
           width: '100%',
           marginBottom: '40px'
-        }}>
-          {/* FEATURED POSTER - ABSOLUTELY POSITIONED INSIDE */}
+        }} />
+      )}
+
+      {/* FEATURED POSTER - ABSOLUTELY POSITIONED INSIDE */}
           <div style={{ 
             position: 'absolute',
             top: 0,
