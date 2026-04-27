@@ -6596,17 +6596,21 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
     return list;
   }, [posters, yearFilter, typeFilter]);
 
+  // 🔥 FIX #1: Layout only regenerates when filtered posters change, NOT when spinning
   const [layout, setLayout] = useState([]);
   useEffect(() => {
     setLayout(filtered.map((p) => ({
       ...p,
-      rotation: (Math.random() * 10) - 5,
+      rotation: (Math.random() * 16) - 8, // 🔥 Stronger rotation range
+      scale: 0.85 + (Math.random() * 0.3), // 🔥 Random sizes for chaos
+      depth: Math.random(), // 🔥 For shadow intensity
     })));
     setFeaturedIdx(Math.floor(Math.random() * Math.max(filtered.length, 1)));
   }, [filtered]);
 
   const featured = layout[featuredIdx] || null;
 
+  // 🔥 FIX #1: Spin only changes the index, doesn't regenerate layout
   const spinFeatured = () => {
     if (layout.length < 2) return;
     setFeaturedSpinning(true);
@@ -6679,51 +6683,45 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
     >
       <style>{`
         @keyframes posterDrop {
-          0% { opacity: 0; transform: translateY(-30px) rotate(var(--rot)); }
-          70% { opacity: 1; transform: translateY(3px) rotate(var(--rot)); }
-          100% { opacity: 1; transform: translateY(0) rotate(var(--rot)); }
+          0% { opacity: 0; transform: translateY(-30px) scale(var(--scale)) rotate(var(--rot)); }
+          70% { opacity: 1; transform: translateY(3px) scale(var(--scale)) rotate(var(--rot)); }
+          100% { opacity: 1; transform: translateY(0) scale(var(--scale)) rotate(var(--rot)); }
         }
         @keyframes featuredPulse {
-          0%, 100% { box-shadow: 0 0 40px rgba(255,102,153,0.3), 0 30px 80px rgba(0,0,0,0.9); }
-          50% { box-shadow: 0 0 80px rgba(255,102,153,0.5), 0 30px 80px rgba(0,0,0,0.9); }
+          0%, 100% { box-shadow: 0 0 50px rgba(255,102,153,0.4), 0 35px 90px rgba(0,0,0,0.9); }
+          50% { box-shadow: 0 0 90px rgba(255,102,153,0.6), 0 35px 90px rgba(0,0,0,0.9); }
         }
         .poster-card:hover { z-index: 100 !important; }
       `}</style>
 
-      {/* WALL LAYERS */}
+      {/* 🔥 FIX #3: BRIGHTENED BRICK WALL */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
         <div style={{
           position: 'absolute', inset: 0,
-          backgroundColor: '#1c110a',
+          backgroundColor: '#2a1810',
           backgroundImage: `url("https://www.transparenttextures.com/patterns/brick-wall.png")`,
           backgroundRepeat: 'repeat',
-          filter: 'brightness(0.45) contrast(1.2) sepia(0.5)',
+          filter: 'brightness(0.85) contrast(1.3) saturate(1.2)',
+          opacity: 0.6
         }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(13,9,5,0.3)' }} />
+        
+        {/* 🔥 FIX #4: STRONGER SPOTLIGHT */}
         <div style={{
           position: 'absolute', inset: 0,
-          backgroundImage: `url("https://www.transparenttextures.com/patterns/dark-brick-wall.png")`,
-          backgroundRepeat: 'repeat',
-          opacity: 0.3,
-          mixBlendMode: 'multiply'
+          background: `radial-gradient(ellipse 700px 600px at ${spotlight.x}% ${spotlight.y}%, rgba(255,200,100,0.25) 0%, rgba(255,150,60,0.15) 25%, rgba(255,102,153,0.08) 50%, transparent 75%)`,
+          transition: 'background 0.2s ease',
+          pointerEvents: 'none',
+          mixBlendMode: 'screen'
         }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(8,4,2,0.5)' }} />
+        
         <div style={{
-          position: 'absolute', inset: 0,
-          background: `radial-gradient(ellipse 600px 500px at ${spotlight.x}% ${spotlight.y}%, rgba(255,180,80,0.12) 0%, rgba(255,120,40,0.06) 30%, transparent 70%)`,
-          transition: 'background 0.15s ease',
-          pointerEvents: 'none'
-        }} />
-        <div style={{
-          position: 'absolute', top: 0, left: '10%', right: '10%', height: '50%',
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(255,160,60,0.1) 0%, transparent 60%)',
+          position: 'absolute', top: 0, left: '10%', right: '10%', height: '40%',
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(255,180,80,0.15) 0%, transparent 70%)',
         }} />
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, height: '35%',
-          background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)',
-        }} />
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'radial-gradient(ellipse 90% 80% at 50% 40%, transparent 40%, rgba(0,0,0,0.75) 100%)',
+          background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)',
         }} />
       </div>
 
@@ -6785,12 +6783,10 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
                 cursor: 'zoom-in',
                 transform: `rotate(${featured.rotation * 0.3}deg)`,
                 animation: 'featuredPulse 4s ease-in-out infinite',
-                boxShadow: '0 0 40px rgba(255,102,153,0.3), 0 30px 80px rgba(0,0,0,0.9)',
                 position: 'relative'
               }}
             >
-              <div style={{ position: 'absolute', top: 6, left: 14, width: 18, height: 7, background: '#aaa', borderRadius: 1, zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.3)' }} />
-              <div style={{ position: 'absolute', top: 6, right: 14, width: 18, height: 7, background: '#aaa', borderRadius: 1, zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.3)' }} />
+              {/* 🔥 FIX #2: REMOVED MAGNETS - No more tape pieces */}
               <img
                 src={featured.image_url}
                 alt={getLabel(featured)}
@@ -6871,13 +6867,13 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
       {layout.length > 1 && (
         <div style={{ position: 'relative', zIndex: 10, padding: '0 40px 30px' }}>
           <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${ACCENT}44, transparent)` }} />
-          <div style={{ textAlign: 'center', marginTop: 12, fontFamily: "'Space Mono'", fontSize: 7, color: '#444', letterSpacing: 4 }}>
+          <div style={{ textAlign: 'center', marginTop: 12, fontFamily: "'Space Mono'", fontSize: 7, color: '#666', letterSpacing: 4 }}>
             THE COLLECTION
           </div>
         </div>
       )}
 
-      {/* THE WALL */}
+      {/* 🔥 FIX #5: CHAOTIC MASONRY WALL WITH VARYING SIZES */}
       <div style={{
         position: 'relative', zIndex: 5,
         columnCount: 3,
@@ -6886,6 +6882,8 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
       }}>
         {layout.filter((_, i) => i !== featuredIdx).map((poster, idx) => {
           const wristband = getMatchedWristband(poster);
+          const shadowIntensity = poster.depth; // Closer = darker shadow
+          
           return (
             <div
               key={poster.id}
@@ -6897,22 +6895,21 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
                 marginBottom: '24px',
                 breakInside: 'avoid',
                 '--rot': `${poster.rotation}deg`,
-                transform: `rotate(${poster.rotation}deg)`,
+                '--scale': poster.scale,
+                transform: `rotate(${poster.rotation}deg) scale(${poster.scale})`,
                 animation: `posterDrop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) ${idx * 0.04}s both`,
                 cursor: 'zoom-in',
                 position: 'relative',
                 transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
               }}
               onMouseEnter={e => {
-                e.currentTarget.style.transform = `rotate(0deg) scale(1.05) translateY(-8px)`;
+                e.currentTarget.style.transform = `rotate(0deg) scale(${poster.scale * 1.08}) translateY(-8px)`;
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.transform = `rotate(${poster.rotation}deg)`;
+                e.currentTarget.style.transform = `rotate(${poster.rotation}deg) scale(${poster.scale})`;
               }}
             >
-              <div style={{ position: 'absolute', top: 5, left: 12, width: 14, height: 6, background: '#999', borderRadius: 1, zIndex: 10, boxShadow: '0 2px 5px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.25)' }} />
-              <div style={{ position: 'absolute', top: 5, right: 12, width: 14, height: 6, background: '#999', borderRadius: 1, zIndex: 10, boxShadow: '0 2px 5px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.25)' }} />
-
+              {/* 🔥 FIX #2: NO MAGNETS ON MOBILE */}
               <img
                 loading="lazy"
                 src={poster.image_url}
@@ -6921,7 +6918,7 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
                   display: 'block',
                   width: '100%',
                   height: 'auto',
-                  boxShadow: '0 20px 50px rgba(0,0,0,0.9), 0 4px 12px rgba(0,0,0,0.7)',
+                  boxShadow: `0 ${10 + shadowIntensity * 40}px ${30 + shadowIntensity * 70}px rgba(0,0,0,${0.7 + shadowIntensity * 0.3}), 0 4px 12px rgba(0,0,0,0.7)`,
                 }}
               />
 
