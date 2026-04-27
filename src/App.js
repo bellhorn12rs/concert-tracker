@@ -7881,6 +7881,8 @@ useEffect(() => {
       init();
     }
   }
+}, [session, authLoading, themeId, viewingUser]);
+
 // --- END OF REPAIRED SYSTEM BLOCK ---
 
 
@@ -9454,10 +9456,11 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
       </div>
     </ThemeContext.Provider>
   );
-} // <--- Properly closes the App component
+}
 
 // ── AUTHENTICATION COMPONENT (Defined ONCE) ──
 function LoginModal({ onClose }) {
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
