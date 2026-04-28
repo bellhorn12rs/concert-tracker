@@ -7368,152 +7368,142 @@ function PosterUploadModal({ concerts, onClose, onSaved }) {
 
 
 // ─── SHOWS TAB (COLLABORATIVE VIEW) ──────────────────────────────────────────
-// ─── SHOWS TAB (COLLABORATIVE VIEW) ──────────────────────────────────────────
 function ShowsTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchCollaborativeShows();
+    const fetch = async () => {
+      try {
+        // Step 1: Get all shows
+        const { data: allShows } = await supabase
+          .from('shows')
+          .select('*')
+          .order('date', { ascending: false })
+          .limit(200);
+        
+        if (!allShows) {
+          setLoading(false);
+          return;
+        }
+
+        // Step 2: For each show, get attendances separately
+        const showsWithAttendees = [];
+        for (const show of allShows) {
+          const { data: attendances } = await supabase
+            .from('attendances')
+            .select(`
+              id,
+              user_id,
+              profiles(username, avatar_color)
+            `)
+            .eq('show_id', show.id);
+          
+          if (attendances && attendances.length > 1) {
+            showsWithAttendees.push({
+              ...show,
+              attendances: attendances
+            });
+          }
+        }
+        
+        console.log('SHARED SHOWS FOUND:', showsWithAttendees.length);
+        setShows(showsWithAttendees);
+        setLoading(false);
+      } catch (err) {
+        console.error('ShowsTab error:', err);
+        setLoading(false);
+      }
+    };
+    fetch();
   }, []);
 
-  const fetchCollaborativeShows = async () => {
-    const { data } = await supabase
-      .from('shows')
-      .select(`
-        *,
-        attendances(
-          id,
-          user_id,
-          profile:profiles(username, avatar_color)
-        )
-      `)
-      .order('date', { ascending: false })
-      .limit(50);
-    
-    if (data) {
-      const collaborative = data.filter(s => s.attendances && s.attendances.length > 1);
-      setShows(collaborative);
-    }
-    setLoading(false);
-  };
-
-  if (loading) {
-    return (
-      <div style={{ padding: 100, textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, letterSpacing: 3 }}>
-          SCANNING FOR SHARED SIGNALS...
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div style={{ padding: 100, textAlign: 'center', color: C.teal }}>SCANNING...</div>;
 
   if (shows.length === 0) {
     return (
       <div style={{ padding: 100, textAlign: 'center' }}>
         <div style={{ fontSize: '3rem', marginBottom: 20 }}>🤝</div>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', letterSpacing: 3 }}>
-          NO SHARED SHOWS YET
-        </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginTop: 10, letterSpacing: 2 }}>
-          WHEN YOU AND ANOTHER CURATOR ATTEND THE SAME SHOW, IT APPEARS HERE
-        </div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff' }}>NO SHARED SHOWS</div>
       </div>
     );
   }
 
   return (
-    <div className="fade-in" style={{ padding: '24px 0' }}>
+    <div className="fade-in" style={{ padding: 24 }}>
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: '#fff', letterSpacing: 2 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: '#fff' }}>
           SHARED <span style={{ color: C.gold }}>SIGNALS</span>
         </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold, letterSpacing: 3 }}>
-          {shows.length} SHOWS WITH MULTIPLE ATTENDEES
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold }}>
+          {shows.length} SHOWS // MULTIPLE CURATORS
         </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        {shows.map(show => {
-          const attendeeCount = show.attendances?.length || 0;
-          const attendees = show.attendances || [];
-          
-          return (
-            <Card key={show.id} neon>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, marginBottom: 15 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', lineHeight: 1, marginBottom: 8 }}>
-                    {show.artist?.toUpperCase() || 'UNKNOWN'}
-                  </div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginBottom: 4 }}>
-                    {fmtDateShort(show.date)} · {show.venue?.toUpperCase()}
-                  </div>
-                  {show.city && (
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray }}>
-                      {show.city.toUpperCase()}, {show.state}
-                    </div>
-                  )}
+        {shows.map(show => (
+          <Card key={show.id} neon>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, marginBottom: 15 }}>
+              <div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', lineHeight: 1 }}>
+                  {show.artist?.toUpperCase()}
                 </div>
-
-                <div style={{ 
-                  background: hexToRgba(C.gold, 0.1), 
-                  border: `1px solid ${C.gold}`, 
-                  borderRadius: 8, 
-                  padding: '12px 16px',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, lineHeight: 1 }}>
-                    {attendeeCount}
-                  </div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold, letterSpacing: 2 }}>
-                    ATTENDEES
-                  </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginTop: 6 }}>
+                  {fmtDateShort(show.date)} · {show.venue?.toUpperCase()}
                 </div>
               </div>
-
               <div style={{ 
-                paddingTop: 15, 
-                borderTop: `1px solid ${C.border}`,
-                display: 'flex',
-                gap: 10,
-                flexWrap: 'wrap'
+                background: hexToRgba(C.gold, 0.1), 
+                border: `1px solid ${C.gold}`, 
+                borderRadius: 8, 
+                padding: '12px 20px',
+                textAlign: 'center'
               }}>
-                {attendees.map(att => (
-                  <div 
-                    key={att.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      background: hexToRgba(att.profile?.avatar_color || C.teal, 0.1),
-                      border: `1px solid ${att.profile?.avatar_color || C.teal}`,
-                      borderRadius: 6,
-                      padding: '6px 12px'
-                    }}
-                  >
-                    <div style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: '50%',
-                      background: att.profile?.avatar_color || C.teal,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontFamily: "'Bebas Neue'",
-                      fontSize: '0.8rem',
-                      color: '#000'
-                    }}>
-                      {att.profile?.username?.[0]?.toUpperCase() || '?'}
-                    </div>
-                    <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#fff' }}>
-                      {att.profile?.username || 'Unknown'}
-                    </span>
-                  </div>
-                ))}
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, lineHeight: 1 }}>
+                  {show.attendances?.length || 0}
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold }}>
+                  ATTENDEES
+                </div>
               </div>
-            </Card>
-          );
-        })}
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {show.attendances?.map(att => (
+                <div 
+                  key={att.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    background: hexToRgba(att.profiles?.avatar_color || C.teal, 0.1),
+                    border: `1px solid ${att.profiles?.avatar_color || C.teal}`,
+                    borderRadius: 6,
+                    padding: '8px 12px'
+                  }}
+                >
+                  <div style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    background: att.profiles?.avatar_color || C.teal,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: "'Bebas Neue'",
+                    fontSize: '1rem',
+                    color: '#000'
+                  }}>
+                    {att.profiles?.username?.[0]?.toUpperCase() || '?'}
+                  </div>
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: '#fff', fontWeight: 900 }}>
+                    {att.profiles?.username?.toUpperCase() || 'UNKNOWN'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ))}
       </div>
     </div>
   );
