@@ -8555,17 +8555,29 @@ async function fetchShowArtifacts(showId) {
   console.log('COLLABORATIVE:', attendances?.length);
   
   // Transform collaborative shows
-  const collaborativeShows = (attendances || []).map(a => ({
-    ...a.show,
-    id: a.show.id,
-    attendance_id: a.id,
-    is_collaborative: true,
-    user_id: targetId,
-    image_url: '',
-    personal_photo_url: '',
-    setlist_image_url: '',
-    wristband_image_url: ''
-  }));
+  // Fetch artifacts for this user
+  const { data: userArtifacts } = await supabase
+    .from('artifacts')
+    .select('*')
+    .eq('user_id', targetId);
+  
+  const collaborativeShows = (attendances || []).map(a => {
+    // Find this user's artifacts for this show
+    const showArtifacts = (userArtifacts || []).filter(art => art.show_id === a.show.id);
+    
+    return {
+      ...a.show,
+      id: a.show.id,
+      attendance_id: a.id,
+      is_collaborative: true,
+      user_id: targetId,
+      // Reconstruct comma-separated URLs from artifacts
+      image_url: showArtifacts.filter(art => art.artifact_type === 'stub').map(art => art.image_url).join(', '),
+      personal_photo_url: showArtifacts.filter(art => art.artifact_type === 'photo').map(art => art.image_url).join(', '),
+      setlist_image_url: showArtifacts.filter(art => art.artifact_type === 'relic').map(art => art.image_url).join(', '),
+      wristband_image_url: showArtifacts.find(art => art.artifact_type === 'wristband')?.image_url || ''
+    };
+  });
   
   // Merge
   const merged = [
