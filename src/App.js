@@ -8344,12 +8344,12 @@ async function fetchShowArtifacts(showId) {
   const targetId = viewingUser || session?.user?.id;
   if (!targetId) return;
   
-  // Fetch private concerts (old system - only unmigrated ones)
+  // Fetch private concerts (old system)
   const { data: privateConcerts } = await supabase
     .from('concerts')
     .select('*')
     .eq('user_id', targetId)
-    .eq('is_public', false)  // 🔥 ONLY get private concerts (unmigrated)
+    .eq('is_public', false)
     .order('date', { ascending: false });
   
   // Fetch collaborative attendances (new system)
