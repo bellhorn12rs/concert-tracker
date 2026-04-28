@@ -8349,7 +8349,7 @@ async function fetchShowArtifacts(showId) {
     .from('concerts')
     .select('*')
     .eq('user_id', targetId)
-    .eq('is_public', false)
+    .is('is_public', false)  // 🔥 Changed .eq to .is for stricter matching
     .order('date', { ascending: false });
   
   // Fetch collaborative attendances (new system)
