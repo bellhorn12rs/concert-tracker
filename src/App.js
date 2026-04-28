@@ -7366,6 +7366,8 @@ function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
   const [yearFilter, setYearFilter] = useState('all');
   const [festFilter, setFestFilter] = useState('all');
   const [items, setItems] = useState([]);
+ const ACCENT = '#ff6699'; // 🔥 Define the accent color
+
 
   // Build the pile from real images only
   const allItems = useMemo(() => {
