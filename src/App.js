@@ -8293,6 +8293,51 @@ const getCuratorTitle = (stats, concerts) => {
     alert('DATABASE REJECTED SAVE: ' + error.message);
   }
 };
+
+// ═══════════════════════════════════════════════════════════
+// COLLABORATIVE ARCHIVE FETCHERS (New System)
+// ═══════════════════════════════════════════════════════════
+
+async function fetchCollaborativeShows() {
+  const { data } = await supabase
+    .from('shows')
+    .select('*')
+    .order('date', { ascending: false });
+  return data || [];
+}
+
+async function fetchMyAttendances() {
+  const targetId = viewingUser || session?.user?.id;
+  if (!targetId) return [];
+  
+  const { data } = await supabase
+    .from('attendances')
+    .select(`
+      *,
+      show:shows(*)
+    `)
+    .eq('user_id', targetId)
+    .eq('is_public', true)
+    .order('date_added', { ascending: false });
+  
+  return data || [];
+}
+
+async function fetchShowArtifacts(showId) {
+  const { data } = await supabase
+    .from('artifacts')
+    .select(`
+      *,
+      profile:profiles(username, avatar_color)
+    `)
+    .eq('show_id', showId)
+    .eq('is_public', true);
+  
+  return data || [];
+}
+
+// ═══════════════════════════════════════════════════════════
+
   // ── 1. MAIN DATA FETCH (THE PIVOT)
   async function fetchConcerts() {
     const targetId = viewingUser || session?.user?.id;
