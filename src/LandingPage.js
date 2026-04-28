@@ -617,9 +617,9 @@ return txt + txt;
   >
     INITIALIZE ARCHIVE
   </button>
-  <button
+   <button
     onClick={() => {
-  if (currentSession) window.location.href = 'https://concert-tracker-eight.vercel.app';
+  if (currentSession) onEnterArchive();
   else setMode('login');
 }}
     style={{
