@@ -6393,6 +6393,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                 </div>
               </div>
 
+              {/* RIGHT COLUMN: ARTIFACTS */}
 {/* RIGHT COLUMN: ARTIFACTS */}
 <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
   <label style={labelStyle}>// PHYSICAL ARTIFACTS</label>
