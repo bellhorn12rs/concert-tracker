@@ -6393,23 +6393,44 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                 </div>
               </div>
 
-              {/* RIGHT COLUMN: ARTIFACTS */}
+{/* RIGHT COLUMN: ARTIFACTS */}
 <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
   <label style={labelStyle}>// PHYSICAL ARTIFACTS</label>
   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
     {[ 
-      {k:'image_url', l:'STUB', i:'🎟️', id:'e-stub', t:'TICKET'}, 
-      {k:'personal_photo_url', l:'PHOTO', i:'📸', id:'e-pic', t:'POLAROID'}, 
-      {k:'setlist_image_url', l:'SETLIST', i:'📋', id:'e-set', t:'SETLIST'}, 
-      ...(form.is_festival ? [{k:'wristband_image_url', l:'WRISTBAND', i:'🎫', id:'e-wrist', t:'WRISTBAND'}] : [])
-    ].map(item => (
-      <div key={item.k} onClick={() => document.getElementById(item.id).click()} style={{ background: form[item.k] ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${form[item.k] ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
-        <div style={{ fontSize: '1.2rem' }}>{form[item.k] ? '✅' : item.i}</div>
-        <div style={{ fontSize: 7, marginTop: 5, color: '#666' }}>{item.l}</div>
-        <input id={item.id} type="file" hidden onChange={async (e) => { const url = await uploadToArchive(e.target.files[0], item.t); if (url) set(item.k, url); }} />
-      </div>
-    ))}
-  </div>
+      {k:'image_url', l:'STUB', i:'🎟️', id:'e-stub', t:'TICKET', multi: true}, 
+      {k:'personal_photo_url', l:'PHOTO', i:'📸', id:'e-pic', t:'POLAROID', multi: true}, 
+      {k:'setlist_image_url', l:'RELIC', i:'🏺', id:'e-set', t:'SETLIST', multi: true}, 
+      ...(form.is_festival ? [{k:'wristband_image_url', l:'WRISTBAND', i:'🎫', id:'e-wrist', t:'WRISTBAND', multi: false}] : [])
+    ].map(item => {
+      const count = item.multi && form[item.k] ? form[item.k].split(',').filter(Boolean).length : 0;
+      const hasAny = form[item.k] && form[item.k] !== '';
+      
+      return (
+        <div key={item.k} onClick={() => document.getElementById(item.id).click()} style={{ background: hasAny ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${hasAny ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
+          <div style={{ fontSize: '1.2rem' }}>{hasAny ? '✅' : item.i}</div>
+          <div style={{ fontSize: 7, marginTop: 5, color: '#666' }}>{item.l}</div>
+          {item.multi && count > 0 && (
+            <div style={{ fontSize: 6, marginTop: 3, color: '#00cc88', fontFamily: "'Space Mono'" }}>
+              {count} UPLOADED
+            </div>
+          )}
+          <input 
+            id={item.id} 
+            type="file" 
+            multiple={item.multi}
+            hidden 
+            onChange={async (e) => { 
+              if (item.multi) {
+                // Handle multiple files
+                const files = Array.from(e.target.files);
+                const urls = [];
+                for (const file of files) {
+                  const url = await uploadToArchive(file, item.t);
+                  if (url) urls.push(url);
+                }
+                if (urls.length > 0) {
+                  const existin
 
   {/* 🎨 DIRECT POSTER PINNING */}
   <div style={{ marginTop: 10 }}>
@@ -8191,7 +8212,7 @@ const getCuratorTitle = (stats, concerts) => {
     // 1. Update the URL to the user's museum path
     window.location.hash = `#/u/${targetUsername}`;
     
-    // 2. Set active tab to dashboard when entering someone's museum
+    // 2. Force navigation to dashboard
     setActiveTab('dashboard');
     
     // 3. 🟢 THE FORCE: Tell React to look at the URL immediately
