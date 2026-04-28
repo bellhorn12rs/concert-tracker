@@ -6431,7 +6431,20 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                   if (url) urls.push(url);
                 }
                 if (urls.length > 0) {
-                  const existin
+                  const existing = form[item.k] ? form[item.k].split(',').map(s => s.trim()).filter(Boolean) : [];
+                  set(item.k, [...existing, ...urls].join(', '));
+                }
+              } else {
+                // Single file (wristband)
+                const url = await uploadToArchive(e.target.files[0], item.t);
+                if (url) set(item.k, url);
+              }
+            }} 
+          />
+        </div>
+      );
+    })}
+  </div>
 
   {/* 🎨 DIRECT POSTER PINNING */}
   <div style={{ marginTop: 10 }}>
