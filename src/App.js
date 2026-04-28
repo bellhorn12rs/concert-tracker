@@ -8344,13 +8344,15 @@ async function fetchShowArtifacts(showId) {
   const targetId = viewingUser || session?.user?.id;
   if (!targetId) return;
   
-  // Fetch private concerts (old system)
+  // Fetch private concerts ONLY (migrated ones are marked false)
   const { data: privateConcerts } = await supabase
     .from('concerts')
     .select('*')
     .eq('user_id', targetId)
-    .is('is_public', false)  // 🔥 Changed .eq to .is for stricter matching
+    .eq('is_public', false)
     .order('date', { ascending: false });
+  
+  console.log('PRIVATE CONCERTS:', privateConcerts?.length);
   
   // Fetch collaborative attendances (new system)
   const { data: attendances } = await supabase
@@ -8362,21 +8364,22 @@ async function fetchShowArtifacts(showId) {
     .eq('user_id', targetId)
     .eq('is_public', true);
   
-  // Transform collaborative shows to match old concert structure
+  console.log('COLLABORATIVE:', attendances?.length);
+  
+  // Transform collaborative shows
   const collaborativeShows = (attendances || []).map(a => ({
     ...a.show,
-    id: a.show.id, // Use show ID
-    attendance_id: a.id, // Keep attendance ID for reference
-    is_collaborative: true, // Flag so we know which system it came from
-    user_id: targetId, // For compatibility with existing code
-    // These might not exist in new structure yet, set defaults:
+    id: a.show.id,
+    attendance_id: a.id,
+    is_collaborative: true,
+    user_id: targetId,
     image_url: '',
     personal_photo_url: '',
     setlist_image_url: '',
     wristband_image_url: ''
   }));
   
-  // Merge both systems
+  // Merge
   const merged = [
     ...(privateConcerts || []),
     ...collaborativeShows
@@ -8390,8 +8393,7 @@ async function fetchShowArtifacts(showId) {
   
   if (merged) setConcerts(merged);
   
-  // 📡 AUTO-SYNC STATS TO PROFILE
-  // If the logged-in user is looking at their OWN archive, push the counts to their profile
+  // Update profile stats
   if (!viewingUser && session?.user?.id && merged) {
     const totalSets = merged.reduce((acc, c) => acc + (Array.isArray(c.bands) ? c.bands.length : 1), 0);
     const totalVenues = new Set(merged.map(c => c.venue).filter(Boolean)).size;
@@ -8404,7 +8406,6 @@ async function fetchShowArtifacts(showId) {
     }).eq('id', session.user.id);
   }
 }
-
 async function fetchPosters() {
   const targetId = viewingUser || session?.user?.id;
   if (!targetId) return;
