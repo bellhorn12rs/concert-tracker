@@ -8191,8 +8191,10 @@ const getCuratorTitle = (stats, concerts) => {
     // 1. Update the URL to the user's museum path
     window.location.hash = `#/u/${targetUsername}`;
     
-    // 2. 🟢 THE FORCE: Tell React to look at the URL immediately
-    // This ensures the App re-runs its "Gate" checks
+    // 2. Set active tab to dashboard when entering someone's museum
+    setActiveTab('dashboard');
+    
+    // 3. 🟢 THE FORCE: Tell React to look at the URL immediately
     window.dispatchEvent(new HashChangeEvent('hashchange'));
   };
 
@@ -8859,6 +8861,35 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
       gap: 10
     }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
+        {viewingUser && (
+          <button 
+            onClick={() => {
+              window.location.hash = '';
+              setViewingUser(null);
+              setActiveTab('dashboard');
+              window.dispatchEvent(new HashChangeEvent('hashchange'));
+            }}
+            style={{
+              background: C.gold,
+              border: 'none',
+              color: '#000',
+              borderRadius: '4px',
+              padding: '6px 14px',
+              fontFamily: "'Space Mono'",
+              fontSize: '10px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontWeight: 900,
+              letterSpacing: '1px',
+              animation: 'pulse 2s ease-in-out infinite',
+              boxShadow: `0 0 20px ${C.gold}66`
+            }}
+          >
+            <span style={{ fontSize: '12px' }}>🏠</span> GO HOME
+          </button>
+        )}
         <button onClick={() => setActiveTab('community')} style={navBtnStyle(activeTab === 'community', C.purple)}>
           <span>🚉</span> THE STATION
         </button>
