@@ -7456,33 +7456,37 @@ function ShowsTab() {
         <Card key={show.id} neon style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, marginBottom: 15 }}>
             <div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', lineHeight: 1 }}>
-                {show.artist?.toUpperCase()}
-              </div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginTop: 6 }}>
-                {fmtDateShort(show.date)} · {show.venue?.toUpperCase()}
-              </div>
-              {show.city && (
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginTop: 3 }}>
-                  {show.city.toUpperCase()}, {show.state}
-                </div>
+              {show.is_festival ? (
+                <>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.gold, lineHeight: 1 }}>
+                    {show.festival_name?.toUpperCase()}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginTop: 6 }}>
+                    {fmtDateShort(show.date)}
+                    {show.festival_day && ` · ${show.festival_day.toUpperCase()}`}
+                  </div>
+                  {show.venue && (
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginTop: 3 }}>
+                      {show.venue.toUpperCase()}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', lineHeight: 1 }}>
+                    {show.artist?.toUpperCase()}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginTop: 6 }}>
+                    {fmtDateShort(show.date)} · {show.venue?.toUpperCase()}
+                  </div>
+                  {show.city && (
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginTop: 3 }}>
+                      {show.city.toUpperCase()}, {show.state}
+                    </div>
+                  )}
+                </>
               )}
             </div>
-            <div style={{ 
-              background: hexToRgba(C.gold, 0.1), 
-              border: `1px solid ${C.gold}`, 
-              borderRadius: 8, 
-              padding: '12px 20px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, lineHeight: 1 }}>
-                {show.attendances?.length}
-              </div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold }}>
-                CURATORS
-              </div>
-            </div>
-          </div>
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {show.attendances?.map(att => (
