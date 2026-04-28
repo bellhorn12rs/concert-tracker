@@ -6051,6 +6051,7 @@ const TAB_GROUPS = [
     header: "COMMUNITY",
     tabs: [
       ['community', '🚉 THE STATION', '#9966ff'],
+      ['shows', '🤝 SHARED SHOWS', '#ffcc00'],
       ['poster', '🎨 GIG POSTER', '#ff6699'],
     ]
   },
@@ -7358,6 +7359,155 @@ function PosterUploadModal({ concerts, onClose, onSaved }) {
   );
 }
 
+
+// ─── SHOWS TAB (COLLABORATIVE VIEW) ──────────────────────────────────────────
+function ShowsTab() {
+  const [shows, setShows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedShow, setSelectedShow] = useState(null);
+
+  useEffect(() => {
+    fetchCollaborativeShows();
+  }, []);
+
+  const fetchCollaborativeShows = async () => {
+    // Get all shows with their attendances
+    const { data } = await supabase
+      .from('shows')
+      .select(`
+        *,
+        attendances(
+          id,
+          user_id,
+          profile:profiles(username, avatar_color)
+        )
+      `)
+      .order('date', { ascending: false });
+    
+    if (data) {
+      // Only show multi-attendee shows
+      const collaborative = data.filter(s => s.attendances && s.attendances.length > 1);
+      setShows(collaborative);
+    }
+    setLoading(false);
+  };
+
+  if (loading) return <div style={{ padding: 100, textAlign: 'center', color: C.teal }}>LOADING COLLABORATIVE SHOWS...</div>;
+
+  if (shows.length === 0) {
+    return (
+      <div style={{ padding: 100, textAlign: 'center' }}>
+        <div style={{ fontSize: '3rem', marginBottom: 20 }}>🤝</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff' }}>NO SHARED SHOWS YET</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginTop: 10 }}>
+          WHEN YOU AND ANOTHER CURATOR ATTEND THE SAME SHOW, IT APPEARS HERE
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fade-in" style={{ padding: '24px 0' }}>
+      <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: '#fff', letterSpacing: 2 }}>
+          SHARED <span style={{ color: C.gold }}>SIGNALS</span>
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold, letterSpacing: 3 }}>
+          {shows.length} SHOWS WITH MULTIPLE ATTENDEES
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {shows.map(show => {
+          const attendeeCount = show.attendances?.length || 0;
+          const attendees = show.attendances || [];
+          
+          return (
+            <Card 
+              key={show.id} 
+              neon 
+              onClick={() => setSelectedShow(show)}
+              style={{ cursor: 'pointer' }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', lineHeight: 1, marginBottom: 8 }}>
+                    {show.artist?.toUpperCase() || 'UNKNOWN'}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginBottom: 4 }}>
+                    {fmtDateShort(show.date)} · {show.venue?.toUpperCase()}
+                  </div>
+                  {show.city && (
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray }}>
+                      {show.city.toUpperCase()}, {show.state}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ 
+                  background: hexToRgba(C.gold, 0.1), 
+                  border: `1px solid ${C.gold}`, 
+                  borderRadius: 8, 
+                  padding: '12px 16px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, lineHeight: 1 }}>
+                    {attendeeCount}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold, letterSpacing: 2 }}>
+                    ATTENDEES
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ 
+                marginTop: 15, 
+                paddingTop: 15, 
+                borderTop: `1px solid ${C.border}`,
+                display: 'flex',
+                gap: 10,
+                flexWrap: 'wrap'
+              }}>
+                {attendees.map(att => (
+                  <div 
+                    key={att.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      background: hexToRgba(att.profile?.avatar_color || C.teal, 0.1),
+                      border: `1px solid ${att.profile?.avatar_color || C.teal}`,
+                      borderRadius: 6,
+                      padding: '6px 12px'
+                    }}
+                  >
+                    <div style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      background: att.profile?.avatar_color || C.teal,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontFamily: "'Bebas Neue'",
+                      fontSize: '0.8rem',
+                      color: '#000'
+                    }}>
+                      {att.profile?.username?.[0]?.toUpperCase() || '?'}
+                    </div>
+                    <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#fff' }}>
+                      {att.profile?.username || 'Unknown'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 // ─── STUB CASE TAB ────────────────────────────────────────────────────────────
 function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
@@ -9541,6 +9691,9 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
   {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
   
   {activeTab === 'photos' && <PhotoVaultTab concerts={concerts} />}
+
+  {activeTab === 'shows' && <ShowsTab />}
+
 
   {activeTab === 'stubs' && (
   <StubCaseTab 
