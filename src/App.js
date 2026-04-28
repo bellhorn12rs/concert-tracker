@@ -3032,7 +3032,7 @@ function SetlistVaultTab({ concerts, genreMap }) {
       
       const bands = c.has_setlist_names.split(',').map(b => b.trim()).filter(Boolean);
       const rawImages = c.setlist_image_url || c.image_url || '';
-      const images = rawImages.split(',').map(img => img.trim()).filter(Boolean);
+      const images = rawImages ? rawImages.split(',').map(img => img.trim()).filter(Boolean) : [];
       
       bands.forEach((band, idx) => {
         const img = images[idx] || (images.length === 1 ? images[0] : null);
