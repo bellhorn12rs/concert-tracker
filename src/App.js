@@ -7361,17 +7361,16 @@ function PosterUploadModal({ concerts, onClose, onSaved }) {
 
 
 // ─── SHOWS TAB (COLLABORATIVE VIEW) ──────────────────────────────────────────
+// ─── SHOWS TAB (COLLABORATIVE VIEW) ──────────────────────────────────────────
 function ShowsTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedShow, setSelectedShow] = useState(null);
 
   useEffect(() => {
     fetchCollaborativeShows();
   }, []);
 
   const fetchCollaborativeShows = async () => {
-    // Get all shows with their attendances
     const { data } = await supabase
       .from('shows')
       .select(`
@@ -7382,24 +7381,34 @@ function ShowsTab() {
           profile:profiles(username, avatar_color)
         )
       `)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .limit(50);
     
     if (data) {
-      // Only show multi-attendee shows
       const collaborative = data.filter(s => s.attendances && s.attendances.length > 1);
       setShows(collaborative);
     }
     setLoading(false);
   };
 
-  if (loading) return <div style={{ padding: 100, textAlign: 'center', color: C.teal }}>LOADING COLLABORATIVE SHOWS...</div>;
+  if (loading) {
+    return (
+      <div style={{ padding: 100, textAlign: 'center' }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, letterSpacing: 3 }}>
+          SCANNING FOR SHARED SIGNALS...
+        </div>
+      </div>
+    );
+  }
 
   if (shows.length === 0) {
     return (
       <div style={{ padding: 100, textAlign: 'center' }}>
         <div style={{ fontSize: '3rem', marginBottom: 20 }}>🤝</div>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff' }}>NO SHARED SHOWS YET</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginTop: 10 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', letterSpacing: 3 }}>
+          NO SHARED SHOWS YET
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginTop: 10, letterSpacing: 2 }}>
           WHEN YOU AND ANOTHER CURATOR ATTEND THE SAME SHOW, IT APPEARS HERE
         </div>
       </div>
@@ -7423,13 +7432,8 @@ function ShowsTab() {
           const attendees = show.attendances || [];
           
           return (
-            <Card 
-              key={show.id} 
-              neon 
-              onClick={() => setSelectedShow(show)}
-              style={{ cursor: 'pointer' }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20 }}>
+            <Card key={show.id} neon>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, marginBottom: 15 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', lineHeight: 1, marginBottom: 8 }}>
                     {show.artist?.toUpperCase() || 'UNKNOWN'}
@@ -7461,7 +7465,6 @@ function ShowsTab() {
               </div>
 
               <div style={{ 
-                marginTop: 15, 
                 paddingTop: 15, 
                 borderTop: `1px solid ${C.border}`,
                 display: 'flex',
