@@ -8463,15 +8463,12 @@ async function fetchPosters() {
 
   // ── 2. MODIFICATION HANDLERS (ADMIN ONLY) ──
 async function handleDelete(id) {
-  // 🛡️ SECURITY: Don't let someone delete while viewing another museum
   if (viewingUser) return; 
-  
   if (!id || id === 'new') {
     setEditTarget(null);
     return;
   }
 
-  // 🟢 THE FIX: High-Intensity Safety Rail
   const warningMsg = 
     "⚠️ CRITICAL SYSTEM WARNING\n\n" +
     "YOU ARE ABOUT TO PERMANENTLY ERASE THIS SIGNAL FROM THE ARCHIVE.\n" +
@@ -8480,26 +8477,41 @@ async function handleDelete(id) {
 
   if (window.confirm(warningMsg)) {
     try {
-      // Add a small console log for debugging during the beta
-      console.log(`%c PURGING SIGNAL: ${id}`, "color: #ff4466; font-weight: bold;");
+      console.log(`PURGING SIGNAL: ${id}`);
 
-      const { error } = await supabase
-        .from('concerts')
-        .delete()
-        .eq('id', id);
+      // Check if this is a collaborative show (from shows table)
+      const concert = concerts.find(c => c.id === id);
+      
+      if (concert?.is_collaborative) {
+        // Delete from collaborative tables
+        // First delete your attendance (this will cascade delete your artifacts)
+        await supabase
+          .from('attendances')
+          .delete()
+          .eq('user_id', session.user.id)
+          .eq('show_id', id);
+        
+        // Check if anyone else attended this show
+        const { data: otherAttendees } = await supabase
+          .from('attendances')
+          .select('id')
+          .eq('show_id', id);
+        
+        // If you were the only one, delete the show itself
+        if (!otherAttendees || otherAttendees.length === 0) {
+          await supabase.from('shows').delete().eq('id', id);
+        }
+      } else {
+        // Old system - delete from concerts table
+        await supabase.from('concerts').delete().eq('id', id);
+      }
 
-      if (error) throw error;
-
-      // 🟢 SUCCESS FEEDBACK: Refresh the museum floor
       await fetchConcerts();
       setEditTarget(null);
-      
-      // Optional: A non-intrusive confirmation log
-      console.log("✅ SIGNAL SUCCESSFULLY PURGED.");
+      console.log("✅ SIGNAL PURGED");
       
     } catch (err) {
       console.error("Delete Error:", err);
-      // Give them a technical readout if it fails
       alert(`SYSTEM ERROR: PURGE FAILED // ${err.message.toUpperCase()}`);
     }
   }
