@@ -3027,7 +3027,8 @@ function SetlistVaultTab({ concerts, genreMap }) {
   const setlists = useMemo(() => {
     const results = [];
     concerts.forEach(c => {
-      if (!c || !c.has_setlist_names?.trim()) return;
+      // Check if concert has relic URLs (migrated data)
+      if (!c || (!c.has_setlist_names?.trim() && !c.setlist_image_url)) return;
       
       const bands = c.has_setlist_names.split(',').map(b => b.trim()).filter(Boolean);
       const rawImages = c.setlist_image_url || c.image_url || '';
