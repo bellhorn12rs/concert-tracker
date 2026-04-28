@@ -1563,7 +1563,14 @@ function ArtifactSpotlight({ concerts, posters = [], onVault }) {
   // Initial Spin
   useEffect(() => { if (pool.length && !leftItems.length) spin(); }, [pool.length]);
 
-  if (!pool.length) return <EmptyArtifacts onVault={onVault} />;
+  if (!pool.length) return (
+    <div style={{ padding: 40, textAlign: 'center' }}>
+      <div style={{ fontSize: '2rem', marginBottom: 10, opacity: 0.3 }}>📦</div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim }}>
+        NO ARTIFACTS TO SPOTLIGHT
+      </div>
+    </div>
+  );
 
   return (
     <div style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }} onClick={onVault}>
