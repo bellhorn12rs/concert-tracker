@@ -8338,7 +8338,7 @@ async function fetchShowArtifacts(showId) {
   return data || [];
 }
 
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 
   async function fetchConcerts() {
   const targetId = viewingUser || session?.user?.id;
