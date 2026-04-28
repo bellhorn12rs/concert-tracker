@@ -8386,23 +8386,21 @@ async function fetchShowArtifacts(showId) {
   });
   
   if (merged) setConcerts(merged);
-}
+  
+  // 📡 AUTO-SYNC STATS TO PROFILE
+  // If the logged-in user is looking at their OWN archive, push the counts to their profile
+  if (!viewingUser && session?.user?.id && merged) {
+    const totalSets = merged.reduce((acc, c) => acc + (Array.isArray(c.bands) ? c.bands.length : 1), 0);
+    const totalVenues = new Set(merged.map(c => c.venue).filter(Boolean)).size;
 
-      // 📡 AUTO-SYNC STATS TO PROFILE
-      // If the logged-in user is looking at their OWN archive, push the counts to their profile
-      if (!viewingUser && session?.user?.id) {
-        const totalSets = data.reduce((acc, c) => acc + (Array.isArray(c.bands) ? c.bands.length : 1), 0);
-        const totalVenues = new Set(data.map(c => c.venue).filter(Boolean)).size;
-
-        await supabase.from('profiles').update({
-          total_shows: data.length,
-          total_sets: totalSets,
-          total_venues: totalVenues,
-          last_seen: new Date().toISOString()
-        }).eq('id', session.user.id);
-      }
-    }
+    await supabase.from('profiles').update({
+      total_shows: merged.length,
+      total_sets: totalSets,
+      total_venues: totalVenues,
+      last_seen: new Date().toISOString()
+    }).eq('id', session.user.id);
   }
+}
 
 async function fetchPosters() {
   const targetId = viewingUser || session?.user?.id;
