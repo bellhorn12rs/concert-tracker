@@ -7375,7 +7375,7 @@ function ShowsTab() {
   useEffect(() => {
     const fetch = async () => {
       try {
-        // Step 1: Get all shows
+        // Get all shows
         const { data: allShows } = await supabase
           .from('shows')
           .select('*')
@@ -7387,31 +7387,43 @@ function ShowsTab() {
           return;
         }
 
-        // Step 2: For each show, get attendances separately
-        const showsWithAttendees = [];
-        for (const show of allShows) {
-          const { data: attendances } = await supabase
-            .from('attendances')
-            .select(`
-              id,
-              user_id,
-              profiles(username, avatar_color)
-            `)
-            .eq('show_id', show.id);
+        // Get all attendances
+        const { data: allAttendances } = await supabase
+          .from('attendances')
+          .select('*');
+        
+        // Get all profiles
+        const { data: allProfiles } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_color');
+        
+        // Map profiles by ID
+        const profileMap = {};
+        (allProfiles || []).forEach(p => {
+          profileMap[p.id] = p;
+        });
+        
+        // Build shows with their attendees
+        const result = [];
+        allShows.forEach(show => {
+          const attendances = (allAttendances || []).filter(a => a.show_id === show.id);
           
-          if (attendances && attendances.length > 1) {
-            showsWithAttendees.push({
+          if (attendances.length > 1) {
+            result.push({
               ...show,
-              attendances: attendances
+              attendances: attendances.map(a => ({
+                ...a,
+                profile: profileMap[a.user_id] || { username: 'Unknown', avatar_color: C.gray }
+              }))
             });
           }
-        }
+        });
         
-        console.log('SHARED SHOWS FOUND:', showsWithAttendees.length);
-        setShows(showsWithAttendees);
+        console.log('SHARED SHOWS:', result.length);
+        setShows(result);
         setLoading(false);
       } catch (err) {
-        console.error('ShowsTab error:', err);
+        console.error('Error:', err);
         setLoading(false);
       }
     };
@@ -7435,76 +7447,79 @@ function ShowsTab() {
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: '#fff' }}>
           SHARED <span style={{ color: C.gold }}>SIGNALS</span>
         </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold }}>
-          {shows.length} SHOWS // MULTIPLE CURATORS
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold, letterSpacing: 3 }}>
+          {shows.length} COLLABORATIVE SHOWS
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        {shows.map(show => (
-          <Card key={show.id} neon>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, marginBottom: 15 }}>
-              <div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', lineHeight: 1 }}>
-                  {show.artist?.toUpperCase()}
-                </div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginTop: 6 }}>
-                  {fmtDateShort(show.date)} · {show.venue?.toUpperCase()}
-                </div>
+      {shows.slice(0, 20).map(show => (
+        <Card key={show.id} neon style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, marginBottom: 15 }}>
+            <div>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', lineHeight: 1 }}>
+                {show.artist?.toUpperCase()}
               </div>
-              <div style={{ 
-                background: hexToRgba(C.gold, 0.1), 
-                border: `1px solid ${C.gold}`, 
-                borderRadius: 8, 
-                padding: '12px 20px',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, lineHeight: 1 }}>
-                  {show.attendances?.length || 0}
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginTop: 6 }}>
+                {fmtDateShort(show.date)} · {show.venue?.toUpperCase()}
+              </div>
+              {show.city && (
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginTop: 3 }}>
+                  {show.city.toUpperCase()}, {show.state}
                 </div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold }}>
-                  ATTENDEES
-                </div>
+              )}
+            </div>
+            <div style={{ 
+              background: hexToRgba(C.gold, 0.1), 
+              border: `1px solid ${C.gold}`, 
+              borderRadius: 8, 
+              padding: '12px 20px',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, lineHeight: 1 }}>
+                {show.attendances?.length}
+              </div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold }}>
+                CURATORS
               </div>
             </div>
+          </div>
 
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {show.attendances?.map(att => (
-                <div 
-                  key={att.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    background: hexToRgba(att.profiles?.avatar_color || C.teal, 0.1),
-                    border: `1px solid ${att.profiles?.avatar_color || C.teal}`,
-                    borderRadius: 6,
-                    padding: '8px 12px'
-                  }}
-                >
-                  <div style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    background: att.profiles?.avatar_color || C.teal,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: "'Bebas Neue'",
-                    fontSize: '1rem',
-                    color: '#000'
-                  }}>
-                    {att.profiles?.username?.[0]?.toUpperCase() || '?'}
-                  </div>
-                  <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: '#fff', fontWeight: 900 }}>
-                    {att.profiles?.username?.toUpperCase() || 'UNKNOWN'}
-                  </span>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {show.attendances?.map(att => (
+              <div 
+                key={att.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  background: hexToRgba(att.profile.avatar_color, 0.1),
+                  border: `1px solid ${att.profile.avatar_color}`,
+                  borderRadius: 6,
+                  padding: '8px 12px'
+                }}
+              >
+                <div style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: '50%',
+                  background: att.profile.avatar_color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: "'Bebas Neue'",
+                  fontSize: '1rem',
+                  color: '#000'
+                }}>
+                  {att.profile.username[0].toUpperCase()}
                 </div>
-              ))}
-            </div>
-          </Card>
-        ))}
-      </div>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: '#fff', fontWeight: 900 }}>
+                  {att.profile.username.toUpperCase()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ))}
     </div>
   );
 }
