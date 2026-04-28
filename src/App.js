@@ -8340,19 +8340,13 @@ async function fetchShowArtifacts(showId) {
 
 // ═══════════════════════════════════════════════════════
 
-  async function fetchConcerts() {
+ async function fetchConcerts() {
   const targetId = viewingUser || session?.user?.id;
   if (!targetId) return;
   
-  // Fetch private concerts ONLY (migrated ones are marked false)
-  const { data: privateConcerts } = await supabase
-    .from('concerts')
-    .select('*')
-    .eq('user_id', targetId)
-    .eq('is_public', false)
-    .order('date', { ascending: false });
-  
-  console.log('PRIVATE CONCERTS:', privateConcerts?.length);
+  // 🔥 TEMPORARILY DISABLED - Testing collaborative only
+  const privateConcerts = [];
+  console.log('PRIVATE CONCERTS: 0 (disabled for testing)');
   
   // Fetch collaborative attendances (new system)
   const { data: attendances } = await supabase
