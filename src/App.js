@@ -3000,37 +3000,32 @@ const parseMedia = (val) => {
   if (Array.isArray(val)) return val;
   return val.split(',').map(u => u.trim()).filter(Boolean);
 };
-// ─── 2. SETLIST VAULT (FULL-IMAGE & BULLSEYE SEARCH) ────────────────────────
 function SetlistVaultTab({ concerts, genreMap }) {
-  // 1. CRITICAL SAFETY CHECK: Prevent crash if data is missing/loading
   if (!concerts || !Array.isArray(concerts)) {
     return (
-      // Inside SetlistVaultTab, find the image container
-<div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-  {parseMedia(c.setlist_image_url).map((url, idx) => (
-    <img 
-      key={idx}
-      src={url} 
-      alt="Setlist" 
-      style={{ 
-        maxWidth: '100%', 
-        height: 'auto', 
-        border: `1px solid ${C.border}`,
-        filter: 'grayscale(1) contrast(1.2)' // Keeps that "Stage Artifact" vibe
-      }} 
-    />
-  ))}
-</div>
+      <div style={{ padding: 100, textAlign: 'center' }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray }}>
+          LOADING...
+        </div>
+      </div>
     );
   }
 
   const setlists = useMemo(() => {
     const results = [];
     concerts.forEach(c => {
-      // Check if concert has relic URLs (migrated data)
-      if (!c || (!c.has_setlist_names?.trim() && !c.setlist_image_url)) return;
+      if (!c) return;
       
-      const bands = c.has_setlist_names.split(',').map(b => b.trim()).filter(Boolean);
+      // Check if concert has relics
+      const hasRelicImages = c.setlist_image_url && c.setlist_image_url.trim();
+      const hasSetlistNames = c.has_setlist_names && c.has_setlist_names.trim();
+      
+      if (!hasRelicImages && !hasSetlistNames) return;
+      
+      const bands = hasSetlistNames 
+        ? c.has_setlist_names.split(',').map(b => b.trim()).filter(Boolean)
+        : [c.artist || (c.bands?.[0]?.name || c.bands?.[0]) || 'Unknown'];
+      
       const rawImages = c.setlist_image_url || c.image_url || '';
       const images = rawImages ? rawImages.split(',').map(img => img.trim()).filter(Boolean) : [];
       
@@ -3045,20 +3040,18 @@ function SetlistVaultTab({ concerts, genreMap }) {
         });
       });
     });
-    // Sort by date (descending)
     return results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }, [concerts]);
 
-  // 2. EMPTY STATE
   if (setlists.length === 0) {
     return (
       <div style={{ padding: '120px 0', textAlign: 'center' }}>
-        <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📁</div>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.white || '#fff', letterSpacing: '2px' }}>
-          VAULT EMPTY
+        <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🏺</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.white, letterSpacing: '2px' }}>
+          RELIC VAULT EMPTY
         </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray || '#8899aa', marginTop: '10px' }}>
-          ARCHIVE EMPTY // AWAITING SIGNAL
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: '10px' }}>
+          UPLOAD SETLISTS, DRUMSTICKS, PASSES TO BEGIN
         </div>
       </div>
     );
@@ -3066,23 +3059,18 @@ function SetlistVaultTab({ concerts, genreMap }) {
 
   return (
     <div style={{ padding: '40px 0' }} className="fade-in">
-      {/* HEADER */}
       <div style={{ textAlign: 'center', marginBottom: 60 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: C.white || '#fff', lineHeight: 1 }}>
-          SETLIST <span style={{ color: C.gold || '#ffcc00' }}>VAULT</span>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4.5rem', color: C.white, lineHeight: 1 }}>
+          RELIC <span style={{ color: C.gold }}>VAULT</span>
         </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray || '#8899aa', marginTop: 15, letterSpacing: '4px', fontWeight: 900 }}>
-          {setlists.length} ARTIFACTS ARCHIVED // LIVE SIGNAL DETECTED
+        <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: 15, letterSpacing: '4px', fontWeight: 900 }}>
+          {setlists.length} ARTIFACTS ARCHIVED
         </div>
       </div>
 
-      {/* GRID */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '60px', alignItems: 'start' }}>
         {setlists.map((s, i) => {
-          // Dynamic rotations for the "scattered paper" look
           const rotation = (i % 2 === 0 ? 1 : -1) * (i % 3 + 1);
-          
-          // Bulletproof search URL construction
           const [yr, mo, dy] = (s.date || '2026-01-01').split('-');
           const searchUrl = `https://www.setlist.fm/search?query=${encodeURIComponent(`${s.band} ${mo}/${dy}/${yr}`)}`;
 
@@ -3102,7 +3090,6 @@ function SetlistVaultTab({ concerts, genreMap }) {
               e.currentTarget.style.zIndex = 1;
             }}
             >
-              {/* 📄 THE PAPER CONTAINER */}
               <div style={{ 
                 background: '#fdfdfd', 
                 padding: '12px', 
@@ -3111,8 +3098,6 @@ function SetlistVaultTab({ concerts, genreMap }) {
                 border: '1px solid #e0e0e0',
                 display: 'block',
               }}>
-                
-                {/* Visual "Blue Painter's Tape" */}
                 <div style={{ 
                   position: 'absolute', top: -12, left: '35%', width: '30%', height: '22px', 
                   background: 'rgba(0, 110, 255, 0.3)', backdropFilter: 'blur(1px)', 
@@ -3120,7 +3105,6 @@ function SetlistVaultTab({ concerts, genreMap }) {
                   boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                 }} />
                 
-                {/* High-Contrast Artist Header */}
                 <div style={{ 
                   padding: '14px 6px', textAlign: 'center', background: '#111', 
                   color: '#fff', fontFamily: "'Bebas Neue'", fontSize: '1.8rem', 
@@ -3129,7 +3113,6 @@ function SetlistVaultTab({ concerts, genreMap }) {
                   {s.band.toUpperCase()}
                 </div>
 
-                {/* IMAGE AREA */}
                 {s.image_url ? (
                   <div style={{ 
                     width: '100%', 
@@ -3158,10 +3141,9 @@ function SetlistVaultTab({ concerts, genreMap }) {
                   </div>
                 )}
 
-                {/* Footer Metadata */}
                 <div style={{ padding: '18px 10px 8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid #eee', marginTop: 5 }}>
                   <div style={{ color: '#000', fontSize: '10px', fontFamily: "'Space Mono'", fontWeight: 900, lineHeight: 1.5 }}>
-                    {typeof fmtDateShort === 'function' ? fmtDateShort(s.date) : s.date}<br/>
+                    {fmtDateShort(s.date)}<br/>
                     <span style={{ opacity: 0.5, fontSize: '8px' }}>{s.venue.toUpperCase()}</span>
                   </div>
                   
