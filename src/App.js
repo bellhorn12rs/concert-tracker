@@ -7488,6 +7488,22 @@ function ShowsTab() {
               )}
             </div>
 
+            <div style={{ 
+              background: hexToRgba(C.gold, 0.1), 
+              border: `1px solid ${C.gold}`, 
+              borderRadius: 8, 
+              padding: '12px 20px',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, lineHeight: 1 }}>
+                {show.attendances?.length}
+              </div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold }}>
+                CURATORS
+              </div>
+            </div>
+          </div>
+
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {show.attendances?.map(att => (
               <div 
