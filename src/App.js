@@ -8338,19 +8338,55 @@ async function fetchShowArtifacts(showId) {
 
 // ═══════════════════════════════════════════════════════════
 
-  // ── 1. MAIN DATA FETCH (THE PIVOT)
   async function fetchConcerts() {
-    const targetId = viewingUser || session?.user?.id;
-    if (!targetId) return;
-
-    const { data, error } = await supabase
-      .from('concerts')
-      .select('*')
-      .eq('user_id', targetId) 
-      .order('date', { ascending: false });
-    
-    if (data) {
-      setConcerts(data);
+  const targetId = viewingUser || session?.user?.id;
+  if (!targetId) return;
+  
+  // Fetch private concerts (old system)
+  const { data: privateConcerts } = await supabase
+    .from('concerts')
+    .select('*')
+    .eq('user_id', targetId)
+    .order('date', { ascending: false });
+  
+  // Fetch collaborative attendances (new system)
+  const { data: attendances } = await supabase
+    .from('attendances')
+    .select(`
+      *,
+      show:shows(*)
+    `)
+    .eq('user_id', targetId)
+    .eq('is_public', true);
+  
+  // Transform collaborative shows to match old concert structure
+  const collaborativeShows = (attendances || []).map(a => ({
+    ...a.show,
+    id: a.show.id, // Use show ID
+    attendance_id: a.id, // Keep attendance ID for reference
+    is_collaborative: true, // Flag so we know which system it came from
+    user_id: targetId, // For compatibility with existing code
+    // These might not exist in new structure yet, set defaults:
+    image_url: '',
+    personal_photo_url: '',
+    setlist_image_url: '',
+    wristband_image_url: ''
+  }));
+  
+  // Merge both systems
+  const merged = [
+    ...(privateConcerts || []),
+    ...collaborativeShows
+  ].sort((a, b) => b.date.localeCompare(a.date));
+  
+  console.log('FETCH:', { 
+    private: privateConcerts?.length || 0, 
+    collaborative: collaborativeShows.length, 
+    total: merged.length 
+  });
+  
+  if (merged) setConcerts(merged);
+}
 
       // 📡 AUTO-SYNC STATS TO PROFILE
       // If the logged-in user is looking at their OWN archive, push the counts to their profile
