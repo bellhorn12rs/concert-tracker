@@ -7565,6 +7565,88 @@ function ShowsTab() {
   );
 }
 
+// ─── COLLABORATION WEB ───────────────────────────────────────────────────────
+function CollaborationWebTab() {
+  const [loading, setLoading] = useState(true);
+  const [myShows, setMyShows] = useState([]);
+  const [collaborators, setCollaborators] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) return;
+
+      // Get my attendances
+      const { data: myAttendances } = await supabase
+        .from('attendances')
+        .select('show_id')
+        .eq('user_id', session.user.id);
+      
+      const myShowIds = (myAttendances || []).map(a => a.show_id);
+      
+      // Get all attendances for those shows
+      const { data: allAttendances } = await supabase
+        .from('attendances')
+        .select(`
+          *,
+          profile:profiles(id, username, avatar_color)
+        `)
+        .in('show_id', myShowIds)
+        .neq('user_id', session.user.id);
+      
+      // Group by collaborator
+      const collabMap = {};
+      (allAttendances || []).forEach(att => {
+        const userId = att.profile.id;
+        if (!collabMap[userId]) {
+          collabMap[userId] = {
+            id: userId,
+            username: att.profile.username,
+            color: att.profile.avatar_color,
+            sharedShows: []
+          };
+        }
+        collabMap[userId].sharedShows.push(att.show_id);
+      });
+      
+      setCollaborators(Object.values(collabMap));
+      setMyShows(myShowIds);
+      setLoading(false);
+    };
+    
+    fetchData();
+  }, []);
+
+  if (loading) return (
+    <div style={{ padding: 100, textAlign: 'center' }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal }}>
+        SCANNING NETWORK...
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="fade-in" style={{ padding: 40 }}>
+      <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: '#fff' }}>
+          COLLABORATION <span style={{ color: C.gold }}>WEB</span>
+        </div>
+      </div>
+
+      {/* TEMP: Just show the data */}
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 11, color: '#fff' }}>
+        <div>YOUR SHOWS: {myShows.length}</div>
+        <div>COLLABORATORS: {collaborators.length}</div>
+        {collaborators.map(c => (
+          <div key={c.id} style={{ marginTop: 10 }}>
+            {c.username}: {c.sharedShows.length} shared shows
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── STUB CASE TAB ────────────────────────────────────────────────────────────
 function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
   const [selected, setSelected] = useState(null);
@@ -9821,7 +9903,7 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
   
   {activeTab === 'photos' && <PhotoVaultTab concerts={concerts} />}
 
-  {activeTab === 'shows' && <ShowsTab />}
+{activeTab === 'shows' && <CollaborationWebTab />}
 
 
   {activeTab === 'stubs' && (
