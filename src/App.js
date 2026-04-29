@@ -7429,7 +7429,7 @@ function ShowsTab() {
 }
 
 // ─── COLLABORATION WEB - MOBILE RESPONSIVE ────────────────────────────────────
-// ─── COLLABORATION WEB - FULL SPECTACLE EDITION ────────────────────────────────
+// ─── COLLABORATION WEB - PROPORTIONAL ORBITAL EDITION ──────────────────────────
 function CollaborationWebTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -7437,10 +7437,11 @@ function CollaborationWebTab() {
   const [detailView, setDetailView] = useState(null);
   const [nodes, setNodes] = useState([]);
   const [particles, setParticles] = useState([]);
+  const [totalShows, setTotalShows] = useState(0);
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
 
-  // Fetch data (same as before)
+  // Fetch data
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -7463,6 +7464,7 @@ function CollaborationWebTab() {
         }
         
         const myShowIds = myAttendances.map(a => a.show_id);
+        setTotalShows(myShowIds.length); // Store total for proportional sizing
         
         const batchSize = 100;
         const showBatches = [];
@@ -7553,9 +7555,9 @@ function CollaborationWebTab() {
     fetch();
   }, []);
 
-  // 🌊 ORBITAL MOTION + PARTICLE SYSTEM
+  // 🌊 ORBITAL MOTION + PARTICLE SYSTEM WITH PROPORTIONAL SIZING
   useEffect(() => {
-    if (collaborators.length === 0) return;
+    if (collaborators.length === 0 || totalShows === 0) return;
 
     const isMobile = window.innerWidth < 768;
     const containerWidth = isMobile ? window.innerWidth - 40 : 800;
@@ -7563,27 +7565,36 @@ function CollaborationWebTab() {
     const centerX = containerWidth / 2;
     const centerY = containerHeight / 2;
     const orbitRadius = isMobile ? 140 : 220;
+    const baseSize = isMobile ? 120 : 160; // Base size for YOU
 
-    // Initialize orbiting nodes
+    // Calculate proportional sizes
     const nodeData = [
       { 
         id: 'you', 
         label: 'YOU', 
         color: C.teal, 
-        size: isMobile ? 80 : 120, 
+        size: baseSize,
         x: centerX, 
         y: centerY,
-        isCenter: true
+        isCenter: true,
+        count: totalShows
       },
       ...collaborators.map((c, i) => {
         const angle = (i / collaborators.length) * Math.PI * 2;
+        // Proportional sizing: (sharedShows / totalShows) * baseSize
+        // Minimum size: 40px mobile, 60px desktop
+        const proportionalSize = Math.max(
+          (c.count / totalShows) * baseSize,
+          isMobile ? 40 : 60
+        );
+        
         return {
           id: c.id,
           label: c.username,
           color: c.color,
           count: c.count,
           showIds: c.showIds,
-          size: isMobile ? 50 : 80,
+          size: proportionalSize,
           baseAngle: angle,
           orbitRadius: orbitRadius,
           x: centerX + Math.cos(angle) * orbitRadius,
@@ -7597,12 +7608,12 @@ function CollaborationWebTab() {
     // Initialize particles
     const particlePool = [];
     collaborators.forEach((c, i) => {
-      const particleCount = Math.min(c.count * 2, 20); // More shows = more particles
+      const particleCount = Math.min(Math.floor(c.count * 1.5), 30);
       for (let p = 0; p < particleCount; p++) {
         particlePool.push({
           nodeIndex: i,
           progress: Math.random(),
-          speed: 0.003 + Math.random() * 0.002,
+          speed: 0.002 + Math.random() * 0.003,
           color: c.color
         });
       }
@@ -7612,7 +7623,7 @@ function CollaborationWebTab() {
     // Animation loop
     let time = 0;
     const animate = () => {
-      time += 0.001; // Slow rotation speed
+      time += 0.0008; // Slow orbital speed
 
       // Update node positions (orbital motion)
       const updatedNodes = nodeData.map(node => {
@@ -7652,7 +7663,7 @@ function CollaborationWebTab() {
           ctx.beginPath();
           ctx.arc(x, y, 2.5, 0, Math.PI * 2);
           ctx.fillStyle = p.color;
-          ctx.shadowBlur = 8;
+          ctx.shadowBlur = 10;
           ctx.shadowColor = p.color;
           ctx.fill();
         });
@@ -7668,7 +7679,7 @@ function CollaborationWebTab() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [collaborators, particles.length]);
+  }, [collaborators, particles.length, totalShows]);
 
   if (loading) return <div style={{ padding: 100, textAlign: 'center', color: C.teal }}>SCANNING...</div>;
 
@@ -7695,7 +7706,7 @@ function CollaborationWebTab() {
           {shows.length} SHARED SHOWS · {collaborators.length} COLLABORATORS
         </div>
         <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.purple, marginTop: 5, letterSpacing: 2 }}>
-          🌊 ORBITAL MOTION ACTIVE // PARTICLE STREAMS FLOWING
+          🌊 BUBBLE SIZE = SHARED HISTORY // PARTICLES = MEMORIES FLOWING
         </div>
       </div>
 
@@ -7733,43 +7744,17 @@ function CollaborationWebTab() {
             const collab = collaborators[i];
             if (!collab) return null;
             
-            // Calculate midpoint for badge
-            const midX = (you.x + node.x) / 2;
-            const midY = (you.y + node.y) / 2;
-            
             return (
-              <g key={node.id}>
-                <line
-                  x1={you.x}
-                  y1={you.y}
-                  x2={node.x}
-                  y2={node.y}
-                  stroke={node.color}
-                  strokeWidth={Math.max(collab.count / 2, 3)}
-                  opacity="0.25"
-                />
-                
-                {/* Count badge on connection line */}
-                <circle
-                  cx={midX}
-                  cy={midY}
-                  r={isMobile ? 10 : 12}
-                  fill={C.gold}
-                  stroke="#000"
-                  strokeWidth="1"
-                />
-                <text
-                  x={midX}
-                  y={midY + 4}
-                  fontFamily="'Space Mono'"
-                  fontSize={isMobile ? 9 : 11}
-                  fontWeight="900"
-                  fill="#000"
-                  textAnchor="middle"
-                >
-                  {collab.count}
-                </text>
-              </g>
+              <line
+                key={node.id}
+                x1={you.x}
+                y1={you.y}
+                x2={node.x}
+                y2={node.y}
+                stroke={node.color}
+                strokeWidth={Math.max(collab.count / 3, 2)}
+                opacity="0.25"
+              />
             );
           })}
         </svg>
@@ -7777,8 +7762,8 @@ function CollaborationWebTab() {
         {/* Render nodes with pulsing animation */}
         <style>{`
           @keyframes orbitPulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 20px var(--node-color); }
-            50% { transform: scale(1.05); box-shadow: 0 0 40px var(--node-color); }
+            0%, 100% { box-shadow: 0 0 30px var(--node-color); }
+            50% { box-shadow: 0 0 50px var(--node-color); }
           }
           .orbit-node {
             animation: orbitPulse 3s ease-in-out infinite;
@@ -7805,37 +7790,61 @@ function CollaborationWebTab() {
                 borderRadius: '50%',
                 background: node.color,
                 border: `3px solid ${node.color}`,
-                boxShadow: `0 0 30px ${node.color}`,
+                boxShadow: `0 0 35px ${node.color}`,
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontFamily: "'Space Mono'",
-                fontSize: isMobile ? (isYou ? 12 : 8) : (isYou ? 18 : 10),
                 color: '#000',
                 fontWeight: 900,
                 cursor: isYou ? 'default' : 'pointer',
                 zIndex: isYou ? 100 : 80,
                 userSelect: 'none',
                 '--node-color': node.color,
-                animation: isYou ? 'orbitPulse 2s ease-in-out infinite' : undefined
+                animation: isYou ? 'orbitPulse 2s ease-in-out infinite' : undefined,
+                gap: '4px'
               }}
             >
-              {isYou ? 'YOU' : node.label.toUpperCase()}
+              {/* Label */}
+              <div style={{ 
+                fontSize: node.size > 80 ? (isMobile ? 11 : 14) : (isMobile ? 8 : 10),
+                lineHeight: 1
+              }}>
+                {isYou ? 'YOU' : node.label.toUpperCase()}
+              </div>
+              
+              {/* Count badge INSIDE bubble */}
+              <div style={{
+                background: 'rgba(0,0,0,0.6)',
+                border: '1px solid rgba(0,0,0,0.8)',
+                borderRadius: '12px',
+                padding: node.size > 80 ? '3px 8px' : '2px 6px',
+                fontFamily: "'Bebas Neue'",
+                fontSize: node.size > 80 ? '1.2rem' : '0.9rem',
+                color: '#ffcc00',
+                letterSpacing: '1px',
+                lineHeight: 1
+              }}>
+                {node.count}
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* Instructions */}
+      {/* Legend */}
       <div style={{ 
         textAlign: 'center', 
         marginTop: 20, 
         fontFamily: "'Space Mono'", 
         fontSize: 8, 
         color: C.grayDim,
-        letterSpacing: 2
+        letterSpacing: 2,
+        lineHeight: 1.6
       }}>
-        🌊 COLLABORATORS ORBIT AROUND YOU // PARTICLES FLOW BETWEEN CONNECTIONS
+        🌊 BUBBLE SIZE = PROPORTION OF YOUR {totalShows} TOTAL SHOWS<br/>
+        ✨ PARTICLE COUNT = SHARED MEMORY STRENGTH
       </div>
 
       {/* Detail view */}
@@ -7851,7 +7860,7 @@ function CollaborationWebTab() {
                   {detailView.username.toUpperCase()}
                 </div>
                 <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray }}>
-                  {detailView.count} SHARED SHOWS
+                  {detailView.count} SHARED SHOWS ({Math.round((detailView.count / totalShows) * 100)}% OF YOUR ARCHIVE)
                 </div>
               </div>
               <button 
