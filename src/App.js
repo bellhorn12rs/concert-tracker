@@ -7571,6 +7571,7 @@ function CollaborationWebTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [collaborators, setCollaborators] = useState([]);
+  const [detailView, setDetailView] = useState(null);
 
   useEffect(() => {
     const fetch = async () => {
@@ -7724,49 +7725,57 @@ function CollaborationWebTab() {
               }} />
               
               {/* Count badge */}
-              <div style={{
-                position: 'absolute',
-                left: (centerX + (x - centerX) * 0.6) - 15,
-                top: (centerY + (y - centerY) * 0.6) - 15,
-                width: 30, height: 30,
-                borderRadius: '50%',
-                background: C.gold,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: "'Space Mono'",
-                fontSize: 12,
-                fontWeight: 900,
-                color: '#000',
-                zIndex: 90,
-                cursor: 'pointer'
-              }}>
+              <div 
+                onClick={() => setDetailView(collab)}
+                style={{
+                  position: 'absolute',
+                  left: (centerX + (x - centerX) * 0.6) - 15,
+                  top: (centerY + (y - centerY) * 0.6) - 15,
+                  width: 30, height: 30,
+                  borderRadius: '50%',
+                  background: C.gold,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: "'Space Mono'",
+                  fontSize: 12,
+                  fontWeight: 900,
+                  color: '#000',
+                  zIndex: 90,
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.2)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+              >
                 {collab.count}
               </div>
               
               {/* Person orb */}
-              <div style={{
-                position: 'absolute',
-                left: x - 40,
-                top: y - 40,
-                width: 80, height: 80,
-                borderRadius: '50%',
-                background: collab.color,
-                border: `2px solid ${collab.color}`,
-                boxShadow: `0 0 20px ${collab.color}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: "'Space Mono'",
-                fontSize: 9,
-                color: '#000',
-                fontWeight: 900,
-                cursor: 'pointer',
-                zIndex: 80,
-                transition: 'transform 0.2s'
-              }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+              <div 
+                onClick={() => setDetailView(collab)}
+                style={{
+                  position: 'absolute',
+                  left: x - 40,
+                  top: y - 40,
+                  width: 80, height: 80,
+                  borderRadius: '50%',
+                  background: collab.color,
+                  border: `2px solid ${collab.color}`,
+                  boxShadow: `0 0 20px ${collab.color}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: "'Space Mono'",
+                  fontSize: 9,
+                  color: '#000',
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  zIndex: 80,
+                  transition: 'transform 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
               >
                 {collab.username.toUpperCase()}
               </div>
@@ -7774,6 +7783,39 @@ function CollaborationWebTab() {
           );
         })}
       </div>
+
+      {/* DETAIL VIEW */}
+      {detailView && (
+        <div style={{ marginTop: 40 }}>
+          <div style={{ 
+            background: C.bgCard, 
+            border: `2px solid ${detailView.color}`, 
+            borderRadius: 12, 
+            padding: 30,
+            boxShadow: `0 0 30px ${hexToRgba(detailView.color, 0.3)}`
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: detailView.color }}>
+                  {detailView.username.toUpperCase()}
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray }}>
+                  {detailView.count} SHARED SHOWS
+                </div>
+              </div>
+              <button 
+                onClick={() => setDetailView(null)}
+                style={{ background: 'none', border: `1px solid ${C.border}`, color: C.gray, padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 }}
+              >
+                CLOSE
+              </button>
+            </div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 11, color: '#fff' }}>
+              Shared show list coming in Phase 4...
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
