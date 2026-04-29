@@ -5451,15 +5451,61 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
                       `Date: ${previewShow.date}\n\n` +
                       `Ready to synchronize these to your museum archive?`;
 
-          if (window.confirm(msg)) {
-            const { error } = await supabase.from('concerts').insert(newShows);
-            if (error) throw error;
-            
-            alert("✅ ARCHIVE UPDATED: Your historical signals have been curated.");
-            if (onFetchData) await onFetchData(); 
-            if (setActiveTab) setActiveTab('dashboard');
-          }
-        }
+         if (window.confirm(msg)) {
+  // Process each show through collaborative system
+  for (const show of newShows) {
+    try {
+      const primaryArtist = show.bands[0] || 'Unknown';
+      
+      // Check if show exists
+      const { data: existingShow } = await supabase
+        .from('shows')
+        .select('id')
+        .eq('date', show.date)
+        .ilike('venue', show.venue || 'Unknown')
+        .ilike('artist', primaryArtist)
+        .single();
+      
+      let showId = existingShow?.id;
+      
+      // Create show if doesn't exist
+      if (!showId) {
+        const { data: newShow } = await supabase
+          .from('shows')
+          .insert([{
+            date: show.date,
+            artist: primaryArtist,
+            bands: show.bands,
+            venue: show.venue,
+            city: show.city,
+            state: show.state,
+            is_festival: show.is_festival,
+            festival_name: show.festival_name,
+            genre: 'Indie Rock',
+            created_by: session.user.id
+          }])
+          .select()
+          .single();
+        
+        showId = newShow.id;
+      }
+      
+      // Create attendance
+      await supabase.from('attendances').insert([{
+        user_id: session.user.id,
+        show_id: showId,
+        is_public: true
+      }]);
+      
+    } catch (err) {
+      console.error(`Failed to import ${show.bands[0]}:`, err);
+    }
+  }
+  
+  alert("✅ ARCHIVE UPDATED: Your historical signals have been curated.");
+  if (onFetchData) await onFetchData(); 
+  if (setActiveTab) setActiveTab('dashboard');
+}
       } catch (err) {
         console.error("Office sync failed:", err);
         alert("❌ SYNC ERROR: Check your CSV format. " + err.message);
@@ -5467,7 +5513,7 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
     };
     reader.readAsText(file);
   };
-
+  
   const filtered = useMemo(() => {
     if (!search) return concerts;
     const q = search.toLowerCase();
