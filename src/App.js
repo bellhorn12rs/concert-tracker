@@ -7427,21 +7427,23 @@ function ShowsTab() {
     </div>
   );
 }
-// ─── COLLABORATION WEB ───────────────────────────────────────────────────────
-// ─── COLLABORATION WEB - DEBUG VERSION ────────────────────────────────────────
+
 // ─── COLLABORATION WEB - MOBILE RESPONSIVE ────────────────────────────────────
+// ─── COLLABORATION WEB - FORCE PHYSICS EDITION ────────────────────────────────
 function CollaborationWebTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [collaborators, setCollaborators] = useState([]);
   const [detailView, setDetailView] = useState(null);
+  const [nodes, setNodes] = useState([]);
+  const simulationRef = useRef(null);
 
+  // Fetch data (same as before)
   useEffect(() => {
     const fetch = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user?.id) {
-          console.log('❌ No session found');
           setLoading(false);
           return;
         }
@@ -7549,6 +7551,53 @@ function CollaborationWebTab() {
     fetch();
   }, []);
 
+  // 🌊 FORCE SIMULATION SETUP
+  useEffect(() => {
+    if (collaborators.length === 0) return;
+
+    const isMobile = window.innerWidth < 768;
+    const containerWidth = isMobile ? window.innerWidth - 40 : 800;
+    const containerHeight = isMobile ? 500 : 700;
+    const centerX = containerWidth / 2;
+    const centerY = containerHeight / 2;
+
+    // Create node data
+    const nodeData = [
+      { id: 'you', label: 'YOU', color: C.teal, size: isMobile ? 80 : 120, x: centerX, y: centerY, fx: centerX, fy: centerY },
+      ...collaborators.map(c => ({
+        id: c.id,
+        label: c.username,
+        color: c.color,
+        count: c.count,
+        showIds: c.showIds,
+        size: isMobile ? 50 : 80
+      }))
+    ];
+
+    // Create link data
+    const linkData = collaborators.map(c => ({
+      source: 'you',
+      target: c.id,
+      strength: c.count
+    }));
+
+    // Initialize D3 force simulation
+    const simulation = window.d3.forceSimulation(nodeData)
+      .force('charge', window.d3.forceManyBody().strength(-400))
+      .force('link', window.d3.forceLink(linkData).id(d => d.id).distance(isMobile ? 140 : 220))
+      .force('center', window.d3.forceCenter(centerX, centerY))
+      .force('collision', window.d3.forceCollide().radius(d => d.size / 2 + 10))
+      .on('tick', () => {
+        setNodes([...nodeData]);
+      });
+
+    simulationRef.current = simulation;
+
+    return () => {
+      simulation.stop();
+    };
+  }, [collaborators]);
+
   if (loading) return <div style={{ padding: 100, textAlign: 'center', color: C.teal }}>SCANNING...</div>;
 
   if (collaborators.length === 0) {
@@ -7565,9 +7614,6 @@ function CollaborationWebTab() {
   const containerHeight = isMobile ? 500 : 700;
   const centerX = containerWidth / 2;
   const centerY = containerHeight / 2;
-  const radius = isMobile ? 120 : 200;
-  const youSize = isMobile ? 80 : 120;
-  const collabSize = isMobile ? 50 : 80;
 
   return (
     <div className="fade-in" style={{ padding: isMobile ? 20 : 40 }}>
@@ -7577,6 +7623,9 @@ function CollaborationWebTab() {
         </div>
         <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 8 : 10, color: C.gold }}>
           {shows.length} SHARED SHOWS · {collaborators.length} COLLABORATORS
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.purple, marginTop: 5, letterSpacing: 2 }}>
+          🌊 FORCE PHYSICS ACTIVE
         </div>
       </div>
 
@@ -7588,112 +7637,107 @@ function CollaborationWebTab() {
         position: 'relative', 
         background: '#050508', 
         border: `1px solid ${C.border}`, 
-        borderRadius: 12 
+        borderRadius: 12,
+        overflow: 'hidden'
       }}>
         
-        <div style={{
-          position: 'absolute',
-          left: centerX - (youSize / 2),
-          top: centerY - (youSize / 2),
-          width: youSize, 
-          height: youSize,
-          borderRadius: '50%',
-          background: C.teal,
-          border: `2px solid ${C.teal}`,
-          boxShadow: `0 0 30px ${C.teal}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: "'Bebas Neue'",
-          fontSize: isMobile ? '1rem' : '1.5rem',
-          color: '#000',
-          zIndex: 100
-        }}>
-          YOU
-        </div>
+        <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
+          {/* Connection lines */}
+          {nodes.length > 1 && nodes.slice(1).map((node, i) => {
+            const you = nodes[0];
+            if (!you || !node.x || !node.y) return null;
+            
+            const collab = collaborators[i];
+            if (!collab) return null;
+            
+            return (
+              <line
+                key={node.id}
+                x1={you.x || centerX}
+                y1={you.y || centerY}
+                x2={node.x}
+                y2={node.y}
+                stroke={node.color}
+                strokeWidth={Math.max(collab.count / 2, 2)}
+                opacity="0.3"
+              />
+            );
+          })}
+        </svg>
 
-        {collaborators.map((collab, i) => {
-          const angle = (i / collaborators.length) * Math.PI * 2 - Math.PI / 2;
-          const x = centerX + radius * Math.cos(angle);
-          const y = centerY + radius * Math.sin(angle);
-          const lineLength = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
-          const lineAngle = Math.atan2(y - centerY, x - centerX) * (180 / Math.PI);
+        {/* Render nodes */}
+        {nodes.map((node, i) => {
+          const isYou = node.id === 'you';
+          const collab = isYou ? null : collaborators.find(c => c.id === node.id);
+          
+          if (!node.x || !node.y) return null;
           
           return (
-            <div key={collab.id}>
-              <div style={{
-                position: 'absolute',
-                left: centerX,
-                top: centerY,
-                width: lineLength,
-                height: Math.max(collab.count / 2, 2),
-                background: collab.color,
-                opacity: 0.3,
-                transformOrigin: 'left center',
-                transform: `rotate(${lineAngle}deg)`,
-                zIndex: 10
-              }} />
-              
-              <div 
-                onClick={() => setDetailView(collab)}
+            <div key={node.id}>
+              {/* Main node circle */}
+              <div
+                onClick={() => !isYou && setDetailView(collab)}
                 style={{
                   position: 'absolute',
-                  left: (centerX + (x - centerX) * 0.6) - (isMobile ? 12 : 15),
-                  top: (centerY + (y - centerY) * 0.6) - (isMobile ? 12 : 15),
-                  width: isMobile ? 24 : 30,
-                  height: isMobile ? 24 : 30,
+                  left: node.x - (node.size / 2),
+                  top: node.y - (node.size / 2),
+                  width: node.size,
+                  height: node.size,
                   borderRadius: '50%',
-                  background: C.gold,
+                  background: node.color,
+                  border: `2px solid ${node.color}`,
+                  boxShadow: `0 0 20px ${node.color}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontFamily: "'Space Mono'",
-                  fontSize: isMobile ? 10 : 12,
-                  fontWeight: 900,
-                  color: '#000',
-                  zIndex: 90,
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s'
-                }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.2)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                {collab.count}
-              </div>
-              
-              <div 
-                onClick={() => setDetailView(collab)}
-                style={{
-                  position: 'absolute',
-                  left: x - (collabSize / 2),
-                  top: y - (collabSize / 2),
-                  width: collabSize,
-                  height: collabSize,
-                  borderRadius: '50%',
-                  background: collab.color,
-                  border: `2px solid ${collab.color}`,
-                  boxShadow: `0 0 20px ${collab.color}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontFamily: "'Space Mono'",
-                  fontSize: isMobile ? 7 : 9,
+                  fontSize: isMobile ? (isYou ? 12 : 7) : (isYou ? 18 : 9),
                   color: '#000',
                   fontWeight: 900,
-                  cursor: 'pointer',
-                  zIndex: 80,
-                  transition: 'transform 0.2s'
+                  cursor: isYou ? 'default' : 'pointer',
+                  zIndex: isYou ? 100 : 80,
+                  transition: 'transform 0.2s',
+                  userSelect: 'none'
                 }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                onMouseEnter={e => !isYou && (e.currentTarget.style.transform = 'scale(1.15)')}
+                onMouseLeave={e => !isYou && (e.currentTarget.style.transform = 'scale(1)')}
               >
-                {collab.username.toUpperCase()}
+                {isYou ? 'YOU' : node.label.toUpperCase()}
               </div>
+
+              {/* Count badge for collaborators */}
+              {!isYou && collab && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: node.x + (node.x - centerX) * 0.4 - (isMobile ? 12 : 15),
+                    top: node.y + (node.y - centerY) * 0.4 - (isMobile ? 12 : 15),
+                    width: isMobile ? 24 : 30,
+                    height: isMobile ? 24 : 30,
+                    borderRadius: '50%',
+                    background: C.gold,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: "'Space Mono'",
+                    fontSize: isMobile ? 10 : 12,
+                    fontWeight: 900,
+                    color: '#000',
+                    zIndex: 90,
+                    cursor: 'pointer',
+                    boxShadow: '0 0 10px rgba(255,204,0,0.5)'
+                  }}
+                  onClick={() => setDetailView(collab)}
+                >
+                  {collab.count}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
+      {/* Detail view (same as before) */}
       {detailView && (
         <div style={{ marginTop: 40 }}>
           <Card neon style={{ 
