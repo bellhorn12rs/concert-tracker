@@ -20,85 +20,6 @@ function hexToRgba(hex, alpha) {
   }
 }
 
-const handleIWasThere = async (concert) => {
-    if (!session?.user) return alert("LOGIN REQUIRED TO ARCHIVE SIGNALS");
-
-    try {
-      // Safety: Extract data with fallbacks
-      const primaryArtist = (concert.bands?.[0]?.name || concert.bands?.[0] || concert.artist || 'Unknown').toString();
-      const safeVenue = concert.venue || concert.festival_name || 'Unknown Venue';
-      const safeDate = concert.date;
-      
-      if (!safeDate) return alert("INVALID SHOW: Missing date");
-      
-      console.log('Cloning show:', { artist: primaryArtist, venue: safeVenue, date: safeDate });
-      
-      // Check if show exists in shows table
-      const { data: existingShows } = await supabase
-        .from('shows')
-        .select('id')
-        .eq('date', safeDate)
-        .limit(5);
-      
-      // Find match by venue and artist
-      let showId = null;
-      if (existingShows && existingShows.length > 0) {
-        const match = existingShows.find(s => 
-          s.venue?.toLowerCase() === safeVenue.toLowerCase() &&
-          s.artist?.toLowerCase() === primaryArtist.toLowerCase()
-        );
-        showId = match?.id;
-      }
-      
-      // Create show if doesn't exist
-      if (!showId) {
-        const { data: newShow, error: showError } = await supabase
-          .from('shows')
-          .insert([{
-            date: safeDate,
-            artist: primaryArtist,
-            bands: concert.bands || [primaryArtist],
-            venue: safeVenue,
-            city: concert.city || '',
-            state: concert.state || '',
-            is_festival: concert.is_festival || false,
-            festival_name: concert.festival_name || null,
-            festival_day: concert.festival_day || null,
-            genre: concert.genre || 'Indie Rock',
-            created_by: session.user.id
-          }])
-          .select()
-          .single();
-        
-        if (showError) throw showError;
-        showId = newShow.id;
-      }
-      
-      // Create attendance
-      const { error: attError } = await supabase
-        .from('attendances')
-        .upsert([{
-          user_id: session.user.id,
-          show_id: showId,
-          is_public: true
-        }], { onConflict: 'user_id,show_id' });
-      
-      if (attError) {
-        if (attError.message.includes('duplicate')) {
-          return alert("YOU ALREADY ARCHIVED THIS SHOW");
-        }
-        throw attError;
-      }
-      
-      alert(`⚡ SIGNAL CLONED: ${primaryArtist} added to your archive!`);
-      if (typeof fetchConcerts === 'function') fetchConcerts();
-      
-    } catch (err) {
-      console.error("Clone failed:", err);
-      alert("Failed to clone: " + err.message);
-    }
-  };
-
 // ─── THE RETRO TICKET STUB (IDEA #1) ──────────────────────────────────────────
 const TicketStub = ({ show }) => {
   if (!show) return null;
@@ -9706,10 +9627,71 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
               {/* 🟢 THE CLONE TRIGGER (Spectator Mode Only) */}
               {viewingUser && viewingUser !== session?.user?.id && (
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleIWasThere(c);
-                  }}
+                  onClick={async (e) => {
+  e.stopPropagation();
+  
+  const { data: { session: currentSession } } = await supabase.auth.getSession();
+  if (!currentSession?.user) {
+    alert("LOGIN REQUIRED");
+    return;
+  }
+
+  try {
+    const primaryArtist = (c.bands?.[0]?.name || c.bands?.[0] || c.artist || 'Unknown').toString();
+    const safeVenue = c.venue || c.festival_name || 'Unknown Venue';
+    
+    const { data: matchingShows } = await supabase
+      .from('shows')
+      .select('*')
+      .eq('date', c.date);
+    
+    let showId = null;
+    if (matchingShows) {
+      const match = matchingShows.find(s => 
+        s.venue?.toLowerCase().includes(safeVenue.toLowerCase().substring(0, 10)) &&
+        s.artist?.toLowerCase().includes(primaryArtist.toLowerCase().substring(0, 10))
+      );
+      showId = match?.id;
+    }
+    
+    if (!showId) {
+      const { data: newShow } = await supabase
+        .from('shows')
+        .insert([{
+          date: c.date,
+          artist: primaryArtist,
+          bands: c.bands || [primaryArtist],
+          venue: safeVenue,
+          city: c.city || '',
+          state: c.state || '',
+          is_festival: c.is_festival || false,
+          festival_name: c.festival_name || null,
+          festival_day: c.festival_day || null,
+          genre: c.genre || 'Indie Rock',
+          created_by: currentSession.user.id
+        }])
+        .select()
+        .single();
+      
+      showId = newShow.id;
+    }
+    
+    await supabase.from('attendances').insert([{
+      user_id: currentSession.user.id,
+      show_id: showId,
+      is_public: true
+    }]);
+    
+    alert(`⚡ CLONED: ${primaryArtist}`);
+    
+  } catch (err) {
+    if (err.code === '23505') {
+      alert("ALREADY IN YOUR ARCHIVE");
+    } else {
+      alert("CLONE FAILED: " + err.message);
+    }
+  }
+}}
                   style={{
                     background: 'transparent',
                     border: `1px solid ${C.teal}`,
