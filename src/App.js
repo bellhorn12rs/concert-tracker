@@ -1142,42 +1142,6 @@ function TheaterMarquee({ upcoming, onAdd, onEdit }) {
     </div>
   );
 }
-// ─── FERRIS WHEEL ─────────────────────────────────────────────────────────────
-function FerrisWheel({ size = 120 }) {
-  const cx = size / 2, cy = size / 2, R = size * 0.38, r = size * 0.06;
-  const spokes = 8;
-  const gondolas = Array.from({ length: spokes }, (_, i) => {
-    const angle = (i / spokes) * 2 * Math.PI;
-    return { x: cx + R * Math.cos(angle), y: cy + R * Math.sin(angle), i };
-  });
-  const COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699', C.red, C.teal];
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ filter:`drop-shadow(0 0 8px ${C.teal}44)` }}>
-      {/* Outer ring */}
-      <circle cx={cx} cy={cy} r={R} fill="none" stroke={C.teal} strokeWidth={1.5} strokeDasharray="4 3" opacity={0.5} />
-      {/* Spinning group */}
-      <g className="ferris-wheel-ring">
-        {/* Spokes */}
-        {gondolas.map(g => <line key={g.i} x1={cx} y1={cy} x2={g.x} y2={g.y} stroke={C.teal} strokeWidth={0.8} opacity={0.4} />)}
-        {/* Gondolas */}
-        {gondolas.map(g => (
-          <g key={g.i}>
-            <rect x={g.x - r*0.7} y={g.y - r*0.5} width={r*1.4} height={r*1.2} rx={2} fill={COLORS[g.i % COLORS.length]} opacity={0.8} />
-            <circle cx={g.x} cy={g.y - r*0.5} r={1.5} fill={C.white} opacity={0.9} />
-          </g>
-        ))}
-        {/* Inner ring */}
-        <circle cx={cx} cy={cy} r={R*0.25} fill="none" stroke={C.gold} strokeWidth={1.5} opacity={0.6} />
-      </g>
-      {/* Hub */}
-      <circle cx={cx} cy={cy} r={5} fill={C.gold} />
-      <circle cx={cx} cy={cy} r={2.5} fill={C.bg} />
-      {/* Support legs */}
-      <line x1={cx} y1={cy+R} x2={cx-R*0.4} y2={size*0.98} stroke={C.teal} strokeWidth={2} opacity={0.5} />
-      <line x1={cx} y1={cy+R} x2={cx+R*0.4} y2={size*0.98} stroke={C.teal} strokeWidth={2} opacity={0.5} />
-    </svg>
-  );
-}
 
 // ─── NEWS TICKER ──────────────────────────────────────────────────────────────
 function NewsTicker({ concerts, artistCounts, genreStats }) {
@@ -2549,9 +2513,20 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '50px', position: 'relative', zIndex: 5 }}>
-              {/* TIMELINE */}
-              <div style={{ flex: 1, position: 'relative', paddingLeft: 25 }}>
+            <div style={{ 
+  display: 'flex', 
+  flexDirection: window.innerWidth < 768 ? 'column' : 'row',
+  gap: window.innerWidth < 768 ? '30px' : '50px',
+  position: 'relative', 
+  zIndex: 5 
+}}>
+  {/* TIMELINE */}
+  <div style={{ 
+    flex: 1, 
+    position: 'relative', 
+    paddingLeft: window.innerWidth < 768 ? '15px' : '25px',
+    maxWidth: window.innerWidth < 768 ? '100%' : 'none'
+  }}>
                 <div style={{ position: 'absolute', left: 5, top: 0, bottom: 0, width: 2, background: `linear-gradient(to bottom, ${gc}, transparent)`, opacity: 0.4 }} />
                 {[...selectedData.shows].reverse().map((s, i) => (
                   <div key={i} style={{ position: 'relative', marginBottom: 18, paddingLeft: 20 }}>
@@ -2565,11 +2540,24 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
               </div>
 
               {/* MEDIA VAULT (REPAIRED) */}
-<div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '30px' }}>
+<div style={{ 
+  flex: 1.2, 
+  display: 'flex', 
+  flexDirection: 'column', 
+  gap: '30px',
+  width: window.innerWidth < 768 ? '100%' : 'auto'
+}}>
   {(archive.setlists.length > 0 || archive.archivePosters.length > 0) && (
   <div>
     <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: gc, letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// STAGE ARTIFACTS</div>
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'flex-start' }}>
+<div style={{ 
+  display: 'flex', 
+  flexWrap: 'wrap', 
+  gap: '15px', 
+  alignItems: 'flex-start',
+  justifyContent: window.innerWidth < 768 ? 'center' : 'flex-start'
+}}>
       {archive.setlists.map((m, idx) => (
         <SetlistPaper key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.setlists.length} />
       ))}
