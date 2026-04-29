@@ -4101,6 +4101,10 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
       return;
     }
 
+    // Use the global handleIWasThere which has the correct logic
+    await handleIWasThere(event);
+  };
+
     // Sanitize: Strip Eric's IDs and Personal Photos
     const { 
       id, 
