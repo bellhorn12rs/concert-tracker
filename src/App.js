@@ -7594,11 +7594,12 @@ function CollaborationWebTab() {
   const [detailView, setDetailView] = useState(null);
 
   useEffect(() => {
-    const fetch = async () => {
+  const fetch = async () => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user?.id) {
       console.log('❌ No session found');
+      setLoading(false);
       return;
     }
     
@@ -7621,25 +7622,43 @@ function CollaborationWebTab() {
     const myShowIds = myAttendances.map(a => a.show_id);
     console.log('🎯 MY SHOW IDS:', myShowIds.length);
     
-    // Step 2: Get shows
-    const { data: showsData } = await supabase
-      .from('shows')
-      .select('*')
-      .in('id', myShowIds)
-      .order('date', { ascending: false });
+    // Step 2: Get shows IN BATCHES (428 might be too many at once)
+    const batchSize = 100;
+    const showBatches = [];
     
-    console.log('🎪 SHOWS FETCHED:', showsData?.length);
+    for (let i = 0; i < myShowIds.length; i += batchSize) {
+      const batch = myShowIds.slice(i, i + batchSize);
+      const { data: batchShows } = await supabase
+        .from('shows')
+        .select('*')
+        .in('id', batch);
+      
+      if (batchShows) showBatches.push(...batchShows);
+      console.log(`🎪 FETCHED BATCH ${i / batchSize + 1}:`, batchShows?.length);
+    }
     
-    // Step 3: Get attendances separately (no join)
-    const { data: allAttendances } = await supabase
-      .from('attendances')
-      .select('*')
-      .in('show_id', myShowIds);
+    const showsData = showBatches;
+    console.log('🎪 TOTAL SHOWS FETCHED:', showsData.length);
     
-    console.log('👥 ALL ATTENDANCES:', allAttendances?.length);
+    // Step 3: Get attendances IN BATCHES
+    const attendanceBatches = [];
     
-    // Step 4: Get profiles separately
-    const userIds = [...new Set(allAttendances?.map(a => a.user_id) || [])];
+    for (let i = 0; i < myShowIds.length; i += batchSize) {
+      const batch = myShowIds.slice(i, i + batchSize);
+      const { data: batchAttendances } = await supabase
+        .from('attendances')
+        .select('*')
+        .in('show_id', batch);
+      
+      if (batchAttendances) attendanceBatches.push(...batchAttendances);
+      console.log(`👥 FETCHED ATTENDANCE BATCH ${i / batchSize + 1}:`, batchAttendances?.length);
+    }
+    
+    const allAttendances = attendanceBatches;
+    console.log('👥 TOTAL ATTENDANCES:', allAttendances.length);
+    
+    // Step 4: Get profiles
+    const userIds = [...new Set(allAttendances.map(a => a.user_id))];
     const { data: profiles } = await supabase
       .from('profiles')
       .select('id, username, avatar_color')
@@ -7652,11 +7671,6 @@ function CollaborationWebTab() {
     (profiles || []).forEach(p => {
       profileMap[p.id] = p;
     });
-    
-    if (!showsData || !allAttendances) {
-      setLoading(false);
-      return;
-    }
     
     // Build attendance map by show_id
     const attendancesByShow = {};
@@ -7677,7 +7691,6 @@ function CollaborationWebTab() {
     showsData.forEach(show => {
       const attendances = attendancesByShow[show.id] || [];
       
-      // Only include shows with 2+ attendees
       if (attendances.length > 1) {
         mySharedShows.push(show);
         
@@ -8883,7 +8896,8 @@ async function fetchConcerts() {
       )
     `)
     .eq('user_id', targetId)
-    .eq('is_public', true);
+    .eq('is_public', true)
+    .order('date_added', { ascending: false });  // ✅ ADD THIS;
   
   console.log('COLLABORATIVE:', attendances?.length);
   
@@ -8912,8 +8926,10 @@ async function fetchConcerts() {
     };
   });
   
-  setConcerts(collaborativeShows);
-  
+// Sort by date descending (newest first)
+const sorted = collaborativeShows.sort((a, b) => b.date.localeCompare(a.date));
+setConcerts(sorted);
+
   console.log('FETCH:', { 
     collaborative: collaborativeShows.length, 
     total: collaborativeShows.length 
