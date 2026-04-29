@@ -7388,7 +7388,7 @@ function PosterUploadModal({ concerts, onClose, onSaved }) {
 }
 
 
-// ─── SHOWS TAB (COLLABORATIVE VIEW) ──────────────────────────────────────────
+// ─── SHOWS TAB (COLLABORATIVE VIEW) - OPTIMIZED ──────────────────────────────
 function ShowsTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -7396,27 +7396,48 @@ function ShowsTab() {
   useEffect(() => {
     const fetch = async () => {
       try {
-        // Get all shows
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.id) return;
+        
+        const myUserId = session.user.id;
+        
+        // ✅ OPTIMIZED: Only get shows where current user attended
+        const { data: myAttendances } = await supabase
+          .from('attendances')
+          .select('show_id')
+          .eq('user_id', myUserId);
+        
+        if (!myAttendances || myAttendances.length === 0) {
+          setLoading(false);
+          return;
+        }
+        
+        const myShowIds = myAttendances.map(a => a.show_id);
+        
+        // ✅ OPTIMIZED: Only fetch MY shows (not all 2000)
         const { data: allShows } = await supabase
           .from('shows')
           .select('*')
-          .order('date', { ascending: false })
-          .limit(2000);
+          .in('id', myShowIds)
+          .order('date', { ascending: false });
         
         if (!allShows) {
           setLoading(false);
           return;
         }
 
-        // Get all attendances
+        // ✅ OPTIMIZED: Only get attendances for MY shows
         const { data: allAttendances } = await supabase
           .from('attendances')
-          .select('*');
+          .select('*')
+          .in('show_id', myShowIds);
         
-        // Get all profiles
+        // ✅ OPTIMIZED: Only get profiles of people who attended MY shows
+        const userIds = [...new Set(allAttendances?.map(a => a.user_id) || [])];
         const { data: allProfiles } = await supabase
           .from('profiles')
-          .select('id, username, avatar_color');
+          .select('id, username, avatar_color')
+          .in('id', userIds);
         
         // Map profiles by ID
         const profileMap = {};
@@ -7564,7 +7585,6 @@ function ShowsTab() {
     </div>
   );
 }
-
 // ─── COLLABORATION WEB ───────────────────────────────────────────────────────
 // ─── COLLABORATION WEB - DEBUG VERSION ────────────────────────────────────────
 function CollaborationWebTab() {
