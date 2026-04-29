@@ -5549,7 +5549,6 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
   };
 
   return (
-    return (
   <div style={{ padding: '24px 0' }} className="fade-in">
     
     {/* 🎨 AVATAR UPLOAD SECTION */}
