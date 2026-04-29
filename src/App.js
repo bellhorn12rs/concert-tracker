@@ -7546,7 +7546,7 @@ function ShowsTab() {
 }
 
 // ─── COLLABORATION WEB - MOBILE RESPONSIVE ────────────────────────────────────
-// ─── COLLABORATION WEB - COMPLETE DUAL VIEW WITH MESH ──────────────────────────
+// ─── COLLABORATION WEB - WITH AVATARS & MESH ───────────────────────────────────
 function CollaborationWebTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -7557,11 +7557,12 @@ function CollaborationWebTab() {
   const [particles, setParticles] = useState([]);
   const [totalShows, setTotalShows] = useState(0);
   const [viewMode, setViewMode] = useState('2d');
+  const [myAvatar, setMyAvatar] = useState(null);
   const canvasRef = useRef(null);
   const threeMountRef = useRef(null);
   const animationRef = useRef(null);
 
-  // Fetch data with mesh tracking
+  // Fetch data with avatars
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -7572,6 +7573,17 @@ function CollaborationWebTab() {
         }
         
         const myUserId = session.user.id;
+        
+        // Fetch MY profile for avatar
+        const { data: myProfile } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', myUserId)
+          .single();
+        
+        if (myProfile?.avatar_url) {
+          setMyAvatar(myProfile.avatar_url);
+        }
         
         const { data: myAttendances } = await supabase
           .from('attendances')
@@ -7618,7 +7630,7 @@ function CollaborationWebTab() {
         const userIds = [...new Set(allAttendances.map(a => a.user_id))];
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, username, avatar_color')
+          .select('id, username, avatar_color, avatar_url')
           .in('id', userIds);
         
         const profileMap = {};
@@ -7659,6 +7671,7 @@ function CollaborationWebTab() {
                   id: att.user_id,
                   username: att.profile.username,
                   color: att.profile.avatar_color,
+                  avatar_url: att.profile.avatar_url,
                   count: 0,
                   showIds: [],
                   shows: []
@@ -7669,7 +7682,7 @@ function CollaborationWebTab() {
               collabMap[att.user_id].shows.push(show);
             });
             
-            // Track collaborator-to-collaborator connections
+            // Track mesh connections
             if (showCollaborators.length >= 2) {
               for (let i = 0; i < showCollaborators.length; i++) {
                 for (let j = i + 1; j < showCollaborators.length; j++) {
@@ -7707,7 +7720,7 @@ function CollaborationWebTab() {
     fetch();
   }, []);
 
-  // 🌊 2D ORBITAL ANIMATION
+  // 🌊 2D ORBITAL ANIMATION (unchanged, add avatar background later)
   useEffect(() => {
     if (collaborators.length === 0 || totalShows === 0 || viewMode !== '2d') return;
 
@@ -7716,8 +7729,8 @@ function CollaborationWebTab() {
     const containerHeight = isMobile ? 500 : 700;
     const centerX = containerWidth / 2;
     const centerY = containerHeight / 2;
-    const baseOrbitRadius = isMobile ? 120 : 220; // Reduced mobile radius
-    const baseSize = isMobile ? 100 : 160; // Smaller YOU on mobile
+    const baseOrbitRadius = isMobile ? 120 : 220;
+    const baseSize = isMobile ? 100 : 160;
 
     const maxCollabCount = Math.max(...collaborators.map(c => c.count));
 
@@ -7730,7 +7743,8 @@ function CollaborationWebTab() {
         x: centerX, 
         y: centerY,
         isCenter: true,
-        count: totalShows
+        count: totalShows,
+        avatar: myAvatar
       },
       ...collaborators.map((c, i) => {
         const angle = (i / collaborators.length) * Math.PI * 2;
@@ -7760,6 +7774,7 @@ function CollaborationWebTab() {
           baseAngle: angle,
           orbitRadius: orbitRadius,
           daysSince: daysSinceLastShow,
+          avatar: c.avatar_url,
           x: centerX + Math.cos(angle) * orbitRadius,
           y: centerY + Math.sin(angle) * orbitRadius
         };
@@ -7857,9 +7872,9 @@ function CollaborationWebTab() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [collaborators, collabLinks, particles.length, totalShows, viewMode]);
+  }, [collaborators, collabLinks, particles.length, totalShows, viewMode, myAvatar]);
 
-  // 🌍 3D GALAXY
+  // 🌍 3D GALAXY WITH AVATAR TEXTURES
   useEffect(() => {
     if (viewMode !== '3d' || !window.THREE || !threeMountRef.current || collaborators.length === 0 || totalShows === 0) return;
     
@@ -7878,7 +7893,7 @@ function CollaborationWebTab() {
     scene.fog = new window.THREE.Fog(0x020204, 800, 1500);
     
     const camera = new window.THREE.PerspectiveCamera(60, width / height, 1, 2000);
-    camera.position.z = isMobile ? 400 : 500; // Closer on mobile
+    camera.position.z = isMobile ? 400 : 500;
     
     const renderer = new window.THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
@@ -7896,12 +7911,7 @@ function CollaborationWebTab() {
     }
     
     starGeo.setAttribute('position', new window.THREE.BufferAttribute(starPositions, 3));
-    const starMat = new window.THREE.PointsMaterial({ 
-      color: 0xffffff, 
-      size: 2, 
-      transparent: true,
-      opacity: 0.6
-    });
+    const starMat = new window.THREE.PointsMaterial({ color: 0xffffff, size: 2, transparent: true, opacity: 0.6 });
     const stars = new window.THREE.Points(starGeo, starMat);
     scene.add(stars);
     
@@ -7911,15 +7921,9 @@ function CollaborationWebTab() {
     const youLight = new window.THREE.PointLight(0x00e5cc, 3, 800);
     scene.add(youLight);
     
-    // Orbit rings
     const galaxyRadius = isMobile ? 180 : 280;
     const ringGeo = new window.THREE.RingGeometry(galaxyRadius, galaxyRadius + 2, 64);
-    const ringMat = new window.THREE.MeshBasicMaterial({ 
-      color: 0x00e5cc, 
-      opacity: 0.15, 
-      transparent: true,
-      side: window.THREE.DoubleSide
-    });
+    const ringMat = new window.THREE.MeshBasicMaterial({ color: 0x00e5cc, opacity: 0.15, transparent: true, side: window.THREE.DoubleSide });
     const ring1 = new window.THREE.Mesh(ringGeo, ringMat);
     ring1.rotation.x = Math.PI / 2;
     scene.add(ring1);
@@ -7929,34 +7933,51 @@ function CollaborationWebTab() {
     ring2.rotation.x = Math.PI / 2;
     scene.add(ring2);
     
-    // YOU sphere
+    // 🎨 YOU sphere with avatar texture
     const youSize = isMobile ? 40 : 60;
     const youGeo = new window.THREE.SphereGeometry(youSize, 32, 32);
-    const youMat = new window.THREE.MeshPhongMaterial({ 
-      color: 0x00e5cc,
-      emissive: 0x00e5cc,
-      emissiveIntensity: 0.8,
-      shininess: 120,
-      transparent: true,
-      opacity: 0.95
-    });
-    const youMesh = new window.THREE.Mesh(youGeo, youMat);
+    
+    let youMesh;
+    if (myAvatar) {
+      const textureLoader = new window.THREE.TextureLoader();
+      textureLoader.load(myAvatar, (texture) => {
+        const youMat = new window.THREE.MeshPhongMaterial({ 
+          map: texture,
+          emissive: 0x00e5cc,
+          emissiveIntensity: 0.3,
+          shininess: 100
+        });
+        youMesh.material = youMat;
+      });
+      
+      // Temporary material while loading
+      const tempMat = new window.THREE.MeshPhongMaterial({ 
+        color: 0x00e5cc,
+        emissive: 0x00e5cc,
+        emissiveIntensity: 0.8
+      });
+      youMesh = new window.THREE.Mesh(youGeo, tempMat);
+    } else {
+      const youMat = new window.THREE.MeshPhongMaterial({ 
+        color: 0x00e5cc,
+        emissive: 0x00e5cc,
+        emissiveIntensity: 0.8
+      });
+      youMesh = new window.THREE.Mesh(youGeo, youMat);
+    }
+    
     scene.add(youMesh);
     
     const glowGeo = new window.THREE.SphereGeometry(youSize + 15, 32, 32);
-    const glowMat = new window.THREE.MeshBasicMaterial({ 
-      color: 0x00e5cc,
-      transparent: true,
-      opacity: 0.1
-    });
+    const glowMat = new window.THREE.MeshBasicMaterial({ color: 0x00e5cc, transparent: true, opacity: 0.1 });
     const glowMesh = new window.THREE.Mesh(glowGeo, glowMat);
     scene.add(glowMesh);
     
-    // Collaborator spheres with mesh
+    // Collaborators with avatars
     const maxCount = Math.max(...collaborators.map(c => c.count));
     const collabMeshes = [];
     const collabGlows = [];
-    const collabPositions = {}; // Track positions for mesh lines
+    const collabPositions = {};
     
     collaborators.forEach((c, i) => {
       const sizeFactor = Math.sqrt(c.count / maxCount);
@@ -7969,46 +7990,46 @@ function CollaborationWebTab() {
       const y = galaxyRadius * Math.sin(theta) * Math.sin(phi);
       const z = galaxyRadius * Math.cos(phi);
       
-      collabPositions[c.id] = { x, y, z }; // Store for mesh lines
+      collabPositions[c.id] = { x, y, z };
       
       const colorInt = parseInt(c.color.replace('#', ''), 16);
       
       const geo = new window.THREE.SphereGeometry(size, 28, 28);
-      const mat = new window.THREE.MeshPhongMaterial({ 
-        color: colorInt,
-        emissive: colorInt,
-        emissiveIntensity: 0.7,
-        shininess: 100,
-        transparent: true,
-        opacity: 0.95
-      });
-      const mesh = new window.THREE.Mesh(geo, mat);
+      
+      let mesh;
+      if (c.avatar_url) {
+        const textureLoader = new window.THREE.TextureLoader();
+        textureLoader.load(c.avatar_url, (texture) => {
+          const mat = new window.THREE.MeshPhongMaterial({ 
+            map: texture,
+            emissive: colorInt,
+            emissiveIntensity: 0.2
+          });
+          mesh.material = mat;
+        });
+        
+        const tempMat = new window.THREE.MeshPhongMaterial({ color: colorInt, emissive: colorInt, emissiveIntensity: 0.7 });
+        mesh = new window.THREE.Mesh(geo, tempMat);
+      } else {
+        const mat = new window.THREE.MeshPhongMaterial({ color: colorInt, emissive: colorInt, emissiveIntensity: 0.7 });
+        mesh = new window.THREE.Mesh(geo, mat);
+      }
+      
       mesh.position.set(x, y, z);
       scene.add(mesh);
       collabMeshes.push(mesh);
       
       const glowGeo2 = new window.THREE.SphereGeometry(size + 12, 20, 20);
-      const glowMat2 = new window.THREE.MeshBasicMaterial({ 
-        color: colorInt,
-        transparent: true,
-        opacity: 0.12
-      });
+      const glowMat2 = new window.THREE.MeshBasicMaterial({ color: colorInt, transparent: true, opacity: 0.12 });
       const glowMesh2 = new window.THREE.Mesh(glowGeo2, glowMat2);
       glowMesh2.position.set(x, y, z);
       scene.add(glowMesh2);
       collabGlows.push(glowMesh2);
       
       // Line to YOU
-      const points = [
-        new window.THREE.Vector3(0, 0, 0),
-        new window.THREE.Vector3(x, y, z)
-      ];
+      const points = [new window.THREE.Vector3(0, 0, 0), new window.THREE.Vector3(x, y, z)];
       const lineGeo = new window.THREE.BufferGeometry().setFromPoints(points);
-      const lineMat = new window.THREE.LineBasicMaterial({ 
-        color: colorInt, 
-        opacity: 0.4, 
-        transparent: true
-      });
+      const lineMat = new window.THREE.LineBasicMaterial({ color: colorInt, opacity: 0.4, transparent: true });
       const line = new window.THREE.Line(lineGeo, lineMat);
       scene.add(line);
       
@@ -8065,8 +8086,8 @@ function CollaborationWebTab() {
       ];
       const meshLineGeo = new window.THREE.BufferGeometry().setFromPoints(points);
       const meshLineMat = new window.THREE.LineBasicMaterial({ 
-        color: 0xffcc00, // Gold for peer connections
-        opacity: 0.25, 
+        color: 0xffcc00,
+        opacity: 0.25,
         transparent: true
       });
       const meshLine = new window.THREE.Line(meshLineGeo, meshLineMat);
@@ -8078,14 +8099,14 @@ function CollaborationWebTab() {
     let prevMouse = { x: 0, y: 0 };
     let rotation = { x: 0.2, y: 0 };
     
-    const onMouseDown = (e) => {
+    const onStart = (e) => {
       isDragging = true;
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       prevMouse = { x: clientX, y: clientY };
     };
     
-    const onMouseMove = (e) => {
+    const onMove = (e) => {
       if (!isDragging) return;
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -8095,19 +8116,19 @@ function CollaborationWebTab() {
       prevMouse = { x: clientX, y: clientY };
     };
     
-    const onMouseUp = () => { isDragging = false; };
+    const onEnd = () => { isDragging = false; };
     
     const onWheel = (e) => {
       e.preventDefault();
       camera.position.z = Math.max(isMobile ? 250 : 300, Math.min(800, camera.position.z + e.deltaY * 0.5));
     };
     
-    renderer.domElement.addEventListener('mousedown', onMouseDown);
-    renderer.domElement.addEventListener('mousemove', onMouseMove);
-    renderer.domElement.addEventListener('mouseup', onMouseUp);
-    renderer.domElement.addEventListener('touchstart', onMouseDown);
-    renderer.domElement.addEventListener('touchmove', onMouseMove);
-    renderer.domElement.addEventListener('touchend', onMouseUp);
+    renderer.domElement.addEventListener('mousedown', onStart);
+    renderer.domElement.addEventListener('mousemove', onMove);
+    renderer.domElement.addEventListener('mouseup', onEnd);
+    renderer.domElement.addEventListener('touchstart', onStart, { passive: true });
+    renderer.domElement.addEventListener('touchmove', onMove, { passive: true });
+    renderer.domElement.addEventListener('touchend', onEnd);
     renderer.domElement.addEventListener('wheel', onWheel);
     
     // Animation
@@ -8144,19 +8165,19 @@ function CollaborationWebTab() {
     animate();
     
     return () => {
-      renderer.domElement.removeEventListener('mousedown', onMouseDown);
-      renderer.domElement.removeEventListener('mousemove', onMouseMove);
-      renderer.domElement.removeEventListener('mouseup', onMouseUp);
-      renderer.domElement.removeEventListener('touchstart', onMouseDown);
-      renderer.domElement.removeEventListener('touchmove', onMouseMove);
-      renderer.domElement.removeEventListener('touchend', onMouseUp);
+      renderer.domElement.removeEventListener('mousedown', onStart);
+      renderer.domElement.removeEventListener('mousemove', onMove);
+      renderer.domElement.removeEventListener('mouseup', onEnd);
+      renderer.domElement.removeEventListener('touchstart', onStart);
+      renderer.domElement.removeEventListener('touchmove', onMove);
+      renderer.domElement.removeEventListener('touchend', onEnd);
       renderer.domElement.removeEventListener('wheel', onWheel);
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
       renderer.dispose();
     };
-  }, [viewMode, collaborators, collabLinks, totalShows]);
+  }, [viewMode, collaborators, collabLinks, totalShows, myAvatar]);
 
   if (loading) return <div style={{ padding: 100, textAlign: 'center', color: C.teal }}>SCANNING...</div>;
 
@@ -8181,182 +8202,61 @@ function CollaborationWebTab() {
             COLLABORATION <span style={{ color: C.gold }}>WEB</span>
           </div>
           <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 8 : 10, color: C.gold }}>
-            {shows.length} SHARED SHOWS · {collaborators.length} COLLABORATORS
+            {shows.length} SHARED · {collaborators.length} COLLABORATORS
           </div>
           {collabLinks.length > 0 && (
             <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.purple, marginTop: 5 }}>
-              🕸️ {collabLinks.length} MESH CONNECTIONS
+              🕸️ {collabLinks.length} MESH LINKS
             </div>
           )}
         </div>
 
         <div style={{ display: 'flex', gap: 6, background: C.bgCard, padding: 4, borderRadius: 6, border: `1px solid ${C.border}` }}>
-          <button
-            onClick={() => setViewMode('2d')}
-            style={{
-              background: viewMode === '2d' ? C.teal : 'transparent',
-              color: viewMode === '2d' ? '#000' : C.gray,
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: 4,
-              fontFamily: "'Space Mono'",
-              fontSize: 10,
-              fontWeight: 900,
-              cursor: 'pointer'
-            }}
-          >
+          <button onClick={() => setViewMode('2d')} style={{ background: viewMode === '2d' ? C.teal : 'transparent', color: viewMode === '2d' ? '#000' : C.gray, border: 'none', padding: '8px 16px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 10, fontWeight: 900, cursor: 'pointer' }}>
             🌊 ORBITAL
           </button>
-          <button
-            onClick={() => setViewMode('3d')}
-            style={{
-              background: viewMode === '3d' ? C.purple : 'transparent',
-              color: viewMode === '3d' ? '#000' : C.gray,
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: 4,
-              fontFamily: "'Space Mono'",
-              fontSize: 10,
-              fontWeight: 900,
-              cursor: 'pointer'
-            }}
-          >
+          <button onClick={() => setViewMode('3d')} style={{ background: viewMode === '3d' ? C.purple : 'transparent', color: viewMode === '3d' ? '#000' : C.gray, border: 'none', padding: '8px 16px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 10, fontWeight: 900, cursor: 'pointer' }}>
             🌍 GALAXY
           </button>
         </div>
       </div>
 
-      <div style={{ 
-        width: '100%',
-        maxWidth: `${containerWidth}px`,
-        height: `${containerHeight}px`,
-        margin: '0 auto', 
-        position: 'relative', 
-        background: '#050508', 
-        border: `1px solid ${C.border}`, 
-        borderRadius: 12,
-        overflow: 'hidden'
-      }}>
+      <div style={{ width: '100%', maxWidth: `${containerWidth}px`, height: `${containerHeight}px`, margin: '0 auto', position: 'relative', background: '#050508', border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
         
         {viewMode === '2d' ? (
           <>
-            <canvas
-              ref={canvasRef}
-              width={containerWidth}
-              height={containerHeight}
-              style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none' }}
-            />
+            <canvas ref={canvasRef} width={containerWidth} height={containerHeight} style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none' }} />
 
             <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
-              {/* YOU to collaborator lines */}
               {nodes.length > 1 && nodes.slice(1).map((node) => {
                 const you = nodes[0];
                 if (!you || !node.x || !node.y) return null;
                 
                 return (
-                  <line
-                    key={`you-${node.id}`}
-                    x1={you.x}
-                    y1={you.y}
-                    x2={node.x}
-                    y2={node.y}
-                    stroke={node.color}
-                    strokeWidth={Math.max(node.count / 4, 2)}
-                    opacity="0.3"
-                  />
+                  <line key={`you-${node.id}`} x1={you.x} y1={you.y} x2={node.x} y2={node.y} stroke={node.color} strokeWidth={Math.max(node.count / 4, 2)} opacity="0.3" />
                 );
               })}
               
-              {/* 🕸️ MESH: Collaborator-to-collaborator lines */}
               {collabLinks.map((link, i) => {
                 const nodeA = nodes.find(n => n.id === link.userA);
                 const nodeB = nodes.find(n => n.id === link.userB);
-                
                 if (!nodeA || !nodeB) return null;
                 
-                return (
-                  <line
-                    key={`mesh-${i}`}
-                    x1={nodeA.x}
-                    y1={nodeA.y}
-                    x2={nodeB.x}
-                    y2={nodeB.y}
-                    stroke="#ffcc00"
-                    strokeWidth={Math.max(link.count / 2, 1.5)}
-                    opacity="0.25"
-                    strokeDasharray="4 4"
-                  />
-                );
+                return <line key={`mesh-${i}`} x1={nodeA.x} y1={nodeA.y} x2={nodeB.x} y2={nodeB.y} stroke="#ffcc00" strokeWidth={Math.max(link.count / 2, 1.5)} opacity="0.25" strokeDasharray="4 4" />;
               })}
             </svg>
 
-            <style>{`
-              @keyframes orbitPulse {
-                0%, 100% { box-shadow: 0 0 30px var(--node-color); }
-                50% { box-shadow: 0 0 50px var(--node-color); }
-              }
-            `}</style>
+            <style>{`@keyframes orbitPulse { 0%, 100% { box-shadow: 0 0 30px var(--node-color); } 50% { box-shadow: 0 0 50px var(--node-color); } }`}</style>
 
             {nodes.map((node) => {
               const isYou = node.id === 'you';
               if (!node.x || !node.y) return null;
               
               return (
-                <div
-                  key={node.id}
-                  onClick={() => !isYou && setDetailView(collaborators.find(c => c.id === node.id))}
-                  style={{
-                    position: 'absolute',
-                    left: node.x - (node.size / 2),
-                    top: node.y - (node.size / 2),
-                    width: node.size,
-                    height: node.size,
-                    borderRadius: '50%',
-                    background: node.color,
-                    border: `3px solid ${node.color}`,
-                    boxShadow: `0 0 35px ${node.color}`,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: "'Space Mono'",
-                    color: '#000',
-                    fontWeight: 900,
-                    cursor: isYou ? 'default' : 'pointer',
-                    zIndex: isYou ? 100 : 80,
-                    userSelect: 'none',
-                    '--node-color': node.color,
-                    animation: 'orbitPulse 2s ease-in-out infinite',
-                    gap: '4px'
-                  }}
-                >
-                  <div style={{ 
-                    fontSize: node.size > 90 ? (isMobile ? 11 : 16) : (isMobile ? 8 : 11),
-                    lineHeight: 1
-                  }}>
-                    {isYou ? 'YOU' : node.label.toUpperCase()}
-                  </div>
-                  
-                  <div style={{
-                    background: 'rgba(0,0,0,0.7)',
-                    borderRadius: '12px',
-                    padding: node.size > 90 ? '4px 10px' : '3px 7px',
-                    fontFamily: "'Bebas Neue'",
-                    fontSize: node.size > 90 ? '1.2rem' : (isMobile ? '0.85rem' : '1rem'),
-                    color: '#ffcc00'
-                  }}>
-                    {node.count}
-                  </div>
-
-                  {!isYou && node.daysSince !== undefined && (
-                    <div style={{
-                      fontFamily: "'Space Mono'",
-                      fontSize: isMobile ? 5 : 6,
-                      color: 'rgba(0,0,0,0.5)'
-                    }}>
-                      {node.daysSince < 30 ? 'RECENT' : node.daysSince < 180 ? 'MONTHS' : 'YEARS'}
-                    </div>
-                  )}
+                <div key={node.id} onClick={() => !isYou && setDetailView(collaborators.find(c => c.id === node.id))} style={{ position: 'absolute', left: node.x - (node.size / 2), top: node.y - (node.size / 2), width: node.size, height: node.size, borderRadius: '50%', background: node.avatar ? `url(${node.avatar}) center/cover` : node.color, border: `3px solid ${node.color}`, boxShadow: `0 0 35px ${node.color}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: "'Space Mono'", color: node.avatar ? '#fff' : '#000', fontWeight: 900, cursor: isYou ? 'default' : 'pointer', zIndex: isYou ? 100 : 80, userSelect: 'none', '--node-color': node.color, animation: 'orbitPulse 2s ease-in-out infinite', gap: '4px', textShadow: node.avatar ? '0 2px 4px rgba(0,0,0,0.8)' : 'none' }}>
+                  <div style={{ fontSize: node.size > 90 ? (isMobile ? 11 : 16) : (isMobile ? 8 : 11) }}>{isYou ? 'YOU' : node.label.toUpperCase()}</div>
+                  <div style={{ background: 'rgba(0,0,0,0.8)', borderRadius: '12px', padding: node.size > 90 ? '4px 10px' : '3px 7px', fontFamily: "'Bebas Neue'", fontSize: node.size > 90 ? '1.2rem' : (isMobile ? '0.85rem' : '1rem'), color: '#ffcc00' }}>{node.count}</div>
+                  {!isYou && node.daysSince !== undefined && <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 5 : 6, color: node.avatar ? '#fff' : 'rgba(0,0,0,0.5)', textShadow: node.avatar ? '0 1px 2px rgba(0,0,0,0.8)' : 'none' }}>{node.daysSince < 30 ? 'RECENT' : node.daysSince < 180 ? 'MONTHS' : 'YEARS'}</div>}
                 </div>
               );
             })}
@@ -8366,12 +8266,8 @@ function CollaborationWebTab() {
         )}
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: 15, fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, letterSpacing: 1.5, lineHeight: 1.6 }}>
-        {viewMode === '2d' ? (
-          <>📏 SIZE = SHARED // 📍 DISTANCE = RECENCY // 🕸️ GOLD LINES = PEER CONNECTIONS</>
-        ) : (
-          <>🌍 DRAG TO ROTATE // SCROLL TO ZOOM // GOLD = COLLABORATORS WHO KNOW EACH OTHER</>
-        )}
+      <div style={{ textAlign: 'center', marginTop: 15, fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, letterSpacing: 1.5 }}>
+        {viewMode === '2d' ? '🕸️ GOLD MESH = COLLABORATORS WHO ATTENDED TOGETHER' : '🌍 YOUR AVATAR MAPPED TO SPHERE // DRAG TO ROTATE'}
       </div>
 
       {detailView && (
@@ -8379,12 +8275,8 @@ function CollaborationWebTab() {
           <Card neon style={{ border: `2px solid ${detailView.color}`, boxShadow: `0 0 30px ${hexToRgba(detailView.color, 0.3)}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '3rem', color: detailView.color }}>
-                  {detailView.username.toUpperCase()}
-                </div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray }}>
-                  {detailView.count} SHARED ({Math.round((detailView.count / totalShows) * 100)}%)
-                </div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '3rem', color: detailView.color }}>{detailView.username.toUpperCase()}</div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray }}>{detailView.count} SHARED ({Math.round((detailView.count / totalShows) * 100)}%)</div>
               </div>
               <button onClick={() => setDetailView(null)} style={{ background: 'none', border: `1px solid ${C.border}`, color: C.gray, padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 }}>CLOSE</button>
             </div>
