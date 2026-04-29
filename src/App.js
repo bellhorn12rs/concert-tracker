@@ -7630,20 +7630,23 @@ return {
 
     setNodes(nodeData);
 
-    // Initialize bouncing particles
-    const particlePool = [];
+    // Initialize bouncing particles - EXACT count match
+const particlePool = [];
 collaborators.forEach((c, i) => {
+  console.log(`Creating ${c.count} particles for ${c.username}`);
+  
   // Exactly c.count particles - no more, no less
   for (let p = 0; p < c.count; p++) {
     particlePool.push({
       nodeIndex: i,
-      progress: Math.random(), // Random starting position
-      speed: 0.005 + Math.random() * 0.005, // Faster for more visible bounce
-      direction: Math.random() > 0.5 ? 1 : -1, // Random initial direction
+      progress: Math.random(), // Spread them along the line
+      speed: 0.015 + Math.random() * 0.01, // MUCH faster (3x speed)
+      direction: Math.random() > 0.5 ? 1 : -1,
       color: c.color
     });
   }
 });
+console.log(`Total particles created: ${particlePool.length}`);
     setParticles(particlePool);
 
     // Animation loop
@@ -7689,28 +7692,36 @@ collaborators.forEach((c, i) => {
       );
 
       // Draw particles on canvas
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, containerWidth, containerHeight);
-        
-        particles.forEach(p => {
-          const collabNode = updatedNodes[p.nodeIndex + 1];
-          if (!collabNode) return;
-          
-          const x = centerX + (collabNode.x - centerX) * p.progress;
-          const y = centerY + (collabNode.y - centerY) * p.progress;
-          
-          ctx.beginPath();
-ctx.arc(x, y, 4, 0, Math.PI * 2);
-ctx.fillStyle = p.color;
-ctx.shadowBlur = 15;
-ctx.shadowColor = p.color;
-ctx.globalAlpha = 0.9;
-ctx.fill();
-ctx.globalAlpha = 1.0;
-        });
-      }
+const canvas = canvasRef.current;
+if (canvas) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, containerWidth, containerHeight);
+  
+  particles.forEach(p => {
+    const collabNode = updatedNodes[p.nodeIndex + 1];
+    if (!collabNode) return;
+    
+    const x = centerX + (collabNode.x - centerX) * p.progress;
+    const y = centerY + (collabNode.y - centerY) * p.progress;
+    
+    // Draw larger, brighter particles with trail
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = p.color;
+    ctx.globalAlpha = 1;
+    ctx.fill();
+    
+    // Add a trailing glow
+    ctx.beginPath();
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = 0.2;
+    ctx.fill();
+    ctx.globalAlpha = 1.0;
+  });
+}
 
       animationRef.current = requestAnimationFrame(animate);
     };
