@@ -7567,7 +7567,6 @@ function ShowsTab() {
 
 // ─── COLLABORATION WEB ───────────────────────────────────────────────────────
 // ─── COLLABORATION WEB ───────────────────────────────────────────────────────
-// ─── COLLABORATION WEB ───────────────────────────────────────────────────────
 function CollaborationWebTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -7626,10 +7625,12 @@ function CollaborationWebTab() {
                     id: a.user_id,
                     username: profileMap[a.user_id]?.username || 'Unknown',
                     color: profileMap[a.user_id]?.avatar_color || C.gray,
-                    count: 0
+                    count: 0,
+                    showIds: [] // 🟢 Track which shows
                   };
                 }
                 collabMap[a.user_id].count++;
+                collabMap[a.user_id].showIds.push(show.id); // 🟢 Add this show
               });
             }
           }
@@ -7800,24 +7801,26 @@ function CollaborationWebTab() {
             </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 15, marginTop: 20 }}>
-              {shows.slice(0, 20).map(show => (
-                <div key={show.id} style={{
-                  background: hexToRgba(detailView.color, 0.05),
-                  border: `1px solid ${hexToRgba(detailView.color, 0.3)}`,
-                  borderRadius: 8,
-                  padding: 15
-                }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff', lineHeight: 1 }}>
-                    {show.is_festival ? show.festival_name?.toUpperCase() : show.artist?.toUpperCase()}
+              {shows
+                .filter(show => detailView.showIds.includes(show.id))
+                .map(show => (
+                  <div key={show.id} style={{
+                    background: hexToRgba(detailView.color, 0.05),
+                    border: `1px solid ${hexToRgba(detailView.color, 0.3)}`,
+                    borderRadius: 8,
+                    padding: 15
+                  }}>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff', lineHeight: 1 }}>
+                      {show.is_festival ? show.festival_name?.toUpperCase() : show.artist?.toUpperCase()}
+                    </div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 5 }}>
+                      {fmtDateShort(show.date)}
+                    </div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: detailView.color, marginTop: 3 }}>
+                      {show.venue?.toUpperCase()}
+                    </div>
                   </div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 5 }}>
-                    {fmtDateShort(show.date)}
-                  </div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: detailView.color, marginTop: 3 }}>
-                    {show.venue?.toUpperCase()}
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </Card>
         </div>
