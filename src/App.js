@@ -7429,7 +7429,7 @@ function ShowsTab() {
 }
 
 // ─── COLLABORATION WEB - MOBILE RESPONSIVE ────────────────────────────────────
-// ─── COLLABORATION WEB - PROPORTIONAL ORBITAL EDITION ──────────────────────────
+// ─── COLLABORATION WEB - RECENCY + PROPORTION EDITION ──────────────────────────
 function CollaborationWebTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -7464,7 +7464,7 @@ function CollaborationWebTab() {
         }
         
         const myShowIds = myAttendances.map(a => a.show_id);
-        setTotalShows(myShowIds.length); // Store total for proportional sizing
+        setTotalShows(myShowIds.length);
         
         const batchSize = 100;
         const showBatches = [];
@@ -7535,11 +7535,13 @@ function CollaborationWebTab() {
                   username: att.profile.username,
                   color: att.profile.avatar_color,
                   count: 0,
-                  showIds: []
+                  showIds: [],
+                  shows: []
                 };
               }
               collabMap[att.user_id].count++;
               collabMap[att.user_id].showIds.push(show.id);
+              collabMap[att.user_id].shows.push(show);
             });
           }
         });
@@ -7555,7 +7557,7 @@ function CollaborationWebTab() {
     fetch();
   }, []);
 
-  // 🌊 ORBITAL MOTION + PARTICLE SYSTEM WITH PROPORTIONAL SIZING
+  // 🌊 ORBITAL MOTION WITH RECENCY-BASED DISTANCE
   useEffect(() => {
     if (collaborators.length === 0 || totalShows === 0) return;
 
@@ -7564,10 +7566,13 @@ function CollaborationWebTab() {
     const containerHeight = isMobile ? 500 : 700;
     const centerX = containerWidth / 2;
     const centerY = containerHeight / 2;
-    const orbitRadius = isMobile ? 140 : 220;
-    const baseSize = isMobile ? 120 : 160; // Base size for YOU
+    const baseOrbitRadius = isMobile ? 180 : 260;
+    const baseSize = isMobile ? 120 : 160;
 
-    // Calculate proportional sizes
+    // Find max count for sizing
+    const maxCollabCount = Math.max(...collaborators.map(c => c.count));
+
+    // Calculate node data with recency-based orbits
     const nodeData = [
       { 
         id: 'you', 
@@ -7581,12 +7586,29 @@ function CollaborationWebTab() {
       },
       ...collaborators.map((c, i) => {
         const angle = (i / collaborators.length) * Math.PI * 2;
-        // Proportional sizing: (sharedShows / totalShows) * baseSize
-        // Minimum size: 40px mobile, 60px desktop
+        
+        // Proportional sizing based on shared shows
+        // Use sqrt for better visual scaling (41 vs 7 won't be 6x difference)
+        const sizeFactor = Math.sqrt(c.count / maxCollabCount);
         const proportionalSize = Math.max(
-          (c.count / totalShows) * baseSize,
-          isMobile ? 40 : 60
+          sizeFactor * (isMobile ? 80 : 110),
+          isMobile ? 50 : 65
         );
+        
+        // Calculate recency (days since last shared show)
+        const mostRecentShow = c.shows.sort((a, b) => b.date.localeCompare(a.date))[0];
+        const daysSince = mostRecentShow ? daysSince(mostRecentShow.date) : 9999;
+        
+        // Map recency to orbit distance
+        // 0-30 days = close (0.7x base radius)
+        // 30-180 days = medium (1.0x base radius)
+        // 180+ days = far (1.3x base radius)
+        let distanceFactor = 1.0;
+        if (daysSince < 30) distanceFactor = 0.7;
+        else if (daysSince < 180) distanceFactor = 1.0;
+        else distanceFactor = 1.3;
+        
+        const orbitRadius = baseOrbitRadius * distanceFactor;
         
         return {
           id: c.id,
@@ -7597,6 +7619,8 @@ function CollaborationWebTab() {
           size: proportionalSize,
           baseAngle: angle,
           orbitRadius: orbitRadius,
+          daysSince: daysSince,
+          mostRecentDate: mostRecentShow?.date,
           x: centerX + Math.cos(angle) * orbitRadius,
           y: centerY + Math.sin(angle) * orbitRadius
         };
@@ -7605,7 +7629,7 @@ function CollaborationWebTab() {
 
     setNodes(nodeData);
 
-    // Initialize particles
+    // Initialize bouncing particles
     const particlePool = [];
     collaborators.forEach((c, i) => {
       const particleCount = Math.min(Math.floor(c.count * 1.5), 30);
@@ -7613,7 +7637,8 @@ function CollaborationWebTab() {
         particlePool.push({
           nodeIndex: i,
           progress: Math.random(),
-          speed: 0.002 + Math.random() * 0.003,
+          speed: 0.004 + Math.random() * 0.004,
+          direction: Math.random() > 0.5 ? 1 : -1, // Bounce direction
           color: c.color
         });
       }
@@ -7623,7 +7648,7 @@ function CollaborationWebTab() {
     // Animation loop
     let time = 0;
     const animate = () => {
-      time += 0.0008; // Slow orbital speed
+      time += 0.0006; // Slow orbital speed
 
       // Update node positions (orbital motion)
       const updatedNodes = nodeData.map(node => {
@@ -7639,12 +7664,27 @@ function CollaborationWebTab() {
 
       setNodes(updatedNodes);
 
-      // Update particles
+      // Update bouncing particles
       setParticles(prevParticles => 
-        prevParticles.map(p => ({
-          ...p,
-          progress: (p.progress + p.speed) % 1
-        }))
+        prevParticles.map(p => {
+          let newProgress = p.progress + (p.speed * p.direction);
+          let newDirection = p.direction;
+          
+          // Bounce at endpoints
+          if (newProgress >= 1) {
+            newProgress = 1;
+            newDirection = -1;
+          } else if (newProgress <= 0) {
+            newProgress = 0;
+            newDirection = 1;
+          }
+          
+          return {
+            ...p,
+            progress: newProgress,
+            direction: newDirection
+          };
+        })
       );
 
       // Draw particles on canvas
@@ -7661,9 +7701,9 @@ function CollaborationWebTab() {
           const y = centerY + (collabNode.y - centerY) * p.progress;
           
           ctx.beginPath();
-          ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+          ctx.arc(x, y, 3, 0, Math.PI * 2);
           ctx.fillStyle = p.color;
-          ctx.shadowBlur = 10;
+          ctx.shadowBlur = 12;
           ctx.shadowColor = p.color;
           ctx.fill();
         });
@@ -7706,7 +7746,7 @@ function CollaborationWebTab() {
           {shows.length} SHARED SHOWS · {collaborators.length} COLLABORATORS
         </div>
         <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.purple, marginTop: 5, letterSpacing: 2 }}>
-          🌊 BUBBLE SIZE = SHARED HISTORY // PARTICLES = MEMORIES FLOWING
+          🌊 SIZE = SHARED SHOWS // DISTANCE = RECENCY // PARTICLES = MEMORIES
         </div>
       </div>
 
@@ -7741,9 +7781,6 @@ function CollaborationWebTab() {
             const you = nodes[0];
             if (!you || !node.x || !node.y) return null;
             
-            const collab = collaborators[i];
-            if (!collab) return null;
-            
             return (
               <line
                 key={node.id}
@@ -7752,8 +7789,8 @@ function CollaborationWebTab() {
                 x2={node.x}
                 y2={node.y}
                 stroke={node.color}
-                strokeWidth={Math.max(collab.count / 3, 2)}
-                opacity="0.25"
+                strokeWidth={Math.max(node.count / 4, 2)}
+                opacity="0.3"
               />
             );
           })}
@@ -7772,7 +7809,6 @@ function CollaborationWebTab() {
 
         {nodes.map((node) => {
           const isYou = node.id === 'you';
-          const collab = isYou ? null : collaborators.find(c => c.id === node.id);
           
           if (!node.x || !node.y) return null;
           
@@ -7780,7 +7816,7 @@ function CollaborationWebTab() {
             <div
               key={node.id}
               className={!isYou ? "orbit-node" : ""}
-              onClick={() => !isYou && setDetailView(collab)}
+              onClick={() => !isYou && setDetailView(collaborators.find(c => c.id === node.id))}
               style={{
                 position: 'absolute',
                 left: node.x - (node.size / 2),
@@ -7808,7 +7844,7 @@ function CollaborationWebTab() {
             >
               {/* Label */}
               <div style={{ 
-                fontSize: node.size > 80 ? (isMobile ? 11 : 14) : (isMobile ? 8 : 10),
+                fontSize: node.size > 90 ? (isMobile ? 12 : 16) : (isMobile ? 9 : 11),
                 lineHeight: 1
               }}>
                 {isYou ? 'YOU' : node.label.toUpperCase()}
@@ -7816,18 +7852,32 @@ function CollaborationWebTab() {
               
               {/* Count badge INSIDE bubble */}
               <div style={{
-                background: 'rgba(0,0,0,0.6)',
-                border: '1px solid rgba(0,0,0,0.8)',
+                background: 'rgba(0,0,0,0.7)',
+                border: '1px solid rgba(0,0,0,0.9)',
                 borderRadius: '12px',
-                padding: node.size > 80 ? '3px 8px' : '2px 6px',
+                padding: node.size > 90 ? '4px 10px' : '3px 7px',
                 fontFamily: "'Bebas Neue'",
-                fontSize: node.size > 80 ? '1.2rem' : '0.9rem',
+                fontSize: node.size > 90 ? '1.3rem' : '1rem',
                 color: '#ffcc00',
                 letterSpacing: '1px',
-                lineHeight: 1
+                lineHeight: 1,
+                boxShadow: '0 0 10px rgba(0,0,0,0.5)'
               }}>
                 {node.count}
               </div>
+
+              {/* Recency indicator */}
+              {!isYou && node.daysSince !== undefined && (
+                <div style={{
+                  fontFamily: "'Space Mono'",
+                  fontSize: node.size > 90 ? 7 : 6,
+                  color: 'rgba(0,0,0,0.5)',
+                  marginTop: 2,
+                  letterSpacing: '0.5px'
+                }}>
+                  {node.daysSince < 30 ? 'RECENT' : node.daysSince < 180 ? 'MONTHS' : 'YEARS'}
+                </div>
+              )}
             </div>
           );
         })}
@@ -7840,11 +7890,12 @@ function CollaborationWebTab() {
         fontFamily: "'Space Mono'", 
         fontSize: 8, 
         color: C.grayDim,
-        letterSpacing: 2,
-        lineHeight: 1.6
+        letterSpacing: 1.5,
+        lineHeight: 1.8
       }}>
-        🌊 BUBBLE SIZE = PROPORTION OF YOUR {totalShows} TOTAL SHOWS<br/>
-        ✨ PARTICLE COUNT = SHARED MEMORY STRENGTH
+        📏 BUBBLE SIZE = SHARED SHOW COUNT<br/>
+        📍 ORBIT DISTANCE = TIME SINCE LAST COLLAB<br/>
+        ✨ BOUNCING PARTICLES = FLOWING MEMORIES
       </div>
 
       {/* Detail view */}
