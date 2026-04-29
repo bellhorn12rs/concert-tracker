@@ -7567,94 +7567,113 @@ function ShowsTab() {
 
 // ─── COLLABORATION WEB ───────────────────────────────────────────────────────
 // ─── COLLABORATION WEB ───────────────────────────────────────────────────────
+// ─── COLLABORATION WEB ───────────────────────────────────────────────────────
 function CollaborationWebTab() {
+  const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [myShows, setMyShows] = useState([]);
-  const [collaborators, setCollaborators] = useState([]);
   const [detailView, setDetailView] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user?.id) return;
-
-      // Get shows where multiple people attended
-      const { data: allShows } = await supabase
-        .from('shows')
-        .select('id')
-        .limit(1000);
-      
-      const { data: allAttendances } = await supabase
-        .from('attendances')
-        .select(`
-          show_id,
-          user_id,
-          profile:profiles(id, username, avatar_color)
-        `);
-      
-      // Find shows with multiple attendees
-      const showAttendeeMap = {};
-      (allAttendances || []).forEach(att => {
-        if (!showAttendeeMap[att.show_id]) showAttendeeMap[att.show_id] = [];
-        showAttendeeMap[att.show_id].push(att);
-      });
-      
-      // Find my shared shows
-      const myShowIds = [];
-      const collabMap = {};
-      
-      Object.entries(showAttendeeMap).forEach(([showId, attendees]) => {
-        const iAttended = attendees.find(a => a.user_id === session.user.id);
-        if (iAttended && attendees.length > 1) {
-          myShowIds.push(showId);
-          
-          attendees.forEach(att => {
-            if (att.user_id === session.user.id) return;
-            
-            if (!collabMap[att.user_id]) {
-              collabMap[att.user_id] = {
-                id: att.user_id,
-                username: att.profile.username,
-                color: att.profile.avatar_color,
-                count: 0
-              };
-            }
-            collabMap[att.user_id].count++;
-          });
+    const fetch = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.id) return;
+        
+        const myUserId = session.user.id;
+        
+        // EXACT SAME LOGIC AS ShowsTab
+        const { data: allShows } = await supabase
+          .from('shows')
+          .select('*')
+          .order('date', { ascending: false })
+          .limit(2000);
+        
+        if (!allShows) {
+          setLoading(false);
+          return;
         }
-      });
-      
-      setCollaborators(Object.values(collabMap).sort((a, b) => b.count - a.count));
-      setMyShows(myShowIds);
-      setLoading(false);
+
+        const { data: allAttendances } = await supabase
+          .from('attendances')
+          .select('*');
+        
+        const { data: allProfiles } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_color');
+        
+        const profileMap = {};
+        (allProfiles || []).forEach(p => {
+          profileMap[p.id] = p;
+        });
+        
+        // Find shows where I attended AND someone else attended
+        const mySharedShows = [];
+        const collabMap = {};
+        
+        allShows.forEach(show => {
+          const attendances = (allAttendances || []).filter(a => a.show_id === show.id);
+          
+          if (attendances.length > 1) {
+            const iAttended = attendances.find(a => a.user_id === myUserId);
+            
+            if (iAttended) {
+              mySharedShows.push(show);
+              
+              // Count collaborators
+              attendances.forEach(a => {
+                if (a.user_id === myUserId) return;
+                
+                if (!collabMap[a.user_id]) {
+                  collabMap[a.user_id] = {
+                    id: a.user_id,
+                    username: profileMap[a.user_id]?.username || 'Unknown',
+                    color: profileMap[a.user_id]?.avatar_color || C.gray,
+                    count: 0
+                  };
+                }
+                collabMap[a.user_id].count++;
+              });
+            }
+          }
+        });
+        
+        console.log('MY SHARED SHOWS:', mySharedShows.length);
+        console.log('COLLABORATORS:', Object.keys(collabMap).length);
+        
+        setShows(mySharedShows);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error:', err);
+        setLoading(false);
+      }
     };
-    
-    fetchData();
+    fetch();
   }, []);
 
-  if (loading) return (
-    <div style={{ padding: 100, textAlign: 'center' }}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal }}>
-        SCANNING NETWORK...
-      </div>
-    </div>
-  );
+  if (loading) return <div style={{ padding: 100, textAlign: 'center', color: C.teal }}>SCANNING...</div>;
 
-  if (collaborators.length === 0) {
+  const collaborators = useMemo(() => {
+    const collabMap = {};
+    
+    shows.forEach(show => {
+      // For each show, find who else attended (this is already proven to work in ShowsTab)
+      const attendances = []; // We'll rebuild this from shows data
+      // This is temporary - we'll use the shows state we already have
+    });
+    
+    return Object.values(collabMap);
+  }, [shows]);
+
+  if (shows.length === 0) {
     return (
       <div style={{ padding: 100, textAlign: 'center' }}>
         <div style={{ fontSize: '3rem', marginBottom: 20 }}>🤝</div>
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff' }}>
           NO COLLABORATIONS DETECTED
         </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginTop: 10 }}>
-          SHARE YOUR ARCHIVE LINK OR USE "I WAS THERE" TO BUILD THE NETWORK
-        </div>
       </div>
     );
   }
-
-  const centerX = 400, centerY = 350, radius = 180;
 
   return (
     <div className="fade-in" style={{ padding: 40 }}>
@@ -7663,108 +7682,13 @@ function CollaborationWebTab() {
           COLLABORATION <span style={{ color: C.gold }}>WEB</span>
         </div>
         <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold }}>
-          {myShows.length} SHARED SHOWS · {collaborators.length} COLLABORATORS
+          {shows.length} SHARED SHOWS DETECTED
         </div>
       </div>
 
-      {/* THE NETWORK */}
-      <div style={{ 
-        width: '800px', height: '700px', margin: '0 auto', 
-        position: 'relative', background: '#050508', 
-        border: `1px solid ${C.border}`, borderRadius: 12 
-      }}>
-        
-        {/* YOU (center) */}
-        <div style={{
-          position: 'absolute',
-          left: centerX - 60,
-          top: centerY - 60,
-          width: 120, height: 120,
-          borderRadius: '50%',
-          background: C.teal,
-          border: `2px solid ${C.teal}`,
-          boxShadow: `0 0 30px ${C.teal}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: "'Bebas Neue'",
-          fontSize: '1.5rem',
-          color: '#000',
-          zIndex: 100
-        }}>
-          YOU
-        </div>
-
-        {/* COLLABORATORS */}
-        {collaborators.map((collab, i) => {
-          const angle = (i / collaborators.length) * Math.PI * 2 - Math.PI / 2;
-          const x = centerX + radius * Math.cos(angle);
-          const y = centerY + radius * Math.sin(angle);
-          
-          return (
-            <React.Fragment key={collab.id}>
-              {/* Connection line */}
-              <svg style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10 }}>
-                <line 
-                  x1={centerX} y1={centerY} 
-                  x2={x} y2={y}
-                  stroke={collab.color}
-                  strokeWidth={Math.max(collab.count / 2, 2)}
-                  opacity={0.3}
-                />
-              </svg>
-              
-              {/* Count badge */}
-              <div style={{
-                position: 'absolute',
-                left: (centerX + (x - centerX) * 0.6) - 15,
-                top: (centerY + (y - centerY) * 0.6) - 15,
-                width: 30, height: 30,
-                borderRadius: '50%',
-                background: C.gold,
-                border: `1px solid ${C.gold}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: "'Space Mono'",
-                fontSize: 12,
-                fontWeight: 900,
-                color: '#000',
-                zIndex: 90
-              }}>
-                {collab.count}
-              </div>
-              
-              {/* Person orb */}
-              <div 
-                onClick={() => setDetailView(collab)}
-                style={{
-                  position: 'absolute',
-                  left: x - 40,
-                  top: y - 40,
-                  width: 80, height: 80,
-                  borderRadius: '50%',
-                  background: collab.color,
-                  border: `2px solid ${collab.color}`,
-                  boxShadow: `0 0 20px ${collab.color}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontFamily: "'Space Mono'",
-                  fontSize: 10,
-                  color: '#000',
-                  cursor: 'pointer',
-                  zIndex: 80,
-                  transition: 'transform 0.2s'
-                }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                {collab.username.toUpperCase()}
-              </div>
-            </React.Fragment>
-          );
-        })}
+      {/* Just show the count for now */}
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 14, color: '#fff', textAlign: 'center' }}>
+        DATA DETECTED - BUILDING NETWORK...
       </div>
     </div>
   );
