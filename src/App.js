@@ -4170,9 +4170,27 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
       </div>
 
       {/* 🟢 RIGHT: MEDIA CLUSTER */}
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-end', minWidth: isMobile ? '100%' : '400px', zIndex: 2, marginLeft: 'auto' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', transform: isMobile ? 'scale(0.8)' : 'none', transformOrigin: 'right' }}>
-        {finalSetlists.map((url, sIdx) => (
+<div style={{ 
+  display: 'flex', 
+  alignItems: 'center', 
+  justifyContent: isMobile ? 'center' : 'flex-end', 
+  width: isMobile ? '100%' : 'auto',
+  minWidth: isMobile ? 'auto' : '400px',
+  zIndex: 2, 
+  marginLeft: isMobile ? '0' : 'auto',
+  overflow: isMobile ? 'visible' : 'visible'
+}}>
+  <div style={{ 
+    display: 'flex', 
+    flexWrap: isMobile ? 'wrap' : 'nowrap',
+    alignItems: 'flex-start', 
+    justifyContent: isMobile ? 'center' : 'flex-start',
+    transform: isMobile ? 'scale(0.7)' : 'none',
+    transformOrigin: isMobile ? 'center' : 'right',
+    gap: isMobile ? '10px' : '0',
+    width: isMobile ? '100%' : 'auto'
+  }}>
+     {finalSetlists.map((url, sIdx) => (
           <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={finalSetlists.length} />
         ))}
         {finalPosters.map((poster, pIdx) => (
@@ -4184,8 +4202,14 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
             index={pIdx}
           />
         ))}
-        <div style={{ marginLeft: (finalSetlists.length > 0 || finalPosters.length > 0) ? '-20px' : '0', display: 'flex' }}>
-          {finalPhotos.map((url, pIdx) => (
+        <div style={{ 
+  marginLeft: isMobile ? '0' : ((finalSetlists.length > 0 || finalPosters.length > 0) ? '-20px' : '0'),
+  display: 'flex',
+  flexWrap: isMobile ? 'wrap' : 'nowrap',
+  gap: isMobile ? '10px' : '0',
+  justifyContent: isMobile ? 'center' : 'flex-start'
+}}>
+   {finalPhotos.map((url, pIdx) => (
             <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
           ))}
         </div>
