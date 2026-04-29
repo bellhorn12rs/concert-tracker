@@ -2539,7 +2539,7 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
                 ))}
               </div>
 
-              {/* MEDIA VAULT (REPAIRED) */}
+             {/* MEDIA VAULT (REPAIRED) */}
 <div style={{ 
   flex: 1.2, 
   display: 'flex', 
@@ -2548,30 +2548,34 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
   width: window.innerWidth < 768 ? '100%' : 'auto'
 }}>
   {(archive.setlists.length > 0 || archive.archivePosters.length > 0) && (
-  <div>
-    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: gc, letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// STAGE ARTIFACTS</div>
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'flex-start' }}>
-<div style={{ 
-  display: 'flex', 
-  flexWrap: 'wrap', 
-  gap: '15px', 
-  alignItems: 'flex-start',
-  justifyContent: window.innerWidth < 768 ? 'center' : 'flex-start'
-}}>
-      {archive.setlists.map((m, idx) => (
-        <SetlistPaper key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.setlists.length} />
-      ))}
-      {archive.archivePosters.map((m, idx) => (
-        <GigPoster key={`poster-${idx}-${m.url}`} src={m.url} artist={selectedData.artist} date={m.date} index={idx} />
-      ))}
+    <div>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: gc, letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// STAGE ARTIFACTS</div>
+      <div style={{ 
+        display: 'flex', 
+        flexWrap: 'wrap', 
+        gap: '15px', 
+        alignItems: 'flex-start',
+        justifyContent: window.innerWidth < 768 ? 'center' : 'flex-start'
+      }}>
+        {archive.setlists.map((m, idx) => (
+          <SetlistPaper key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.setlists.length} />
+        ))}
+        {archive.archivePosters.map((m, idx) => (
+          <GigPoster key={`poster-${idx}-${m.url}`} src={m.url} artist={selectedData.artist} date={m.date} index={idx} />
+        ))}
+      </div>
     </div>
-  </div>
-)}
+  )}
   
   {archive.photos.length > 0 && (
     <div>
       <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#9d00ff', letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// PERSONAL MEMORIES</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+      <div style={{ 
+        display: 'flex', 
+        flexWrap: 'wrap', 
+        gap: '15px',
+        justifyContent: window.innerWidth < 768 ? 'center' : 'flex-start'
+      }}>
         {archive.photos.map((m, idx) => (
           <PersonalPolaroid key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.photos.length} caption={fmtDateShort(m.date)} />
         ))}
@@ -2579,11 +2583,6 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
     </div>
   )}
 </div>
-</div>
-</div>
-        );
-      })()}
-
       {/* 3. 🟡 THE GRID VIEW (Restored Badge & Counter) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 15 }}>
         {artists.map((a, i) => {
