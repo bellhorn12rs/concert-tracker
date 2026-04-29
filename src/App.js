@@ -24,34 +24,46 @@ const handleIWasThere = async (concert) => {
     if (!session?.user) return alert("LOGIN REQUIRED TO ARCHIVE SIGNALS");
 
     try {
-      const primaryArtist = concert.bands?.[0]?.name || concert.artist || 'Unknown';
+      // Safety: Extract data with fallbacks
+      const primaryArtist = (concert.bands?.[0]?.name || concert.bands?.[0] || concert.artist || 'Unknown').toString();
       const safeVenue = concert.venue || concert.festival_name || 'Unknown Venue';
+      const safeDate = concert.date;
       
-      // Check if show exists in collaborative DB
-      const { data: existingShow } = await supabase
+      if (!safeDate) return alert("INVALID SHOW: Missing date");
+      
+      console.log('Cloning show:', { artist: primaryArtist, venue: safeVenue, date: safeDate });
+      
+      // Check if show exists in shows table
+      const { data: existingShows } = await supabase
         .from('shows')
         .select('id')
-        .eq('date', concert.date)
-        .ilike('venue', safeVenue)
-        .ilike('artist', primaryArtist)
-        .single();
+        .eq('date', safeDate)
+        .limit(5);
       
-      let showId = existingShow?.id;
+      // Find match by venue and artist
+      let showId = null;
+      if (existingShows && existingShows.length > 0) {
+        const match = existingShows.find(s => 
+          s.venue?.toLowerCase() === safeVenue.toLowerCase() &&
+          s.artist?.toLowerCase() === primaryArtist.toLowerCase()
+        );
+        showId = match?.id;
+      }
       
-      // If show doesn't exist, create it
+      // Create show if doesn't exist
       if (!showId) {
         const { data: newShow, error: showError } = await supabase
           .from('shows')
           .insert([{
-            date: concert.date,
+            date: safeDate,
             artist: primaryArtist,
-            bands: concert.bands,
+            bands: concert.bands || [primaryArtist],
             venue: safeVenue,
-            city: concert.city,
-            state: concert.state,
-            is_festival: concert.is_festival,
-            festival_name: concert.festival_name,
-            festival_day: concert.festival_day,
+            city: concert.city || '',
+            state: concert.state || '',
+            is_festival: concert.is_festival || false,
+            festival_name: concert.festival_name || null,
+            festival_day: concert.festival_day || null,
             genre: concert.genre || 'Indie Rock',
             created_by: session.user.id
           }])
@@ -62,7 +74,7 @@ const handleIWasThere = async (concert) => {
         showId = newShow.id;
       }
       
-      // Create attendance (upsert prevents duplicates)
+      // Create attendance
       const { error: attError } = await supabase
         .from('attendances')
         .upsert([{
@@ -71,11 +83,14 @@ const handleIWasThere = async (concert) => {
           is_public: true
         }], { onConflict: 'user_id,show_id' });
       
-      if (attError) throw attError;
+      if (attError) {
+        if (attError.message.includes('duplicate')) {
+          return alert("YOU ALREADY ARCHIVED THIS SHOW");
+        }
+        throw attError;
+      }
       
       alert(`⚡ SIGNAL CLONED: ${primaryArtist} added to your archive!`);
-      
-      // Refresh to show the new attendance
       if (typeof fetchConcerts === 'function') fetchConcerts();
       
     } catch (err) {
