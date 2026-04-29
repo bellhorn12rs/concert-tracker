@@ -8839,35 +8839,9 @@ const getCuratorTitle = (stats, concerts) => {
     alert('SAVE FAILED: ' + error.message);
   }
 };
-
 // ═══════════════════════════════════════════════════════════
 // COLLABORATIVE ARCHIVE FETCHERS (New System)
 // ═══════════════════════════════════════════════════════════
-
-async function fetchCollaborativeShows() {
-  const { data } = await supabase
-    .from('shows')
-    .select('*')
-    .order('date', { ascending: false });
-  return data || [];
-}
-
-async function fetchMyAttendances() {
-  const targetId = viewingUser || session?.user?.id;
-  if (!targetId) return [];
-  
-  const { data } = await supabase
-    .from('attendances')
-    .select(`
-      *,
-      show:shows(*)
-    `)
-    .eq('user_id', targetId)
-    .eq('is_public', true)
-    .order('date_added', { ascending: false });
-  
-  return data || [];
-}
 
 async function fetchShowArtifacts(showId) {
   const { data } = await supabase
@@ -8884,7 +8858,7 @@ async function fetchShowArtifacts(showId) {
 
 // ═══════════════════════════════════════════════════════
 
- async function fetchConcerts() {
+async function fetchConcerts() {
   const targetId = viewingUser || session?.user?.id;
   if (!targetId) return;
   
@@ -8939,100 +8913,81 @@ async function fetchShowArtifacts(showId) {
   });
   
   setConcerts(collaborativeShows);
-
-  // 📡 AUTO-SYNC STATS TO PROFILE
-  const totalShows = collaborativeShows.length;
-  const totalSets = collaborativeShows.reduce((sum, c) => sum + (c.bands?.length || 1), 0);
-  const uniqueVenues = new Set(collaborativeShows.map(c => c.venue)).size;
-  
-  await supabase.from('profiles').update({
-    total_shows: totalShows,
-    total_sets: totalSets,
-    total_venues: uniqueVenues,
-    last_seen: new Date().toISOString()
-  }).eq('id', targetId);
-}
-  
-  // Merge
-  const merged = [
-    ...(privateConcerts || []),
-    ...collaborativeShows
-  ].sort((a, b) => b.date.localeCompare(a.date));
   
   console.log('FETCH:', { 
-    private: privateConcerts?.length || 0, 
     collaborative: collaborativeShows.length, 
-    total: merged.length 
+    total: collaborativeShows.length 
   });
   
-  if (merged) setConcerts(merged);
-  
-  // Update profile stats
-  if (!viewingUser && session?.user?.id && merged) {
-    const totalSets = merged.reduce((acc, c) => acc + (Array.isArray(c.bands) ? c.bands.length : 1), 0);
-    const totalVenues = new Set(merged.map(c => c.venue).filter(Boolean)).size;
+  // 📡 AUTO-SYNC STATS TO PROFILE
+  if (!viewingUser && session?.user?.id && collaborativeShows) {
+    const totalShows = collaborativeShows.length;
+    const totalSets = collaborativeShows.reduce((acc, c) => acc + (Array.isArray(c.bands) ? c.bands.length : 1), 0);
+    const totalVenues = new Set(collaborativeShows.map(c => c.venue).filter(Boolean)).size;
 
     await supabase.from('profiles').update({
-      total_shows: merged.length,
+      total_shows: totalShows,
       total_sets: totalSets,
       total_venues: totalVenues,
       last_seen: new Date().toISOString()
     }).eq('id', session.user.id);
   }
 }
+
+// ✅ OPTIMIZED: Only fetch recent posters with limit
 async function fetchPosters() {
   const targetId = viewingUser || session?.user?.id;
   if (!targetId) return;
   
-  // 🛡️ DEFENSIVE: Clear old posters immediately when switching users
   setPosters([]);
   
   const { data } = await supabase
     .from('posters')
     .select('*')
     .eq('user_id', targetId)
-    .order('date', { ascending: false });
-  console.log('POSTERS FETCHED:', data);
+    .order('date', { ascending: false })
+    .limit(200); // ✅ Cap at 200 most recent posters
+  
+  console.log('POSTERS FETCHED:', data?.length);
   if (data) setPosters(data);
 }
 
-  async function fetchGenres() {
-    try {
-      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
-      const query = supabase.from('artist_genres').select('*');
-      const { data, error } = await Promise.race([query, timeout]);
-      if (error) {
-        console.error('fetchGenres error:', error);
-        return;
-      }
-      if (data) {
-        const gMap = {};
-        data.forEach(row => { gMap[row.artist_name] = row.genre; });
-        setArtistGenres(gMap);
-      }
-    } catch (e) {
-      console.error('fetchGenres failed:', e.message);
-      return; 
+async function fetchGenres() {
+  try {
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
+    const query = supabase.from('artist_genres').select('*');
+    const { data, error } = await Promise.race([query, timeout]);
+    if (error) {
+      console.error('fetchGenres error:', error);
+      return;
     }
+    if (data) {
+      const gMap = {};
+      data.forEach(row => { gMap[row.artist_name] = row.genre; });
+      setArtistGenres(gMap);
+    }
+  } catch (e) {
+    console.error('fetchGenres failed:', e.message);
+    return; 
   }
+}
 
-  async function fetchUpcoming() {
-    // 🟢 Pivot check for Upcoming shows as well
-    const targetId = viewingUser || session?.user?.id;
-    if (!targetId) { console.log('fetchUpcoming: no target id'); return; }
+async function fetchUpcoming() {
+  const targetId = viewingUser || session?.user?.id;
+  if (!targetId) { console.log('fetchUpcoming: no target id'); return; }
+  
+  console.log('fetchUpcoming: starting');
+  const { data } = await supabase
+    .from('upcoming_concerts')
+    .select('*')
+    .eq('user_id', targetId)
+    .order('date', { ascending: true });
     
-    console.log('fetchUpcoming: starting');
-    const { data } = await supabase
-      .from('upcoming_concerts')
-      .select('*')
-      .eq('user_id', targetId) // 🟢 Pivoted
-      .order('date', { ascending: true });
-      
-    console.log('fetchUpcoming: done', data?.length);
-    if (data) setUpcoming(data);
-  }
+  console.log('fetchUpcoming: done', data?.length);
+  if (data) setUpcoming(data);
+}
 
-  // ── 2. MODIFICATION HANDLERS (ADMIN ONLY) ──
+// ── 2. MODIFICATION HANDLERS (ADMIN ONLY) ──
 async function handleDelete(id) {
   if (viewingUser) return; 
   if (!id || id === 'new') {
@@ -9050,30 +9005,28 @@ async function handleDelete(id) {
     try {
       console.log(`PURGING SIGNAL: ${id}`);
 
-      // Check if this is a collaborative show (from shows table)
       const concert = concerts.find(c => c.id === id);
       
       if (concert?.is_collaborative) {
-        // Delete from collaborative tables
-        // First delete your attendance (this will cascade delete your artifacts)
+        // Delete attendance (cascades to artifacts)
         await supabase
           .from('attendances')
           .delete()
           .eq('user_id', session.user.id)
           .eq('show_id', id);
         
-        // Check if anyone else attended this show
+        // Check if anyone else attended
         const { data: otherAttendees } = await supabase
           .from('attendances')
           .select('id')
           .eq('show_id', id);
         
-        // If you were the only one, delete the show itself
+        // If you were the only one, delete the show
         if (!otherAttendees || otherAttendees.length === 0) {
           await supabase.from('shows').delete().eq('id', id);
         }
       } else {
-        // Old system - delete from concerts table
+        // Old system fallback
         await supabase.from('concerts').delete().eq('id', id);
       }
 
@@ -9087,7 +9040,6 @@ async function handleDelete(id) {
     }
   }
 }
-
   async function handleSetGenre(artist, genre) {
   if (!artist) return;
   
