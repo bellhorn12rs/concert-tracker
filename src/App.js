@@ -7597,33 +7597,34 @@ function CollaborationWebTab() {
         
         // Calculate recency (days since last shared show)
         const mostRecentShow = c.shows.sort((a, b) => b.date.localeCompare(a.date))[0];
-        const daysSince = mostRecentShow ? daysSince(mostRecentShow.date) : 9999;
-        
+        const daysSinceLastShow = mostRecentShow ? daysSince(mostRecentShow.date) : 9999;
+
         // Map recency to orbit distance
         // 0-30 days = close (0.7x base radius)
         // 30-180 days = medium (1.0x base radius)
         // 180+ days = far (1.3x base radius)
-        let distanceFactor = 1.0;
-        if (daysSince < 30) distanceFactor = 0.7;
-        else if (daysSince < 180) distanceFactor = 1.0;
-        else distanceFactor = 1.3;
-        
-        const orbitRadius = baseOrbitRadius * distanceFactor;
-        
-        return {
-          id: c.id,
-          label: c.username,
-          color: c.color,
-          count: c.count,
-          showIds: c.showIds,
-          size: proportionalSize,
-          baseAngle: angle,
-          orbitRadius: orbitRadius,
-          daysSince: daysSince,
-          mostRecentDate: mostRecentShow?.date,
-          x: centerX + Math.cos(angle) * orbitRadius,
-          y: centerY + Math.sin(angle) * orbitRadius
-        };
+        // Map recency to orbit distance
+let distanceFactor = 1.0;
+if (daysSinceLastShow < 30) distanceFactor = 0.7;
+else if (daysSinceLastShow < 180) distanceFactor = 1.0;
+else distanceFactor = 1.3;
+
+const orbitRadius = baseOrbitRadius * distanceFactor;
+
+return {
+  id: c.id,
+  label: c.username,
+  color: c.color,
+  count: c.count,
+  showIds: c.showIds,
+  size: proportionalSize,
+  baseAngle: angle,
+  orbitRadius: orbitRadius,
+  daysSince: daysSinceLastShow, // ← Update this too
+  mostRecentDate: mostRecentShow?.date,
+  x: centerX + Math.cos(angle) * orbitRadius,
+  y: centerY + Math.sin(angle) * orbitRadius
+};
       })
     ];
 
