@@ -7429,7 +7429,7 @@ function ShowsTab() {
 }
 
 // ─── COLLABORATION WEB - MOBILE RESPONSIVE ────────────────────────────────────
-// ─── COLLABORATION WEB - DUAL VIEW (2D + 3D) EDITION ───────────────────────────
+// ─── COLLABORATION WEB - DUAL VIEW (2D + 3D) COMPLETE ──────────────────────────
 function CollaborationWebTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -7438,13 +7438,12 @@ function CollaborationWebTab() {
   const [nodes, setNodes] = useState([]);
   const [particles, setParticles] = useState([]);
   const [totalShows, setTotalShows] = useState(0);
-  const [viewMode, setViewMode] = useState('2d'); // '2d' or '3d'
+  const [viewMode, setViewMode] = useState('2d');
   const canvasRef = useRef(null);
   const threeMountRef = useRef(null);
   const animationRef = useRef(null);
-  const threeSceneRef = useRef(null);
 
-  // Fetch data (unchanged)
+  // Fetch data
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -7613,7 +7612,6 @@ function CollaborationWebTab() {
           baseAngle: angle,
           orbitRadius: orbitRadius,
           daysSince: daysSinceLastShow,
-          mostRecentDate: mostRecentShow?.date,
           x: centerX + Math.cos(angle) * orbitRadius,
           y: centerY + Math.sin(angle) * orbitRadius
         };
@@ -7624,13 +7622,12 @@ function CollaborationWebTab() {
 
     const particlePool = [];
     collaborators.forEach((c, i) => {
-      console.log(`Creating ${c.count} particles for ${c.username}`);
       for (let p = 0; p < c.count; p++) {
         particlePool.push({
           nodeIndex: i,
-          progress: p / c.count, // Evenly space them initially
-          speed: 0.01 + Math.random() * 0.015, // MUCH faster
-          direction: p % 2 === 0 ? 1 : -1, // Alternate directions for variety
+          progress: p / c.count,
+          speed: 0.015 + Math.random() * 0.01,
+          direction: p % 2 === 0 ? 1 : -1,
           color: c.color
         });
       }
@@ -7714,175 +7711,157 @@ function CollaborationWebTab() {
     };
   }, [collaborators, particles.length, totalShows, viewMode]);
 
-  // 🌍 3D SPHERE SETUP
-useEffect(() => {
-  if (viewMode !== '3d' || !window.THREE || !threeMountRef.current || collaborators.length === 0) return;
-  
-  const container = threeMountRef.current;
-  const width = container.clientWidth;
-  const height = container.clientHeight;
-  
-  // Create scene
-  const scene = new window.THREE.Scene();
-  scene.background = new window.THREE.Color('#050508');
-  
-  // Create camera
-  const camera = new window.THREE.PerspectiveCamera(50, width / height, 0.1, 2000);
-  camera.position.z = 600;
-  
-  // Create renderer
-  const renderer = new window.THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(width, height);
-  container.appendChild(renderer.domElement);
-  
-  // Lighting
-  const ambientLight = new window.THREE.AmbientLight(0xffffff, 0.5);
-  scene.add(ambientLight);
-  
-  const pointLight = new window.THREE.PointLight(0x00e5cc, 1, 1000);
-  pointLight.position.set(0, 0, 0);
-  scene.add(pointLight);
-  
-  // Central YOU sphere
-  const youGeometry = new window.THREE.SphereGeometry(60, 32, 32);
-  const youMaterial = new window.THREE.MeshPhongMaterial({ 
-    color: 0x00e5cc,
-    emissive: 0x00e5cc,
-    emissiveIntensity: 0.5,
-    shininess: 100
-  });
-  const youMesh = new window.THREE.Mesh(youGeometry, youMaterial);
-  scene.add(youMesh);
-  
-  // Create collaborator spheres on galaxy surface
-  const galaxyRadius = 250;
-  const maxCollabCount = Math.max(...collaborators.map(c => c.count));
-  const collabMeshes = [];
-  
-  collaborators.forEach((c, i) => {
-    // Proportional size
-    const sizeFactor = Math.sqrt(c.count / maxCollabCount);
-    const size = Math.max(sizeFactor * 40, 20);
+  // 🌍 3D GALAXY SCENE
+  useEffect(() => {
+    if (viewMode !== '3d' || !threeMountRef.current || collaborators.length === 0) return;
     
-    // Position on sphere surface (evenly distributed)
-    const phi = Math.acos(-1 + (2 * i) / collaborators.length);
-    const theta = Math.sqrt(collaborators.length * Math.PI) * phi;
+    console.log('🌍 Building 3D scene...');
     
-    const x = galaxyRadius * Math.cos(theta) * Math.sin(phi);
-    const y = galaxyRadius * Math.sin(theta) * Math.sin(phi);
-    const z = galaxyRadius * Math.cos(phi);
-    
-    // Parse hex color to THREE color
-    const colorHex = parseInt(c.color.replace('#', '0x'));
-    
-    const geometry = new window.THREE.SphereGeometry(size, 16, 16);
-    const material = new window.THREE.MeshPhongMaterial({ 
-      color: colorHex,
-      emissive: colorHex,
-      emissiveIntensity: 0.4
-    });
-    const mesh = new window.THREE.Mesh(geometry, material);
-    mesh.position.set(x, y, z);
-    mesh.userData = { collaborator: c, size: size };
-    
-    scene.add(mesh);
-    collabMeshes.push(mesh);
-    
-    // Create connection line from YOU to collaborator
-    const lineGeometry = new window.THREE.BufferGeometry().setFromPoints([
-      new window.THREE.Vector3(0, 0, 0),
-      new window.THREE.Vector3(x, y, z)
-    ]);
-    const lineMaterial = new window.THREE.LineBasicMaterial({ 
-      color: colorHex, 
-      opacity: 0.3, 
-      transparent: true,
-      linewidth: 2
-    });
-    const line = new window.THREE.Line(lineGeometry, lineMaterial);
-    scene.add(line);
-    
-    // Add count label sprite (3D text floating above sphere)
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = 128;
-    canvas.height = 64;
-    ctx.fillStyle = '#ffcc00';
-    ctx.font = 'bold 40px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(c.count.toString(), 64, 45);
-    
-    const texture = new window.THREE.CanvasTexture(canvas);
-    const spriteMaterial = new window.THREE.SpriteMaterial({ map: texture });
-    const sprite = new window.THREE.Sprite(spriteMaterial);
-    sprite.position.set(x, y + size + 20, z);
-    sprite.scale.set(40, 20, 1);
-    scene.add(sprite);
-  });
-  
-  // Mouse controls for rotation
-  let isDragging = false;
-  let previousMousePosition = { x: 0, y: 0 };
-  let rotation = { x: 0, y: 0 };
-  
-  const onMouseDown = (e) => {
-    isDragging = true;
-    previousMousePosition = { x: e.clientX, y: e.clientY };
-  };
-  
-  const onMouseMove = (e) => {
-    if (!isDragging) return;
-    
-    const deltaX = e.clientX - previousMousePosition.x;
-    const deltaY = e.clientY - previousMousePosition.y;
-    
-    rotation.y += deltaX * 0.005;
-    rotation.x += deltaY * 0.005;
-    
-    previousMousePosition = { x: e.clientX, y: e.clientY };
-  };
-  
-  const onMouseUp = () => {
-    isDragging = false;
-  };
-  
-  renderer.domElement.addEventListener('mousedown', onMouseDown);
-  renderer.domElement.addEventListener('mousemove', onMouseMove);
-  renderer.domElement.addEventListener('mouseup', onMouseUp);
-  
-  // Animation loop
-  const animate = () => {
-    requestAnimationFrame(animate);
-    
-    // Auto-rotate slowly when not dragging
-    if (!isDragging) {
-      rotation.y += 0.001;
+    const container = threeMountRef.current;
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
     }
     
-    // Apply rotation to entire galaxy
-    scene.rotation.y = rotation.y;
-    scene.rotation.x = rotation.x;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
     
-    // Pulse the YOU sphere
-    const pulse = Math.sin(Date.now() * 0.001) * 0.1 + 1;
-    youMesh.scale.set(pulse, pulse, pulse);
-    
-    renderer.render(scene, camera);
-  };
-  
-  animate();
-  
-  // Cleanup
-  return () => {
-    renderer.domElement.removeEventListener('mousedown', onMouseDown);
-    renderer.domElement.removeEventListener('mousemove', onMouseMove);
-    renderer.domElement.removeEventListener('mouseup', onMouseUp);
-    if (container.contains(renderer.domElement)) {
-      container.removeChild(renderer.domElement);
+    if (!window.THREE) {
+      console.error('THREE.js not loaded!');
+      return;
     }
-    renderer.dispose();
-  };
-}, [viewMode, collaborators, totalShows]);
+    
+    try {
+      const scene = new window.THREE.Scene();
+      scene.background = new window.THREE.Color(0x050508);
+      
+      const camera = new window.THREE.PerspectiveCamera(50, width / height, 1, 2000);
+      camera.position.z = 500;
+      
+      const renderer = new window.THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(width, height);
+      container.appendChild(renderer.domElement);
+      
+      const ambientLight = new window.THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+      
+      const pointLight = new window.THREE.PointLight(0x00e5cc, 1.5);
+      pointLight.position.set(0, 0, 200);
+      scene.add(pointLight);
+      
+      // YOU sphere
+      const youGeo = new window.THREE.SphereGeometry(45, 32, 32);
+      const youMat = new window.THREE.MeshPhongMaterial({ 
+        color: 0x00e5cc,
+        emissive: 0x00e5cc,
+        emissiveIntensity: 0.6
+      });
+      const youMesh = new window.THREE.Mesh(youGeo, youMat);
+      scene.add(youMesh);
+      
+      const galaxyRadius = 250;
+      const maxCount = Math.max(...collaborators.map(c => c.count));
+      
+      collaborators.forEach((c, i) => {
+        const sizeFactor = Math.sqrt(c.count / maxCount);
+        const size = Math.max(sizeFactor * 30, 12);
+        
+        const phi = Math.acos(-1 + (2 * (i + 1)) / (collaborators.length + 1));
+        const theta = Math.sqrt((collaborators.length + 1) * Math.PI) * phi;
+        
+        const x = galaxyRadius * Math.cos(theta) * Math.sin(phi);
+        const y = galaxyRadius * Math.sin(theta) * Math.sin(phi);
+        const z = galaxyRadius * Math.cos(phi);
+        
+        const colorInt = parseInt(c.color.replace('#', ''), 16);
+        
+        const geo = new window.THREE.SphereGeometry(size, 20, 20);
+        const mat = new window.THREE.MeshPhongMaterial({ 
+          color: colorInt,
+          emissive: colorInt,
+          emissiveIntensity: 0.5
+        });
+        const mesh = new window.THREE.Mesh(geo, mat);
+        mesh.position.set(x, y, z);
+        scene.add(mesh);
+        
+        const points = [
+          new window.THREE.Vector3(0, 0, 0),
+          new window.THREE.Vector3(x, y, z)
+        ];
+        const lineGeo = new window.THREE.BufferGeometry().setFromPoints(points);
+        const lineMat = new window.THREE.LineBasicMaterial({ 
+          color: colorInt, 
+          opacity: 0.4, 
+          transparent: true
+        });
+        const line = new window.THREE.Line(lineGeo, lineMat);
+        scene.add(line);
+      });
+      
+      let isDragging = false;
+      let prevMouse = { x: 0, y: 0 };
+      let rotation = { x: 0.3, y: 0 };
+      
+      const onMouseDown = (e) => {
+        isDragging = true;
+        prevMouse = { x: e.clientX, y: e.clientY };
+      };
+      
+      const onMouseMove = (e) => {
+        if (!isDragging) return;
+        rotation.y += (e.clientX - prevMouse.x) * 0.01;
+        rotation.x += (e.clientY - prevMouse.y) * 0.01;
+        prevMouse = { x: e.clientX, y: e.clientY };
+      };
+      
+      const onMouseUp = () => { isDragging = false; };
+      
+      renderer.domElement.addEventListener('mousedown', onMouseDown);
+      renderer.domElement.addEventListener('mousemove', onMouseMove);
+      renderer.domElement.addEventListener('mouseup', onMouseUp);
+      
+      const animate = () => {
+        requestAnimationFrame(animate);
+        
+        if (!isDragging) {
+          rotation.y += 0.002;
+        }
+        
+        scene.rotation.x = rotation.x;
+        scene.rotation.y = rotation.y;
+        
+        const pulse = 1 + Math.sin(Date.now() * 0.002) * 0.1;
+        youMesh.scale.set(pulse, pulse, pulse);
+        
+        renderer.render(scene, camera);
+      };
+      
+      animate();
+      
+      console.log('✅ 3D scene built!');
+      
+      return () => {
+        renderer.domElement.removeEventListener('mousedown', onMouseDown);
+        renderer.domElement.removeEventListener('mousemove', onMouseMove);
+        renderer.domElement.removeEventListener('mouseup', onMouseUp);
+        container.removeChild(renderer.domElement);
+        renderer.dispose();
+      };
+    } catch (err) {
+      console.error('3D Error:', err);
+    }
+  }, [viewMode, collaborators, totalShows]);
+
+  if (loading) return <div style={{ padding: 100, textAlign: 'center', color: C.teal }}>SCANNING...</div>;
+
+  if (collaborators.length === 0) {
+    return (
+      <div style={{ padding: 100, textAlign: 'center' }}>
+        <div style={{ fontSize: '3rem', marginBottom: 20 }}>🤝</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff' }}>NO COLLABORATIONS YET</div>
+      </div>
+    );
+  }
 
   const isMobile = window.innerWidth < 768;
   const containerWidth = isMobile ? window.innerWidth - 40 : 800;
@@ -7890,7 +7869,7 @@ useEffect(() => {
 
   return (
     <div className="fade-in" style={{ padding: isMobile ? 20 : 40 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? 15 : 30 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 15 }}>
         <div style={{ textAlign: 'center', flex: 1 }}>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff' }}>
             COLLABORATION <span style={{ color: C.gold }}>WEB</span>
@@ -7900,24 +7879,22 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* VIEW TOGGLE */}
-        <div style={{ display: 'flex', gap: 8, background: C.bgCard, padding: 4, borderRadius: 6, border: `1px solid ${C.border}` }}>
+        <div style={{ display: 'flex', gap: 6, background: C.bgCard, padding: 4, borderRadius: 6, border: `1px solid ${C.border}` }}>
           <button
             onClick={() => setViewMode('2d')}
             style={{
               background: viewMode === '2d' ? C.teal : 'transparent',
               color: viewMode === '2d' ? '#000' : C.gray,
               border: 'none',
-              padding: '6px 14px',
+              padding: '8px 16px',
               borderRadius: 4,
               fontFamily: "'Space Mono'",
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: 900,
-              cursor: 'pointer',
-              transition: '0.2s'
+              cursor: 'pointer'
             }}
           >
-            🌊 2D
+            🌊 ORBITAL
           </button>
           <button
             onClick={() => setViewMode('3d')}
@@ -7925,16 +7902,15 @@ useEffect(() => {
               background: viewMode === '3d' ? C.purple : 'transparent',
               color: viewMode === '3d' ? '#000' : C.gray,
               border: 'none',
-              padding: '6px 14px',
+              padding: '8px 16px',
               borderRadius: 4,
               fontFamily: "'Space Mono'",
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: 900,
-              cursor: 'pointer',
-              transition: '0.2s'
+              cursor: 'pointer'
             }}
           >
-            🌍 3D
+            🌍 GALAXY
           </button>
         </div>
       </div>
@@ -7951,19 +7927,13 @@ useEffect(() => {
         overflow: 'hidden'
       }}>
         
-        {/* 2D VIEW */}
-        {viewMode === '2d' && (
+        {viewMode === '2d' ? (
           <>
             <canvas
               ref={canvasRef}
               width={containerWidth}
               height={containerHeight}
-              style={{ 
-                position: 'absolute', 
-                inset: 0, 
-                zIndex: 5,
-                pointerEvents: 'none'
-              }}
+              style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none' }}
             />
 
             <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
@@ -8026,23 +7996,17 @@ useEffect(() => {
                     gap: '4px'
                   }}
                 >
-                  <div style={{ 
-                    fontSize: node.size > 90 ? (isMobile ? 12 : 16) : (isMobile ? 9 : 11),
-                    lineHeight: 1
-                  }}>
+                  <div style={{ fontSize: node.size > 90 ? (isMobile ? 12 : 16) : (isMobile ? 9 : 11) }}>
                     {isYou ? 'YOU' : node.label.toUpperCase()}
                   </div>
                   
                   <div style={{
                     background: 'rgba(0,0,0,0.7)',
-                    border: '1px solid rgba(0,0,0,0.9)',
                     borderRadius: '12px',
                     padding: node.size > 90 ? '4px 10px' : '3px 7px',
                     fontFamily: "'Bebas Neue'",
                     fontSize: node.size > 90 ? '1.3rem' : '1rem',
-                    color: '#ffcc00',
-                    letterSpacing: '1px',
-                    lineHeight: 1
+                    color: '#ffcc00'
                   }}>
                     {node.count}
                   </div>
@@ -8050,9 +8014,8 @@ useEffect(() => {
                   {!isYou && node.daysSince !== undefined && (
                     <div style={{
                       fontFamily: "'Space Mono'",
-                      fontSize: node.size > 90 ? 7 : 6,
-                      color: 'rgba(0,0,0,0.5)',
-                      marginTop: 2
+                      fontSize: 6,
+                      color: 'rgba(0,0,0,0.5)'
                     }}>
                       {node.daysSince < 30 ? 'RECENT' : node.daysSince < 180 ? 'MONTHS' : 'YEARS'}
                     </div>
@@ -8061,100 +8024,38 @@ useEffect(() => {
               );
             })}
           </>
-        )}
-
-        {/* 3D VIEW */}
-        {viewMode === '3d' && (
-          <div
-            ref={threeMountRef}
-            style={{
-              width: '100%',
-              height: '100%',
-              position: 'relative'
-            }}
-          >
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: "'Bebas Neue'",
-              fontSize: '3rem',
-              color: C.purple,
-              letterSpacing: 4
-            }}>
-              🌍 3D GALAXY VIEW<br/>
-              <span style={{ fontSize: '1rem', color: C.gray }}>BUILDING...</span>
-            </div>
-          </div>
+        ) : (
+          <div ref={threeMountRef} style={{ width: '100%', height: '100%' }} />
         )}
       </div>
 
-      <div style={{ 
-        textAlign: 'center', 
-        marginTop: 20, 
-        fontFamily: "'Space Mono'", 
-        fontSize: 8, 
-        color: C.grayDim,
-        letterSpacing: 1.5,
-        lineHeight: 1.8
-      }}>
-        {viewMode === '2d' ? (
-          <>
-            📏 SIZE = SHARED SHOWS // 📍 DISTANCE = RECENCY // ✨ PARTICLES BOUNCING
-          </>
-        ) : (
-          <>
-            🌍 DRAG TO ROTATE GALAXY // SCROLL TO ZOOM
-          </>
-        )}
+      <div style={{ textAlign: 'center', marginTop: 15, fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, letterSpacing: 1.5 }}>
+        {viewMode === '2d' ? '📏 SIZE = SHARED // 📍 DISTANCE = RECENCY // ✨ PARTICLES BOUNCING' : '🌍 DRAG TO ROTATE // COLLABORATORS ON SPHERE SURFACE'}
       </div>
 
       {detailView && (
         <div style={{ marginTop: 40 }}>
-          <Card neon style={{ 
-            border: `2px solid ${detailView.color}`, 
-            boxShadow: `0 0 30px ${hexToRgba(detailView.color, 0.3)}`
-          }}>
+          <Card neon style={{ border: `2px solid ${detailView.color}`, boxShadow: `0 0 30px ${hexToRgba(detailView.color, 0.3)}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div>
                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '3rem', color: detailView.color }}>
                   {detailView.username.toUpperCase()}
                 </div>
                 <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray }}>
-                  {detailView.count} SHARED SHOWS ({Math.round((detailView.count / totalShows) * 100)}%)
+                  {detailView.count} SHARED ({Math.round((detailView.count / totalShows) * 100)}%)
                 </div>
               </div>
-              <button 
-                onClick={() => setDetailView(null)}
-                style={{ background: 'none', border: `1px solid ${C.border}`, color: C.gray, padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 }}
-              >
-                CLOSE
-              </button>
+              <button onClick={() => setDetailView(null)} style={{ background: 'none', border: `1px solid ${C.border}`, color: C.gray, padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 }}>CLOSE</button>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(250px, 1fr))', gap: 15, marginTop: 20 }}>
-              {shows
-                .filter(show => detailView.showIds.includes(show.id))
-                .map(show => (
-                  <div key={show.id} style={{
-                    background: hexToRgba(detailView.color, 0.05),
-                    border: `1px solid ${hexToRgba(detailView.color, 0.3)}`,
-                    borderRadius: 8,
-                    padding: 15
-                  }}>
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff', lineHeight: 1 }}>
-                      {show.is_festival ? show.festival_name?.toUpperCase() : show.artist?.toUpperCase()}
-                    </div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 5 }}>
-                      {fmtDateShort(show.date)}
-                    </div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: detailView.color, marginTop: 3 }}>
-                      {show.venue?.toUpperCase()}
-                    </div>
-                  </div>
-                ))}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(250px, 1fr))', gap: 15 }}>
+              {shows.filter(s => detailView.showIds.includes(s.id)).map(s => (
+                <div key={s.id} style={{ background: hexToRgba(detailView.color, 0.05), border: `1px solid ${hexToRgba(detailView.color, 0.3)}`, borderRadius: 8, padding: 15 }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff' }}>{s.is_festival ? s.festival_name?.toUpperCase() : s.artist?.toUpperCase()}</div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 5 }}>{fmtDateShort(s.date)}</div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: detailView.color, marginTop: 3 }}>{s.venue?.toUpperCase()}</div>
+                </div>
+              ))}
             </div>
           </Card>
         </div>
