@@ -8887,29 +8887,70 @@ async function fetchShowArtifacts(showId) {
  async function fetchConcerts() {
   const targetId = viewingUser || session?.user?.id;
   if (!targetId) return;
-
-  // ✅ OPTIMIZED: All fields except created_at, date_added
-  const { data, error } = await supabase
-    .from('concerts')
-    .select('id, user_id, date, date_str, venue, city, state, is_festival, fest_label, fest_name, location_display, festival_name, festival_day, has_setlist, has_setlist_names, genre, image_url, personal_photo_url, festival_poster_url, setlist_image_url, wristband_image_url, bands, is_public')
-    .eq('user_id', targetId) 
-    .order('date', { ascending: false });
   
-  if (data) {
-    setConcerts(data);
-
-    // 📡 AUTO-SYNC STATS TO PROFILE
-    const totalShows = data.length;
-    const totalSets = data.reduce((sum, c) => sum + (c.bands?.length || 1), 0);
-    const uniqueVenues = new Set(data.map(c => c.venue)).size;
+  // ✅ OPTIMIZED: Fetch attendances with shows joined in Postgres
+  const { data: attendances } = await supabase
+    .from('attendances')
+    .select(`
+      id,
+      is_public,
+      show:shows(
+        id,
+        date,
+        artist,
+        bands,
+        venue,
+        city,
+        state,
+        is_festival,
+        festival_name,
+        festival_day,
+        genre
+      )
+    `)
+    .eq('user_id', targetId)
+    .eq('is_public', true);
+  
+  console.log('COLLABORATIVE:', attendances?.length);
+  
+  // ✅ OPTIMIZED: Only fetch artifacts for shows the user attended
+  const showIds = (attendances || []).map(a => a.show?.id).filter(Boolean);
+  
+  const { data: userArtifacts } = await supabase
+    .from('artifacts')
+    .select('*')
+    .eq('user_id', targetId)
+    .in('show_id', showIds);
+  
+  const collaborativeShows = (attendances || []).map(a => {
+    const showArtifacts = (userArtifacts || []).filter(art => art.show_id === a.show.id);
     
-    await supabase.from('profiles').update({
-      total_shows: totalShows,
-      total_sets: totalSets,
-      total_venues: uniqueVenues,
-      last_seen: new Date().toISOString()
-    }).eq('id', targetId);
-  }
+    return {
+      ...a.show,
+      id: a.show.id,
+      attendance_id: a.id,
+      is_collaborative: true,
+      user_id: targetId,
+      image_url: showArtifacts.filter(art => art.artifact_type === 'stub').map(art => art.image_url).join(', '),
+      personal_photo_url: showArtifacts.filter(art => art.artifact_type === 'photo').map(art => art.image_url).join(', '),
+      setlist_image_url: showArtifacts.filter(art => art.artifact_type === 'relic').map(art => art.image_url).join(', '),
+      wristband_image_url: showArtifacts.find(art => art.artifact_type === 'wristband')?.image_url || ''
+    };
+  });
+  
+  setConcerts(collaborativeShows);
+
+  // 📡 AUTO-SYNC STATS TO PROFILE
+  const totalShows = collaborativeShows.length;
+  const totalSets = collaborativeShows.reduce((sum, c) => sum + (c.bands?.length || 1), 0);
+  const uniqueVenues = new Set(collaborativeShows.map(c => c.venue)).size;
+  
+  await supabase.from('profiles').update({
+    total_shows: totalShows,
+    total_sets: totalSets,
+    total_venues: uniqueVenues,
+    last_seen: new Date().toISOString()
+  }).eq('id', targetId);
 }
   
   // Merge
