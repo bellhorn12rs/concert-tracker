@@ -23,34 +23,63 @@ function hexToRgba(hex, alpha) {
 const handleIWasThere = async (concert) => {
     if (!session?.user) return alert("LOGIN REQUIRED TO ARCHIVE SIGNALS");
 
-    // 1. Sanitize the Data: Strip Eric's DB info AND his personal photos
-    const { 
-      id, 
-      created_at, 
-      user_id, 
-      personal_photo_url, 
-      ...coreEventData 
-    } = concert;
-
-    // 2. Build the Clone
-    const newRecord = {
-      ...coreEventData,
-      user_id: session.user.id, // Assign to Tara
-      personal_photo_url: null, // Blank slate for Tara's own photos
-      is_public: true,
-      date_added: new Date().toISOString()
-    };
-
     try {
-      const { error } = await supabase.from('concerts').insert([newRecord]);
-      if (error) throw error;
+      const primaryArtist = concert.bands?.[0]?.name || concert.artist || 'Unknown';
+      const safeVenue = concert.venue || concert.festival_name || 'Unknown Venue';
       
-      alert(`SIGNAL CLONED: ${getBandName(concert.bands?.[0]) || 'Show'} added to your archive!`);
+      // Check if show exists in collaborative DB
+      const { data: existingShow } = await supabase
+        .from('shows')
+        .select('id')
+        .eq('date', concert.date)
+        .ilike('venue', safeVenue)
+        .ilike('artist', primaryArtist)
+        .single();
       
-      // 🟢 Keep the UI in sync
+      let showId = existingShow?.id;
+      
+      // If show doesn't exist, create it
+      if (!showId) {
+        const { data: newShow, error: showError } = await supabase
+          .from('shows')
+          .insert([{
+            date: concert.date,
+            artist: primaryArtist,
+            bands: concert.bands,
+            venue: safeVenue,
+            city: concert.city,
+            state: concert.state,
+            is_festival: concert.is_festival,
+            festival_name: concert.festival_name,
+            festival_day: concert.festival_day,
+            genre: concert.genre || 'Indie Rock',
+            created_by: session.user.id
+          }])
+          .select()
+          .single();
+        
+        if (showError) throw showError;
+        showId = newShow.id;
+      }
+      
+      // Create attendance (upsert prevents duplicates)
+      const { error: attError } = await supabase
+        .from('attendances')
+        .upsert([{
+          user_id: session.user.id,
+          show_id: showId,
+          is_public: true
+        }], { onConflict: 'user_id,show_id' });
+      
+      if (attError) throw attError;
+      
+      alert(`⚡ SIGNAL CLONED: ${primaryArtist} added to your archive!`);
+      
+      // Refresh to show the new attendance
       if (typeof fetchConcerts === 'function') fetchConcerts();
+      
     } catch (err) {
-      console.error("Cloning failed:", err);
+      console.error("Clone failed:", err);
       alert("Failed to clone: " + err.message);
     }
   };
