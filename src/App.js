@@ -7728,9 +7728,9 @@ boxShadow: item.type === 'wristband' ? `0 8px 30px rgba(0,0,0,0.7), 0 0 15px ${h
           </div>
         </div>
       )}
-    </div>
+    </div>  {/* <-- Main component wrapper */}
   );
-}
+}  {/* <-- Function close */}
 
 // ─── MAIN APP ────────────────────────────────────────────────────
 export default function App() {
