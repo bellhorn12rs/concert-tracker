@@ -4097,166 +4097,72 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
     
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
-      alert("LOGIN REQUIRED TO ARCHIVE SIGNALS");
+      alert("LOGIN REQUIRED");
       return;
     }
 
-    // Use the global handleIWasThere which has the correct logic
-    await handleIWasThere(event);
-  };
-
-    // Sanitize: Strip Eric's IDs and Personal Photos
-    const { 
-      id, 
-      created_at, 
-      user_id, 
-      personal_photo_url, 
-      ...coreEventData 
-    } = event;
-
-    const newRecord = {
-      ...coreEventData,
-      user_id: session.user.id,
-      personal_photo_url: null, // Clean slate for Tara
-      is_public: true,
-      date_added: new Date().toISOString()
-    };
-
     try {
-      const { error } = await supabase.from('concerts').insert([newRecord]);
-      if (error) throw error;
-      alert(`⚡ SIGNAL CLONED: ${headlinerName} added to your archive!`);
+      const primaryArtist = (event.bands?.[0]?.name || event.bands?.[0] || event.artist || 'Unknown').toString();
+      const safeVenue = event.venue || event.festival_name || 'Unknown Venue';
+      const safeDate = event.date;
+      
+      if (!safeDate) return alert("INVALID SHOW");
+      
+      // Search for existing show
+      const { data: existingShows } = await supabase
+        .from('shows')
+        .select('*')
+        .eq('date', safeDate);
+      
+      let showId = null;
+      if (existingShows) {
+        const match = existingShows.find(s => 
+          s.venue?.toLowerCase() === safeVenue.toLowerCase() &&
+          s.artist?.toLowerCase() === primaryArtist.toLowerCase()
+        );
+        showId = match?.id;
+      }
+      
+      if (!showId) {
+        const { data: newShow } = await supabase
+          .from('shows')
+          .insert([{
+            date: safeDate,
+            artist: primaryArtist,
+            bands: event.bands || [primaryArtist],
+            venue: safeVenue,
+            city: event.city || '',
+            state: event.state || '',
+            is_festival: event.is_festival || false,
+            festival_name: event.festival_name || null,
+            festival_day: event.festival_day || null,
+            genre: event.genre || 'Indie Rock',
+            created_by: session.user.id
+          }])
+          .select()
+          .single();
+        
+        showId = newShow.id;
+      }
+      
+      await supabase
+        .from('attendances')
+        .insert([{
+          user_id: session.user.id,
+          show_id: showId,
+          is_public: true
+        }]);
+      
+      alert(`⚡ CLONED: ${primaryArtist}`);
+      
     } catch (err) {
-      alert("Failed to clone: " + err.message);
+      if (err.message?.includes('duplicate')) {
+        alert("ALREADY IN YOUR ARCHIVE");
+      } else {
+        alert("CLONE FAILED: " + err.message);
+      }
     }
   };
-
-  // Detect if we are on a curator's page (spectator mode)
-  const isSpectator = window.location.hash.includes('#/u/');
-
-  return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: isMobile ? 'column' : 'row', 
-      alignItems: isMobile ? 'stretch' : 'center', 
-      padding: isMobile ? '15px' : '40px 30px',
-      background: isClustered ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.02)',
-      borderRadius: '24px', 
-      border: `1px solid ${isClustered ? hexToRgba(primaryColor, 0.3) : C.border}`,
-      position: 'relative', 
-      overflow: 'hidden', 
-      gap: isMobile ? '20px' : '0',
-      marginBottom: isMobile ? '10px' : '0'
-    }}>
-      
-      {/* 🟢 THE GHOST POSTER */}
-      {!isMobile && (
-        <div style={{
-          position: 'absolute', left: '-2%', top: '-10%', width: '100%', height: '120%',
-          fontFamily: "'Bebas Neue'", fontSize: '22rem', color: primaryColor, opacity: 0.05, 
-          whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 0, letterSpacing: '-12px', 
-          lineHeight: 0.8, display: 'flex', alignItems: 'flex-start',
-          WebkitMaskImage: 'linear-gradient(to right, black 20%, transparent 80%)',
-          animation: 'pulse-ghost 4s ease-in-out infinite' 
-        }}>
-          {headlinerName}
-        </div>
-      )}
-
-      {/* 🟢 LEFT: THE TICKET STUB / WRISTBAND */}
-      <div style={{ 
-        flexShrink: 0, width: isMobile ? '100%' : '320px', position: 'relative', zIndex: 2,
-        display: 'flex', flexDirection: 'column', gap: '15px', alignItems: isMobile ? 'center' : 'flex-start'
-      }}>
-        <div style={{ transform: isMobile ? 'scale(0.9)' : 'none' }}>
-          {event.is_festival 
-            ? <WristbandCard event={event} genreMap={genreMap} compact={true} onEdit={isAdmin ? onEdit : null} /> 
-            : <TicketStubCard event={event} onEdit={isAdmin ? onEdit : null} genreMap={genreMap} stubIdx={idx} />
-          }
-        </div>
-      </div>
-
-      {/* 🟢 MIDDLE: THE INTERACTIVE LINEUP */}
-      <div style={{ flex: 1, paddingLeft: isMobile ? '0' : '50px', zIndex: 2, textAlign: isMobile ? 'center' : 'left' }}>
-        <div style={{ 
-          fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.2rem' : '3.8rem', lineHeight: 0.85,
-          letterSpacing: '1px', marginBottom: '15px', color: '#fff',
-          textShadow: `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`,
-          display: 'flex', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start', columnGap: '15px'
-        }}>
-          {bands.map((band, bIdx) => (
-            <React.Fragment key={`${event.id}-link-${bIdx}`}>
-              <a 
-                href={getSetlistFmUrl(getBandName(band), event.date)} 
-                target="_blank" rel="noreferrer"
-                style={{ color: '#fff', textDecoration: 'none', cursor: 'pointer', transition: '0.2s' }}
-                onMouseEnter={e => { e.target.style.color = C.gold; e.target.style.textShadow = `0 0 20px ${C.gold}`; }}
-                onMouseLeave={e => { e.target.style.color = '#fff'; e.target.style.textShadow = `0 0 30px ${hexToRgba(primaryColor, 0.4)}`; }}
-              >
-                {getBandName(band).toUpperCase()}
-              </a>
-              {bIdx < bands.length - 1 && <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>}
-            </React.Fragment>
-          ))}
-        </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px', flexWrap: 'wrap' }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: primaryColor, fontWeight: 900 }}>{fmtDateShort(event.date)}</div>
-          <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.1)' }} />
-          <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>{event.venue?.toUpperCase()}</div>
-          
-          {/* 🟢 THE CLONE BUTTON */}
-          {isSpectator && !isAdmin && (
-            <button
-              onClick={cloneSignal}
-              style={{
-                background: 'transparent',
-                border: `1px solid ${primaryColor}`,
-                color: primaryColor,
-                padding: '4px 10px',
-                fontFamily: "'Space Mono'",
-                fontSize: '9px',
-                cursor: 'pointer',
-                borderRadius: 4,
-                transition: 'all 0.2s',
-                textTransform: 'uppercase',
-                letterSpacing: 1,
-                marginLeft: '5px'
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = primaryColor; e.currentTarget.style.color = '#000'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = primaryColor; }}
-            >
-              + I WAS THERE
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* 🟢 RIGHT: MEDIA CLUSTER */}
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-end', minWidth: isMobile ? '100%' : '400px', zIndex: 2, marginLeft: 'auto' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', transform: isMobile ? 'scale(0.8)' : 'none', transformOrigin: 'right' }}>
-        {finalSetlists.map((url, sIdx) => (
-          <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={finalSetlists.length} />
-        ))}
-        {finalPosters.map((poster, pIdx) => (
-          <GigPoster
-            key={`${event.id}-poster-${pIdx}`}
-            src={poster.url}
-            artist={poster.artist}
-            date={poster.date}
-            index={pIdx}
-          />
-        ))}
-        <div style={{ marginLeft: (finalSetlists.length > 0 || finalPosters.length > 0) ? '-20px' : '0', display: 'flex' }}>
-          {finalPhotos.map((url, pIdx) => (
-            <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
-          ))}
-        </div>
-      </div>
-    </div>
-  </div>
-  );
-}
 const getDayColor = (baseHex, index) => {
   const variants = [1.0, 0.8, 0.6, 0.45, 0.3]; 
   return hexToRgba(baseHex || C.teal, variants[index % variants.length]);
