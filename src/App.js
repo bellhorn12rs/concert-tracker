@@ -9453,7 +9453,7 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
           {getCuratorTitle(headerStats, concerts)}
         </div>
       </div>
-</>
+    </>
   ) : (
     /* DESKTOP HEADER — unchanged */
     <div style={{ 
@@ -9538,57 +9538,29 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
   )}
 </header>
 
-{/* MOBILE STAT ROWS — GROUPED */}
-<div style={{
-  background: '#000',
-  borderBottom: `1px solid ${C.border}`,
-  padding: '8px 10px',
-}}>
-  {/* Row 1 — SHOW COUNTS (always visible) */}
+{/* ─── MOBILE ONLY: HERO STATS (SCROLLABLE) ─── */}
+{isMobile && (
   <div style={{
-    border: `2px solid ${C.purple}`,
-    borderRadius: '8px',
-    padding: '6px',
-    marginBottom: headerStats.tickets + headerStats.setlists + headerStats.posters + headerStats.photos > 1 ? '6px' : '0',
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '6px',
-    boxShadow: `0 0 20px ${hexToRgba(C.purple, 0.3)}, inset 0 0 20px ${hexToRgba(C.purple, 0.05)}`,
+    background: '#000',
+    borderBottom: `1px solid ${C.border}`,
+    padding: '8px 10px',
   }}>
-    {[
-      { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
-      { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); }},
-      { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); }},
-      { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
-    ].map(s => (
-      <div key={s.lbl} onClick={s.click} style={{
-        background: hexToRgba(s.col, 0.05), border: `1.5px solid ${s.col}`,
-        borderRadius: '6px', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-        minHeight: '52px', boxShadow: `inset 0 0 10px ${hexToRgba(s.col, 0.15)}`
-      }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: s.col, lineHeight: 1 }}>{s.val}</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: '#fff', opacity: 0.5, letterSpacing: '1px' }}>{s.lbl}</div>
-      </div>
-    ))}
-  </div>
-
-  {/* Row 2 — ARTIFACT COUNTS (only show if at least 2 have data) */}
-  {[headerStats.tickets, headerStats.setlists, headerStats.posters, headerStats.photos].filter(v => v > 0).length >= 2 && (
+    {/* Row 1 — SHOW COUNTS */}
     <div style={{
-      border: `2px solid ${C.teal}`,
+      border: `2px solid ${C.purple}`,
       borderRadius: '8px',
       padding: '6px',
+      marginBottom: headerStats.tickets + headerStats.setlists + headerStats.posters + headerStats.photos > 1 ? '6px' : '0',
       display: 'grid',
       gridTemplateColumns: 'repeat(4, 1fr)',
       gap: '6px',
-      boxShadow: `0 0 20px ${hexToRgba(C.teal, 0.3)}, inset 0 0 20px ${hexToRgba(C.teal, 0.05)}`,
+      boxShadow: `0 0 20px ${hexToRgba(C.purple, 0.3)}, inset 0 0 20px ${hexToRgba(C.purple, 0.05)}`,
     }}>
       {[
-        { val: headerStats.tickets, lbl: 'TICKETS', col: C.gold, click: () => setActiveTab('stubs') },
-        { val: headerStats.setlists, lbl: 'RELICS', col: C.teal, click: () => setActiveTab('vault') },
-        { val: headerStats.posters, lbl: 'POSTERS', col: C.purple, click: () => setActiveTab('posterwall') },
-        { val: headerStats.photos, lbl: 'PHOTOS', col: C.cyan, click: () => setActiveTab('photos') },
+        { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
+        { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); }},
+        { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); }},
+        { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
       ].map(s => (
         <div key={s.lbl} onClick={s.click} style={{
           background: hexToRgba(s.col, 0.05), border: `1.5px solid ${s.col}`,
@@ -9601,7 +9573,38 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
         </div>
       ))}
     </div>
-  )}
+
+    {/* Row 2 — ARTIFACT COUNTS */}
+    {[headerStats.tickets, headerStats.setlists, headerStats.posters, headerStats.photos].filter(v => v > 0).length >= 2 && (
+      <div style={{
+        border: `2px solid ${C.teal}`,
+        borderRadius: '8px',
+        padding: '6px',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '6px',
+        boxShadow: `0 0 20px ${hexToRgba(C.teal, 0.3)}, inset 0 0 20px ${hexToRgba(C.teal, 0.05)}`,
+      }}>
+        {[
+          { val: headerStats.tickets, lbl: 'TICKETS', col: C.gold, click: () => setActiveTab('stubs') },
+          { val: headerStats.setlists, lbl: 'RELICS', col: C.teal, click: () => setActiveTab('vault') },
+          { val: headerStats.posters, lbl: 'POSTERS', col: C.purple, click: () => setActiveTab('posterwall') },
+          { val: headerStats.photos, lbl: 'PHOTOS', col: C.cyan, click: () => setActiveTab('photos') },
+        ].map(s => (
+          <div key={s.lbl} onClick={s.click} style={{
+            background: hexToRgba(s.col, 0.05), border: `1.5px solid ${s.col}`,
+            borderRadius: '6px', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            minHeight: '52px', boxShadow: `inset 0 0 10px ${hexToRgba(s.col, 0.15)}`
+          }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: s.col, lineHeight: 1 }}>{s.val}</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: '#fff', opacity: 0.5, letterSpacing: '1px' }}>{s.lbl}</div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
 
 {/* ─── DESKTOP ONLY: HERO STATS BAR ─── */}
 {!isMobile && (
