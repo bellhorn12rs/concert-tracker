@@ -7566,7 +7566,7 @@ function ShowsTab() {
 }
 
 // ─── COLLABORATION WEB ───────────────────────────────────────────────────────
-// ─── COLLABORATION WEB - OPTIMIZED VERSION ────────────────────────────────────
+// ─── COLLABORATION WEB - DEBUG VERSION ────────────────────────────────────────
 function CollaborationWebTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -7577,48 +7577,77 @@ function CollaborationWebTab() {
     const fetch = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user?.id) return;
+        if (!session?.user?.id) {
+          console.log('❌ No session found');
+          return;
+        }
         
         const myUserId = session.user.id;
+        console.log('✅ MY USER ID:', myUserId);
         
-        // ✅ OPTIMIZED: Only fetch attendances where I'm involved
-        const { data: myAttendances } = await supabase
+        // Step 1: Get my attendances
+        const { data: myAttendances, error: error1 } = await supabase
           .from('attendances')
           .select('show_id')
           .eq('user_id', myUserId);
         
+        console.log('📊 MY ATTENDANCES:', myAttendances?.length, 'Error:', error1);
+        
         if (!myAttendances || myAttendances.length === 0) {
+          console.log('⚠️ No attendances found for user');
           setLoading(false);
           return;
         }
         
         const myShowIds = myAttendances.map(a => a.show_id);
+        console.log('🎯 MY SHOW IDS:', myShowIds.length, myShowIds);
         
-        // ✅ OPTIMIZED: Fetch shows with Postgres join (one query instead of three)
-        const { data: showsData } = await supabase
+        // Step 2: Get shows
+        const { data: showsData, error: error2 } = await supabase
           .from('shows')
-          .select(`
-            *,
-            attendances(
-              id,
-              user_id,
-              profiles(id, username, avatar_color)
-            )
-          `)
+          .select('*')
           .in('id', myShowIds)
           .order('date', { ascending: false });
         
-        if (!showsData) {
+        console.log('🎪 SHOWS FETCHED:', showsData?.length, 'Error:', error2);
+        
+        // Step 3: Get all attendances for these shows
+        const { data: allAttendances, error: error3 } = await supabase
+          .from('attendances')
+          .select(`
+            *,
+            profiles(id, username, avatar_color)
+          `)
+          .in('show_id', myShowIds);
+        
+        console.log('👥 ALL ATTENDANCES:', allAttendances?.length, 'Error:', error3);
+        console.log('Sample attendance:', allAttendances?.[0]);
+        
+        if (!showsData || !allAttendances) {
+          console.log('❌ Missing data - showsData or allAttendances is null');
           setLoading(false);
           return;
         }
+        
+        // Build attendance map by show_id
+        const attendancesByShow = {};
+        allAttendances.forEach(att => {
+          if (!attendancesByShow[att.show_id]) {
+            attendancesByShow[att.show_id] = [];
+          }
+          attendancesByShow[att.show_id].push(att);
+        });
+        
+        console.log('📋 ATTENDANCE MAP:', Object.keys(attendancesByShow).length, 'shows have attendances');
         
         // Build collaborator map
         const collabMap = {};
         const mySharedShows = [];
         
         showsData.forEach(show => {
-          const attendances = show.attendances || [];
+          const attendances = attendancesByShow[show.id] || [];
+          
+          console.log(`🎵 Show ${show.id} (${show.artist}): ${attendances.length} attendees`);
           
           // Only include shows with 2+ attendees
           if (attendances.length > 1) {
@@ -7642,11 +7671,15 @@ function CollaborationWebTab() {
           }
         });
         
+        console.log('🤝 SHARED SHOWS:', mySharedShows.length);
+        console.log('👤 COLLABORATORS:', Object.keys(collabMap).length);
+        console.log('Collaborators:', collabMap);
+        
         setShows(mySharedShows);
         setCollaborators(Object.values(collabMap).sort((a, b) => b.count - a.count));
         setLoading(false);
       } catch (err) {
-        console.error('Error:', err);
+        console.error('💥 ERROR:', err);
         setLoading(false);
       }
     };
