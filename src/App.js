@@ -7632,18 +7632,18 @@ return {
 
     // Initialize bouncing particles
     const particlePool = [];
-    collaborators.forEach((c, i) => {
-      const particleCount = Math.min(Math.floor(c.count * 1.5), 30);
-      for (let p = 0; p < particleCount; p++) {
-        particlePool.push({
-          nodeIndex: i,
-          progress: Math.random(),
-          speed: 0.004 + Math.random() * 0.004,
-          direction: Math.random() > 0.5 ? 1 : -1, // Bounce direction
-          color: c.color
-        });
-      }
+collaborators.forEach((c, i) => {
+  // Exactly c.count particles - no more, no less
+  for (let p = 0; p < c.count; p++) {
+    particlePool.push({
+      nodeIndex: i,
+      progress: Math.random(), // Random starting position
+      speed: 0.005 + Math.random() * 0.005, // Faster for more visible bounce
+      direction: Math.random() > 0.5 ? 1 : -1, // Random initial direction
+      color: c.color
     });
+  }
+});
     setParticles(particlePool);
 
     // Animation loop
@@ -7702,11 +7702,13 @@ return {
           const y = centerY + (collabNode.y - centerY) * p.progress;
           
           ctx.beginPath();
-          ctx.arc(x, y, 3, 0, Math.PI * 2);
-          ctx.fillStyle = p.color;
-          ctx.shadowBlur = 12;
-          ctx.shadowColor = p.color;
-          ctx.fill();
+ctx.arc(x, y, 4, 0, Math.PI * 2);
+ctx.fillStyle = p.color;
+ctx.shadowBlur = 15;
+ctx.shadowColor = p.color;
+ctx.globalAlpha = 0.9;
+ctx.fill();
+ctx.globalAlpha = 1.0;
         });
       }
 
