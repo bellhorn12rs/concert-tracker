@@ -7711,146 +7711,202 @@ function CollaborationWebTab() {
     };
   }, [collaborators, particles.length, totalShows, viewMode]);
 
-  // 🌍 3D GALAXY SCENE
-  useEffect(() => {
-    if (viewMode !== '3d' || !threeMountRef.current || collaborators.length === 0) return;
+  // 🌍 3D GALAXY SCENE - PRODUCTION VERSION
+useEffect(() => {
+  if (viewMode !== '3d' || !window.THREE || !threeMountRef.current || collaborators.length === 0 || totalShows === 0) return;
+  
+  const container = threeMountRef.current;
+  
+  // Clear existing
+  while (container.firstChild) {
+    container.removeChild(container.firstChild);
+  }
+  
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+  
+  // Scene
+  const scene = new window.THREE.Scene();
+  scene.background = new window.THREE.Color(0x050508);
+  
+  // Camera
+  const camera = new window.THREE.PerspectiveCamera(60, width / height, 1, 2000);
+  camera.position.z = 500;
+  
+  // Renderer
+  const renderer = new window.THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(width, height);
+  container.appendChild(renderer.domElement);
+  
+  // Lighting
+  const ambientLight = new window.THREE.AmbientLight(0xffffff, 0.5);
+  scene.add(ambientLight);
+  
+  const youLight = new window.THREE.PointLight(0x00e5cc, 2, 600);
+  scene.add(youLight);
+  
+  // Central YOU sphere
+  const youGeo = new window.THREE.SphereGeometry(60, 32, 32);
+  const youMat = new window.THREE.MeshPhongMaterial({ 
+    color: 0x00e5cc,
+    emissive: 0x00e5cc,
+    emissiveIntensity: 0.7,
+    shininess: 100
+  });
+  const youMesh = new window.THREE.Mesh(youGeo, youMat);
+  scene.add(youMesh);
+  
+  // Collaborator spheres
+  const galaxyRadius = 280;
+  const maxCount = Math.max(...collaborators.map(c => c.count));
+  const collabMeshes = [];
+  
+  collaborators.forEach((c, i) => {
+    // Proportional sizing
+    const sizeFactor = Math.sqrt(c.count / maxCount);
+    const size = Math.max(sizeFactor * 45, 18);
     
-    console.log('🌍 Building 3D scene...');
+    // Fibonacci sphere positioning
+    const phi = Math.acos(-1 + (2 * (i + 1)) / (collaborators.length + 1));
+    const theta = Math.sqrt((collaborators.length + 1) * Math.PI) * phi;
     
-    const container = threeMountRef.current;
-    while (container.firstChild) {
-      container.removeChild(container.firstChild);
+    const x = galaxyRadius * Math.cos(theta) * Math.sin(phi);
+    const y = galaxyRadius * Math.sin(theta) * Math.sin(phi);
+    const z = galaxyRadius * Math.cos(phi);
+    
+    const colorInt = parseInt(c.color.replace('#', ''), 16);
+    
+    // Sphere
+    const geo = new window.THREE.SphereGeometry(size, 24, 24);
+    const mat = new window.THREE.MeshPhongMaterial({ 
+      color: colorInt,
+      emissive: colorInt,
+      emissiveIntensity: 0.6,
+      shininess: 80
+    });
+    const mesh = new window.THREE.Mesh(geo, mat);
+    mesh.position.set(x, y, z);
+    scene.add(mesh);
+    
+    collabMeshes.push(mesh);
+    
+    // Connection line
+    const points = [
+      new window.THREE.Vector3(0, 0, 0),
+      new window.THREE.Vector3(x, y, z)
+    ];
+    const lineGeo = new window.THREE.BufferGeometry().setFromPoints(points);
+    const lineMat = new window.THREE.LineBasicMaterial({ 
+      color: colorInt, 
+      opacity: 0.35, 
+      transparent: true
+    });
+    const line = new window.THREE.Line(lineGeo, lineMat);
+    scene.add(line);
+    
+    // Point light at collaborator
+    const collabLight = new window.THREE.PointLight(colorInt, 0.8, 150);
+    collabLight.position.set(x, y, z);
+    scene.add(collabLight);
+    
+    // Count label sprite
+    const countCanvas = document.createElement('canvas');
+    const countCtx = countCanvas.getContext('2d');
+    countCanvas.width = 128;
+    countCanvas.height = 64;
+    countCtx.fillStyle = '#ffcc00';
+    countCtx.font = 'bold 42px monospace';
+    countCtx.textAlign = 'center';
+    countCtx.textBaseline = 'middle';
+    countCtx.fillText(c.count.toString(), 64, 32);
+    
+    const countTexture = new window.THREE.CanvasTexture(countCanvas);
+    const countMat = new window.THREE.SpriteMaterial({ map: countTexture });
+    const countSprite = new window.THREE.Sprite(countMat);
+    countSprite.position.set(x * 0.7, y * 0.7, z * 0.7);
+    countSprite.scale.set(40, 20, 1);
+    scene.add(countSprite);
+    
+    // Name label sprite
+    const nameCanvas = document.createElement('canvas');
+    const nameCtx = nameCanvas.getContext('2d');
+    nameCanvas.width = 256;
+    nameCanvas.height = 64;
+    nameCtx.fillStyle = c.color;
+    nameCtx.font = 'bold 32px monospace';
+    nameCtx.textAlign = 'center';
+    nameCtx.textBaseline = 'middle';
+    nameCtx.fillText(c.username.toUpperCase(), 128, 32);
+    
+    const nameTexture = new window.THREE.CanvasTexture(nameCanvas);
+    const nameMat = new window.THREE.SpriteMaterial({ map: nameTexture });
+    const nameSprite = new window.THREE.Sprite(nameMat);
+    nameSprite.position.set(x * 1.35, y * 1.35, z * 1.35);
+    nameSprite.scale.set(70, 17, 1);
+    scene.add(nameSprite);
+  });
+  
+  // Mouse controls
+  let isDragging = false;
+  let prevMouse = { x: 0, y: 0 };
+  let rotation = { x: 0.2, y: 0 };
+  
+  const onMouseDown = (e) => {
+    isDragging = true;
+    prevMouse = { x: e.clientX, y: e.clientY };
+  };
+  
+  const onMouseMove = (e) => {
+    if (!isDragging) return;
+    rotation.y += (e.clientX - prevMouse.x) * 0.008;
+    rotation.x += (e.clientY - prevMouse.y) * 0.008;
+    rotation.x = Math.max(-1.5, Math.min(1.5, rotation.x));
+    prevMouse = { x: e.clientX, y: e.clientY };
+  };
+  
+  const onMouseUp = () => { isDragging = false; };
+  
+  renderer.domElement.addEventListener('mousedown', onMouseDown);
+  renderer.domElement.addEventListener('mousemove', onMouseMove);
+  renderer.domElement.addEventListener('mouseup', onMouseUp);
+  
+  // Animation
+  const animate = () => {
+    requestAnimationFrame(animate);
+    
+    if (!isDragging) {
+      rotation.y += 0.003;
     }
     
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    scene.rotation.x = rotation.x;
+    scene.rotation.y = rotation.y;
     
-    if (!window.THREE) {
-      console.error('THREE.js not loaded!');
-      return;
-    }
+    const pulse = 1 + Math.sin(Date.now() * 0.002) * 0.12;
+    youMesh.scale.set(pulse, pulse, pulse);
     
-    try {
-      const scene = new window.THREE.Scene();
-      scene.background = new window.THREE.Color(0x050508);
-      
-      const camera = new window.THREE.PerspectiveCamera(50, width / height, 1, 2000);
-      camera.position.z = 500;
-      
-      const renderer = new window.THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(width, height);
-      container.appendChild(renderer.domElement);
-      
-      const ambientLight = new window.THREE.AmbientLight(0xffffff, 0.6);
-      scene.add(ambientLight);
-      
-      const pointLight = new window.THREE.PointLight(0x00e5cc, 1.5);
-      pointLight.position.set(0, 0, 200);
-      scene.add(pointLight);
-      
-      // YOU sphere
-      const youGeo = new window.THREE.SphereGeometry(45, 32, 32);
-      const youMat = new window.THREE.MeshPhongMaterial({ 
-        color: 0x00e5cc,
-        emissive: 0x00e5cc,
-        emissiveIntensity: 0.6
-      });
-      const youMesh = new window.THREE.Mesh(youGeo, youMat);
-      scene.add(youMesh);
-      
-      const galaxyRadius = 250;
-      const maxCount = Math.max(...collaborators.map(c => c.count));
-      
-      collaborators.forEach((c, i) => {
-        const sizeFactor = Math.sqrt(c.count / maxCount);
-        const size = Math.max(sizeFactor * 30, 12);
-        
-        const phi = Math.acos(-1 + (2 * (i + 1)) / (collaborators.length + 1));
-        const theta = Math.sqrt((collaborators.length + 1) * Math.PI) * phi;
-        
-        const x = galaxyRadius * Math.cos(theta) * Math.sin(phi);
-        const y = galaxyRadius * Math.sin(theta) * Math.sin(phi);
-        const z = galaxyRadius * Math.cos(phi);
-        
-        const colorInt = parseInt(c.color.replace('#', ''), 16);
-        
-        const geo = new window.THREE.SphereGeometry(size, 20, 20);
-        const mat = new window.THREE.MeshPhongMaterial({ 
-          color: colorInt,
-          emissive: colorInt,
-          emissiveIntensity: 0.5
-        });
-        const mesh = new window.THREE.Mesh(geo, mat);
-        mesh.position.set(x, y, z);
-        scene.add(mesh);
-        
-        const points = [
-          new window.THREE.Vector3(0, 0, 0),
-          new window.THREE.Vector3(x, y, z)
-        ];
-        const lineGeo = new window.THREE.BufferGeometry().setFromPoints(points);
-        const lineMat = new window.THREE.LineBasicMaterial({ 
-          color: colorInt, 
-          opacity: 0.4, 
-          transparent: true
-        });
-        const line = new window.THREE.Line(lineGeo, lineMat);
-        scene.add(line);
-      });
-      
-      let isDragging = false;
-      let prevMouse = { x: 0, y: 0 };
-      let rotation = { x: 0.3, y: 0 };
-      
-      const onMouseDown = (e) => {
-        isDragging = true;
-        prevMouse = { x: e.clientX, y: e.clientY };
-      };
-      
-      const onMouseMove = (e) => {
-        if (!isDragging) return;
-        rotation.y += (e.clientX - prevMouse.x) * 0.01;
-        rotation.x += (e.clientY - prevMouse.y) * 0.01;
-        prevMouse = { x: e.clientX, y: e.clientY };
-      };
-      
-      const onMouseUp = () => { isDragging = false; };
-      
-      renderer.domElement.addEventListener('mousedown', onMouseDown);
-      renderer.domElement.addEventListener('mousemove', onMouseMove);
-      renderer.domElement.addEventListener('mouseup', onMouseUp);
-      
-      const animate = () => {
-        requestAnimationFrame(animate);
-        
-        if (!isDragging) {
-          rotation.y += 0.002;
-        }
-        
-        scene.rotation.x = rotation.x;
-        scene.rotation.y = rotation.y;
-        
-        const pulse = 1 + Math.sin(Date.now() * 0.002) * 0.1;
-        youMesh.scale.set(pulse, pulse, pulse);
-        
-        renderer.render(scene, camera);
-      };
-      
-      animate();
-      
-      console.log('✅ 3D scene built!');
-      
-      return () => {
-        renderer.domElement.removeEventListener('mousedown', onMouseDown);
-        renderer.domElement.removeEventListener('mousemove', onMouseMove);
-        renderer.domElement.removeEventListener('mouseup', onMouseUp);
-        container.removeChild(renderer.domElement);
-        renderer.dispose();
-      };
-    } catch (err) {
-      console.error('3D Error:', err);
+    collabMeshes.forEach((mesh, i) => {
+      const phase = i * 0.8;
+      const p = 1 + Math.sin(Date.now() * 0.0018 + phase) * 0.06;
+      mesh.scale.set(p, p, p);
+    });
+    
+    renderer.render(scene, camera);
+  };
+  
+  animate();
+  
+  console.log('✅ 3D Galaxy rendered!');
+  
+  return () => {
+    renderer.domElement.removeEventListener('mousedown', onMouseDown);
+    renderer.domElement.removeEventListener('mousemove', onMouseMove);
+    renderer.domElement.removeEventListener('mouseup', onMouseUp);
+    if (container.contains(renderer.domElement)) {
+      container.removeChild(renderer.domElement);
     }
-  }, [viewMode, collaborators, totalShows]);
+    renderer.dispose();
+  };
+}, [viewMode, collaborators, totalShows]);
 
   if (loading) return <div style={{ padding: 100, textAlign: 'center', color: C.teal }}>SCANNING...</div>;
 
