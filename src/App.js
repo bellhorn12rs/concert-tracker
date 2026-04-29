@@ -8286,7 +8286,7 @@ function CollaborationWebTab() {
     </div>
   );
 })}
-{!isYou && node.daysSince !== undefined && <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 5 : 6, color: node.avatar ? '#fff' : 'rgba(0,0,0,0.5)', textShadow: node.avatar ? '0 1px 2px rgba(0,0,0,0.8)' : 'none' }}>{node.daysSince < 30 ? 'RECENT' : node.daysSince < 180 ? 'MONTHS' : 'YEARS'}</div>}
+                  {!isYou && node.daysSince !== undefined && <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 5 : 6, color: node.avatar ? '#fff' : 'rgba(0,0,0,0.5)', textShadow: node.avatar ? '0 1px 2px rgba(0,0,0,0.8)' : 'none' }}>{node.daysSince < 30 ? 'RECENT' : node.daysSince < 180 ? 'MONTHS' : 'YEARS'}</div>}
                 </div>
               );
             })}
