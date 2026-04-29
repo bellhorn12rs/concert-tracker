@@ -6663,8 +6663,6 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
   const [yearFilter, setYearFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [showUpload, setShowUpload] = useState(false);
-  const [featuredIdx, setFeaturedIdx] = useState(0);
-  const [featuredSpinning, setFeaturedSpinning] = useState(false);
   const [spotlight, setSpotlight] = useState({ x: 50, y: 0 });
 
   const ACCENT = '#ff6699';
@@ -6677,7 +6675,8 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
   const filtered = useMemo(() => {
     let list = [...posters];
     if (yearFilter !== 'all') list = list.filter(p => String(getYear(p.date)) === yearFilter);
-    if (typeFilter !== 'all') list = list.filter(p => p.poster_type === typeFilter);
+    if (typeFilter === 'artist') list = list.filter(p => p.poster_type === 'artist');
+    if (typeFilter === 'festival') list = list.filter(p => p.poster_type === 'festival_year' || p.poster_type === 'festival_day');
     return list;
   }, [posters, yearFilter, typeFilter]);
 
@@ -6689,21 +6688,7 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
       scale: 0.85 + (Math.random() * 0.3),
       depth: Math.random(),
     })));
-    setFeaturedIdx(Math.floor(Math.random() * Math.max(filtered.length, 1)));
   }, [filtered]);
-
-  const featured = layout[featuredIdx] || null;
-
-  const spinFeatured = () => {
-    if (layout.length < 2) return;
-    setFeaturedSpinning(true);
-    let count = 0;
-    const interval = setInterval(() => {
-      setFeaturedIdx(Math.floor(Math.random() * layout.length));
-      count++;
-      if (count > 10) { clearInterval(interval); setFeaturedSpinning(false); }
-    }, 80);
-  };
 
   const getLabel = (p) => {
     if (!p) return '';
@@ -6771,14 +6756,10 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
           70% { opacity: 1; transform: translateY(3px) scale(var(--scale)) rotate(var(--rot)); }
           100% { opacity: 1; transform: translateY(0) scale(var(--scale)) rotate(var(--rot)); }
         }
-        @keyframes featuredPulse {
-          0%, 100% { box-shadow: 0 0 50px rgba(255,102,153,0.4), 0 35px 90px rgba(0,0,0,0.9); }
-          50% { box-shadow: 0 0 90px rgba(255,102,153,0.6), 0 35px 90px rgba(0,0,0,0.9); }
-        }
         .poster-card:hover { z-index: 100 !important; }
       `}</style>
 
-      {/* UNIFORM BRIGHT RED BRICK WALL */}
+      {/* BRICK WALL BACKGROUND */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
         <div style={{
           position: 'absolute', inset: 0,
@@ -6814,15 +6795,17 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
               POSTER <span style={{ color: ACCENT }}>WALL</span>
             </div>
           </div>
+          
+          {/* SIMPLIFIED FILTERS */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            <button style={filterBtnStyle(yearFilter === 'all', ACCENT)} onClick={() => setYearFilter('all')}>ALL</button>
+            <button style={filterBtnStyle(yearFilter === 'all', ACCENT)} onClick={() => setYearFilter('all')}>ALL YEARS</button>
             {years.map(y => (
               <button key={y} style={filterBtnStyle(String(yearFilter) === String(y), ACCENT)} onClick={() => setYearFilter(String(y))}>{y}</button>
             ))}
             <div style={{ width: 1, height: 20, background: '#333' }} />
             <button style={filterBtnStyle(typeFilter === 'all')} onClick={() => setTypeFilter('all')}>ALL</button>
-            <button style={filterBtnStyle(typeFilter === 'artist')} onClick={() => setTypeFilter('artist')}>ARTIST</button>
-            <button style={filterBtnStyle(typeFilter === 'festival_year')} onClick={() => setTypeFilter('festival_year')}>FESTIVAL</button>
+            <button style={filterBtnStyle(typeFilter === 'artist')} onClick={() => setTypeFilter('artist')}>SOLO</button>
+            <button style={filterBtnStyle(typeFilter === 'festival')} onClick={() => setTypeFilter('festival')}>FESTIVAL</button>
             {isAdmin && (
               <button onClick={() => setShowUpload(true)} style={{
                 background: ACCENT, border: 'none', color: '#000',
@@ -6834,156 +6817,6 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
         </div>
       </div>
 
-      {/* FEATURED POSTER SECTION */}
-      {featured && (
-        <div style={{ 
-          position: 'relative',
-          height: '480px',
-          width: '100%',
-          marginBottom: '40px'
-        }}>
-          <div style={{ 
-            position: 'absolute',
-            top: 0,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 15,
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center',
-            width: '100%',
-            maxWidth: '1200px',
-            pointerEvents: 'none'
-          }}>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 20, 
-              marginBottom: 20,
-              pointerEvents: 'auto'
-            }}>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#ffcc00', letterSpacing: 4 }}>// FEATURED</div>
-              <button
-                onClick={spinFeatured}
-                disabled={featuredSpinning}
-                style={{
-                  background: featuredSpinning ? '#333' : '#ffcc00', border: 'none', color: '#000',
-                  fontFamily: "'Space Mono'", fontSize: 8, padding: '4px 12px',
-                  borderRadius: 4, cursor: 'pointer', fontWeight: 900
-                }}
-              >
-                {featuredSpinning ? '...' : 'SPIN'}
-              </button>
-            </div>
-
-            <div style={{ 
-              display: 'flex', 
-              gap: 30, 
-              alignItems: 'flex-start', 
-              maxWidth: 800, 
-              width: '100%', 
-              justifyContent: 'center',
-              minHeight: '350px'
-            }}>
-              <div
-                onClick={() => setSelected(featured)}
-                style={{
-                  flexShrink: 0,
-                  width: 200,
-                  cursor: 'zoom-in',
-                  transform: `rotate(${featured.rotation * 0.3}deg)`,
-                  animation: 'featuredPulse 4s ease-in-out infinite',
-                  position: 'relative',
-                  pointerEvents: 'auto'
-                }}
-              >
-                <img
-                  src={featured.image_url}
-                  alt={getLabel(featured)}
-                  style={{ display: 'block', width: '100%', height: 'auto' }}
-                />
-              </div>
-
-              <div style={{ flex: 1, paddingTop: 20, pointerEvents: 'auto' }}>
-                <div style={{
-                  background: 'rgba(0,0,0,0.7)',
-                  border: `1px solid ${hexToRgba(ACCENT, 0.4)}`,
-                  borderRadius: 8,
-                  padding: '20px 24px',
-                  marginBottom: 20,
-                  backdropFilter: 'blur(8px)'
-                }}>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: ACCENT, letterSpacing: 3, marginBottom: 8 }}>
-                    {featured.poster_type === 'festival_year' ? 'FESTIVAL POSTER' : 'ARTIST POSTER'}
-                  </div>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', lineHeight: 1, letterSpacing: 2, marginBottom: 8 }}>
-                    {getLabel(featured)?.toUpperCase()}
-                  </div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: ACCENT, marginBottom: 4 }}>
-                    {fmtDateShort(featured.date)}
-                    {featured.venue ? ` · ${featured.venue.toUpperCase()}` : ''}
-                  </div>
-                  {featured.city && (
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#666' }}>
-                      {featured.city.toUpperCase()}{featured.state ? `, ${featured.state}` : ''}
-                    </div>
-                  )}
-                  {(() => {
-                    const lines = getDetailLines(featured);
-                    if (!lines.length) return null;
-                    return (
-                      <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid rgba(255,102,153,0.2)` }}>
-                        {lines.map((l, i) => (
-                          <div key={i} style={{ marginBottom: 8 }}>
-                            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#ffcc00', letterSpacing: 2, marginBottom: 3 }}>
-                              {l.day?.toUpperCase()}
-                            </div>
-                            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#ccc', letterSpacing: 1, lineHeight: 1.3 }}>
-                              {l.bands.join(' · ').toUpperCase()}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {(() => {
-                  const wb = getMatchedWristband(featured);
-                  if (!wb) return null;
-                  return (
-                    <div>
-                      <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#666', letterSpacing: 3, marginBottom: 8 }}>// WRISTBAND</div>
-                      <img
-                        src={wb}
-                        alt="wristband"
-                        style={{
-                          width: '100%',
-                          height: 'auto',
-                          borderRadius: 4,
-                          border: `1px solid rgba(255,102,153,0.3)`,
-                          boxShadow: '0 8px 30px rgba(0,0,0,0.7)'
-                        }}
-                      />
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* DIVIDER */}
-      {layout.length > 1 && (
-        <div style={{ position: 'relative', zIndex: 10, padding: '0 40px 30px' }}>
-          <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${ACCENT}44, transparent)` }} />
-          <div style={{ textAlign: 'center', marginTop: 12, fontFamily: "'Space Mono'", fontSize: 7, color: '#666', letterSpacing: 4 }}>
-            THE COLLECTION
-          </div>
-        </div>
-      )}
-
       {/* THE WALL */}
       <div style={{
         position: 'relative', zIndex: 5,
@@ -6991,7 +6824,7 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
         columnGap: '20px',
         padding: '0 40px 80px',
       }}>
-        {layout.filter((_, i) => i !== featuredIdx).map((poster, idx) => {
+        {layout.map((poster, idx) => {
           const wristband = getMatchedWristband(poster);
           const shadowIntensity = poster.depth;
           
@@ -7111,7 +6944,7 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
 
             <div style={{ minWidth: 260, maxWidth: 320, paddingTop: 10 }}>
               <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: ACCENT, letterSpacing: 3, marginBottom: 10 }}>
-                {selected.poster_type === 'festival_year' ? 'FESTIVAL POSTER' : 'ARTIST POSTER'}
+                {selected.poster_type === 'festival_year' ? 'FESTIVAL POSTER' : selected.poster_type === 'festival_day' ? 'FESTIVAL DAY' : 'ARTIST POSTER'}
               </div>
               <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.8rem', color: '#fff', lineHeight: 0.9, letterSpacing: 2, marginBottom: 12 }}>
                 {getLabel(selected)?.toUpperCase()}
