@@ -5549,7 +5549,125 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
   };
 
   return (
-    <div style={{ padding: '24px 0' }} className="fade-in">
+    return (
+  <div style={{ padding: '24px 0' }} className="fade-in">
+    
+    {/* 🎨 AVATAR UPLOAD SECTION */}
+    <Card neon style={{ marginBottom: 30 }}>
+      <CardTitle>YOUR PROFILE AVATAR</CardTitle>
+      <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+        <div style={{ position: 'relative' }}>
+          {session?.user?.user_metadata?.avatar_url ? (
+            <div style={{ 
+              width: 120, 
+              height: 120, 
+              borderRadius: '50%', 
+              backgroundImage: `url(${session.user.user_metadata.avatar_url})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              border: `3px solid ${C.teal}`,
+              boxShadow: `0 0 30px ${C.teal}66`
+            }} />
+          ) : (
+            <div style={{ 
+              width: 120, 
+              height: 120, 
+              borderRadius: '50%', 
+              background: C.teal,
+              border: `3px solid ${C.teal}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: "'Bebas Neue'",
+              fontSize: '3rem',
+              color: '#000'
+            }}>
+              {session?.user?.email?.[0].toUpperCase()}
+            </div>
+          )}
+        </div>
+        
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginBottom: 10 }}>
+            YOUR AVATAR APPEARS IN THE 3D GALAXY VIEW
+          </div>
+          
+          <label style={{ 
+            display: 'inline-block',
+            background: C.teal, 
+            color: '#000', 
+            padding: '10px 20px', 
+            borderRadius: 6, 
+            fontFamily: "'Space Mono'", 
+            fontSize: 10, 
+            cursor: 'pointer',
+            fontWeight: 900
+          }}>
+            📸 UPLOAD PHOTO
+            <input 
+              type="file" 
+              accept="image/*" 
+              hidden 
+              onChange={async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                try {
+                  const fileExt = file.name.split('.').pop();
+                  const fileName = `avatar-${Date.now()}.${fileExt}`;
+                  const filePath = `${session.user.id}/${fileName}`;
+                  
+                  const { error: uploadError } = await supabase.storage
+                    .from('avatars')
+                    .upload(filePath, file);
+                  
+                  if (uploadError) throw uploadError;
+                  
+                  const { data } = supabase.storage
+                    .from('avatars')
+                    .getPublicUrl(filePath);
+                  
+                  const { error: updateError } = await supabase
+                    .from('profiles')
+                    .update({ avatar_url: data.publicUrl })
+                    .eq('id', session.user.id);
+                  
+                  if (updateError) throw updateError;
+                  
+                  alert('✅ AVATAR UPLOADED! Refresh to see it in 3D.');
+                  window.location.reload();
+                } catch (err) {
+                  alert('Upload failed: ' + err.message);
+                }
+              }}
+            />
+          </label>
+          
+          {session?.user?.user_metadata?.avatar_url && (
+            <button
+              onClick={async () => {
+                if (!confirm('Remove avatar?')) return;
+                await supabase.from('profiles').update({ avatar_url: null }).eq('id', session.user.id);
+                window.location.reload();
+              }}
+              style={{
+                marginLeft: 10,
+                background: 'none',
+                border: `1px solid ${C.red}`,
+                color: C.red,
+                padding: '10px 20px',
+                borderRadius: 6,
+                fontFamily: "'Space Mono'",
+                fontSize: 10,
+                cursor: 'pointer'
+              }}
+            >
+              REMOVE
+            </button>
+          )}
+        </div>
+      </div>
+    </Card>
       
       {/* 🤝 CURATOR ONBOARDING GUIDE */}
       {(!concerts || concerts.length < 50) && (
