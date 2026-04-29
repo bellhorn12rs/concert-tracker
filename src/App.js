@@ -2489,12 +2489,10 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
       boxShadow: `0 30px 100px rgba(0,0,0,0.5), 0 0 40px ${hexToRgba(gc, 0.15)}`,
       position: 'relative'
     }}>
-      {/* Watermark */}
       <div style={{ position: 'absolute', right: 20, bottom: -10, fontFamily: "'Bebas Neue'", fontSize: '12rem', color: hexToRgba(gc, 0.03), pointerEvents: 'none', userSelect: 'none', lineHeight: 1 }}>
         {selectedData.shows.length}X
       </div>
 
-      {/* Header Area */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, position: 'relative', zIndex: 5 }}>
         <div>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: C.white, lineHeight: 0.9 }}>
@@ -2520,7 +2518,6 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
         position: 'relative', 
         zIndex: 5 
       }}>
-        {/* TIMELINE */}
         <div style={{ 
           flex: 1, 
           position: 'relative', 
@@ -2539,7 +2536,6 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
           ))}
         </div>
 
-        {/* MEDIA VAULT (REPAIRED) */}
         <div style={{ 
           flex: 1.2, 
           display: 'flex', 
@@ -2587,7 +2583,8 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
     </div>
   );
 })()}
-      {/* 3. 🟡 THE GRID VIEW (Restored Badge & Counter) */}
+
+{/* 3. 🟡 THE GRID VIEW (Restored Badge & Counter) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 15 }}>
         {artists.map((a, i) => {
           const gc = a.genre ? (GENRE_COLORS[a.genre] || C.teal) : null;
