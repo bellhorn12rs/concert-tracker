@@ -7567,6 +7567,7 @@ function ShowsTab() {
 
 // ─── COLLABORATION WEB ───────────────────────────────────────────────────────
 // ─── COLLABORATION WEB ───────────────────────────────────────────────────────
+// ─── COLLABORATION WEB ───────────────────────────────────────────────────────
 function CollaborationWebTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -7605,7 +7606,6 @@ function CollaborationWebTab() {
           profileMap[p.id] = p;
         });
         
-        // Find MY shared shows
         const mySharedShows = [];
         const collabMap = {};
         
@@ -7652,9 +7652,7 @@ function CollaborationWebTab() {
     return (
       <div style={{ padding: 100, textAlign: 'center' }}>
         <div style={{ fontSize: '3rem', marginBottom: 20 }}>🤝</div>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff' }}>
-          NO COLLABORATIONS YET
-        </div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff' }}>NO COLLABORATIONS YET</div>
       </div>
     );
   }
@@ -7672,14 +7670,12 @@ function CollaborationWebTab() {
         </div>
       </div>
 
-      {/* THE NETWORK */}
       <div style={{ 
         width: '800px', height: '700px', margin: '0 auto', 
         position: 'relative', background: '#050508', 
         border: `1px solid ${C.border}`, borderRadius: 12 
       }}>
         
-        {/* YOU (center) */}
         <div style={{
           position: 'absolute',
           left: centerX - 60,
@@ -7700,7 +7696,6 @@ function CollaborationWebTab() {
           YOU
         </div>
 
-        {/* COLLABORATORS */}
         {collaborators.map((collab, i) => {
           const angle = (i / collaborators.length) * Math.PI * 2 - Math.PI / 2;
           const x = centerX + radius * Math.cos(angle);
@@ -7710,7 +7705,6 @@ function CollaborationWebTab() {
           
           return (
             <div key={collab.id}>
-              {/* Connection line */}
               <div style={{
                 position: 'absolute',
                 left: centerX,
@@ -7724,7 +7718,6 @@ function CollaborationWebTab() {
                 zIndex: 10
               }} />
               
-              {/* Count badge */}
               <div 
                 onClick={() => setDetailView(collab)}
                 style={{
@@ -7751,7 +7744,6 @@ function CollaborationWebTab() {
                 {collab.count}
               </div>
               
-              {/* Person orb */}
               <div 
                 onClick={() => setDetailView(collab)}
                 style={{
@@ -7784,14 +7776,10 @@ function CollaborationWebTab() {
         })}
       </div>
 
-      {/* DETAIL VIEW */}
       {detailView && (
         <div style={{ marginTop: 40 }}>
-          <div style={{ 
-            background: C.bgCard, 
+          <Card neon style={{ 
             border: `2px solid ${detailView.color}`, 
-            borderRadius: 12, 
-            padding: 30,
             boxShadow: `0 0 30px ${hexToRgba(detailView.color, 0.3)}`
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -7810,10 +7798,28 @@ function CollaborationWebTab() {
                 CLOSE
               </button>
             </div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 11, color: '#fff' }}>
-              Shared show list coming in Phase 4...
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 15, marginTop: 20 }}>
+              {shows.slice(0, 20).map(show => (
+                <div key={show.id} style={{
+                  background: hexToRgba(detailView.color, 0.05),
+                  border: `1px solid ${hexToRgba(detailView.color, 0.3)}`,
+                  borderRadius: 8,
+                  padding: 15
+                }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff', lineHeight: 1 }}>
+                    {show.is_festival ? show.festival_name?.toUpperCase() : show.artist?.toUpperCase()}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 5 }}>
+                    {fmtDateShort(show.date)}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: detailView.color, marginTop: 3 }}>
+                    {show.venue?.toUpperCase()}
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          </Card>
         </div>
       )}
     </div>
