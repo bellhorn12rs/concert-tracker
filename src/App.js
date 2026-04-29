@@ -7566,7 +7566,7 @@ function ShowsTab() {
 }
 
 // ─── COLLABORATION WEB ───────────────────────────────────────────────────────
-// ─── COLLABORATION WEB ───────────────────────────────────────────────────────
+// ─── COLLABORATION WEB - OPTIMIZED VERSION ────────────────────────────────────
 function CollaborationWebTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -7581,58 +7581,64 @@ function CollaborationWebTab() {
         
         const myUserId = session.user.id;
         
-        const { data: allShows } = await supabase
-          .from('shows')
-          .select('*')
-          .order('date', { ascending: false })
-          .limit(2000);
+        // ✅ OPTIMIZED: Only fetch attendances where I'm involved
+        const { data: myAttendances } = await supabase
+          .from('attendances')
+          .select('show_id')
+          .eq('user_id', myUserId);
         
-        if (!allShows) {
+        if (!myAttendances || myAttendances.length === 0) {
           setLoading(false);
           return;
         }
-
-        const { data: allAttendances } = await supabase
-          .from('attendances')
-          .select('*');
         
-        const { data: allProfiles } = await supabase
-          .from('profiles')
-          .select('id, username, avatar_color');
+        const myShowIds = myAttendances.map(a => a.show_id);
         
-        const profileMap = {};
-        (allProfiles || []).forEach(p => {
-          profileMap[p.id] = p;
-        });
+        // ✅ OPTIMIZED: Fetch shows with Postgres join (one query instead of three)
+        const { data: showsData } = await supabase
+          .from('shows')
+          .select(`
+            *,
+            attendances(
+              id,
+              user_id,
+              profiles(id, username, avatar_color)
+            )
+          `)
+          .in('id', myShowIds)
+          .order('date', { ascending: false });
         
-        const mySharedShows = [];
+        if (!showsData) {
+          setLoading(false);
+          return;
+        }
+        
+        // Build collaborator map
         const collabMap = {};
+        const mySharedShows = [];
         
-        allShows.forEach(show => {
-          const attendances = (allAttendances || []).filter(a => a.show_id === show.id);
+        showsData.forEach(show => {
+          const attendances = show.attendances || [];
           
+          // Only include shows with 2+ attendees
           if (attendances.length > 1) {
-            const iAttended = attendances.find(a => a.user_id === myUserId);
+            mySharedShows.push(show);
             
-            if (iAttended) {
-              mySharedShows.push(show);
+            attendances.forEach(att => {
+              if (att.user_id === myUserId) return;
               
-              attendances.forEach(a => {
-                if (a.user_id === myUserId) return;
-                
-                if (!collabMap[a.user_id]) {
-                  collabMap[a.user_id] = {
-                    id: a.user_id,
-                    username: profileMap[a.user_id]?.username || 'Unknown',
-                    color: profileMap[a.user_id]?.avatar_color || C.gray,
-                    count: 0,
-                    showIds: [] // 🟢 Track which shows
-                  };
-                }
-                collabMap[a.user_id].count++;
-                collabMap[a.user_id].showIds.push(show.id); // 🟢 Add this show
-              });
-            }
+              if (!collabMap[att.user_id]) {
+                collabMap[att.user_id] = {
+                  id: att.user_id,
+                  username: att.profiles?.username || 'Unknown',
+                  color: att.profiles?.avatar_color || C.gray,
+                  count: 0,
+                  showIds: []
+                };
+              }
+              collabMap[att.user_id].count++;
+              collabMap[att.user_id].showIds.push(show.id);
+            });
           }
         });
         
