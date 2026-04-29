@@ -20,6 +20,85 @@ function hexToRgba(hex, alpha) {
   }
 }
 
+const handleIWasThere = async (concert) => {
+    if (!session?.user) return alert("LOGIN REQUIRED TO ARCHIVE SIGNALS");
+
+    try {
+      // Safety: Extract data with fallbacks
+      const primaryArtist = (concert.bands?.[0]?.name || concert.bands?.[0] || concert.artist || 'Unknown').toString();
+      const safeVenue = concert.venue || concert.festival_name || 'Unknown Venue';
+      const safeDate = concert.date;
+      
+      if (!safeDate) return alert("INVALID SHOW: Missing date");
+      
+      console.log('Cloning show:', { artist: primaryArtist, venue: safeVenue, date: safeDate });
+      
+      // Check if show exists in shows table
+      const { data: existingShows } = await supabase
+        .from('shows')
+        .select('id')
+        .eq('date', safeDate)
+        .limit(5);
+      
+      // Find match by venue and artist
+      let showId = null;
+      if (existingShows && existingShows.length > 0) {
+        const match = existingShows.find(s => 
+          s.venue?.toLowerCase() === safeVenue.toLowerCase() &&
+          s.artist?.toLowerCase() === primaryArtist.toLowerCase()
+        );
+        showId = match?.id;
+      }
+      
+      // Create show if doesn't exist
+      if (!showId) {
+        const { data: newShow, error: showError } = await supabase
+          .from('shows')
+          .insert([{
+            date: safeDate,
+            artist: primaryArtist,
+            bands: concert.bands || [primaryArtist],
+            venue: safeVenue,
+            city: concert.city || '',
+            state: concert.state || '',
+            is_festival: concert.is_festival || false,
+            festival_name: concert.festival_name || null,
+            festival_day: concert.festival_day || null,
+            genre: concert.genre || 'Indie Rock',
+            created_by: session.user.id
+          }])
+          .select()
+          .single();
+        
+        if (showError) throw showError;
+        showId = newShow.id;
+      }
+      
+      // Create attendance
+      const { error: attError } = await supabase
+        .from('attendances')
+        .upsert([{
+          user_id: session.user.id,
+          show_id: showId,
+          is_public: true
+        }], { onConflict: 'user_id,show_id' });
+      
+      if (attError) {
+        if (attError.message.includes('duplicate')) {
+          return alert("YOU ALREADY ARCHIVED THIS SHOW");
+        }
+        throw attError;
+      }
+      
+      alert(`⚡ SIGNAL CLONED: ${primaryArtist} added to your archive!`);
+      if (typeof fetchConcerts === 'function') fetchConcerts();
+      
+    } catch (err) {
+      console.error("Clone failed:", err);
+      alert("Failed to clone: " + err.message);
+    }
+  };
+
 // ─── THE RETRO TICKET STUB (IDEA #1) ──────────────────────────────────────────
 const TicketStub = ({ show }) => {
   if (!show) return null;
@@ -4018,74 +4097,169 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
     
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
-      alert("LOGIN REQUIRED");
+      alert("LOGIN REQUIRED TO ARCHIVE SIGNALS");
       return;
     }
 
+    // Sanitize: Strip Eric's IDs and Personal Photos
+    const { 
+      id, 
+      created_at, 
+      user_id, 
+      personal_photo_url, 
+      ...coreEventData 
+    } = event;
+
+    const newRecord = {
+      ...coreEventData,
+      user_id: session.user.id,
+      personal_photo_url: null, // Clean slate for Tara
+      is_public: true,
+      date_added: new Date().toISOString()
+    };
+
     try {
-      const primaryArtist = (event.bands?.[0]?.name || event.bands?.[0] || event.artist || 'Unknown').toString();
-      const safeVenue = event.venue || event.festival_name || 'Unknown Venue';
-      
-      // Search shows table (NOT concerts)
-      const { data: matchingShows } = await supabase
-        .from('shows')
-        .select('*')
-        .eq('date', event.date);
-      
-      let showId = null;
-      if (matchingShows && matchingShows.length > 0) {
-        const match = matchingShows.find(s => 
-          s.venue?.toLowerCase().includes(safeVenue.toLowerCase().substring(0, 10)) &&
-          s.artist?.toLowerCase().includes(primaryArtist.toLowerCase().substring(0, 10))
-        );
-        showId = match?.id;
-      }
-      
-      if (!showId) {
-        const { data: newShow } = await supabase
-          .from('shows')
-          .insert([{
-            date: event.date,
-            artist: primaryArtist,
-            bands: event.bands || [primaryArtist],
-            venue: safeVenue,
-            city: event.city || '',
-            state: event.state || '',
-            is_festival: event.is_festival || false,
-            festival_name: event.festival_name || null,
-            festival_day: event.festival_day || null,
-            genre: event.genre || 'Indie Rock',
-            created_by: session.user.id
-          }])
-          .select()
-          .single();
-        
-        showId = newShow.id;
-      }
-      
-      const { error } = await supabase
-        .from('attendances')
-        .insert([{
-          user_id: session.user.id,
-          show_id: showId,
-          is_public: true
-        }]);
-      
-      if (error) {
-        if (error.code === '23505') {
-          alert("ALREADY IN YOUR ARCHIVE");
-        } else {
-          throw error;
-        }
-      } else {
-        alert(`⚡ CLONED: ${primaryArtist}`);
-      }
-      
+      const { error } = await supabase.from('concerts').insert([newRecord]);
+      if (error) throw error;
+      alert(`⚡ SIGNAL CLONED: ${headlinerName} added to your archive!`);
     } catch (err) {
-      console.error("Clone error:", err);
-      alert("CLONE FAILED: " + err.message);
+      alert("Failed to clone: " + err.message);
     }
   };
+
+  // Detect if we are on a curator's page (spectator mode)
+  const isSpectator = window.location.hash.includes('#/u/');
+
+  return (
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: isMobile ? 'column' : 'row', 
+      alignItems: isMobile ? 'stretch' : 'center', 
+      padding: isMobile ? '15px' : '40px 30px',
+      background: isClustered ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.02)',
+      borderRadius: '24px', 
+      border: `1px solid ${isClustered ? hexToRgba(primaryColor, 0.3) : C.border}`,
+      position: 'relative', 
+      overflow: 'hidden', 
+      gap: isMobile ? '20px' : '0',
+      marginBottom: isMobile ? '10px' : '0'
+    }}>
+      
+      {/* 🟢 THE GHOST POSTER */}
+      {!isMobile && (
+        <div style={{
+          position: 'absolute', left: '-2%', top: '-10%', width: '100%', height: '120%',
+          fontFamily: "'Bebas Neue'", fontSize: '22rem', color: primaryColor, opacity: 0.05, 
+          whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 0, letterSpacing: '-12px', 
+          lineHeight: 0.8, display: 'flex', alignItems: 'flex-start',
+          WebkitMaskImage: 'linear-gradient(to right, black 20%, transparent 80%)',
+          animation: 'pulse-ghost 4s ease-in-out infinite' 
+        }}>
+          {headlinerName}
+        </div>
+      )}
+
+      {/* 🟢 LEFT: THE TICKET STUB / WRISTBAND */}
+      <div style={{ 
+        flexShrink: 0, width: isMobile ? '100%' : '320px', position: 'relative', zIndex: 2,
+        display: 'flex', flexDirection: 'column', gap: '15px', alignItems: isMobile ? 'center' : 'flex-start'
+      }}>
+        <div style={{ transform: isMobile ? 'scale(0.9)' : 'none' }}>
+          {event.is_festival 
+            ? <WristbandCard event={event} genreMap={genreMap} compact={true} onEdit={isAdmin ? onEdit : null} /> 
+            : <TicketStubCard event={event} onEdit={isAdmin ? onEdit : null} genreMap={genreMap} stubIdx={idx} />
+          }
+        </div>
+      </div>
+
+      {/* 🟢 MIDDLE: THE INTERACTIVE LINEUP */}
+      <div style={{ flex: 1, paddingLeft: isMobile ? '0' : '50px', zIndex: 2, textAlign: isMobile ? 'center' : 'left' }}>
+        <div style={{ 
+          fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.2rem' : '3.8rem', lineHeight: 0.85,
+          letterSpacing: '1px', marginBottom: '15px', color: '#fff',
+          textShadow: `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`,
+          display: 'flex', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start', columnGap: '15px'
+        }}>
+          {bands.map((band, bIdx) => (
+            <React.Fragment key={`${event.id}-link-${bIdx}`}>
+              <a 
+                href={getSetlistFmUrl(getBandName(band), event.date)} 
+                target="_blank" rel="noreferrer"
+                style={{ color: '#fff', textDecoration: 'none', cursor: 'pointer', transition: '0.2s' }}
+                onMouseEnter={e => { e.target.style.color = C.gold; e.target.style.textShadow = `0 0 20px ${C.gold}`; }}
+                onMouseLeave={e => { e.target.style.color = '#fff'; e.target.style.textShadow = `0 0 30px ${hexToRgba(primaryColor, 0.4)}`; }}
+              >
+                {getBandName(band).toUpperCase()}
+              </a>
+              {bIdx < bands.length - 1 && <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>}
+            </React.Fragment>
+          ))}
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px', flexWrap: 'wrap' }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: primaryColor, fontWeight: 900 }}>{fmtDateShort(event.date)}</div>
+          <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.1)' }} />
+          <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>{event.venue?.toUpperCase()}</div>
+          
+          {/* 🟢 THE CLONE BUTTON */}
+          {isSpectator && !isAdmin && (
+            <button
+              onClick={cloneSignal}
+              style={{
+                background: 'transparent',
+                border: `1px solid ${primaryColor}`,
+                color: primaryColor,
+                padding: '4px 10px',
+                fontFamily: "'Space Mono'",
+                fontSize: '9px',
+                cursor: 'pointer',
+                borderRadius: 4,
+                transition: 'all 0.2s',
+                textTransform: 'uppercase',
+                letterSpacing: 1,
+                marginLeft: '5px'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = primaryColor; e.currentTarget.style.color = '#000'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = primaryColor; }}
+            >
+              + I WAS THERE
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 🟢 RIGHT: MEDIA CLUSTER */}
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-end', minWidth: isMobile ? '100%' : '400px', zIndex: 2, marginLeft: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', transform: isMobile ? 'scale(0.8)' : 'none', transformOrigin: 'right' }}>
+        {finalSetlists.map((url, sIdx) => (
+          <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={finalSetlists.length} />
+        ))}
+        {finalPosters.map((poster, pIdx) => (
+          <GigPoster
+            key={`${event.id}-poster-${pIdx}`}
+            src={poster.url}
+            artist={poster.artist}
+            date={poster.date}
+            index={pIdx}
+          />
+        ))}
+        <div style={{ marginLeft: (finalSetlists.length > 0 || finalPosters.length > 0) ? '-20px' : '0', display: 'flex' }}>
+          {finalPhotos.map((url, pIdx) => (
+            <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+const getDayColor = (baseHex, index) => {
+  const variants = [1.0, 0.8, 0.6, 0.45, 0.3]; 
+  return hexToRgba(baseHex || C.teal, variants[index % variants.length]);
+};
+
+// ─── 1. BY FEST TAB (BOX SET EDITION + MEDIA CLUSTER) ───────────────────────
+// ─── 1. BY FEST TAB (BOX SET EDITION + MEDIA CLUSTER) ───────────────────────
 // ─── 1. BY FEST TAB (BOX SET EDITION + MEDIA CLUSTER) ───────────────────────
 function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = [] }) {
   const FEST_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699', '#ff4400', '#a2ff00'];
@@ -7728,9 +7902,9 @@ boxShadow: item.type === 'wristband' ? `0 8px 30px rgba(0,0,0,0.7), 0 0 15px ${h
           </div>
         </div>
       )}
-    </div>  
+    </div>
   );
-}  {/* <-- Function close */}
+}
 
 // ─── MAIN APP ────────────────────────────────────────────────────
 export default function App() {
@@ -9509,82 +9683,13 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
     posters={posters} // 🟢 CRITICAL: Ensure this prop is passed
   />
 )}
-  {/* PAPER TRAIL TAB */}
+  {/* 🟢 NEW PAPERTRAIL BLOCK GOES HERE */}
   {activeTab === 'papertrail' && (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {concerts.map((c, i) => {
         const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
         const color = GENRE_COLORS[c.genre] || C.teal;
         const img = c.image_url?.split(',')[0] || c.personal_photo_url?.split(',')[0];
-        
-        // Inline clone handler for this tab
-        const handleClone = async (e) => {
-          e.stopPropagation();
-          
-          const { data: { session: currentSession } } = await supabase.auth.getSession();
-          if (!currentSession?.user) {
-            alert("LOGIN REQUIRED");
-            return;
-          }
-
-          try {
-            const primaryArtist = (c.bands?.[0]?.name || c.bands?.[0] || c.artist || 'Unknown').toString();
-            const safeVenue = c.venue || c.festival_name || 'Unknown Venue';
-            
-            const { data: matchingShows } = await supabase
-              .from('shows')
-              .select('*')
-              .eq('date', c.date);
-            
-            let showId = null;
-            if (matchingShows && matchingShows.length > 0) {
-              const match = matchingShows.find(s => 
-                s.venue?.toLowerCase().includes(safeVenue.toLowerCase().substring(0, 10)) &&
-                s.artist?.toLowerCase().includes(primaryArtist.toLowerCase().substring(0, 10))
-              );
-              showId = match?.id;
-            }
-            
-            if (!showId) {
-              const { data: newShow } = await supabase
-                .from('shows')
-                .insert([{
-                  date: c.date,
-                  artist: primaryArtist,
-                  bands: c.bands || [primaryArtist],
-                  venue: safeVenue,
-                  city: c.city || '',
-                  state: c.state || '',
-                  is_festival: c.is_festival || false,
-                  festival_name: c.festival_name || null,
-                  festival_day: c.festival_day || null,
-                  genre: c.genre || 'Indie Rock',
-                  created_by: currentSession.user.id
-                }])
-                .select()
-                .single();
-              
-              showId = newShow.id;
-            }
-            
-            await supabase
-              .from('attendances')
-              .insert([{
-                user_id: currentSession.user.id,
-                show_id: showId,
-                is_public: true
-              }]);
-            
-            alert(`⚡ CLONED: ${primaryArtist}`);
-            
-          } catch (err) {
-            if (err.code === '23505') {
-              alert("ALREADY IN YOUR ARCHIVE");
-            } else {
-              alert("CLONE FAILED: " + err.message);
-            }
-          }
-        };
         
         return (
           <div key={c.id || i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', background: C.bgCard, borderRadius: 6, border: `1px solid ${C.border}` }}>
@@ -9598,9 +9703,13 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
               <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color }}>{fmtDateShort(c.date)}</div>
               
+              {/* 🟢 THE CLONE TRIGGER (Spectator Mode Only) */}
               {viewingUser && viewingUser !== session?.user?.id && (
                 <button
-                  onClick={handleClone}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleIWasThere(c);
+                  }}
                   style={{
                     background: 'transparent',
                     border: `1px solid ${C.teal}`,
@@ -9626,6 +9735,30 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
       })}
     </div>
   )}
+
+  {activeTab === 'byFest' && (
+  <ByFestTab 
+    festGroupings={festGroupings} 
+    genreMap={artistGenres} 
+    isAdmin={isAdmin} 
+    onEdit={isAdmin ? setEditTarget : null} 
+    posters={posters} // 🟢 Ensure this is passed
+  />
+)}
+  {activeTab === 'community' && <CommunityTab onEnterMuseum={handleNavigateToUser} />}
+  {activeTab === 'passport' && (
+    <PassportTab 
+      passport={passport} 
+      onNavigateToFest={name => { 
+        setActiveTab('byFest'); 
+        setTimeout(() => { 
+          const el = document.getElementById(`fest-${name.toLowerCase().replace(/\s+/g, '-')}`); 
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+        }, 450); 
+      }} 
+    />
+  )}
+
   {/* 3. ARCHIVE TABS */}
 {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} posters={posters} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
   
