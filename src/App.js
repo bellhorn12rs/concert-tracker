@@ -8249,14 +8249,44 @@ function CollaborationWebTab() {
             <style>{`@keyframes orbitPulse { 0%, 100% { box-shadow: 0 0 30px var(--node-color); } 50% { box-shadow: 0 0 50px var(--node-color); } }`}</style>
 
             {nodes.map((node) => {
-              const isYou = node.id === 'you';
-              if (!node.x || !node.y) return null;
-              
-              return (
-                <div key={node.id} onClick={() => !isYou && setDetailView(collaborators.find(c => c.id === node.id))} style={{ position: 'absolute', left: node.x - (node.size / 2), top: node.y - (node.size / 2), width: node.size, height: node.size, borderRadius: '50%', background: node.avatar ? `url(${node.avatar}) center/cover` : node.color, border: `3px solid ${node.color}`, boxShadow: `0 0 35px ${node.color}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: "'Space Mono'", color: node.avatar ? '#fff' : '#000', fontWeight: 900, cursor: isYou ? 'default' : 'pointer', zIndex: isYou ? 100 : 80, userSelect: 'none', '--node-color': node.color, animation: 'orbitPulse 2s ease-in-out infinite', gap: '4px', textShadow: node.avatar ? '0 2px 4px rgba(0,0,0,0.8)' : 'none' }}>
-                  <div style={{ fontSize: node.size > 90 ? (isMobile ? 11 : 16) : (isMobile ? 8 : 11) }}>{isYou ? 'YOU' : node.label.toUpperCase()}</div>
-                  <div style={{ background: 'rgba(0,0,0,0.8)', borderRadius: '12px', padding: node.size > 90 ? '4px 10px' : '3px 7px', fontFamily: "'Bebas Neue'", fontSize: node.size > 90 ? '1.2rem' : (isMobile ? '0.85rem' : '1rem'), color: '#ffcc00' }}>{node.count}</div>
-                  {!isYou && node.daysSince !== undefined && <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 5 : 6, color: node.avatar ? '#fff' : 'rgba(0,0,0,0.5)', textShadow: node.avatar ? '0 1px 2px rgba(0,0,0,0.8)' : 'none' }}>{node.daysSince < 30 ? 'RECENT' : node.daysSince < 180 ? 'MONTHS' : 'YEARS'}</div>}
+  const isYou = node.id === 'you';
+  if (!node.x || !node.y) return null;
+  
+  return (
+    <div key={node.id} onClick={() => !isYou && setDetailView(collaborators.find(c => c.id === node.id))} style={{ position: 'absolute', left: node.x - (node.size / 2), top: node.y - (node.size / 2), width: node.size, height: node.size, borderRadius: '50%', background: node.avatar ? `url(${node.avatar}) center/cover` : node.color, border: `3px solid ${node.color}`, boxShadow: `0 0 35px ${node.color}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: isYou ? 'flex-end' : 'center', fontFamily: "'Space Mono'", color: node.avatar ? '#fff' : '#000', fontWeight: 900, cursor: isYou ? 'default' : 'pointer', zIndex: isYou ? 100 : 80, userSelect: 'none', '--node-color': node.color, animation: 'orbitPulse 2s ease-in-out infinite', gap: '4px', textShadow: node.avatar ? '0 2px 4px rgba(0,0,0,0.8)' : 'none', position: 'relative' }}>
+      
+      {/* Label - only for collaborators */}
+      {!isYou && (
+        <div style={{ fontSize: node.size > 90 ? (isMobile ? 11 : 16) : (isMobile ? 8 : 11) }}>{node.label.toUpperCase()}</div>
+      )}
+      
+      {/* Count badge */}
+      <div style={{ 
+        position: isYou ? 'absolute' : 'relative',
+        bottom: isYou ? '8px' : 'auto',
+        right: isYou ? '8px' : 'auto',
+        background: 'rgba(0,0,0,0.85)', 
+        borderRadius: '12px', 
+        padding: node.size > 90 ? '4px 10px' : '3px 7px', 
+        fontFamily: "'Bebas Neue'", 
+        fontSize: node.size > 90 ? '1.2rem' : (isMobile ? '0.85rem' : '1rem'), 
+        color: '#ffcc00',
+        border: '1px solid rgba(0,0,0,0.9)',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.5)'
+      }}>
+        {node.count}
+      </div>
+      
+      {/* Recency - only for collaborators */}
+      {!isYou && node.daysSince !== undefined && (
+        <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 5 : 6, color: node.avatar ? '#fff' : 'rgba(0,0,0,0.5)', textShadow: node.avatar ? '0 1px 2px rgba(0,0,0,0.8)' : 'none' }}>
+          {node.daysSince < 30 ? 'RECENT' : node.daysSince < 180 ? 'MONTHS' : 'YEARS'}
+        </div>
+      )}
+    </div>
+  );
+})}
+{!isYou && node.daysSince !== undefined && <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 5 : 6, color: node.avatar ? '#fff' : 'rgba(0,0,0,0.5)', textShadow: node.avatar ? '0 1px 2px rgba(0,0,0,0.8)' : 'none' }}>{node.daysSince < 30 ? 'RECENT' : node.daysSince < 180 ? 'MONTHS' : 'YEARS'}</div>}
                 </div>
               );
             })}
