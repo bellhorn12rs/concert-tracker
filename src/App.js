@@ -6660,25 +6660,18 @@ const QuadStat = ({ val, label, color }) => (
 
 function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
   const [selected, setSelected] = useState(null);
-  const [yearFilter, setYearFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [showUpload, setShowUpload] = useState(false);
   const [spotlight, setSpotlight] = useState({ x: 50, y: 0 });
 
   const ACCENT = '#ff6699';
 
-  const years = useMemo(() => {
-    const ySet = new Set(posters.map(p => getYear(p.date)).filter(Boolean));
-    return [...ySet].sort((a, b) => b - a);
-  }, [posters]);
-
   const filtered = useMemo(() => {
     let list = [...posters];
-    if (yearFilter !== 'all') list = list.filter(p => String(getYear(p.date)) === yearFilter);
     if (typeFilter === 'artist') list = list.filter(p => p.poster_type === 'artist');
     if (typeFilter === 'festival') list = list.filter(p => p.poster_type === 'festival_year' || p.poster_type === 'festival_day');
     return list;
-  }, [posters, yearFilter, typeFilter]);
+  }, [posters, typeFilter]);
 
   const [layout, setLayout] = useState([]);
   useEffect(() => {
@@ -6779,14 +6772,14 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
         }} />
       </div>
       
-      {/* HEADER */}
+      {/* HEADER - MINIMAL */}
       <div style={{ 
         position: 'relative', 
         zIndex: 10, 
-        padding: '30px 40px 20px',
+        padding: '20px 40px 15px',
         background: 'linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.6) 60%, transparent 100%)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20, marginBottom: 25 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 15 }}>
           <div>
             <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: ACCENT, letterSpacing: 4, marginBottom: 6 }}>
               GALLERY // {filtered.length} ON THE WALL
@@ -6796,13 +6789,8 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
             </div>
           </div>
           
-          {/* SIMPLIFIED FILTERS */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            <button style={filterBtnStyle(yearFilter === 'all', ACCENT)} onClick={() => setYearFilter('all')}>ALL YEARS</button>
-            {years.map(y => (
-              <button key={y} style={filterBtnStyle(String(yearFilter) === String(y), ACCENT)} onClick={() => setYearFilter(String(y))}>{y}</button>
-            ))}
-            <div style={{ width: 1, height: 20, background: '#333' }} />
+          {/* SIMPLE 3-BUTTON FILTER */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <button style={filterBtnStyle(typeFilter === 'all')} onClick={() => setTypeFilter('all')}>ALL</button>
             <button style={filterBtnStyle(typeFilter === 'artist')} onClick={() => setTypeFilter('artist')}>SOLO</button>
             <button style={filterBtnStyle(typeFilter === 'festival')} onClick={() => setTypeFilter('festival')}>FESTIVAL</button>
@@ -6810,7 +6798,7 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
               <button onClick={() => setShowUpload(true)} style={{
                 background: ACCENT, border: 'none', color: '#000',
                 fontFamily: "'Bebas Neue'", fontSize: '1rem', letterSpacing: 1,
-                padding: '6px 16px', borderRadius: 4, cursor: 'pointer', fontWeight: 900
+                padding: '6px 16px', borderRadius: 4, cursor: 'pointer', fontWeight: 900, marginLeft: 8
               }}>+ POSTER</button>
             )}
           </div>
@@ -6822,7 +6810,7 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
         position: 'relative', zIndex: 5,
         columnCount: 3,
         columnGap: '20px',
-        padding: '0 40px 80px',
+        padding: '20px 40px 80px',
       }}>
         {layout.map((poster, idx) => {
           const wristband = getMatchedWristband(poster);
