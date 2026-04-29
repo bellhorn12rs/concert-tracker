@@ -7567,11 +7567,10 @@ function ShowsTab() {
 
 // ─── COLLABORATION WEB ───────────────────────────────────────────────────────
 // ─── COLLABORATION WEB ───────────────────────────────────────────────────────
-// ─── COLLABORATION WEB ───────────────────────────────────────────────────────
 function CollaborationWebTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [detailView, setDetailView] = useState(null);
+  const [collaborators, setCollaborators] = useState([]);
 
   useEffect(() => {
     const fetch = async () => {
@@ -7581,7 +7580,6 @@ function CollaborationWebTab() {
         
         const myUserId = session.user.id;
         
-        // EXACT SAME LOGIC AS ShowsTab
         const { data: allShows } = await supabase
           .from('shows')
           .select('*')
@@ -7606,7 +7604,7 @@ function CollaborationWebTab() {
           profileMap[p.id] = p;
         });
         
-        // Find shows where I attended AND someone else attended
+        // Find MY shared shows
         const mySharedShows = [];
         const collabMap = {};
         
@@ -7619,7 +7617,6 @@ function CollaborationWebTab() {
             if (iAttended) {
               mySharedShows.push(show);
               
-              // Count collaborators
               attendances.forEach(a => {
                 if (a.user_id === myUserId) return;
                 
@@ -7637,10 +7634,8 @@ function CollaborationWebTab() {
           }
         });
         
-        console.log('MY SHARED SHOWS:', mySharedShows.length);
-        console.log('COLLABORATORS:', Object.keys(collabMap).length);
-        
         setShows(mySharedShows);
+        setCollaborators(Object.values(collabMap).sort((a, b) => b.count - a.count));
         setLoading(false);
       } catch (err) {
         console.error('Error:', err);
@@ -7652,28 +7647,18 @@ function CollaborationWebTab() {
 
   if (loading) return <div style={{ padding: 100, textAlign: 'center', color: C.teal }}>SCANNING...</div>;
 
-  const collaborators = useMemo(() => {
-    const collabMap = {};
-    
-    shows.forEach(show => {
-      // For each show, find who else attended (this is already proven to work in ShowsTab)
-      const attendances = []; // We'll rebuild this from shows data
-      // This is temporary - we'll use the shows state we already have
-    });
-    
-    return Object.values(collabMap);
-  }, [shows]);
-
-  if (shows.length === 0) {
+  if (collaborators.length === 0) {
     return (
       <div style={{ padding: 100, textAlign: 'center' }}>
         <div style={{ fontSize: '3rem', marginBottom: 20 }}>🤝</div>
         <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff' }}>
-          NO COLLABORATIONS DETECTED
+          NO COLLABORATIONS YET
         </div>
       </div>
     );
   }
+
+  const centerX = 400, centerY = 350, radius = 200;
 
   return (
     <div className="fade-in" style={{ padding: 40 }}>
@@ -7682,13 +7667,112 @@ function CollaborationWebTab() {
           COLLABORATION <span style={{ color: C.gold }}>WEB</span>
         </div>
         <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold }}>
-          {shows.length} SHARED SHOWS DETECTED
+          {shows.length} SHARED SHOWS · {collaborators.length} COLLABORATORS
         </div>
       </div>
 
-      {/* Just show the count for now */}
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 14, color: '#fff', textAlign: 'center' }}>
-        DATA DETECTED - BUILDING NETWORK...
+      {/* THE NETWORK */}
+      <div style={{ 
+        width: '800px', height: '700px', margin: '0 auto', 
+        position: 'relative', background: '#050508', 
+        border: `1px solid ${C.border}`, borderRadius: 12 
+      }}>
+        
+        {/* YOU (center) */}
+        <div style={{
+          position: 'absolute',
+          left: centerX - 60,
+          top: centerY - 60,
+          width: 120, height: 120,
+          borderRadius: '50%',
+          background: C.teal,
+          border: `2px solid ${C.teal}`,
+          boxShadow: `0 0 30px ${C.teal}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: "'Bebas Neue'",
+          fontSize: '1.5rem',
+          color: '#000',
+          zIndex: 100
+        }}>
+          YOU
+        </div>
+
+        {/* COLLABORATORS */}
+        {collaborators.map((collab, i) => {
+          const angle = (i / collaborators.length) * Math.PI * 2 - Math.PI / 2;
+          const x = centerX + radius * Math.cos(angle);
+          const y = centerY + radius * Math.sin(angle);
+          const lineLength = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+          const lineAngle = Math.atan2(y - centerY, x - centerX) * (180 / Math.PI);
+          
+          return (
+            <div key={collab.id}>
+              {/* Connection line */}
+              <div style={{
+                position: 'absolute',
+                left: centerX,
+                top: centerY,
+                width: lineLength,
+                height: Math.max(collab.count / 2, 2),
+                background: collab.color,
+                opacity: 0.3,
+                transformOrigin: 'left center',
+                transform: `rotate(${lineAngle}deg)`,
+                zIndex: 10
+              }} />
+              
+              {/* Count badge */}
+              <div style={{
+                position: 'absolute',
+                left: (centerX + (x - centerX) * 0.6) - 15,
+                top: (centerY + (y - centerY) * 0.6) - 15,
+                width: 30, height: 30,
+                borderRadius: '50%',
+                background: C.gold,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: "'Space Mono'",
+                fontSize: 12,
+                fontWeight: 900,
+                color: '#000',
+                zIndex: 90,
+                cursor: 'pointer'
+              }}>
+                {collab.count}
+              </div>
+              
+              {/* Person orb */}
+              <div style={{
+                position: 'absolute',
+                left: x - 40,
+                top: y - 40,
+                width: 80, height: 80,
+                borderRadius: '50%',
+                background: collab.color,
+                border: `2px solid ${collab.color}`,
+                boxShadow: `0 0 20px ${collab.color}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: "'Space Mono'",
+                fontSize: 9,
+                color: '#000',
+                fontWeight: 900,
+                cursor: 'pointer',
+                zIndex: 80,
+                transition: 'transform 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                {collab.username.toUpperCase()}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
