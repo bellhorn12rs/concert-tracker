@@ -7575,114 +7575,121 @@ function CollaborationWebTab() {
 
   useEffect(() => {
     const fetch = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user?.id) {
-          console.log('❌ No session found');
-          return;
-        }
-        
-        const myUserId = session.user.id;
-        console.log('✅ MY USER ID:', myUserId);
-        
-        // Step 1: Get my attendances
-        const { data: myAttendances, error: error1 } = await supabase
-          .from('attendances')
-          .select('show_id')
-          .eq('user_id', myUserId);
-        
-        console.log('📊 MY ATTENDANCES:', myAttendances?.length, 'Error:', error1);
-        
-        if (!myAttendances || myAttendances.length === 0) {
-          console.log('⚠️ No attendances found for user');
-          setLoading(false);
-          return;
-        }
-        
-        const myShowIds = myAttendances.map(a => a.show_id);
-        console.log('🎯 MY SHOW IDS:', myShowIds.length, myShowIds);
-        
-        // Step 2: Get shows
-        const { data: showsData, error: error2 } = await supabase
-          .from('shows')
-          .select('*')
-          .in('id', myShowIds)
-          .order('date', { ascending: false });
-        
-        console.log('🎪 SHOWS FETCHED:', showsData?.length, 'Error:', error2);
-        
-        // Step 3: Get all attendances for these shows
-        const { data: allAttendances, error: error3 } = await supabase
-          .from('attendances')
-          .select(`
-            *,
-            profiles(id, username, avatar_color)
-          `)
-          .in('show_id', myShowIds);
-        
-        console.log('👥 ALL ATTENDANCES:', allAttendances?.length, 'Error:', error3);
-        console.log('Sample attendance:', allAttendances?.[0]);
-        
-        if (!showsData || !allAttendances) {
-          console.log('❌ Missing data - showsData or allAttendances is null');
-          setLoading(false);
-          return;
-        }
-        
-        // Build attendance map by show_id
-        const attendancesByShow = {};
-        allAttendances.forEach(att => {
-          if (!attendancesByShow[att.show_id]) {
-            attendancesByShow[att.show_id] = [];
-          }
-          attendancesByShow[att.show_id].push(att);
-        });
-        
-        console.log('📋 ATTENDANCE MAP:', Object.keys(attendancesByShow).length, 'shows have attendances');
-        
-        // Build collaborator map
-        const collabMap = {};
-        const mySharedShows = [];
-        
-        showsData.forEach(show => {
-          const attendances = attendancesByShow[show.id] || [];
-          
-          console.log(`🎵 Show ${show.id} (${show.artist}): ${attendances.length} attendees`);
-          
-          // Only include shows with 2+ attendees
-          if (attendances.length > 1) {
-            mySharedShows.push(show);
-            
-            attendances.forEach(att => {
-              if (att.user_id === myUserId) return;
-              
-              if (!collabMap[att.user_id]) {
-                collabMap[att.user_id] = {
-                  id: att.user_id,
-                  username: att.profiles?.username || 'Unknown',
-                  color: att.profiles?.avatar_color || C.gray,
-                  count: 0,
-                  showIds: []
-                };
-              }
-              collabMap[att.user_id].count++;
-              collabMap[att.user_id].showIds.push(show.id);
-            });
-          }
-        });
-        
-        console.log('🤝 SHARED SHOWS:', mySharedShows.length);
-        console.log('👤 COLLABORATORS:', Object.keys(collabMap).length);
-        console.log('Collaborators:', collabMap);
-        
-        setShows(mySharedShows);
-        setCollaborators(Object.values(collabMap).sort((a, b) => b.count - a.count));
-        setLoading(false);
-      } catch (err) {
-        console.error('💥 ERROR:', err);
-        setLoading(false);
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) {
+      console.log('❌ No session found');
+      return;
+    }
+    
+    const myUserId = session.user.id;
+    console.log('✅ MY USER ID:', myUserId);
+    
+    // Step 1: Get my attendances
+    const { data: myAttendances } = await supabase
+      .from('attendances')
+      .select('show_id')
+      .eq('user_id', myUserId);
+    
+    console.log('📊 MY ATTENDANCES:', myAttendances?.length);
+    
+    if (!myAttendances || myAttendances.length === 0) {
+      setLoading(false);
+      return;
+    }
+    
+    const myShowIds = myAttendances.map(a => a.show_id);
+    console.log('🎯 MY SHOW IDS:', myShowIds.length);
+    
+    // Step 2: Get shows
+    const { data: showsData } = await supabase
+      .from('shows')
+      .select('*')
+      .in('id', myShowIds)
+      .order('date', { ascending: false });
+    
+    console.log('🎪 SHOWS FETCHED:', showsData?.length);
+    
+    // Step 3: Get attendances separately (no join)
+    const { data: allAttendances } = await supabase
+      .from('attendances')
+      .select('*')
+      .in('show_id', myShowIds);
+    
+    console.log('👥 ALL ATTENDANCES:', allAttendances?.length);
+    
+    // Step 4: Get profiles separately
+    const userIds = [...new Set(allAttendances?.map(a => a.user_id) || [])];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_color')
+      .in('id', userIds);
+    
+    console.log('🧑 PROFILES FETCHED:', profiles?.length);
+    
+    // Build profile map
+    const profileMap = {};
+    (profiles || []).forEach(p => {
+      profileMap[p.id] = p;
+    });
+    
+    if (!showsData || !allAttendances) {
+      setLoading(false);
+      return;
+    }
+    
+    // Build attendance map by show_id
+    const attendancesByShow = {};
+    allAttendances.forEach(att => {
+      if (!attendancesByShow[att.show_id]) {
+        attendancesByShow[att.show_id] = [];
       }
-    };
+      attendancesByShow[att.show_id].push({
+        ...att,
+        profile: profileMap[att.user_id] || { username: 'Unknown', avatar_color: C.gray }
+      });
+    });
+    
+    // Build collaborator map
+    const collabMap = {};
+    const mySharedShows = [];
+    
+    showsData.forEach(show => {
+      const attendances = attendancesByShow[show.id] || [];
+      
+      // Only include shows with 2+ attendees
+      if (attendances.length > 1) {
+        mySharedShows.push(show);
+        
+        attendances.forEach(att => {
+          if (att.user_id === myUserId) return;
+          
+          if (!collabMap[att.user_id]) {
+            collabMap[att.user_id] = {
+              id: att.user_id,
+              username: att.profile.username,
+              color: att.profile.avatar_color,
+              count: 0,
+              showIds: []
+            };
+          }
+          collabMap[att.user_id].count++;
+          collabMap[att.user_id].showIds.push(show.id);
+        });
+      }
+    });
+    
+    console.log('🤝 SHARED SHOWS:', mySharedShows.length);
+    console.log('👤 COLLABORATORS:', Object.keys(collabMap).length);
+    
+    setShows(mySharedShows);
+    setCollaborators(Object.values(collabMap).sort((a, b) => b.count - a.count));
+    setLoading(false);
+  } catch (err) {
+    console.error('💥 ERROR:', err);
+    setLoading(false);
+  }
+};
     fetch();
   }, []);
 
