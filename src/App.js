@@ -2481,108 +2481,112 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
       </div>
 
       {selectedData && (() => {
-        const gc = selectedData.genre ? (GENRE_COLORS[selectedData.genre] || C.teal) : C.teal;
-        return (
-          <div className="fade-in" style={{ 
-            background: `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(gc, 0.05)})`, 
-            border: `2px solid ${gc}44`, borderRadius: 16, padding: '40px', marginBottom: 40, 
-            boxShadow: `0 30px 100px rgba(0,0,0,0.5), 0 0 40px ${hexToRgba(gc, 0.15)}`,
-            position: 'relative'
-          }}>
-            {/* Watermark */}
-            <div style={{ position: 'absolute', right: 20, bottom: -10, fontFamily: "'Bebas Neue'", fontSize: '12rem', color: hexToRgba(gc, 0.03), pointerEvents: 'none', userSelect: 'none', lineHeight: 1 }}>
-              {selectedData.shows.length}X
-            </div>
+  const gc = selectedData.genre ? (GENRE_COLORS[selectedData.genre] || C.teal) : C.teal;
+  return (
+    <div className="fade-in" style={{ 
+      background: `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(gc, 0.05)})`, 
+      border: `2px solid ${gc}44`, borderRadius: 16, padding: '40px', marginBottom: 40, 
+      boxShadow: `0 30px 100px rgba(0,0,0,0.5), 0 0 40px ${hexToRgba(gc, 0.15)}`,
+      position: 'relative'
+    }}>
+      {/* Watermark */}
+      <div style={{ position: 'absolute', right: 20, bottom: -10, fontFamily: "'Bebas Neue'", fontSize: '12rem', color: hexToRgba(gc, 0.03), pointerEvents: 'none', userSelect: 'none', lineHeight: 1 }}>
+        {selectedData.shows.length}X
+      </div>
 
-            {/* Header Area */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, position: 'relative', zIndex: 5 }}>
-              <div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: C.white, lineHeight: 0.9 }}>
-                  {selectedData.artist.toUpperCase()}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 15, marginTop: 10 }}>
-                  {selectedData.genre && <GenreBadge genre={selectedData.genre} color={gc} />}
-                  <span style={{ fontFamily: "'Space Mono'", fontSize: 11, color: gc, fontWeight: 900 }}>
-                    {selectedData.shows.length} SETS IN ARCHIVE
-                  </span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 12 }}>
-                {onShare && <button onClick={() => onShare(selectedData.artist, selectedData.shows)} style={{ fontFamily: "'Space Mono'", fontSize: 10, background: hexToRgba(gc, 0.2), border: `2px solid ${gc}`, color: '#fff', borderRadius: 6, padding: '8px 16px', cursor: 'pointer', fontWeight: 700 }}>SHARE HISTORY</button>}
-                <button onClick={() => setSelected(null)} style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid rgba(255,255,255,0.1)`, color: '#fff', fontSize: 10, borderRadius: 6, padding: '8px 16px', cursor: 'pointer' }}>CLOSE</button>
+      {/* Header Area */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, position: 'relative', zIndex: 5 }}>
+        <div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: C.white, lineHeight: 0.9 }}>
+            {selectedData.artist.toUpperCase()}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 15, marginTop: 10 }}>
+            {selectedData.genre && <GenreBadge genre={selectedData.genre} color={gc} />}
+            <span style={{ fontFamily: "'Space Mono'", fontSize: 11, color: gc, fontWeight: 900 }}>
+              {selectedData.shows.length} SETS IN ARCHIVE
+            </span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          {onShare && <button onClick={() => onShare(selectedData.artist, selectedData.shows)} style={{ fontFamily: "'Space Mono'", fontSize: 10, background: hexToRgba(gc, 0.2), border: `2px solid ${gc}`, color: '#fff', borderRadius: 6, padding: '8px 16px', cursor: 'pointer', fontWeight: 700 }}>SHARE HISTORY</button>}
+          <button onClick={() => setSelected(null)} style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid rgba(255,255,255,0.1)`, color: '#fff', fontSize: 10, borderRadius: 6, padding: '8px 16px', cursor: 'pointer' }}>CLOSE</button>
+        </div>
+      </div>
+
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: window.innerWidth < 768 ? 'column' : 'row',
+        gap: window.innerWidth < 768 ? '30px' : '50px',
+        position: 'relative', 
+        zIndex: 5 
+      }}>
+        {/* TIMELINE */}
+        <div style={{ 
+          flex: 1, 
+          position: 'relative', 
+          paddingLeft: window.innerWidth < 768 ? '15px' : '25px',
+          maxWidth: window.innerWidth < 768 ? '100%' : 'none'
+        }}>
+          <div style={{ position: 'absolute', left: 5, top: 0, bottom: 0, width: 2, background: `linear-gradient(to bottom, ${gc}, transparent)`, opacity: 0.4 }} />
+          {[...selectedData.shows].reverse().map((s, i) => (
+            <div key={i} style={{ position: 'relative', marginBottom: 18, paddingLeft: 20 }}>
+              <div style={{ position: 'absolute', left: -24, top: 4, width: 10, height: 10, borderRadius: '50%', background: s.is_festival ? gc : '#fff', boxShadow: `0 0 15px ${s.is_festival ? gc : '#fff'}` }} />
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: 11, color: gc, fontWeight: 900 }}>{fmtDate(s.date)}</span>
+                <span style={{ fontSize: '1.1rem', color: C.white }}>{s.venue}</span>
               </div>
             </div>
+          ))}
+        </div>
 
-            <div style={{ 
-  display: 'flex', 
-  flexDirection: window.innerWidth < 768 ? 'column' : 'row',
-  gap: window.innerWidth < 768 ? '30px' : '50px',
-  position: 'relative', 
-  zIndex: 5 
-}}>
-  {/* TIMELINE */}
-  <div style={{ 
-    flex: 1, 
-    position: 'relative', 
-    paddingLeft: window.innerWidth < 768 ? '15px' : '25px',
-    maxWidth: window.innerWidth < 768 ? '100%' : 'none'
-  }}>
-                <div style={{ position: 'absolute', left: 5, top: 0, bottom: 0, width: 2, background: `linear-gradient(to bottom, ${gc}, transparent)`, opacity: 0.4 }} />
-                {[...selectedData.shows].reverse().map((s, i) => (
-                  <div key={i} style={{ position: 'relative', marginBottom: 18, paddingLeft: 20 }}>
-                    <div style={{ position: 'absolute', left: -24, top: 4, width: 10, height: 10, borderRadius: '50%', background: s.is_festival ? gc : '#fff', boxShadow: `0 0 15px ${s.is_festival ? gc : '#fff'}` }} />
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-                      <span style={{ fontFamily: "'Space Mono'", fontSize: 11, color: gc, fontWeight: 900 }}>{fmtDate(s.date)}</span>
-                      <span style={{ fontSize: '1.1rem', color: C.white }}>{s.venue}</span>
-                    </div>
-                  </div>
+        {/* MEDIA VAULT (REPAIRED) */}
+        <div style={{ 
+          flex: 1.2, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '30px',
+          width: window.innerWidth < 768 ? '100%' : 'auto'
+        }}>
+          {(archive.setlists.length > 0 || archive.archivePosters.length > 0) && (
+            <div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: gc, letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// STAGE ARTIFACTS</div>
+              <div style={{ 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: '15px', 
+                alignItems: 'flex-start',
+                justifyContent: window.innerWidth < 768 ? 'center' : 'flex-start'
+              }}>
+                {archive.setlists.map((m, idx) => (
+                  <SetlistPaper key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.setlists.length} />
+                ))}
+                {archive.archivePosters.map((m, idx) => (
+                  <GigPoster key={`poster-${idx}-${m.url}`} src={m.url} artist={selectedData.artist} date={m.date} index={idx} />
                 ))}
               </div>
-
-             {/* MEDIA VAULT (REPAIRED) */}
-<div style={{ 
-  flex: 1.2, 
-  display: 'flex', 
-  flexDirection: 'column', 
-  gap: '30px',
-  width: window.innerWidth < 768 ? '100%' : 'auto'
-}}>
-  {(archive.setlists.length > 0 || archive.archivePosters.length > 0) && (
-    <div>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: gc, letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// STAGE ARTIFACTS</div>
-      <div style={{ 
-        display: 'flex', 
-        flexWrap: 'wrap', 
-        gap: '15px', 
-        alignItems: 'flex-start',
-        justifyContent: window.innerWidth < 768 ? 'center' : 'flex-start'
-      }}>
-        {archive.setlists.map((m, idx) => (
-          <SetlistPaper key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.setlists.length} />
-        ))}
-        {archive.archivePosters.map((m, idx) => (
-          <GigPoster key={`poster-${idx}-${m.url}`} src={m.url} artist={selectedData.artist} date={m.date} index={idx} />
-        ))}
+            </div>
+          )}
+          
+          {archive.photos.length > 0 && (
+            <div>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#9d00ff', letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// PERSONAL MEMORIES</div>
+              <div style={{ 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: '15px',
+                justifyContent: window.innerWidth < 768 ? 'center' : 'flex-start'
+              }}>
+                {archive.photos.map((m, idx) => (
+                  <PersonalPolaroid key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.photos.length} caption={fmtDateShort(m.date)} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
-  )}
-  
-  {archive.photos.length > 0 && (
-    <div>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#9d00ff', letterSpacing: 2, marginBottom: 15, fontWeight: 900 }}>// PERSONAL MEMORIES</div>
-      <div style={{ 
-        display: 'flex', 
-        flexWrap: 'wrap', 
-        gap: '15px',
-        justifyContent: window.innerWidth < 768 ? 'center' : 'flex-start'
-      }}>
-        {archive.photos.map((m, idx) => (
-          <PersonalPolaroid key={`${idx}-${m.url}`} src={m.url} index={idx} total={archive.photos.length} caption={fmtDateShort(m.date)} />
-        ))}
-      </div>
-    </div>
-  )}
-</div>
+  );
+})()}
       {/* 3. 🟡 THE GRID VIEW (Restored Badge & Counter) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 15 }}>
         {artists.map((a, i) => {
