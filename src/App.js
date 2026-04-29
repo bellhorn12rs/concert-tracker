@@ -7429,7 +7429,7 @@ function ShowsTab() {
 }
 
 // ─── COLLABORATION WEB - MOBILE RESPONSIVE ────────────────────────────────────
-// ─── COLLABORATION WEB - RECENCY + PROPORTION EDITION ──────────────────────────
+// ─── COLLABORATION WEB - DUAL VIEW (2D + 3D) EDITION ───────────────────────────
 function CollaborationWebTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -7438,10 +7438,13 @@ function CollaborationWebTab() {
   const [nodes, setNodes] = useState([]);
   const [particles, setParticles] = useState([]);
   const [totalShows, setTotalShows] = useState(0);
+  const [viewMode, setViewMode] = useState('2d'); // '2d' or '3d'
   const canvasRef = useRef(null);
+  const threeMountRef = useRef(null);
   const animationRef = useRef(null);
+  const threeSceneRef = useRef(null);
 
-  // Fetch data
+  // Fetch data (unchanged)
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -7557,9 +7560,9 @@ function CollaborationWebTab() {
     fetch();
   }, []);
 
-  // 🌊 ORBITAL MOTION WITH RECENCY-BASED DISTANCE
+  // 🌊 2D ORBITAL ANIMATION
   useEffect(() => {
-    if (collaborators.length === 0 || totalShows === 0) return;
+    if (collaborators.length === 0 || totalShows === 0 || viewMode !== '2d') return;
 
     const isMobile = window.innerWidth < 768;
     const containerWidth = isMobile ? window.innerWidth - 40 : 800;
@@ -7569,10 +7572,8 @@ function CollaborationWebTab() {
     const baseOrbitRadius = isMobile ? 180 : 260;
     const baseSize = isMobile ? 120 : 160;
 
-    // Find max count for sizing
     const maxCollabCount = Math.max(...collaborators.map(c => c.count));
 
-    // Calculate node data with recency-based orbits
     const nodeData = [
       { 
         id: 'you', 
@@ -7586,78 +7587,62 @@ function CollaborationWebTab() {
       },
       ...collaborators.map((c, i) => {
         const angle = (i / collaborators.length) * Math.PI * 2;
-        
-        // Proportional sizing based on shared shows
-        // Use sqrt for better visual scaling (41 vs 7 won't be 6x difference)
         const sizeFactor = Math.sqrt(c.count / maxCollabCount);
         const proportionalSize = Math.max(
           sizeFactor * (isMobile ? 80 : 110),
           isMobile ? 50 : 65
         );
         
-        // Calculate recency (days since last shared show)
         const mostRecentShow = c.shows.sort((a, b) => b.date.localeCompare(a.date))[0];
         const daysSinceLastShow = mostRecentShow ? daysSince(mostRecentShow.date) : 9999;
-
-        // Map recency to orbit distance
-        // 0-30 days = close (0.7x base radius)
-        // 30-180 days = medium (1.0x base radius)
-        // 180+ days = far (1.3x base radius)
-        // Map recency to orbit distance
-let distanceFactor = 1.0;
-if (daysSinceLastShow < 30) distanceFactor = 0.7;
-else if (daysSinceLastShow < 180) distanceFactor = 1.0;
-else distanceFactor = 1.3;
-
-const orbitRadius = baseOrbitRadius * distanceFactor;
-
-return {
-  id: c.id,
-  label: c.username,
-  color: c.color,
-  count: c.count,
-  showIds: c.showIds,
-  size: proportionalSize,
-  baseAngle: angle,
-  orbitRadius: orbitRadius,
-  daysSince: daysSinceLastShow, // ← Update this too
-  mostRecentDate: mostRecentShow?.date,
-  x: centerX + Math.cos(angle) * orbitRadius,
-  y: centerY + Math.sin(angle) * orbitRadius
-};
+        
+        let distanceFactor = 1.0;
+        if (daysSinceLastShow < 30) distanceFactor = 0.7;
+        else if (daysSinceLastShow < 180) distanceFactor = 1.0;
+        else distanceFactor = 1.3;
+        
+        const orbitRadius = baseOrbitRadius * distanceFactor;
+        
+        return {
+          id: c.id,
+          label: c.username,
+          color: c.color,
+          count: c.count,
+          showIds: c.showIds,
+          size: proportionalSize,
+          baseAngle: angle,
+          orbitRadius: orbitRadius,
+          daysSince: daysSinceLastShow,
+          mostRecentDate: mostRecentShow?.date,
+          x: centerX + Math.cos(angle) * orbitRadius,
+          y: centerY + Math.sin(angle) * orbitRadius
+        };
       })
     ];
 
     setNodes(nodeData);
 
-    // Initialize bouncing particles - EXACT count match
-const particlePool = [];
-collaborators.forEach((c, i) => {
-  console.log(`Creating ${c.count} particles for ${c.username}`);
-  
-  // Exactly c.count particles - no more, no less
-  for (let p = 0; p < c.count; p++) {
-    particlePool.push({
-      nodeIndex: i,
-      progress: Math.random(), // Spread them along the line
-      speed: 0.015 + Math.random() * 0.01, // MUCH faster (3x speed)
-      direction: Math.random() > 0.5 ? 1 : -1,
-      color: c.color
+    const particlePool = [];
+    collaborators.forEach((c, i) => {
+      console.log(`Creating ${c.count} particles for ${c.username}`);
+      for (let p = 0; p < c.count; p++) {
+        particlePool.push({
+          nodeIndex: i,
+          progress: p / c.count, // Evenly space them initially
+          speed: 0.01 + Math.random() * 0.015, // MUCH faster
+          direction: p % 2 === 0 ? 1 : -1, // Alternate directions for variety
+          color: c.color
+        });
+      }
     });
-  }
-});
-console.log(`Total particles created: ${particlePool.length}`);
     setParticles(particlePool);
 
-    // Animation loop
     let time = 0;
     const animate = () => {
-      time += 0.0006; // Slow orbital speed
+      time += 0.0006;
 
-      // Update node positions (orbital motion)
       const updatedNodes = nodeData.map(node => {
         if (node.isCenter) return node;
-        
         const angle = node.baseAngle + time;
         return {
           ...node,
@@ -7668,18 +7653,16 @@ console.log(`Total particles created: ${particlePool.length}`);
 
       setNodes(updatedNodes);
 
-      // Update bouncing particles
       setParticles(prevParticles => 
         prevParticles.map(p => {
           let newProgress = p.progress + (p.speed * p.direction);
           let newDirection = p.direction;
           
-          // Bounce at endpoints
           if (newProgress >= 1) {
-            newProgress = 1;
+            newProgress = 0.99;
             newDirection = -1;
           } else if (newProgress <= 0) {
-            newProgress = 0;
+            newProgress = 0.01;
             newDirection = 1;
           }
           
@@ -7691,37 +7674,33 @@ console.log(`Total particles created: ${particlePool.length}`);
         })
       );
 
-      // Draw particles on canvas
-const canvas = canvasRef.current;
-if (canvas) {
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, containerWidth, containerHeight);
-  
-  particles.forEach(p => {
-    const collabNode = updatedNodes[p.nodeIndex + 1];
-    if (!collabNode) return;
-    
-    const x = centerX + (collabNode.x - centerX) * p.progress;
-    const y = centerY + (collabNode.y - centerY) * p.progress;
-    
-    // Draw larger, brighter particles with trail
-    ctx.beginPath();
-    ctx.arc(x, y, 5, 0, Math.PI * 2);
-    ctx.fillStyle = p.color;
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = p.color;
-    ctx.globalAlpha = 1;
-    ctx.fill();
-    
-    // Add a trailing glow
-    ctx.beginPath();
-    ctx.arc(x, y, 8, 0, Math.PI * 2);
-    ctx.fillStyle = p.color;
-    ctx.globalAlpha = 0.2;
-    ctx.fill();
-    ctx.globalAlpha = 1.0;
-  });
-}
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, containerWidth, containerHeight);
+        
+        particles.forEach(p => {
+          const collabNode = updatedNodes[p.nodeIndex + 1];
+          if (!collabNode) return;
+          
+          const x = centerX + (collabNode.x - centerX) * p.progress;
+          const y = centerY + (collabNode.y - centerY) * p.progress;
+          
+          ctx.beginPath();
+          ctx.arc(x, y, 5, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = p.color;
+          ctx.fill();
+          
+          ctx.beginPath();
+          ctx.arc(x, y, 10, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = 0.25;
+          ctx.fill();
+          ctx.globalAlpha = 1.0;
+        });
+      }
 
       animationRef.current = requestAnimationFrame(animate);
     };
@@ -7733,7 +7712,15 @@ if (canvas) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [collaborators, particles.length, totalShows]);
+  }, [collaborators, particles.length, totalShows, viewMode]);
+
+  // 🌍 3D SPHERE SETUP (Next!)
+  useEffect(() => {
+    if (viewMode !== '3d' || !window.THREE || !threeMountRef.current) return;
+    
+    // We'll build the 3D scene here after you confirm particles work!
+    
+  }, [viewMode, collaborators]);
 
   if (loading) return <div style={{ padding: 100, textAlign: 'center', color: C.teal }}>SCANNING...</div>;
 
@@ -7752,15 +7739,52 @@ if (canvas) {
 
   return (
     <div className="fade-in" style={{ padding: isMobile ? 20 : 40 }}>
-      <div style={{ textAlign: 'center', marginBottom: isMobile ? 20 : 40 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff' }}>
-          COLLABORATION <span style={{ color: C.gold }}>WEB</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? 15 : 30 }}>
+        <div style={{ textAlign: 'center', flex: 1 }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff' }}>
+            COLLABORATION <span style={{ color: C.gold }}>WEB</span>
+          </div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 8 : 10, color: C.gold }}>
+            {shows.length} SHARED SHOWS · {collaborators.length} COLLABORATORS
+          </div>
         </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 8 : 10, color: C.gold }}>
-          {shows.length} SHARED SHOWS · {collaborators.length} COLLABORATORS
-        </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.purple, marginTop: 5, letterSpacing: 2 }}>
-          🌊 SIZE = SHARED SHOWS // DISTANCE = RECENCY // PARTICLES = MEMORIES
+
+        {/* VIEW TOGGLE */}
+        <div style={{ display: 'flex', gap: 8, background: C.bgCard, padding: 4, borderRadius: 6, border: `1px solid ${C.border}` }}>
+          <button
+            onClick={() => setViewMode('2d')}
+            style={{
+              background: viewMode === '2d' ? C.teal : 'transparent',
+              color: viewMode === '2d' ? '#000' : C.gray,
+              border: 'none',
+              padding: '6px 14px',
+              borderRadius: 4,
+              fontFamily: "'Space Mono'",
+              fontSize: 9,
+              fontWeight: 900,
+              cursor: 'pointer',
+              transition: '0.2s'
+            }}
+          >
+            🌊 2D
+          </button>
+          <button
+            onClick={() => setViewMode('3d')}
+            style={{
+              background: viewMode === '3d' ? C.purple : 'transparent',
+              color: viewMode === '3d' ? '#000' : C.gray,
+              border: 'none',
+              padding: '6px 14px',
+              borderRadius: 4,
+              fontFamily: "'Space Mono'",
+              fontSize: 9,
+              fontWeight: 900,
+              cursor: 'pointer',
+              transition: '0.2s'
+            }}
+          >
+            🌍 3D
+          </button>
         </div>
       </div>
 
@@ -7776,128 +7800,146 @@ if (canvas) {
         overflow: 'hidden'
       }}>
         
-        {/* Particle canvas layer */}
-        <canvas
-          ref={canvasRef}
-          width={containerWidth}
-          height={containerHeight}
-          style={{ 
-            position: 'absolute', 
-            inset: 0, 
-            zIndex: 5,
-            pointerEvents: 'none'
-          }}
-        />
-
-        {/* Connection lines */}
-        <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
-          {nodes.length > 1 && nodes.slice(1).map((node, i) => {
-            const you = nodes[0];
-            if (!you || !node.x || !node.y) return null;
-            
-            return (
-              <line
-                key={node.id}
-                x1={you.x}
-                y1={you.y}
-                x2={node.x}
-                y2={node.y}
-                stroke={node.color}
-                strokeWidth={Math.max(node.count / 4, 2)}
-                opacity="0.3"
-              />
-            );
-          })}
-        </svg>
-
-        {/* Render nodes with pulsing animation */}
-        <style>{`
-          @keyframes orbitPulse {
-            0%, 100% { box-shadow: 0 0 30px var(--node-color); }
-            50% { box-shadow: 0 0 50px var(--node-color); }
-          }
-          .orbit-node {
-            animation: orbitPulse 3s ease-in-out infinite;
-          }
-        `}</style>
-
-        {nodes.map((node) => {
-          const isYou = node.id === 'you';
-          
-          if (!node.x || !node.y) return null;
-          
-          return (
-            <div
-              key={node.id}
-              className={!isYou ? "orbit-node" : ""}
-              onClick={() => !isYou && setDetailView(collaborators.find(c => c.id === node.id))}
-              style={{
-                position: 'absolute',
-                left: node.x - (node.size / 2),
-                top: node.y - (node.size / 2),
-                width: node.size,
-                height: node.size,
-                borderRadius: '50%',
-                background: node.color,
-                border: `3px solid ${node.color}`,
-                boxShadow: `0 0 35px ${node.color}`,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: "'Space Mono'",
-                color: '#000',
-                fontWeight: 900,
-                cursor: isYou ? 'default' : 'pointer',
-                zIndex: isYou ? 100 : 80,
-                userSelect: 'none',
-                '--node-color': node.color,
-                animation: isYou ? 'orbitPulse 2s ease-in-out infinite' : undefined,
-                gap: '4px'
+        {/* 2D VIEW */}
+        {viewMode === '2d' && (
+          <>
+            <canvas
+              ref={canvasRef}
+              width={containerWidth}
+              height={containerHeight}
+              style={{ 
+                position: 'absolute', 
+                inset: 0, 
+                zIndex: 5,
+                pointerEvents: 'none'
               }}
-            >
-              {/* Label */}
-              <div style={{ 
-                fontSize: node.size > 90 ? (isMobile ? 12 : 16) : (isMobile ? 9 : 11),
-                lineHeight: 1
-              }}>
-                {isYou ? 'YOU' : node.label.toUpperCase()}
-              </div>
-              
-              {/* Count badge INSIDE bubble */}
-              <div style={{
-                background: 'rgba(0,0,0,0.7)',
-                border: '1px solid rgba(0,0,0,0.9)',
-                borderRadius: '12px',
-                padding: node.size > 90 ? '4px 10px' : '3px 7px',
-                fontFamily: "'Bebas Neue'",
-                fontSize: node.size > 90 ? '1.3rem' : '1rem',
-                color: '#ffcc00',
-                letterSpacing: '1px',
-                lineHeight: 1,
-                boxShadow: '0 0 10px rgba(0,0,0,0.5)'
-              }}>
-                {node.count}
-              </div>
+            />
 
-              {/* Recency indicator */}
-              {!isYou && node.daysSince !== undefined && (
-                <div style={{
-                  fontFamily: "'Space Mono'",
-                  fontSize: node.size > 90 ? 7 : 6,
-                  color: 'rgba(0,0,0,0.5)',
-                  marginTop: 2,
-                  letterSpacing: '0.5px'
-                }}>
-                  {node.daysSince < 30 ? 'RECENT' : node.daysSince < 180 ? 'MONTHS' : 'YEARS'}
+            <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+              {nodes.length > 1 && nodes.slice(1).map((node) => {
+                const you = nodes[0];
+                if (!you || !node.x || !node.y) return null;
+                
+                return (
+                  <line
+                    key={node.id}
+                    x1={you.x}
+                    y1={you.y}
+                    x2={node.x}
+                    y2={node.y}
+                    stroke={node.color}
+                    strokeWidth={Math.max(node.count / 4, 2)}
+                    opacity="0.3"
+                  />
+                );
+              })}
+            </svg>
+
+            <style>{`
+              @keyframes orbitPulse {
+                0%, 100% { box-shadow: 0 0 30px var(--node-color); }
+                50% { box-shadow: 0 0 50px var(--node-color); }
+              }
+            `}</style>
+
+            {nodes.map((node) => {
+              const isYou = node.id === 'you';
+              if (!node.x || !node.y) return null;
+              
+              return (
+                <div
+                  key={node.id}
+                  onClick={() => !isYou && setDetailView(collaborators.find(c => c.id === node.id))}
+                  style={{
+                    position: 'absolute',
+                    left: node.x - (node.size / 2),
+                    top: node.y - (node.size / 2),
+                    width: node.size,
+                    height: node.size,
+                    borderRadius: '50%',
+                    background: node.color,
+                    border: `3px solid ${node.color}`,
+                    boxShadow: `0 0 35px ${node.color}`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: "'Space Mono'",
+                    color: '#000',
+                    fontWeight: 900,
+                    cursor: isYou ? 'default' : 'pointer',
+                    zIndex: isYou ? 100 : 80,
+                    userSelect: 'none',
+                    '--node-color': node.color,
+                    animation: 'orbitPulse 2s ease-in-out infinite',
+                    gap: '4px'
+                  }}
+                >
+                  <div style={{ 
+                    fontSize: node.size > 90 ? (isMobile ? 12 : 16) : (isMobile ? 9 : 11),
+                    lineHeight: 1
+                  }}>
+                    {isYou ? 'YOU' : node.label.toUpperCase()}
+                  </div>
+                  
+                  <div style={{
+                    background: 'rgba(0,0,0,0.7)',
+                    border: '1px solid rgba(0,0,0,0.9)',
+                    borderRadius: '12px',
+                    padding: node.size > 90 ? '4px 10px' : '3px 7px',
+                    fontFamily: "'Bebas Neue'",
+                    fontSize: node.size > 90 ? '1.3rem' : '1rem',
+                    color: '#ffcc00',
+                    letterSpacing: '1px',
+                    lineHeight: 1
+                  }}>
+                    {node.count}
+                  </div>
+
+                  {!isYou && node.daysSince !== undefined && (
+                    <div style={{
+                      fontFamily: "'Space Mono'",
+                      fontSize: node.size > 90 ? 7 : 6,
+                      color: 'rgba(0,0,0,0.5)',
+                      marginTop: 2
+                    }}>
+                      {node.daysSince < 30 ? 'RECENT' : node.daysSince < 180 ? 'MONTHS' : 'YEARS'}
+                    </div>
+                  )}
                 </div>
-              )}
+              );
+            })}
+          </>
+        )}
+
+        {/* 3D VIEW */}
+        {viewMode === '3d' && (
+          <div
+            ref={threeMountRef}
+            style={{
+              width: '100%',
+              height: '100%',
+              position: 'relative'
+            }}
+          >
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: "'Bebas Neue'",
+              fontSize: '3rem',
+              color: C.purple,
+              letterSpacing: 4
+            }}>
+              🌍 3D GALAXY VIEW<br/>
+              <span style={{ fontSize: '1rem', color: C.gray }}>BUILDING...</span>
             </div>
-          );
-        })}
+          </div>
+        )}
       </div>
 
-      {/* Legend */}
       <div style={{ 
         textAlign: 'center', 
         marginTop: 20, 
@@ -7907,12 +7949,17 @@ if (canvas) {
         letterSpacing: 1.5,
         lineHeight: 1.8
       }}>
-        📏 BUBBLE SIZE = SHARED SHOW COUNT<br/>
-        📍 ORBIT DISTANCE = TIME SINCE LAST COLLAB<br/>
-        ✨ BOUNCING PARTICLES = FLOWING MEMORIES
+        {viewMode === '2d' ? (
+          <>
+            📏 SIZE = SHARED SHOWS // 📍 DISTANCE = RECENCY // ✨ PARTICLES BOUNCING
+          </>
+        ) : (
+          <>
+            🌍 DRAG TO ROTATE GALAXY // SCROLL TO ZOOM
+          </>
+        )}
       </div>
 
-      {/* Detail view */}
       {detailView && (
         <div style={{ marginTop: 40 }}>
           <Card neon style={{ 
@@ -7925,7 +7972,7 @@ if (canvas) {
                   {detailView.username.toUpperCase()}
                 </div>
                 <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray }}>
-                  {detailView.count} SHARED SHOWS ({Math.round((detailView.count / totalShows) * 100)}% OF YOUR ARCHIVE)
+                  {detailView.count} SHARED SHOWS ({Math.round((detailView.count / totalShows) * 100)}%)
                 </div>
               </div>
               <button 
