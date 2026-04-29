@@ -6,9 +6,16 @@
   "display": "standalone",
   "background_color": "#050508",
   "theme_color": "#00e5cc",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/Screenshot%202026-04-20%20at%209.13.55%20AM.png",
+      "src": "https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
