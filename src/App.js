@@ -7599,6 +7599,7 @@ function ShowsTab() {
 }
 // ─── COLLABORATION WEB ───────────────────────────────────────────────────────
 // ─── COLLABORATION WEB - DEBUG VERSION ────────────────────────────────────────
+// ─── COLLABORATION WEB - MOBILE RESPONSIVE ────────────────────────────────────
 function CollaborationWebTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -7606,135 +7607,115 @@ function CollaborationWebTab() {
   const [detailView, setDetailView] = useState(null);
 
   useEffect(() => {
-  const fetch = async () => {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) {
-      console.log('❌ No session found');
-      setLoading(false);
-      return;
-    }
-    
-    const myUserId = session.user.id;
-    console.log('✅ MY USER ID:', myUserId);
-    
-    // Step 1: Get my attendances
-    const { data: myAttendances } = await supabase
-      .from('attendances')
-      .select('show_id')
-      .eq('user_id', myUserId);
-    
-    console.log('📊 MY ATTENDANCES:', myAttendances?.length);
-    
-    if (!myAttendances || myAttendances.length === 0) {
-      setLoading(false);
-      return;
-    }
-    
-    const myShowIds = myAttendances.map(a => a.show_id);
-    console.log('🎯 MY SHOW IDS:', myShowIds.length);
-    
-    // Step 2: Get shows IN BATCHES (428 might be too many at once)
-    const batchSize = 100;
-    const showBatches = [];
-    
-    for (let i = 0; i < myShowIds.length; i += batchSize) {
-      const batch = myShowIds.slice(i, i + batchSize);
-      const { data: batchShows } = await supabase
-        .from('shows')
-        .select('*')
-        .in('id', batch);
-      
-      if (batchShows) showBatches.push(...batchShows);
-      console.log(`🎪 FETCHED BATCH ${i / batchSize + 1}:`, batchShows?.length);
-    }
-    
-    const showsData = showBatches;
-    console.log('🎪 TOTAL SHOWS FETCHED:', showsData.length);
-    
-    // Step 3: Get attendances IN BATCHES
-    const attendanceBatches = [];
-    
-    for (let i = 0; i < myShowIds.length; i += batchSize) {
-      const batch = myShowIds.slice(i, i + batchSize);
-      const { data: batchAttendances } = await supabase
-        .from('attendances')
-        .select('*')
-        .in('show_id', batch);
-      
-      if (batchAttendances) attendanceBatches.push(...batchAttendances);
-      console.log(`👥 FETCHED ATTENDANCE BATCH ${i / batchSize + 1}:`, batchAttendances?.length);
-    }
-    
-    const allAttendances = attendanceBatches;
-    console.log('👥 TOTAL ATTENDANCES:', allAttendances.length);
-    
-    // Step 4: Get profiles
-    const userIds = [...new Set(allAttendances.map(a => a.user_id))];
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, username, avatar_color')
-      .in('id', userIds);
-    
-    console.log('🧑 PROFILES FETCHED:', profiles?.length);
-    
-    // Build profile map
-    const profileMap = {};
-    (profiles || []).forEach(p => {
-      profileMap[p.id] = p;
-    });
-    
-    // Build attendance map by show_id
-    const attendancesByShow = {};
-    allAttendances.forEach(att => {
-      if (!attendancesByShow[att.show_id]) {
-        attendancesByShow[att.show_id] = [];
-      }
-      attendancesByShow[att.show_id].push({
-        ...att,
-        profile: profileMap[att.user_id] || { username: 'Unknown', avatar_color: C.gray }
-      });
-    });
-    
-    // Build collaborator map
-    const collabMap = {};
-    const mySharedShows = [];
-    
-    showsData.forEach(show => {
-      const attendances = attendancesByShow[show.id] || [];
-      
-      if (attendances.length > 1) {
-        mySharedShows.push(show);
+    const fetch = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.id) {
+          console.log('❌ No session found');
+          setLoading(false);
+          return;
+        }
         
-        attendances.forEach(att => {
-          if (att.user_id === myUserId) return;
+        const myUserId = session.user.id;
+        
+        const { data: myAttendances } = await supabase
+          .from('attendances')
+          .select('show_id')
+          .eq('user_id', myUserId);
+        
+        if (!myAttendances || myAttendances.length === 0) {
+          setLoading(false);
+          return;
+        }
+        
+        const myShowIds = myAttendances.map(a => a.show_id);
+        
+        const batchSize = 100;
+        const showBatches = [];
+        
+        for (let i = 0; i < myShowIds.length; i += batchSize) {
+          const batch = myShowIds.slice(i, i + batchSize);
+          const { data: batchShows } = await supabase
+            .from('shows')
+            .select('*')
+            .in('id', batch);
           
-          if (!collabMap[att.user_id]) {
-            collabMap[att.user_id] = {
-              id: att.user_id,
-              username: att.profile.username,
-              color: att.profile.avatar_color,
-              count: 0,
-              showIds: []
-            };
-          }
-          collabMap[att.user_id].count++;
-          collabMap[att.user_id].showIds.push(show.id);
+          if (batchShows) showBatches.push(...batchShows);
+        }
+        
+        const showsData = showBatches;
+        
+        const attendanceBatches = [];
+        
+        for (let i = 0; i < myShowIds.length; i += batchSize) {
+          const batch = myShowIds.slice(i, i + batchSize);
+          const { data: batchAttendances } = await supabase
+            .from('attendances')
+            .select('*')
+            .in('show_id', batch);
+          
+          if (batchAttendances) attendanceBatches.push(...batchAttendances);
+        }
+        
+        const allAttendances = attendanceBatches;
+        
+        const userIds = [...new Set(allAttendances.map(a => a.user_id))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_color')
+          .in('id', userIds);
+        
+        const profileMap = {};
+        (profiles || []).forEach(p => {
+          profileMap[p.id] = p;
         });
+        
+        const attendancesByShow = {};
+        allAttendances.forEach(att => {
+          if (!attendancesByShow[att.show_id]) {
+            attendancesByShow[att.show_id] = [];
+          }
+          attendancesByShow[att.show_id].push({
+            ...att,
+            profile: profileMap[att.user_id] || { username: 'Unknown', avatar_color: C.gray }
+          });
+        });
+        
+        const collabMap = {};
+        const mySharedShows = [];
+        
+        showsData.forEach(show => {
+          const attendances = attendancesByShow[show.id] || [];
+          
+          if (attendances.length > 1) {
+            mySharedShows.push(show);
+            
+            attendances.forEach(att => {
+              if (att.user_id === myUserId) return;
+              
+              if (!collabMap[att.user_id]) {
+                collabMap[att.user_id] = {
+                  id: att.user_id,
+                  username: att.profile.username,
+                  color: att.profile.avatar_color,
+                  count: 0,
+                  showIds: []
+                };
+              }
+              collabMap[att.user_id].count++;
+              collabMap[att.user_id].showIds.push(show.id);
+            });
+          }
+        });
+        
+        setShows(mySharedShows);
+        setCollaborators(Object.values(collabMap).sort((a, b) => b.count - a.count));
+        setLoading(false);
+      } catch (err) {
+        console.error('💥 ERROR:', err);
+        setLoading(false);
       }
-    });
-    
-    console.log('🤝 SHARED SHOWS:', mySharedShows.length);
-    console.log('👤 COLLABORATORS:', Object.keys(collabMap).length);
-    
-    setShows(mySharedShows);
-    setCollaborators(Object.values(collabMap).sort((a, b) => b.count - a.count));
-    setLoading(false);
-  } catch (err) {
-    console.error('💥 ERROR:', err);
-    setLoading(false);
-  }
-};
+    };
     fetch();
   }, []);
 
@@ -7749,30 +7730,43 @@ function CollaborationWebTab() {
     );
   }
 
-  const centerX = 400, centerY = 350, radius = 200;
+  const isMobile = window.innerWidth < 768;
+  const containerWidth = isMobile ? window.innerWidth - 40 : 800;
+  const containerHeight = isMobile ? 500 : 700;
+  const centerX = containerWidth / 2;
+  const centerY = containerHeight / 2;
+  const radius = isMobile ? 120 : 200;
+  const youSize = isMobile ? 80 : 120;
+  const collabSize = isMobile ? 50 : 80;
 
   return (
-    <div className="fade-in" style={{ padding: 40 }}>
-      <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: '#fff' }}>
+    <div className="fade-in" style={{ padding: isMobile ? 20 : 40 }}>
+      <div style={{ textAlign: 'center', marginBottom: isMobile ? 20 : 40 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff' }}>
           COLLABORATION <span style={{ color: C.gold }}>WEB</span>
         </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 8 : 10, color: C.gold }}>
           {shows.length} SHARED SHOWS · {collaborators.length} COLLABORATORS
         </div>
       </div>
 
       <div style={{ 
-        width: '800px', height: '700px', margin: '0 auto', 
-        position: 'relative', background: '#050508', 
-        border: `1px solid ${C.border}`, borderRadius: 12 
+        width: '100%',
+        maxWidth: `${containerWidth}px`,
+        height: `${containerHeight}px`,
+        margin: '0 auto', 
+        position: 'relative', 
+        background: '#050508', 
+        border: `1px solid ${C.border}`, 
+        borderRadius: 12 
       }}>
         
         <div style={{
           position: 'absolute',
-          left: centerX - 60,
-          top: centerY - 60,
-          width: 120, height: 120,
+          left: centerX - (youSize / 2),
+          top: centerY - (youSize / 2),
+          width: youSize, 
+          height: youSize,
           borderRadius: '50%',
           background: C.teal,
           border: `2px solid ${C.teal}`,
@@ -7781,7 +7775,7 @@ function CollaborationWebTab() {
           alignItems: 'center',
           justifyContent: 'center',
           fontFamily: "'Bebas Neue'",
-          fontSize: '1.5rem',
+          fontSize: isMobile ? '1rem' : '1.5rem',
           color: '#000',
           zIndex: 100
         }}>
@@ -7814,16 +7808,17 @@ function CollaborationWebTab() {
                 onClick={() => setDetailView(collab)}
                 style={{
                   position: 'absolute',
-                  left: (centerX + (x - centerX) * 0.6) - 15,
-                  top: (centerY + (y - centerY) * 0.6) - 15,
-                  width: 30, height: 30,
+                  left: (centerX + (x - centerX) * 0.6) - (isMobile ? 12 : 15),
+                  top: (centerY + (y - centerY) * 0.6) - (isMobile ? 12 : 15),
+                  width: isMobile ? 24 : 30,
+                  height: isMobile ? 24 : 30,
                   borderRadius: '50%',
                   background: C.gold,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontFamily: "'Space Mono'",
-                  fontSize: 12,
+                  fontSize: isMobile ? 10 : 12,
                   fontWeight: 900,
                   color: '#000',
                   zIndex: 90,
@@ -7840,9 +7835,10 @@ function CollaborationWebTab() {
                 onClick={() => setDetailView(collab)}
                 style={{
                   position: 'absolute',
-                  left: x - 40,
-                  top: y - 40,
-                  width: 80, height: 80,
+                  left: x - (collabSize / 2),
+                  top: y - (collabSize / 2),
+                  width: collabSize,
+                  height: collabSize,
                   borderRadius: '50%',
                   background: collab.color,
                   border: `2px solid ${collab.color}`,
@@ -7851,7 +7847,7 @@ function CollaborationWebTab() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontFamily: "'Space Mono'",
-                  fontSize: 9,
+                  fontSize: isMobile ? 7 : 9,
                   color: '#000',
                   fontWeight: 900,
                   cursor: 'pointer',
@@ -7876,7 +7872,7 @@ function CollaborationWebTab() {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3rem', color: detailView.color }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '3rem', color: detailView.color }}>
                   {detailView.username.toUpperCase()}
                 </div>
                 <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray }}>
@@ -7891,7 +7887,7 @@ function CollaborationWebTab() {
               </button>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 15, marginTop: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(250px, 1fr))', gap: 15, marginTop: 20 }}>
               {shows
                 .filter(show => detailView.showIds.includes(show.id))
                 .map(show => (
