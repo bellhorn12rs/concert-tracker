@@ -7714,24 +7714,175 @@ function CollaborationWebTab() {
     };
   }, [collaborators, particles.length, totalShows, viewMode]);
 
-  // 🌍 3D SPHERE SETUP (Next!)
-  useEffect(() => {
-    if (viewMode !== '3d' || !window.THREE || !threeMountRef.current) return;
+  // 🌍 3D SPHERE SETUP
+useEffect(() => {
+  if (viewMode !== '3d' || !window.THREE || !threeMountRef.current || collaborators.length === 0) return;
+  
+  const container = threeMountRef.current;
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+  
+  // Create scene
+  const scene = new window.THREE.Scene();
+  scene.background = new window.THREE.Color('#050508');
+  
+  // Create camera
+  const camera = new window.THREE.PerspectiveCamera(50, width / height, 0.1, 2000);
+  camera.position.z = 600;
+  
+  // Create renderer
+  const renderer = new window.THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(width, height);
+  container.appendChild(renderer.domElement);
+  
+  // Lighting
+  const ambientLight = new window.THREE.AmbientLight(0xffffff, 0.5);
+  scene.add(ambientLight);
+  
+  const pointLight = new window.THREE.PointLight(0x00e5cc, 1, 1000);
+  pointLight.position.set(0, 0, 0);
+  scene.add(pointLight);
+  
+  // Central YOU sphere
+  const youGeometry = new window.THREE.SphereGeometry(60, 32, 32);
+  const youMaterial = new window.THREE.MeshPhongMaterial({ 
+    color: 0x00e5cc,
+    emissive: 0x00e5cc,
+    emissiveIntensity: 0.5,
+    shininess: 100
+  });
+  const youMesh = new window.THREE.Mesh(youGeometry, youMaterial);
+  scene.add(youMesh);
+  
+  // Create collaborator spheres on galaxy surface
+  const galaxyRadius = 250;
+  const maxCollabCount = Math.max(...collaborators.map(c => c.count));
+  const collabMeshes = [];
+  
+  collaborators.forEach((c, i) => {
+    // Proportional size
+    const sizeFactor = Math.sqrt(c.count / maxCollabCount);
+    const size = Math.max(sizeFactor * 40, 20);
     
-    // We'll build the 3D scene here after you confirm particles work!
+    // Position on sphere surface (evenly distributed)
+    const phi = Math.acos(-1 + (2 * i) / collaborators.length);
+    const theta = Math.sqrt(collaborators.length * Math.PI) * phi;
     
-  }, [viewMode, collaborators]);
-
-  if (loading) return <div style={{ padding: 100, textAlign: 'center', color: C.teal }}>SCANNING...</div>;
-
-  if (collaborators.length === 0) {
-    return (
-      <div style={{ padding: 100, textAlign: 'center' }}>
-        <div style={{ fontSize: '3rem', marginBottom: 20 }}>🤝</div>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff' }}>NO COLLABORATIONS YET</div>
-      </div>
-    );
-  }
+    const x = galaxyRadius * Math.cos(theta) * Math.sin(phi);
+    const y = galaxyRadius * Math.sin(theta) * Math.sin(phi);
+    const z = galaxyRadius * Math.cos(phi);
+    
+    // Parse hex color to THREE color
+    const colorHex = parseInt(c.color.replace('#', '0x'));
+    
+    const geometry = new window.THREE.SphereGeometry(size, 16, 16);
+    const material = new window.THREE.MeshPhongMaterial({ 
+      color: colorHex,
+      emissive: colorHex,
+      emissiveIntensity: 0.4
+    });
+    const mesh = new window.THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, z);
+    mesh.userData = { collaborator: c, size: size };
+    
+    scene.add(mesh);
+    collabMeshes.push(mesh);
+    
+    // Create connection line from YOU to collaborator
+    const lineGeometry = new window.THREE.BufferGeometry().setFromPoints([
+      new window.THREE.Vector3(0, 0, 0),
+      new window.THREE.Vector3(x, y, z)
+    ]);
+    const lineMaterial = new window.THREE.LineBasicMaterial({ 
+      color: colorHex, 
+      opacity: 0.3, 
+      transparent: true,
+      linewidth: 2
+    });
+    const line = new window.THREE.Line(lineGeometry, lineMaterial);
+    scene.add(line);
+    
+    // Add count label sprite (3D text floating above sphere)
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 128;
+    canvas.height = 64;
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = 'bold 40px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(c.count.toString(), 64, 45);
+    
+    const texture = new window.THREE.CanvasTexture(canvas);
+    const spriteMaterial = new window.THREE.SpriteMaterial({ map: texture });
+    const sprite = new window.THREE.Sprite(spriteMaterial);
+    sprite.position.set(x, y + size + 20, z);
+    sprite.scale.set(40, 20, 1);
+    scene.add(sprite);
+  });
+  
+  // Mouse controls for rotation
+  let isDragging = false;
+  let previousMousePosition = { x: 0, y: 0 };
+  let rotation = { x: 0, y: 0 };
+  
+  const onMouseDown = (e) => {
+    isDragging = true;
+    previousMousePosition = { x: e.clientX, y: e.clientY };
+  };
+  
+  const onMouseMove = (e) => {
+    if (!isDragging) return;
+    
+    const deltaX = e.clientX - previousMousePosition.x;
+    const deltaY = e.clientY - previousMousePosition.y;
+    
+    rotation.y += deltaX * 0.005;
+    rotation.x += deltaY * 0.005;
+    
+    previousMousePosition = { x: e.clientX, y: e.clientY };
+  };
+  
+  const onMouseUp = () => {
+    isDragging = false;
+  };
+  
+  renderer.domElement.addEventListener('mousedown', onMouseDown);
+  renderer.domElement.addEventListener('mousemove', onMouseMove);
+  renderer.domElement.addEventListener('mouseup', onMouseUp);
+  
+  // Animation loop
+  const animate = () => {
+    requestAnimationFrame(animate);
+    
+    // Auto-rotate slowly when not dragging
+    if (!isDragging) {
+      rotation.y += 0.001;
+    }
+    
+    // Apply rotation to entire galaxy
+    scene.rotation.y = rotation.y;
+    scene.rotation.x = rotation.x;
+    
+    // Pulse the YOU sphere
+    const pulse = Math.sin(Date.now() * 0.001) * 0.1 + 1;
+    youMesh.scale.set(pulse, pulse, pulse);
+    
+    renderer.render(scene, camera);
+  };
+  
+  animate();
+  
+  // Cleanup
+  return () => {
+    renderer.domElement.removeEventListener('mousedown', onMouseDown);
+    renderer.domElement.removeEventListener('mousemove', onMouseMove);
+    renderer.domElement.removeEventListener('mouseup', onMouseUp);
+    if (container.contains(renderer.domElement)) {
+      container.removeChild(renderer.domElement);
+    }
+    renderer.dispose();
+  };
+}, [viewMode, collaborators, totalShows]);
 
   const isMobile = window.innerWidth < 768;
   const containerWidth = isMobile ? window.innerWidth - 40 : 800;
