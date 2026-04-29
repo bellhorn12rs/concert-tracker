@@ -5413,106 +5413,101 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
   const isMobile = window.innerWidth < 768;
 
   const handleCSVUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const file = e.target.files[0];
+  if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const text = event.target.result;
-        const rows = text.split(/\r?\n/).map(r => r.trim()).filter(Boolean);
-        const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
-        const dataRows = rows.slice(1);
-        
-        const newShows = dataRows.map(row => {
-          const values = row.split(',');
-          const entry = {};
-          headers.forEach((h, i) => { entry[h] = values[i]; });
-
-          return {
-            date: entry.date || null,
-            bands: entry.lineup ? entry.lineup.split(';').map(b => b.trim()) : [entry.headliner],
-            venue: entry.venue || null,
-            city: entry.city || null,
-            state: entry.state || null,
-            is_festival: entry.is_festival?.toUpperCase() === 'TRUE',
-            festival_name: entry.festival_name || null,
-            user_id: session?.user?.id || (concerts.length > 0 ? concerts[0].user_id : null),
-          };
-        });
-
-        // 📡 SMART PREVIEW LOGIC
-        if (newShows.length > 0) {
-          const previewShow = newShows[0];
-          const msg = `📡 SIGNAL ANALYZED: Found ${newShows.length} total shows.\n\n` +
-                      `PREVIEWING FIRST ENTRY:\n` +
-                      `Artist: ${previewShow.bands.join(', ')}\n` +
-                      `Venue: ${previewShow.venue}\n` +
-                      `Date: ${previewShow.date}\n\n` +
-                      `Ready to synchronize these to your museum archive?`;
-
-         if (window.confirm(msg)) {
-  // Process each show through collaborative system
-  for (const show of newShows) {
+  const reader = new FileReader();
+  reader.onload = async (event) => {
     try {
-      const primaryArtist = show.bands[0] || 'Unknown';
+      const text = event.target.result;
+      const rows = text.split(/\r?\n/).map(r => r.trim()).filter(Boolean);
+      const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
+      const dataRows = rows.slice(1);
       
-      // Check if show exists
-      const { data: existingShow } = await supabase
-        .from('shows')
-        .select('id')
-        .eq('date', show.date)
-        .ilike('venue', show.venue || 'Unknown')
-        .ilike('artist', primaryArtist)
-        .single();
-      
-      let showId = existingShow?.id;
-      
-      // Create show if doesn't exist
-      if (!showId) {
-        const { data: newShow } = await supabase
-          .from('shows')
-          .insert([{
-            date: show.date,
-            artist: primaryArtist,
-            bands: show.bands,
-            venue: show.venue,
-            city: show.city,
-            state: show.state,
-            is_festival: show.is_festival,
-            festival_name: show.festival_name,
-            genre: 'Indie Rock',
-            created_by: session.user.id
-          }])
-          .select()
-          .single();
-        
-        showId = newShow.id;
+      const newShows = dataRows.map(row => {
+        const values = row.split(',');
+        const entry = {};
+        headers.forEach((h, i) => { entry[h] = values[i]; });
+
+        return {
+          date: entry.date || null,
+          bands: entry.lineup ? entry.lineup.split(';').map(b => b.trim()) : [entry.headliner],
+          venue: entry.venue || null,
+          city: entry.city || null,
+          state: entry.state || null,
+          is_festival: entry.is_festival?.toUpperCase() === 'TRUE',
+          festival_name: entry.festival_name || null,
+        };
+      });
+
+      if (newShows.length > 0) {
+        const previewShow = newShows[0];
+        const msg = `📡 SIGNAL ANALYZED: Found ${newShows.length} total shows.\n\n` +
+                    `PREVIEWING FIRST ENTRY:\n` +
+                    `Artist: ${previewShow.bands.join(', ')}\n` +
+                    `Venue: ${previewShow.venue}\n` +
+                    `Date: ${previewShow.date}\n\n` +
+                    `Ready to synchronize these to your museum archive?`;
+
+        if (window.confirm(msg)) {
+          for (const show of newShows) {
+            try {
+              const primaryArtist = show.bands[0] || 'Unknown';
+              
+              const { data: existingShow } = await supabase
+                .from('shows')
+                .select('id')
+                .eq('date', show.date)
+                .ilike('venue', show.venue || 'Unknown')
+                .ilike('artist', primaryArtist)
+                .single();
+              
+              let showId = existingShow?.id;
+              
+              if (!showId) {
+                const { data: newShow } = await supabase
+                  .from('shows')
+                  .insert([{
+                    date: show.date,
+                    artist: primaryArtist,
+                    bands: show.bands,
+                    venue: show.venue,
+                    city: show.city,
+                    state: show.state,
+                    is_festival: show.is_festival,
+                    festival_name: show.festival_name,
+                    genre: 'Indie Rock',
+                    created_by: session.user.id
+                  }])
+                  .select()
+                  .single();
+                
+                showId = newShow.id;
+              }
+              
+              await supabase.from('attendances').insert([{
+                user_id: session.user.id,
+                show_id: showId,
+                is_public: true
+              }]);
+              
+            } catch (err) {
+              console.error(`Failed to import ${show.bands[0]}:`, err);
+            }
+          }
+          
+          alert("✅ ARCHIVE UPDATED: Your historical signals have been curated.");
+          if (onFetchData) await onFetchData(); 
+          if (setActiveTab) setActiveTab('dashboard');
+        }
       }
-      
-      // Create attendance
-      await supabase.from('attendances').insert([{
-        user_id: session.user.id,
-        show_id: showId,
-        is_public: true
-      }]);
-      
     } catch (err) {
-      console.error(`Failed to import ${show.bands[0]}:`, err);
+      console.error("Office sync failed:", err);
+      alert("❌ SYNC ERROR: Check your CSV format. " + err.message);
     }
-  }
-  
-  alert("✅ ARCHIVE UPDATED: Your historical signals have been curated.");
-  if (onFetchData) await onFetchData(); 
-  if (setActiveTab) setActiveTab('dashboard');
-}
-      } catch (err) {
-        console.error("Office sync failed:", err);
-        alert("❌ SYNC ERROR: Check your CSV format. " + err.message);
-      }
-    };
-    reader.readAsText(file);
   };
+  reader.readAsText(file);
+};
   
   const filtered = useMemo(() => {
     if (!search) return concerts;
