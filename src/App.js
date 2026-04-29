@@ -9509,13 +9509,82 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
     posters={posters} // 🟢 CRITICAL: Ensure this prop is passed
   />
 )}
-  {/* 🟢 NEW PAPERTRAIL BLOCK GOES HERE */}
+  {/* PAPER TRAIL TAB */}
   {activeTab === 'papertrail' && (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {concerts.map((c, i) => {
         const band = getBandName(c.bands?.[0]) || c.festival_name || 'Unknown';
         const color = GENRE_COLORS[c.genre] || C.teal;
         const img = c.image_url?.split(',')[0] || c.personal_photo_url?.split(',')[0];
+        
+        // Inline clone handler for this tab
+        const handleClone = async (e) => {
+          e.stopPropagation();
+          
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          if (!currentSession?.user) {
+            alert("LOGIN REQUIRED");
+            return;
+          }
+
+          try {
+            const primaryArtist = (c.bands?.[0]?.name || c.bands?.[0] || c.artist || 'Unknown').toString();
+            const safeVenue = c.venue || c.festival_name || 'Unknown Venue';
+            
+            const { data: matchingShows } = await supabase
+              .from('shows')
+              .select('*')
+              .eq('date', c.date);
+            
+            let showId = null;
+            if (matchingShows && matchingShows.length > 0) {
+              const match = matchingShows.find(s => 
+                s.venue?.toLowerCase().includes(safeVenue.toLowerCase().substring(0, 10)) &&
+                s.artist?.toLowerCase().includes(primaryArtist.toLowerCase().substring(0, 10))
+              );
+              showId = match?.id;
+            }
+            
+            if (!showId) {
+              const { data: newShow } = await supabase
+                .from('shows')
+                .insert([{
+                  date: c.date,
+                  artist: primaryArtist,
+                  bands: c.bands || [primaryArtist],
+                  venue: safeVenue,
+                  city: c.city || '',
+                  state: c.state || '',
+                  is_festival: c.is_festival || false,
+                  festival_name: c.festival_name || null,
+                  festival_day: c.festival_day || null,
+                  genre: c.genre || 'Indie Rock',
+                  created_by: currentSession.user.id
+                }])
+                .select()
+                .single();
+              
+              showId = newShow.id;
+            }
+            
+            await supabase
+              .from('attendances')
+              .insert([{
+                user_id: currentSession.user.id,
+                show_id: showId,
+                is_public: true
+              }]);
+            
+            alert(`⚡ CLONED: ${primaryArtist}`);
+            
+          } catch (err) {
+            if (err.code === '23505') {
+              alert("ALREADY IN YOUR ARCHIVE");
+            } else {
+              alert("CLONE FAILED: " + err.message);
+            }
+          }
+        };
         
         return (
           <div key={c.id || i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', background: C.bgCard, borderRadius: 6, border: `1px solid ${C.border}` }}>
@@ -9529,13 +9598,9 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
               <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color }}>{fmtDateShort(c.date)}</div>
               
-              {/* 🟢 THE CLONE TRIGGER (Spectator Mode Only) */}
               {viewingUser && viewingUser !== session?.user?.id && (
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleIWasThere(c);
-                  }}
+                  onClick={handleClone}
                   style={{
                     background: 'transparent',
                     border: `1px solid ${C.teal}`,
@@ -9561,30 +9626,6 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
       })}
     </div>
   )}
-
-  {activeTab === 'byFest' && (
-  <ByFestTab 
-    festGroupings={festGroupings} 
-    genreMap={artistGenres} 
-    isAdmin={isAdmin} 
-    onEdit={isAdmin ? setEditTarget : null} 
-    posters={posters} // 🟢 Ensure this is passed
-  />
-)}
-  {activeTab === 'community' && <CommunityTab onEnterMuseum={handleNavigateToUser} />}
-  {activeTab === 'passport' && (
-    <PassportTab 
-      passport={passport} 
-      onNavigateToFest={name => { 
-        setActiveTab('byFest'); 
-        setTimeout(() => { 
-          const el = document.getElementById(`fest-${name.toLowerCase().replace(/\s+/g, '-')}`); 
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
-        }, 450); 
-      }} 
-    />
-  )}
-
   {/* 3. ARCHIVE TABS */}
 {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} posters={posters} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
   
