@@ -7429,7 +7429,7 @@ function ShowsTab() {
 }
 
 // ─── COLLABORATION WEB - MOBILE RESPONSIVE ────────────────────────────────────
-// ─── COLLABORATION WEB - FORCE PHYSICS EDITION ────────────────────────────────
+// ─── COLLABORATION WEB - LIVING PHYSICS EDITION ────────────────────────────────
 function CollaborationWebTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -7437,6 +7437,7 @@ function CollaborationWebTab() {
   const [detailView, setDetailView] = useState(null);
   const [nodes, setNodes] = useState([]);
   const simulationRef = useRef(null);
+  const svgRef = useRef(null);
 
   // Fetch data (same as before)
   useEffect(() => {
@@ -7551,9 +7552,9 @@ function CollaborationWebTab() {
     fetch();
   }, []);
 
-  // 🌊 FORCE SIMULATION SETUP
+  // 🌊 FORCE SIMULATION WITH DRAG & CONTINUOUS MOTION
   useEffect(() => {
-    if (collaborators.length === 0) return;
+    if (collaborators.length === 0 || !window.d3) return;
 
     const isMobile = window.innerWidth < 768;
     const containerWidth = isMobile ? window.innerWidth - 40 : 800;
@@ -7561,42 +7562,84 @@ function CollaborationWebTab() {
     const centerX = containerWidth / 2;
     const centerY = containerHeight / 2;
 
-    // Create node data
+    // Create node data with initial random velocities
     const nodeData = [
-      { id: 'you', label: 'YOU', color: C.teal, size: isMobile ? 80 : 120, x: centerX, y: centerY, fx: centerX, fy: centerY },
-      ...collaborators.map(c => ({
-        id: c.id,
-        label: c.username,
-        color: c.color,
-        count: c.count,
-        showIds: c.showIds,
-        size: isMobile ? 50 : 80
-      }))
+      { 
+        id: 'you', 
+        label: 'YOU', 
+        color: C.teal, 
+        size: isMobile ? 80 : 120, 
+        x: centerX, 
+        y: centerY, 
+        fx: centerX, 
+        fy: centerY 
+      },
+      ...collaborators.map((c, i) => {
+        const angle = (i / collaborators.length) * Math.PI * 2;
+        return {
+          id: c.id,
+          label: c.username,
+          color: c.color,
+          count: c.count,
+          showIds: c.showIds,
+          size: isMobile ? 50 : 80,
+          x: centerX + Math.cos(angle) * 100,
+          y: centerY + Math.sin(angle) * 100
+        };
+      })
     ];
 
     // Create link data
     const linkData = collaborators.map(c => ({
       source: 'you',
       target: c.id,
-      strength: c.count
+      strength: c.count / 50
     }));
 
     // Initialize D3 force simulation
     const simulation = window.d3.forceSimulation(nodeData)
-      .force('charge', window.d3.forceManyBody().strength(-400))
-      .force('link', window.d3.forceLink(linkData).id(d => d.id).distance(isMobile ? 140 : 220))
-      .force('center', window.d3.forceCenter(centerX, centerY))
-      .force('collision', window.d3.forceCollide().radius(d => d.size / 2 + 10))
+      .force('charge', window.d3.forceManyBody().strength(-600))
+      .force('link', window.d3.forceLink(linkData).id(d => d.id).distance(isMobile ? 160 : 240).strength(0.3))
+      .force('center', window.d3.forceCenter(centerX, centerY).strength(0.05))
+      .force('collision', window.d3.forceCollide().radius(d => d.size / 2 + 20))
+      .alphaDecay(0.01) // Slow decay = longer animation
+      .velocityDecay(0.3) // Less friction = more floating
       .on('tick', () => {
         setNodes([...nodeData]);
       });
 
-    simulationRef.current = simulation;
+    // 🎯 DRAG BEHAVIOR
+    const drag = window.d3.drag()
+      .on('start', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      })
+      .on('drag', (event, d) => {
+        d.fx = event.x;
+        d.fy = event.y;
+      })
+      .on('end', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0);
+        if (d.id !== 'you') {
+          d.fx = null;
+          d.fy = null;
+        }
+      });
+
+    // Apply drag to SVG circles (we'll add refs to them)
+    simulationRef.current = { simulation, drag, nodeData };
 
     return () => {
       simulation.stop();
     };
   }, [collaborators]);
+
+  const reheat = () => {
+    if (simulationRef.current?.simulation) {
+      simulationRef.current.simulation.alpha(1).restart();
+    }
+  };
 
   if (loading) return <div style={{ padding: 100, textAlign: 'center', color: C.teal }}>SCANNING...</div>;
 
@@ -7617,16 +7660,36 @@ function CollaborationWebTab() {
 
   return (
     <div className="fade-in" style={{ padding: isMobile ? 20 : 40 }}>
-      <div style={{ textAlign: 'center', marginBottom: isMobile ? 20 : 40 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff' }}>
-          COLLABORATION <span style={{ color: C.gold }}>WEB</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? 20 : 40 }}>
+        <div style={{ textAlign: 'center', flex: 1 }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff' }}>
+            COLLABORATION <span style={{ color: C.gold }}>WEB</span>
+          </div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 8 : 10, color: C.gold }}>
+            {shows.length} SHARED SHOWS · {collaborators.length} COLLABORATORS
+          </div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.purple, marginTop: 5, letterSpacing: 2 }}>
+            🌊 LIVING NETWORK // DRAG TO INTERACT
+          </div>
         </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 8 : 10, color: C.gold }}>
-          {shows.length} SHARED SHOWS · {collaborators.length} COLLABORATORS
-        </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.purple, marginTop: 5, letterSpacing: 2 }}>
-          🌊 FORCE PHYSICS ACTIVE
-        </div>
+        
+        <button
+          onClick={reheat}
+          style={{
+            background: C.purple,
+            border: 'none',
+            color: '#000',
+            padding: '8px 16px',
+            borderRadius: 4,
+            fontFamily: "'Space Mono'",
+            fontSize: 9,
+            fontWeight: 900,
+            cursor: 'pointer',
+            boxShadow: `0 0 15px ${hexToRgba(C.purple, 0.4)}`
+          }}
+        >
+          ⚡ SHAKE
+        </button>
       </div>
 
       <div style={{ 
@@ -7641,7 +7704,7 @@ function CollaborationWebTab() {
         overflow: 'hidden'
       }}>
         
-        <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
+        <svg ref={svgRef} width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
           {/* Connection lines */}
           {nodes.length > 1 && nodes.slice(1).map((node, i) => {
             const you = nodes[0];
@@ -7660,12 +7723,13 @@ function CollaborationWebTab() {
                 stroke={node.color}
                 strokeWidth={Math.max(collab.count / 2, 2)}
                 opacity="0.3"
+                style={{ transition: 'all 0.1s ease-out' }}
               />
             );
           })}
         </svg>
 
-        {/* Render nodes */}
+        {/* Render nodes with drag */}
         {nodes.map((node, i) => {
           const isYou = node.id === 'you';
           const collab = isYou ? null : collaborators.find(c => c.id === node.id);
@@ -7676,6 +7740,32 @@ function CollaborationWebTab() {
             <div key={node.id}>
               {/* Main node circle */}
               <div
+                onMouseDown={(e) => {
+                  if (isYou) return;
+                  const startX = e.clientX;
+                  const startY = e.clientY;
+                  const startNodeX = node.x;
+                  const startNodeY = node.y;
+                  
+                  const handleMove = (moveE) => {
+                    const dx = moveE.clientX - startX;
+                    const dy = moveE.clientY - startY;
+                    node.fx = startNodeX + dx;
+                    node.fy = startNodeY + dy;
+                    simulationRef.current?.simulation.alpha(0.3).restart();
+                  };
+                  
+                  const handleUp = () => {
+                    node.fx = null;
+                    node.fy = null;
+                    simulationRef.current?.simulation.alpha(0.3).restart();
+                    document.removeEventListener('mousemove', handleMove);
+                    document.removeEventListener('mouseup', handleUp);
+                  };
+                  
+                  document.addEventListener('mousemove', handleMove);
+                  document.addEventListener('mouseup', handleUp);
+                }}
                 onClick={() => !isYou && setDetailView(collab)}
                 style={{
                   position: 'absolute',
@@ -7694,18 +7784,18 @@ function CollaborationWebTab() {
                   fontSize: isMobile ? (isYou ? 12 : 7) : (isYou ? 18 : 9),
                   color: '#000',
                   fontWeight: 900,
-                  cursor: isYou ? 'default' : 'pointer',
+                  cursor: isYou ? 'default' : 'grab',
                   zIndex: isYou ? 100 : 80,
-                  transition: 'transform 0.2s',
+                  transition: 'box-shadow 0.2s',
                   userSelect: 'none'
                 }}
-                onMouseEnter={e => !isYou && (e.currentTarget.style.transform = 'scale(1.15)')}
-                onMouseLeave={e => !isYou && (e.currentTarget.style.transform = 'scale(1)')}
+                onMouseEnter={e => !isYou && (e.currentTarget.style.boxShadow = `0 0 40px ${node.color}`)}
+                onMouseLeave={e => !isYou && (e.currentTarget.style.boxShadow = `0 0 20px ${node.color}`)}
               >
                 {isYou ? 'YOU' : node.label.toUpperCase()}
               </div>
 
-              {/* Count badge for collaborators */}
+              {/* Count badge */}
               {!isYou && collab && (
                 <div
                   style={{
@@ -7725,9 +7815,9 @@ function CollaborationWebTab() {
                     color: '#000',
                     zIndex: 90,
                     cursor: 'pointer',
-                    boxShadow: '0 0 10px rgba(255,204,0,0.5)'
+                    boxShadow: '0 0 15px rgba(255,204,0,0.6)',
+                    pointerEvents: 'none'
                   }}
-                  onClick={() => setDetailView(collab)}
                 >
                   {collab.count}
                 </div>
@@ -7737,7 +7827,19 @@ function CollaborationWebTab() {
         })}
       </div>
 
-      {/* Detail view (same as before) */}
+      {/* Instructions */}
+      <div style={{ 
+        textAlign: 'center', 
+        marginTop: 20, 
+        fontFamily: "'Space Mono'", 
+        fontSize: 8, 
+        color: C.grayDim,
+        letterSpacing: 2
+      }}>
+        💡 DRAG COLLABORATOR NODES TO PULL THEM • THEY'LL SPRING BACK
+      </div>
+
+      {/* Detail view */}
       {detailView && (
         <div style={{ marginTop: 40 }}>
           <Card neon style={{ 
