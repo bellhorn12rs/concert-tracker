@@ -8288,20 +8288,20 @@ function CollaborationWebTab() {
                 )}
                 
                 <div style={{ 
-                  position: isYou ? 'absolute' : 'relative',
-                  bottom: isYou ? '8px' : 'auto',
-                  right: isYou ? '8px' : 'auto',
-                  background: 'rgba(0,0,0,0.85)', 
-                  borderRadius: '12px', 
-                  padding: node.size > 90 ? '4px 10px' : '3px 7px', 
-                  fontFamily: "'Bebas Neue'", 
-                  fontSize: node.size > 90 ? '1.2rem' : (isMobile ? '0.85rem' : '1rem'), 
-                  color: '#ffcc00',
-                  border: '1px solid rgba(0,0,0,0.9)',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.5)'
-                }}>
-                  {node.count}
-                </div>
+  position: node.avatar ? 'absolute' : 'relative',
+  top: node.avatar ? '8px' : 'auto',
+  right: node.avatar ? '8px' : 'auto',
+  background: 'rgba(0,0,0,0.85)', 
+  borderRadius: '12px', 
+  padding: node.size > 90 ? '4px 10px' : '3px 7px', 
+  fontFamily: "'Bebas Neue'", 
+  fontSize: node.size > 90 ? '1.2rem' : (isMobile ? '0.85rem' : '1rem'), 
+  color: '#ffcc00',
+  border: '1px solid rgba(0,0,0,0.9)',
+  boxShadow: '0 2px 6px rgba(0,0,0,0.5)'
+}}>
+  {node.count}
+</div>
                 
                 {!isYou && node.daysSince !== undefined && (
                   <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 5 : 6, color: node.avatar ? '#fff' : 'rgba(0,0,0,0.5)', textShadow: node.avatar ? '0 1px 2px rgba(0,0,0,0.8)' : 'none' }}>
