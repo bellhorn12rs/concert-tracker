@@ -2526,14 +2526,63 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
         }}>
           <div style={{ position: 'absolute', left: 5, top: 0, bottom: 0, width: 2, background: `linear-gradient(to bottom, ${gc}, transparent)`, opacity: 0.4 }} />
           {[...selectedData.shows].reverse().map((s, i) => (
-            <div key={i} style={{ position: 'relative', marginBottom: 18, paddingLeft: 20 }}>
-              <div style={{ position: 'absolute', left: -24, top: 4, width: 10, height: 10, borderRadius: '50%', background: s.is_festival ? gc : '#fff', boxShadow: `0 0 15px ${s.is_festival ? gc : '#fff'}` }} />
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-                <span style={{ fontFamily: "'Space Mono'", fontSize: 11, color: gc, fontWeight: 900 }}>{fmtDate(s.date)}</span>
-                <span style={{ fontSize: '1.1rem', color: C.white }}>{s.venue}</span>
-              </div>
-            </div>
-          ))}
+  <div key={i} style={{ position: 'relative', marginBottom: 18, paddingLeft: 20 }}>
+    <div style={{ 
+      position: 'absolute', 
+      left: -24, 
+      top: 4, 
+      width: 10, 
+      height: 10, 
+      borderRadius: '50%', 
+      background: s.is_festival ? gc : '#fff', 
+      boxShadow: `0 0 15px ${s.is_festival ? gc : '#fff'}` 
+    }} />
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+      <span style={{ 
+        fontFamily: "'Space Mono'", 
+        fontSize: 11, 
+        color: gc, 
+        fontWeight: 900 
+      }}>
+        {fmtDate(s.date)}
+      </span>
+      
+      {s.is_festival ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span style={{ 
+            fontSize: '1.1rem', 
+            color: C.gold, 
+            fontWeight: 700,
+            fontFamily: "'Bebas Neue'"
+          }}>
+            {s.festival_name?.toUpperCase()} {getYear(s.date)}
+          </span>
+          {s.festival_day && (
+            <span style={{ 
+              fontFamily: "'Space Mono'", 
+              fontSize: 8, 
+              color: gc, 
+              opacity: 0.7 
+            }}>
+              {s.festival_day.toUpperCase()}
+            </span>
+          )}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span style={{ fontSize: '1.1rem', color: C.white }}>{s.venue}</span>
+          <span style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 9, 
+            color: C.grayDim 
+          }}>
+            {s.city}, {s.state}
+          </span>
+        </div>
+      )}
+    </div>
+  </div>
+))}
         </div>
 
         <div style={{ 
