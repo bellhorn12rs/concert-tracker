@@ -4132,94 +4132,6 @@ if (typeof onRefresh === 'function') await onRefresh();
     }
   };
 
-const onSync = async () => {
-  if (selectedSignals.length === 0) return;
-  
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user) {
-    alert("LOGIN REQUIRED");
-    return;
-  }
-
-  console.log('🔄 Starting bulk sync for', selectedSignals.length, 'shows');
-
-  let succeeded = 0;
-  let failed = 0;
-
-  for (const signal of selectedSignals) {
-    try {
-      console.log('Processing:', signal.artist, signal.date);
-      
-      const primaryArtist = signal.bands?.[0]?.name || signal.artist || 'Unknown';
-      const safeVenue = signal.venue || signal.festival_name || 'Unknown Venue';
-      
-      const { data: matchingShows } = await supabase
-        .from('shows')
-        .select('*')
-        .eq('date', signal.date);
-      
-      let showId = null;
-      if (matchingShows) {
-        const match = matchingShows.find(s => 
-          s.venue?.toLowerCase().includes(safeVenue.toLowerCase()) &&
-          s.artist?.toLowerCase().includes(primaryArtist.toLowerCase())
-        );
-        showId = match?.id;
-      }
-      
-      if (!showId) {
-        console.log('Creating new show for', primaryArtist);
-        const { data: newShow, error } = await supabase
-          .from('shows')
-          .insert([{
-            date: signal.date,
-            artist: primaryArtist,
-            bands: signal.bands,
-            venue: safeVenue,
-            city: signal.city,
-            state: signal.state,
-            is_festival: signal.is_festival,
-            festival_name: signal.festival_name,
-            genre: signal.genre || 'Indie Rock',
-            created_by: session.user.id
-          }])
-          .select()
-          .single();
-        
-        if (error) throw error;
-        showId = newShow.id;
-      }
-      
-      console.log('Inserting attendance for show', showId);
-      const { error: attError } = await supabase
-        .from('attendances')
-        .insert([{
-          user_id: session.user.id,
-          show_id: showId,
-          is_public: true
-        }]);
-      
-      if (attError) {
-        if (attError.code === '23505') {
-          console.log('Already exists, skipping');
-        } else {
-          throw attError;
-        }
-      }
-      
-      succeeded++;
-      console.log('✅ Success:', primaryArtist);
-      
-    } catch (err) {
-      failed++;
-      console.error('❌ Failed:', signal.artist, err.message);
-    }
-  }
-  
-  alert(`✅ ${succeeded} synced, ${failed} failed`);
-  console.log('Final:', { succeeded, failed });
-  window.location.reload();
-};
   // Detect if we are on a curator's page (spectator mode)
   const isSpectator = window.location.hash.includes('#/u/');
 
@@ -4604,6 +4516,95 @@ function BrowseTab({
   const safeYears = Array.isArray(years) ? years : [];
   const safeGenreMap = genreMap || {};
 
+
+const onSync = async () => {
+  if (selectedSignals.length === 0) return;
+  
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) {
+    alert("LOGIN REQUIRED");
+    return;
+  }
+
+  console.log('🔄 Starting bulk sync for', selectedSignals.length, 'shows');
+
+  let succeeded = 0;
+  let failed = 0;
+
+  for (const signal of selectedSignals) {
+    try {
+      console.log('Processing:', signal.artist, signal.date);
+      
+      const primaryArtist = signal.bands?.[0]?.name || signal.artist || 'Unknown';
+      const safeVenue = signal.venue || signal.festival_name || 'Unknown Venue';
+      
+      const { data: matchingShows } = await supabase
+        .from('shows')
+        .select('*')
+        .eq('date', signal.date);
+      
+      let showId = null;
+      if (matchingShows) {
+        const match = matchingShows.find(s => 
+          s.venue?.toLowerCase().includes(safeVenue.toLowerCase()) &&
+          s.artist?.toLowerCase().includes(primaryArtist.toLowerCase())
+        );
+        showId = match?.id;
+      }
+      
+      if (!showId) {
+        console.log('Creating new show for', primaryArtist);
+        const { data: newShow, error } = await supabase
+          .from('shows')
+          .insert([{
+            date: signal.date,
+            artist: primaryArtist,
+            bands: signal.bands,
+            venue: safeVenue,
+            city: signal.city,
+            state: signal.state,
+            is_festival: signal.is_festival,
+            festival_name: signal.festival_name,
+            genre: signal.genre || 'Indie Rock',
+            created_by: session.user.id
+          }])
+          .select()
+          .single();
+        
+        if (error) throw error;
+        showId = newShow.id;
+      }
+      
+      console.log('Inserting attendance for show', showId);
+      const { error: attError } = await supabase
+        .from('attendances')
+        .insert([{
+          user_id: session.user.id,
+          show_id: showId,
+          is_public: true
+        }]);
+      
+      if (attError) {
+        if (attError.code === '23505') {
+          console.log('Already exists, skipping');
+        } else {
+          throw attError;
+        }
+      }
+      
+      succeeded++;
+      console.log('✅ Success:', primaryArtist);
+      
+    } catch (err) {
+      failed++;
+      console.error('❌ Failed:', signal.artist, err.message);
+    }
+  }
+  
+  alert(`✅ ${succeeded} synced, ${failed} failed`);
+  console.log('Final:', { succeeded, failed });
+  window.location.reload();
+};
 
 
   // ── 2. INTERNAL STYLING ──
