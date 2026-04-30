@@ -4141,8 +4141,15 @@ const onSync = async () => {
     return;
   }
 
-  try {
-    for (const signal of selectedSignals) {
+  console.log('🔄 Starting bulk sync for', selectedSignals.length, 'shows');
+
+  let succeeded = 0;
+  let failed = 0;
+
+  for (const signal of selectedSignals) {
+    try {
+      console.log('Processing:', signal.artist, signal.date);
+      
       const primaryArtist = signal.bands?.[0]?.name || signal.artist || 'Unknown';
       const safeVenue = signal.venue || signal.festival_name || 'Unknown Venue';
       
@@ -4161,7 +4168,8 @@ const onSync = async () => {
       }
       
       if (!showId) {
-        const { data: newShow } = await supabase
+        console.log('Creating new show for', primaryArtist);
+        const { data: newShow, error } = await supabase
           .from('shows')
           .insert([{
             date: signal.date,
@@ -4178,25 +4186,40 @@ const onSync = async () => {
           .select()
           .single();
         
+        if (error) throw error;
         showId = newShow.id;
       }
       
-      await supabase.from('attendances').insert([{
-        user_id: session.user.id,
-        show_id: showId,
-        is_public: true
-      }]);
+      console.log('Inserting attendance for show', showId);
+      const { error: attError } = await supabase
+        .from('attendances')
+        .insert([{
+          user_id: session.user.id,
+          show_id: showId,
+          is_public: true
+        }]);
+      
+      if (attError) {
+        if (attError.code === '23505') {
+          console.log('Already exists, skipping');
+        } else {
+          throw attError;
+        }
+      }
+      
+      succeeded++;
+      console.log('✅ Success:', primaryArtist);
+      
+    } catch (err) {
+      failed++;
+      console.error('❌ Failed:', signal.artist, err.message);
     }
-    
-    alert(`✅ ${selectedSignals.length} SHOWS CLONED`);
-    window.location.reload();
-    
-  } catch (err) {
-    console.error('Bulk sync error:', err);
-    alert('SYNC FAILED: ' + err.message);
   }
+  
+  alert(`✅ ${succeeded} synced, ${failed} failed`);
+  console.log('Final:', { succeeded, failed });
+  window.location.reload();
 };
-
   // Detect if we are on a curator's page (spectator mode)
   const isSpectator = window.location.hash.includes('#/u/');
 
