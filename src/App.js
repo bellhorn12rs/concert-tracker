@@ -4604,8 +4604,7 @@ const onSync = async () => {
   alert(`✅ ${succeeded} synced, ${failed} failed`);
   console.log('Final:', { succeeded, failed });
   window.location.reload();
-};
-
+}
 
   // ── 2. INTERNAL STYLING ──
   const internalInputSt = { 
