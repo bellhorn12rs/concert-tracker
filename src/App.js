@@ -9225,30 +9225,45 @@ const getCuratorTitle = (stats, concerts) => {
 
 const handleSave = async (id, payload) => {
   if (!isAdmin) return;
+  
+  console.log('💾 SAVE CALLED:', { id, payload });
+  
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('No session found');
+    
     const primaryArtist = payload.bands?.[0]?.name || payload.artist || 'Unknown';
     
     if (id) {
-      // Update show metadata
-      const { error } = await supabase
+      console.log('📝 UPDATE MODE for show:', id);
+      
+      const updateData = {
+        date: payload.date,
+        artist: primaryArtist,
+        bands: payload.bands,
+        venue: payload.venue || 'Unknown Venue',
+        city: payload.city,
+        state: payload.state,
+        is_festival: payload.is_festival,
+        festival_name: payload.festival_name,
+        festival_day: payload.festival_day,
+        genre: payload.is_festival ? 'Festival' : (payload.bands[0]?.genre || 'Indie Rock')
+      };
+      
+      console.log('Updating with:', updateData);
+      
+      const { data, error } = await supabase
         .from('shows')
-        .update({
-          date: payload.date,
-          artist: primaryArtist,
-          bands: payload.bands,
-          venue: payload.venue || 'Unknown Venue',
-          city: payload.city,
-          state: payload.state,
-          is_festival: payload.is_festival,
-          festival_name: payload.festival_name,
-          festival_day: payload.festival_day,
-          genre: payload.is_festival ? 'Festival' : (payload.bands[0]?.genre || 'Indie Rock')
-        })
-        .eq('id', id);
+        .update(updateData)
+        .eq('id', id)
+        .select();
+      
+      console.log('Update result:', { data, error });
       
       if (error) throw error;
       
-      // Delete old artifacts, insert new ones
+      console.log('✅ Show updated, now handling artifacts...');
+      
       await supabase.from('artifacts').delete().eq('show_id', id).eq('user_id', session.user.id);
       
       const artifacts = [];
@@ -9258,15 +9273,18 @@ const handleSave = async (id, payload) => {
       if (payload.wristband_image_url) artifacts.push({ user_id: session.user.id, show_id: id, artifact_type: 'wristband', image_url: payload.wristband_image_url, is_public: true });
       
       if (artifacts.length > 0) {
-        await supabase.from('artifacts').insert(artifacts);
+        const { error: artError } = await supabase.from('artifacts').insert(artifacts);
+        if (artError) console.error('Artifact error:', artError);
       }
       
+      console.log('✅ SAVE COMPLETE');
+      alert('✅ SHOW UPDATED');
       setEditTarget(null);
       await fetchConcerts();
       return;
     }
     
-    // NEW MODE (rest unchanged)
+    // NEW MODE
     const safeVenue = payload.venue || payload.festival_name || 'Unknown Venue';
     const { data: existingShow } = await supabase
       .from('shows')
@@ -9321,7 +9339,7 @@ const handleSave = async (id, payload) => {
     await fetchConcerts();
 
   } catch (error) {
-    console.error("SAVE ERROR:", error.message);
+    console.error("💥 SAVE ERROR:", error);
     alert('SAVE FAILED: ' + error.message);
   }
 };
