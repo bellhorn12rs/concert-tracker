@@ -9242,18 +9242,13 @@ const getCuratorTitle = (stats, concerts) => {
           is_festival: payload.is_festival,
           festival_name: payload.festival_name,
           festival_day: payload.festival_day,
-          genre: payload.is_festival ? 'Festival' : (payload.bands[0]?.genre || 'Indie Rock'),
-          image_url: payload.image_url,
-          personal_photo_url: payload.personal_photo_url,
-          setlist_image_url: payload.setlist_image_url,
-          festival_poster_url: payload.festival_poster_url,
-          wristband_image_url: payload.wristband_image_url
+          genre: payload.is_festival ? 'Festival' : (payload.bands[0]?.genre || 'Indie Rock')
         })
         .eq('id', id);
       
       if (error) throw error;
       
-      // Update artifacts for this show
+      // Update artifacts
       const artifacts = [];
       if (payload.image_url) payload.image_url.split(',').forEach(url => artifacts.push({ user_id: session.user.id, show_id: id, artifact_type: 'stub', image_url: url.trim(), is_public: true }));
       if (payload.personal_photo_url) payload.personal_photo_url.split(',').forEach(url => artifacts.push({ user_id: session.user.id, show_id: id, artifact_type: 'photo', image_url: url.trim(), is_public: true }));
