@@ -9224,63 +9224,61 @@ const getCuratorTitle = (stats, concerts) => {
   };
 
 const handleSave = async (id, payload) => {
-  if (!isAdmin) return;
+  console.log('🔍 handleSave called:', { id, isAdmin, hasSession: !!session });
   
-  console.log('💾 SAVE CALLED:', { id, payload });
+  if (!session?.user?.id) {
+    alert('No session - please refresh and login');
+    return;
+  }
   
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error('No session found');
-    
     const primaryArtist = payload.bands?.[0]?.name || payload.artist || 'Unknown';
     
     if (id) {
-      console.log('📝 UPDATE MODE for show:', id);
+      console.log('📝 Updating show:', id);
       
-      const updateData = {
-        date: payload.date,
-        artist: primaryArtist,
-        bands: payload.bands,
-        venue: payload.venue || 'Unknown Venue',
-        city: payload.city,
-        state: payload.state,
-        is_festival: payload.is_festival,
-        festival_name: payload.festival_name,
-        festival_day: payload.festival_day,
-        genre: payload.is_festival ? 'Festival' : (payload.bands[0]?.genre || 'Indie Rock')
-      };
-      
-      console.log('Updating with:', updateData);
-      
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('shows')
-        .update(updateData)
-        .eq('id', id)
-        .select();
+        .update({
+          date: payload.date,
+          artist: primaryArtist,
+          bands: payload.bands,
+          venue: payload.venue || 'Unknown Venue',
+          city: payload.city,
+          state: payload.state,
+          is_festival: payload.is_festival,
+          festival_name: payload.festival_name,
+          festival_day: payload.festival_day,
+          genre: payload.is_festival ? 'Festival' : (payload.bands[0]?.genre || 'Indie Rock')
+        })
+        .eq('id', id);
       
-      console.log('Update result:', { data, error });
+      if (error) {
+        console.error('Update error:', error);
+        throw error;
+      }
       
-      if (error) throw error;
+      console.log('✅ Show updated');
       
-      console.log('✅ Show updated, now handling artifacts...');
-      
+      // Handle artifacts
       await supabase.from('artifacts').delete().eq('show_id', id).eq('user_id', session.user.id);
       
       const artifacts = [];
-      if (payload.image_url) payload.image_url.split(',').forEach(url => artifacts.push({ user_id: session.user.id, show_id: id, artifact_type: 'stub', image_url: url.trim(), is_public: true }));
-      if (payload.personal_photo_url) payload.personal_photo_url.split(',').forEach(url => artifacts.push({ user_id: session.user.id, show_id: id, artifact_type: 'photo', image_url: url.trim(), is_public: true }));
-      if (payload.setlist_image_url) payload.setlist_image_url.split(',').forEach(url => artifacts.push({ user_id: session.user.id, show_id: id, artifact_type: 'relic', image_url: url.trim(), is_public: true }));
-      if (payload.wristband_image_url) artifacts.push({ user_id: session.user.id, show_id: id, artifact_type: 'wristband', image_url: payload.wristband_image_url, is_public: true });
+      if (payload.image_url) payload.image_url.split(',').forEach(url => url.trim() && artifacts.push({ user_id: session.user.id, show_id: id, artifact_type: 'stub', image_url: url.trim(), is_public: true }));
+      if (payload.personal_photo_url) payload.personal_photo_url.split(',').forEach(url => url.trim() && artifacts.push({ user_id: session.user.id, show_id: id, artifact_type: 'photo', image_url: url.trim(), is_public: true }));
+      if (payload.setlist_image_url) payload.setlist_image_url.split(',').forEach(url => url.trim() && artifacts.push({ user_id: session.user.id, show_id: id, artifact_type: 'relic', image_url: url.trim(), is_public: true }));
+      if (payload.wristband_image_url?.trim()) artifacts.push({ user_id: session.user.id, show_id: id, artifact_type: 'wristband', image_url: payload.wristband_image_url.trim(), is_public: true });
       
       if (artifacts.length > 0) {
+        console.log('Adding artifacts:', artifacts.length);
         const { error: artError } = await supabase.from('artifacts').insert(artifacts);
         if (artError) console.error('Artifact error:', artError);
       }
       
-      console.log('✅ SAVE COMPLETE');
-      alert('✅ SHOW UPDATED');
+      alert('✅ UPDATED');
       setEditTarget(null);
-      await fetchConcerts();
+      if (typeof fetchData === 'function') await fetchData();
+      if (typeof fetchConcerts === 'function') await fetchConcerts();
       return;
     }
     
