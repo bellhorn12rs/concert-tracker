@@ -9223,13 +9223,13 @@ const getCuratorTitle = (stats, concerts) => {
     window.dispatchEvent(new HashChangeEvent('hashchange'));
   };
 
- const handleSave = async (id, payload) => {
+const handleSave = async (id, payload) => {
   if (!isAdmin) return;
   try {
     const primaryArtist = payload.bands?.[0]?.name || payload.artist || 'Unknown';
     
-    // EDIT MODE: Update existing show
     if (id) {
+      // Update show metadata
       const { error } = await supabase
         .from('shows')
         .update({
@@ -9248,7 +9248,9 @@ const getCuratorTitle = (stats, concerts) => {
       
       if (error) throw error;
       
-      // Update artifacts
+      // Delete old artifacts, insert new ones
+      await supabase.from('artifacts').delete().eq('show_id', id).eq('user_id', session.user.id);
+      
       const artifacts = [];
       if (payload.image_url) payload.image_url.split(',').forEach(url => artifacts.push({ user_id: session.user.id, show_id: id, artifact_type: 'stub', image_url: url.trim(), is_public: true }));
       if (payload.personal_photo_url) payload.personal_photo_url.split(',').forEach(url => artifacts.push({ user_id: session.user.id, show_id: id, artifact_type: 'photo', image_url: url.trim(), is_public: true }));
@@ -9256,7 +9258,7 @@ const getCuratorTitle = (stats, concerts) => {
       if (payload.wristband_image_url) artifacts.push({ user_id: session.user.id, show_id: id, artifact_type: 'wristband', image_url: payload.wristband_image_url, is_public: true });
       
       if (artifacts.length > 0) {
-        await supabase.from('artifacts').upsert(artifacts, { onConflict: 'user_id,show_id,artifact_type' });
+        await supabase.from('artifacts').insert(artifacts);
       }
       
       setEditTarget(null);
@@ -9264,7 +9266,7 @@ const getCuratorTitle = (stats, concerts) => {
       return;
     }
     
-    // NEW MODE: Check for duplicates
+    // NEW MODE (rest unchanged)
     const safeVenue = payload.venue || payload.festival_name || 'Unknown Venue';
     const { data: existingShow } = await supabase
       .from('shows')
@@ -9299,13 +9301,11 @@ const getCuratorTitle = (stats, concerts) => {
       showId = newShow.id;
     }
     
-    await supabase
-      .from('attendances')
-      .upsert([{
-        user_id: session.user.id,
-        show_id: showId,
-        is_public: true
-      }], { onConflict: 'user_id,show_id' });
+    await supabase.from('attendances').upsert([{
+      user_id: session.user.id,
+      show_id: showId,
+      is_public: true
+    }], { onConflict: 'user_id,show_id' });
     
     const artifacts = [];
     if (payload.image_url) payload.image_url.split(',').forEach(url => artifacts.push({ user_id: session.user.id, show_id: showId, artifact_type: 'stub', image_url: url.trim(), is_public: true }));
