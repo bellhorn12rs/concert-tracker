@@ -4009,42 +4009,24 @@ function ByDayTab({
 
 // ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With "I Was There" Trigger) ─────────────
 
+// ─── SCRAPBOOK ROW (Cleaned) ───────────────────────────────────────────────────
 function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
-  // 🛡️ CRITICAL SAFETY GATES - Must be FIRST
-  if (!event) {
-    console.error('ScrapbookRow: event is null/undefined');
-    return null;
-  }
-  
-  if (!event.date) {
-    console.error('ScrapbookRow: Missing date', event);
-    return null;
-  }
+  if (!event || !event.date) return null;
 
   const isMobile = window.innerWidth < 768;
   const venueLabel = event.is_festival ? (event.festival_name || 'FESTIVAL') : (event.venue || 'UNKNOWN VENUE');
   const primaryColor = clusterColor || C.teal;
+  const isSpectator = window.location.hash.includes('#/u/');
   
-  // 🛰️ DATA SCAVENGING
-  // 1. Establish Naming Hierarchy
   const bands = Array.isArray(event.bands) ? event.bands : (event.artist ? [event.artist] : []);
-  
-  // 🛡️ Ensure we always have at least one band
-  if (bands.length === 0) {
-    bands.push(event.festival_name || event.venue || 'UNKNOWN');
-  }
+  if (bands.length === 0) bands.push(event.festival_name || event.venue || 'UNKNOWN');
   
   const headlinerName = (getBandName(bands[0]) || "LIVE").toUpperCase();
-
-  // 2. Standardize Media Sources
   const rawSetlists = (event.setlist_image_url || "").split(',').map(u => u.trim()).filter(Boolean);
   const rawPhotos = (event.personal_photo_url || "").split(',').map(u => u.trim()).filter(Boolean);
-  
-  // 🛡️ Safety: Ensure personal photos don't duplicate setlist images
   const finalPhotos = rawPhotos.filter(url => !rawSetlists.includes(url));
   const finalSetlists = rawSetlists;
 
-  // 🎨 RELATIONAL POSTER CONSOLIDATION
   const finalPosters = useMemo(() => {
     const list = [];
     if (event.festival_poster_url) {
@@ -4059,29 +4041,20 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
         }
       });
     }
-    
-    // 🟢 HIDE FESTIVAL-WIDE POSTERS FROM ROWS
     return list.filter(p => p.poster_type !== 'festival_year');
   }, [event.festival_poster_url, event.matchedPosters, event.date, headlinerName]);
 
-  // 🟢 SELF-CONTAINED CLONE LOGIC
   const cloneSignal = async (e) => {
     e.stopPropagation();
     
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      alert("LOGIN REQUIRED");
-      return;
-    }
+    if (!session?.user) return alert("LOGIN REQUIRED");
 
     try {
       const primaryArtist = (event.bands?.[0]?.name || event.bands?.[0] || event.artist || 'Unknown').toString();
       const safeVenue = event.venue || event.festival_name || 'Unknown Venue';
       
-      const { data: matchingShows } = await supabase
-        .from('shows')
-        .select('*')
-        .eq('date', event.date);
+      const { data: matchingShows } = await supabase.from('shows').select('*').eq('date', event.date);
       
       let showId = null;
       if (matchingShows) {
@@ -4093,23 +4066,19 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
       }
       
       if (!showId) {
-        const { data: newShow } = await supabase
-          .from('shows')
-          .insert([{
-            date: event.date,
-            artist: primaryArtist,
-            bands: event.bands || [primaryArtist],
-            venue: safeVenue,
-            city: event.city || '',
-            state: event.state || '',
-            is_festival: event.is_festival || false,
-            festival_name: event.festival_name || null,
-            festival_day: event.festival_day || null,
-            genre: event.genre || 'Indie Rock',
-            created_by: session.user.id
-          }])
-          .select()
-          .single();
+        const { data: newShow } = await supabase.from('shows').insert([{
+          date: event.date,
+          artist: primaryArtist,
+          bands: event.bands || [primaryArtist],
+          venue: safeVenue,
+          city: event.city || '',
+          state: event.state || '',
+          is_festival: event.is_festival || false,
+          festival_name: event.festival_name || null,
+          festival_day: event.festival_day || null,
+          genre: event.genre || 'Indie Rock',
+          created_by: session.user.id
+        }]).select().single();
         
         showId = newShow.id;
       }
@@ -4121,7 +4090,7 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
       }]);
       
       alert(`⚡ CLONED: ${primaryArtist}`);
-if (typeof onRefresh === 'function') await onRefresh();
+      window.location.reload();
       
     } catch (err) {
       if (err.code === '23505') {
@@ -4132,68 +4101,26 @@ if (typeof onRefresh === 'function') await onRefresh();
     }
   };
 
-  // Detect if we are on a curator's page (spectator mode)
-  const isSpectator = window.location.hash.includes('#/u/');
-
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: isMobile ? 'column' : 'row', 
-      alignItems: isMobile ? 'stretch' : 'center', 
-      padding: isMobile ? '15px' : '40px 30px',
-      background: isClustered ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.02)',
-      borderRadius: '24px', 
-      border: `1px solid ${isClustered ? hexToRgba(primaryColor, 0.3) : C.border}`,
-      position: 'relative', 
-      overflow: 'hidden', 
-      gap: isMobile ? '20px' : '0',
-      marginBottom: isMobile ? '10px' : '0'
-    }}>
+    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', padding: isMobile ? '15px' : '40px 30px', background: isClustered ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.02)', borderRadius: '24px', border: `1px solid ${isClustered ? hexToRgba(primaryColor, 0.3) : C.border}`, position: 'relative', overflow: 'hidden', gap: isMobile ? '20px' : '0', marginBottom: isMobile ? '10px' : '0' }}>
       
-      {/* 🟢 THE GHOST POSTER */}
       {!isMobile && (
-        <div style={{
-          position: 'absolute', left: '-2%', top: '-10%', width: '100%', height: '120%',
-          fontFamily: "'Bebas Neue'", fontSize: '22rem', color: primaryColor, opacity: 0.05, 
-          whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 0, letterSpacing: '-12px', 
-          lineHeight: 0.8, display: 'flex', alignItems: 'flex-start',
-          WebkitMaskImage: 'linear-gradient(to right, black 20%, transparent 80%)',
-          animation: 'pulse-ghost 4s ease-in-out infinite' 
-        }}>
+        <div style={{ position: 'absolute', left: '-2%', top: '-10%', width: '100%', height: '120%', fontFamily: "'Bebas Neue'", fontSize: '22rem', color: primaryColor, opacity: 0.05, whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 0, letterSpacing: '-12px', lineHeight: 0.8, display: 'flex', alignItems: 'flex-start', WebkitMaskImage: 'linear-gradient(to right, black 20%, transparent 80%)', animation: 'pulse-ghost 4s ease-in-out infinite' }}>
           {headlinerName}
         </div>
       )}
 
-      {/* 🟢 LEFT: THE TICKET STUB / WRISTBAND */}
-      <div style={{ 
-        flexShrink: 0, width: isMobile ? '100%' : '320px', position: 'relative', zIndex: 2,
-        display: 'flex', flexDirection: 'column', gap: '15px', alignItems: isMobile ? 'center' : 'flex-start'
-      }}>
+      <div style={{ flexShrink: 0, width: isMobile ? '100%' : '320px', position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: '15px', alignItems: isMobile ? 'center' : 'flex-start' }}>
         <div style={{ transform: isMobile ? 'scale(0.9)' : 'none' }}>
-          {event.is_festival 
-            ? <WristbandCard event={event} genreMap={genreMap} compact={true} onEdit={isAdmin ? onEdit : null} /> 
-            : <TicketStubCard event={event} onEdit={isAdmin ? onEdit : null} genreMap={genreMap} stubIdx={idx} />
-          }
+          {event.is_festival ? <WristbandCard event={event} genreMap={genreMap} compact={true} onEdit={isAdmin ? onEdit : null} /> : <TicketStubCard event={event} onEdit={isAdmin ? onEdit : null} genreMap={genreMap} stubIdx={idx} />}
         </div>
       </div>
 
-      {/* 🟢 MIDDLE: THE INTERACTIVE LINEUP */}
       <div style={{ flex: 1, paddingLeft: isMobile ? '0' : '50px', zIndex: 2, textAlign: isMobile ? 'center' : 'left' }}>
-        <div style={{ 
-          fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.2rem' : '3.8rem', lineHeight: 0.85,
-          letterSpacing: '1px', marginBottom: '15px', color: '#fff',
-          textShadow: `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`,
-          display: 'flex', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start', columnGap: '15px'
-        }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.2rem' : '3.8rem', lineHeight: 0.85, letterSpacing: '1px', marginBottom: '15px', color: '#fff', textShadow: `0 0 30px ${hexToRgba(primaryColor, 0.4)}, 2px 2px 10px rgba(0,0,0,0.8)`, display: 'flex', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start', columnGap: '15px' }}>
           {bands.map((band, bIdx) => (
             <React.Fragment key={`${event.id}-link-${bIdx}`}>
-              <a 
-                href={getSetlistFmUrl(getBandName(band), event.date)} 
-                target="_blank" rel="noreferrer"
-                style={{ color: '#fff', textDecoration: 'none', cursor: 'pointer', transition: '0.2s' }}
-                onMouseEnter={e => { e.target.style.color = C.gold; e.target.style.textShadow = `0 0 20px ${C.gold}`; }}
-                onMouseLeave={e => { e.target.style.color = '#fff'; e.target.style.textShadow = `0 0 30px ${hexToRgba(primaryColor, 0.4)}`; }}
-              >
+              <a href={getSetlistFmUrl(getBandName(band), event.date)} target="_blank" rel="noreferrer" style={{ color: '#fff', textDecoration: 'none', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e => { e.target.style.color = C.gold; e.target.style.textShadow = `0 0 20px ${C.gold}`; }} onMouseLeave={e => { e.target.style.color = '#fff'; e.target.style.textShadow = `0 0 30px ${hexToRgba(primaryColor, 0.4)}`; }}>
                 {getBandName(band).toUpperCase()}
               </a>
               {bIdx < bands.length - 1 && <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>}
@@ -4206,32 +4133,26 @@ if (typeof onRefresh === 'function') await onRefresh();
           <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.1)' }} />
           <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>{event.venue?.toUpperCase()}</div>
           
-          {/* 🟢 THE CLONE BUTTON */}
           {isSpectator && !isAdmin && (
-            <button
-              onClick={cloneSignal}
-              style={{
-                background: 'transparent',
-                border: `1px solid ${primaryColor}`,
-                color: primaryColor,
-                padding: '4px 10px',
-                fontFamily: "'Space Mono'",
-                fontSize: '9px',
-                cursor: 'pointer',
-                borderRadius: 4,
-                transition: 'all 0.2s',
-                textTransform: 'uppercase',
-                letterSpacing: 1,
-                marginLeft: '5px'
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = primaryColor; e.currentTarget.style.color = '#000'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = primaryColor; }}
-            >
+            <button onClick={cloneSignal} style={{ background: 'transparent', border: `1px solid ${primaryColor}`, color: primaryColor, padding: '4px 10px', fontFamily: "'Space Mono'", fontSize: '9px', cursor: 'pointer', borderRadius: 4, transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: 1, marginLeft: '5px' }} onMouseEnter={e => { e.currentTarget.style.background = primaryColor; e.currentTarget.style.color = '#000'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = primaryColor; }}>
               + I WAS THERE
             </button>
           )}
         </div>
       </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-end', width: isMobile ? '100%' : 'auto', minWidth: isMobile ? 'auto' : '400px', zIndex: 2, marginLeft: isMobile ? '0' : 'auto', overflow: isMobile ? 'visible' : 'visible' }}>
+        <div style={{ display: 'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', alignItems: 'flex-start', justifyContent: isMobile ? 'center' : 'flex-start', transform: isMobile ? 'scale(0.7)' : 'none', transformOrigin: isMobile ? 'center' : 'right', gap: isMobile ? '10px' : '0', width: isMobile ? '100%' : 'auto' }}>
+          {finalSetlists.map((url, sIdx) => <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={finalSetlists.length} />)}
+          {finalPosters.map((poster, pIdx) => <GigPoster key={`${event.id}-poster-${pIdx}`} src={poster.url} artist={poster.artist} date={poster.date} index={pIdx} />)}
+          <div style={{ marginLeft: isMobile ? '0' : ((finalSetlists.length > 0 || finalPosters.length > 0) ? '-20px' : '0'), display: 'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: isMobile ? '10px' : '0', justifyContent: isMobile ? 'center' : 'flex-start' }}>
+            {finalPhotos.map((url, pIdx) => <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
       {/* 🟢 RIGHT: MEDIA CLUSTER */}
       <div style={{ 
@@ -4500,111 +4421,49 @@ function PassportTab({ passport, onNavigateToFest }) {
 }
 // ─── BROWSE TAB ───────────────────────────────────────────────────────────────
 // ─── BROWSE TAB (Public View + Admin Lockdown) ──────────────────────────────
-function BrowseTab({ 
-  browseView, setBrowseView, search, setSearch, 
-  yearFilter, setYearFilter, festFilter, setFestFilter, 
-  genreFilter, setGenreFilter, sortCol, setSortCol, sortDir, setSortDir, 
-  paged, page, setPage, totalPages, artistRows, years, 
-  onShare, onEdit, onSetGenre, genreMap, isAdmin,
-  /* 🟢 NEW BULK PROPS */
-  viewingUser, bulkMode, setBulkMode, selectedSignals, setSelectedSignals, onSync 
-}) {
+function BrowseTab({ concerts, onEdit, genreMap, viewingUser, session }) {
+  const [search, setSearch] = useState('');
+  const [sortCol, setSortCol] = useState('date');
+  const [sortDir, setSortDir] = useState('desc');
+  const [page, setPage] = useState(1);
+  const [yearFilter, setYearFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [genreFilter, setGenreFilter] = useState('all');
+  const [viewMode, setViewMode] = useState('shows');
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedSignals, setSelectedSignals] = useState([]);
   
-  // ── 1. SAFETY GATES ──
-  const safePaged = Array.isArray(paged) ? paged : [];
-  const safeArtistRows = Array.isArray(artistRows) ? artistRows : [];
-  const safeYears = Array.isArray(years) ? years : [];
-  const safeGenreMap = genreMap || {};
+  const isMobile = window.innerWidth < 768;
+  const PER = 50;
+  const isAdmin = session?.user?.id === concerts?.[0]?.user_id;
 
+  // ADD THIS FUNCTION HERE
+  const onSync = async () => {
+    if (selectedSignals.length === 0) return;
+    
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession?.user) return alert("LOGIN REQUIRED");
 
-const onSync = async () => {
-  if (selectedSignals.length === 0) return;
-  
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user) {
-    alert("LOGIN REQUIRED");
-    return;
-  }
+    console.log('🔄 Syncing', selectedSignals.length, 'shows');
 
-  console.log('🔄 Starting bulk sync for', selectedSignals.length, 'shows');
-
-  let succeeded = 0;
-  let failed = 0;
-
-  for (const signal of selectedSignals) {
-    try {
-      console.log('Processing:', signal.artist, signal.date);
-      
-      const primaryArtist = signal.bands?.[0]?.name || signal.artist || 'Unknown';
-      const safeVenue = signal.venue || signal.festival_name || 'Unknown Venue';
-      
-      const { data: matchingShows } = await supabase
-        .from('shows')
-        .select('*')
-        .eq('date', signal.date);
-      
-      let showId = null;
-      if (matchingShows) {
-        const match = matchingShows.find(s => 
-          s.venue?.toLowerCase().includes(safeVenue.toLowerCase()) &&
-          s.artist?.toLowerCase().includes(primaryArtist.toLowerCase())
-        );
-        showId = match?.id;
-      }
-      
-      if (!showId) {
-        console.log('Creating new show for', primaryArtist);
-        const { data: newShow, error } = await supabase
-          .from('shows')
-          .insert([{
-            date: signal.date,
-            artist: primaryArtist,
-            bands: signal.bands,
-            venue: safeVenue,
-            city: signal.city,
-            state: signal.state,
-            is_festival: signal.is_festival,
-            festival_name: signal.festival_name,
-            genre: signal.genre || 'Indie Rock',
-            created_by: session.user.id
-          }])
-          .select()
-          .single();
-        
-        if (error) throw error;
-        showId = newShow.id;
-      }
-      
-      console.log('Inserting attendance for show', showId);
-      const { error: attError } = await supabase
-        .from('attendances')
-        .insert([{
-          user_id: session.user.id,
-          show_id: showId,
+    let succeeded = 0;
+    for (const signal of selectedSignals) {
+      try {
+        await supabase.from('attendances').insert([{
+          user_id: currentSession.user.id,
+          show_id: signal.id,
           is_public: true
         }]);
-      
-      if (attError) {
-        if (attError.code === '23505') {
-          console.log('Already exists, skipping');
-        } else {
-          throw attError;
-        }
+        succeeded++;
+      } catch (err) {
+        if (err.code !== '23505') console.error('Failed:', signal.artist, err);
       }
-      
-      succeeded++;
-      console.log('✅ Success:', primaryArtist);
-      
-    } catch (err) {
-      failed++;
-      console.error('❌ Failed:', signal.artist, err.message);
     }
-  }
-  
-  alert(`✅ ${succeeded} synced, ${failed} failed`);
-  console.log('Final:', { succeeded, failed });
-  window.location.reload();
-}
+    
+    alert(`✅ ${succeeded} SYNCED`);
+    window.location.reload();
+  };
+
 
   // ── 2. INTERNAL STYLING ──
   const internalInputSt = { 
