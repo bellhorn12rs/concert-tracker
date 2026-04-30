@@ -4232,8 +4232,11 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
     </div>
   );
 }
-// ─── 1. BY FEST TAB (BOX SET EDITION + MEDIA CLUSTER) ───────────────────────
-// ─── 1. BY FEST TAB (BOX SET EDITION + MEDIA CLUSTER) ───────────────────────
+
+const getDayColor = (baseHex, index) => {
+  const variants = [1.0, 0.8, 0.6, 0.45, 0.3]; 
+  return hexToRgba(baseHex || C.teal, variants[index % variants.length]);
+};
 // ─── 1. BY FEST TAB (BOX SET EDITION + MEDIA CLUSTER) ───────────────────────
 function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = [] }) {
   const FEST_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699', '#ff4400', '#a2ff00'];
@@ -6401,13 +6404,12 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
       const { error } = await supabase.from('posters').insert([insertData]);
 
       if (error) {
-        console.error("Supabase DB Error:", error);
-        alert(`POSTER SYNC FAILED: ${error.message || 'Database connection error'}`);
-      } else {
-        console.log("✅ POSTER PINNED SUCCESSFULLY");
-        if (onRefreshPosters) onRefreshPosters();
-        onClose(); 
-      }
+  console.error("Supabase DB Error:", error);
+  alert(`POSTER SYNC FAILED: ${error.message || 'Database connection error'}`);
+} else {
+  console.log("✅ POSTER PINNED SUCCESSFULLY");
+  onClose(); 
+}
     }
   };
 
