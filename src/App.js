@@ -8333,14 +8333,47 @@ function CollaborationWebTab() {
           </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(250px, 1fr))', gap: 15 }}>
-            {shows.filter(s => detailView.showIds.includes(s.id)).map(s => (
-              <div key={s.id} style={{ background: hexToRgba(detailView.color, 0.05), border: `1px solid ${hexToRgba(detailView.color, 0.3)}`, borderRadius: 8, padding: 15 }}>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff' }}>{s.is_festival ? s.festival_name?.toUpperCase() : s.artist?.toUpperCase()}</div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 5 }}>{fmtDateShort(s.date)}</div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: detailView.color, marginTop: 3 }}>{s.venue?.toUpperCase()}</div>
-              </div>
+  {shows.filter(s => detailView.showIds.includes(s.id)).map(s => {
+    // Find who else attended this show
+    const otherAttendees = collaborators.filter(c => 
+      c.id !== detailView.id && c.showIds.includes(s.id)
+    );
+    
+    return (
+      <div key={s.id} style={{ background: hexToRgba(detailView.color, 0.05), border: `1px solid ${hexToRgba(detailView.color, 0.3)}`, borderRadius: 8, padding: 15 }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff' }}>{s.is_festival ? s.festival_name?.toUpperCase() : s.artist?.toUpperCase()}</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 5 }}>{fmtDateShort(s.date)}</div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: detailView.color, marginTop: 3 }}>{s.venue?.toUpperCase()}</div>
+        
+        {otherAttendees.length > 0 && (
+          <div style={{ 
+            marginTop: 8, 
+            paddingTop: 8, 
+            borderTop: `1px solid ${hexToRgba(detailView.color, 0.2)}`,
+            display: 'flex',
+            gap: 4,
+            alignItems: 'center'
+          }}>
+            <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold }}>WITH:</span>
+            {otherAttendees.map(att => (
+              <span key={att.id} style={{ 
+                fontFamily: "'Space Mono'", 
+                fontSize: 7, 
+                color: att.color,
+                background: hexToRgba(att.color, 0.15),
+                padding: '2px 6px',
+                borderRadius: 4,
+                border: `1px solid ${hexToRgba(att.color, 0.4)}`
+              }}>
+                {att.username.toUpperCase()}
+              </span>
             ))}
           </div>
+        )}
+      </div>
+    );
+  })}
+</div>
         </Card>
       </div>
     )}
