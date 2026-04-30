@@ -7464,58 +7464,69 @@ function PosterUploadModal({ concerts, onClose, onSaved }) {
     </div>
   );
 }
-
-
-// ─── SHOWS TAB (COLLABORATIVE VIEW) - OPTIMIZED ──────────────────────────────
+// ─── SHOWS TAB (COLLABORATIVE VIEW) - WITH FESTIVAL CLUSTERING ───────────────
 function ShowsTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  
-
-const clustered = useMemo(() => {
-  const groups = [];
-  const festMap = {};
-  
-  console.log('🔍 CLUSTERING DEBUG:', shows.length, 'total shows');
-  console.log('Sample show:', shows[0]);
-  
-  shows.forEach(s => {
-    if (s.is_festival && s.festival_name) {
-      const key = `${s.festival_name}-${getYear(s.date)}`;
-      console.log('Festival found:', key);
-      if (!festMap[key]) {
-        festMap[key] = {
-          festival_name: s.festival_name,
-          year: getYear(s.date),
-          days: [],
-          allAttendances: new Map()
-        };
-      }
-      festMap[key].days.push(s);
-      s.attendances?.forEach(att => {
-        festMap[key].allAttendances.set(att.user_id, att);
-      });
-    } else {
-      groups.push({ type: 'solo', show: s });
+  // 🟢 CLUSTERING LOGIC - Runs whenever shows updates
+  const clustered = useMemo(() => {
+    if (!shows || shows.length === 0) {
+      console.log('⚠️ No shows to cluster');
+      return [];
     }
-  });
-  
-  console.log('Festival groups:', Object.keys(festMap).length);
-  console.log('Solo shows:', groups.filter(g => g.type === 'solo').length);
-  
-  Object.values(festMap).forEach(fg => {
-    groups.push({ 
-      type: 'festival', 
-      festival_name: fg.festival_name,
-      year: fg.year,
-      days: fg.days.sort((a, b) => a.date.localeCompare(b.date)),
-      attendances: Array.from(fg.allAttendances.values())
+    
+    console.log('🔍 CLUSTERING:', shows.length, 'total shows');
+    
+    const groups = [];
+    const festMap = {};
+    
+    shows.forEach((s, idx) => {
+      console.log(`[${idx}] ${s.artist || s.festival_name} - is_festival: ${s.is_festival}, name: ${s.festival_name}`);
+      
+      if (s.is_festival && s.festival_name) {
+        const key = `${s.festival_name}-${getYear(s.date)}`;
+        console.log('  ✅ Festival key:', key);
+        
+        if (!festMap[key]) {
+          festMap[key] = {
+            festival_name: s.festival_name,
+            year: getYear(s.date),
+            days: [],
+            allAttendances: new Map()
+          };
+        }
+        
+        festMap[key].days.push(s);
+        
+        // Collect unique attendances across all days
+        (s.attendances || []).forEach(att => {
+          festMap[key].allAttendances.set(att.user_id, att);
+        });
+      } else {
+        console.log('  ❌ Solo show');
+        groups.push({ type: 'solo', show: s });
+      }
     });
-  });
-  
-  return groups;
-}, [shows]);
+    
+    console.log('📊 Festival groups created:', Object.keys(festMap).length);
+    console.log('📊 Solo shows:', groups.filter(g => g.type === 'solo').length);
+    
+    // Convert festival groups
+    Object.entries(festMap).forEach(([key, fg]) => {
+      console.log(`  Adding festival group: ${key} with ${fg.days.length} days`);
+      groups.push({ 
+        type: 'festival', 
+        festival_name: fg.festival_name,
+        year: fg.year,
+        days: fg.days.sort((a, b) => a.date.localeCompare(b.date)),
+        attendances: Array.from(fg.allAttendances.values())
+      });
+    });
+    
+    console.log('✅ Final clustered groups:', groups.length);
+    return groups;
+  }, [shows]);
 
   useEffect(() => {
     const fetch = async () => {
@@ -7579,7 +7590,7 @@ const clustered = useMemo(() => {
           }
         });
         
-        console.log('SHARED SHOWS:', result.length);
+        console.log('SHARED SHOWS FETCHED:', result.length);
         setShows(result);
         setLoading(false);
       } catch (err) {
@@ -7608,14 +7619,14 @@ const clustered = useMemo(() => {
           SHARED <span style={{ color: C.gold }}>SIGNALS</span>
         </div>
         <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gold, letterSpacing: 3 }}>
-          {shows.length} COLLABORATIVE SHOWS
+          {shows.length} COLLABORATIVE SHOWS // {clustered.length} GROUPS
         </div>
       </div>
 
-      {clustered.slice(0, 20).map((item, i) => {
+      {clustered.slice(0, 30).map((item, i) => {
         if (item.type === 'festival') {
           return (
-            <Card key={`fest-${item.festival_name}-${item.year}`} neon style={{ marginBottom: 20 }}>
+            <Card key={`fest-${item.festival_name}-${item.year}-${i}`} neon style={{ marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, marginBottom: 15 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.gold, lineHeight: 1 }}>
@@ -7659,7 +7670,7 @@ const clustered = useMemo(() => {
                     paddingLeft: 12, 
                     borderLeft: `2px solid ${C.gold}` 
                   }}>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gold, fontWeight: 900, minWidth: 60 }}>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gold, fontWeight: 900, minWidth: 80 }}>
                       {day.festival_day?.toUpperCase() || fmtDateShort(day.date)}
                     </div>
                     <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray }}>
@@ -7673,7 +7684,7 @@ const clustered = useMemo(() => {
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 15 }}>
                 {item.attendances?.map(att => (
                   <div 
-                    key={att.id}
+                    key={att.user_id}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -7710,6 +7721,8 @@ const clustered = useMemo(() => {
         
         // Solo show
         const show = item.show;
+        if (!show) return null;
+        
         return (
           <Card key={show.id} neon style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, marginBottom: 15 }}>
@@ -7783,7 +7796,6 @@ const clustered = useMemo(() => {
     </div>
   );
 }
-
 // ─── COLLABORATION WEB - MOBILE RESPONSIVE ────────────────────────────────────
 // ─── COLLABORATION WEB - WITH AVATARS & MESH ───────────────────────────────────
 function CollaborationWebTab() {
