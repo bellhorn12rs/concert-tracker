@@ -4121,6 +4121,7 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
       }]);
       
       alert(`⚡ CLONED: ${primaryArtist}`);
+if (typeof onRefresh === 'function') await onRefresh();
       
     } catch (err) {
       if (err.code === '23505') {
