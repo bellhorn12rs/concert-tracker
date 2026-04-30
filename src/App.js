@@ -7471,6 +7471,46 @@ function ShowsTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // 🟢 CLUSTERING LOGIC - Groups festivals by name + year
+  const clustered = useMemo(() => {
+    const groups = [];
+    const festMap = {};
+    
+    shows.forEach(s => {
+      if (s.is_festival && s.festival_name) {
+        const key = `${s.festival_name}-${getYear(s.date)}`;
+        if (!festMap[key]) {
+          festMap[key] = {
+            festival_name: s.festival_name,
+            year: getYear(s.date),
+            days: [],
+            allAttendances: new Map() // Track unique attendances across all days
+          };
+        }
+        festMap[key].days.push(s);
+        // Merge attendances
+        s.attendances?.forEach(att => {
+          festMap[key].allAttendances.set(att.user_id, att);
+        });
+      } else {
+        groups.push({ type: 'solo', show: s });
+      }
+    });
+    
+    // Convert festival map to groups
+    Object.values(festMap).forEach(fg => {
+      groups.push({ 
+        type: 'festival', 
+        festival_name: fg.festival_name,
+        year: fg.year,
+        days: fg.days.sort((a, b) => a.date.localeCompare(b.date)),
+        attendances: Array.from(fg.allAttendances.values())
+      });
+    });
+    
+    return groups;
+  }, [shows]);
+
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -7479,7 +7519,6 @@ function ShowsTab() {
         
         const myUserId = session.user.id;
         
-        // ✅ OPTIMIZED: Only get shows where current user attended
         const { data: myAttendances } = await supabase
           .from('attendances')
           .select('show_id')
@@ -7492,7 +7531,6 @@ function ShowsTab() {
         
         const myShowIds = myAttendances.map(a => a.show_id);
         
-        // ✅ OPTIMIZED: Only fetch MY shows (not all 2000)
         const { data: allShows } = await supabase
           .from('shows')
           .select('*')
@@ -7504,26 +7542,22 @@ function ShowsTab() {
           return;
         }
 
-        // ✅ OPTIMIZED: Only get attendances for MY shows
         const { data: allAttendances } = await supabase
           .from('attendances')
           .select('*')
           .in('show_id', myShowIds);
         
-        // ✅ OPTIMIZED: Only get profiles of people who attended MY shows
         const userIds = [...new Set(allAttendances?.map(a => a.user_id) || [])];
         const { data: allProfiles } = await supabase
           .from('profiles')
           .select('id, username, avatar_color')
           .in('id', userIds);
         
-        // Map profiles by ID
         const profileMap = {};
         (allProfiles || []).forEach(p => {
           profileMap[p.id] = p;
         });
         
-        // Build shows with their attendees
         const result = [];
         allShows.forEach(show => {
           const attendances = (allAttendances || []).filter(a => a.show_id === show.id);
@@ -7572,94 +7606,174 @@ function ShowsTab() {
         </div>
       </div>
 
-      {shows.slice(0, 20).map(show => (
-        <Card key={show.id} neon style={{ marginBottom: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, marginBottom: 15 }}>
-            <div>
-              {show.is_festival ? (
-                <>
+      {clustered.slice(0, 20).map((item, i) => {
+        if (item.type === 'festival') {
+          return (
+            <Card key={`fest-${item.festival_name}-${item.year}`} neon style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, marginBottom: 15 }}>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.gold, lineHeight: 1 }}>
-                    {show.festival_name?.toUpperCase()}
+                    {item.festival_name?.toUpperCase()} {item.year}
                   </div>
                   <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginTop: 6 }}>
-                    {fmtDateShort(show.date)}
-                    {show.festival_day && ` · ${show.festival_day.toUpperCase()}`}
+                    {item.days.length} {item.days.length === 1 ? 'DAY' : 'DAYS'} ATTENDED
                   </div>
-                  {show.venue && (
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginTop: 3 }}>
-                      {show.venue.toUpperCase()}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', lineHeight: 1 }}>
-                    {show.artist?.toUpperCase()}
-                  </div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginTop: 6 }}>
-                    {fmtDateShort(show.date)} · {show.venue?.toUpperCase()}
-                  </div>
-                  {show.city && (
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginTop: 3 }}>
-                      {show.city.toUpperCase()}, {show.state}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            <div style={{ 
-              background: hexToRgba(C.gold, 0.1), 
-              border: `1px solid ${C.gold}`, 
-              borderRadius: 8, 
-              padding: '12px 20px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, lineHeight: 1 }}>
-                {show.attendances?.length}
-              </div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold }}>
-                CURATORS
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {show.attendances?.map(att => (
-              <div 
-                key={att.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  background: hexToRgba(att.profile.avatar_color, 0.1),
-                  border: `1px solid ${att.profile.avatar_color}`,
-                  borderRadius: 6,
-                  padding: '8px 12px'
-                }}
-              >
-                <div style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: '50%',
-                  background: att.profile.avatar_color,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontFamily: "'Bebas Neue'",
-                  fontSize: '1rem',
-                  color: '#000'
-                }}>
-                  {att.profile.username[0].toUpperCase()}
                 </div>
-                <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: '#fff', fontWeight: 900 }}>
-                  {att.profile.username.toUpperCase()}
-                </span>
+                
+                <div style={{ 
+                  background: hexToRgba(C.gold, 0.1), 
+                  border: `1px solid ${C.gold}`, 
+                  borderRadius: 8, 
+                  padding: '12px 20px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, lineHeight: 1 }}>
+                    {item.attendances?.length}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold }}>
+                    CURATORS
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
-        </Card>
-      ))}
+              
+              {/* Days List */}
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: 8, 
+                marginTop: 15, 
+                paddingTop: 15, 
+                borderTop: `1px solid ${C.border}` 
+              }}>
+                {item.days.map((day, di) => (
+                  <div key={day.id} style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    paddingLeft: 12, 
+                    borderLeft: `2px solid ${C.gold}` 
+                  }}>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gold, fontWeight: 900, minWidth: 60 }}>
+                      {day.festival_day?.toUpperCase() || fmtDateShort(day.date)}
+                    </div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray }}>
+                      {day.venue?.toUpperCase() || ''}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Curators */}
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 15 }}>
+                {item.attendances?.map(att => (
+                  <div 
+                    key={att.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      background: hexToRgba(att.profile.avatar_color, 0.1),
+                      border: `1px solid ${att.profile.avatar_color}`,
+                      borderRadius: 6,
+                      padding: '8px 12px'
+                    }}
+                  >
+                    <div style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: '50%',
+                      background: att.profile.avatar_color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontFamily: "'Bebas Neue'",
+                      fontSize: '1rem',
+                      color: '#000'
+                    }}>
+                      {att.profile.username[0].toUpperCase()}
+                    </div>
+                    <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: '#fff', fontWeight: 900 }}>
+                      {att.profile.username.toUpperCase()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          );
+        }
+        
+        // Solo show
+        const show = item.show;
+        return (
+          <Card key={show.id} neon style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, marginBottom: 15 }}>
+              <div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', lineHeight: 1 }}>
+                  {show.artist?.toUpperCase()}
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, marginTop: 6 }}>
+                  {fmtDateShort(show.date)} · {show.venue?.toUpperCase()}
+                </div>
+                {show.city && (
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginTop: 3 }}>
+                    {show.city.toUpperCase()}, {show.state}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ 
+                background: hexToRgba(C.gold, 0.1), 
+                border: `1px solid ${C.gold}`, 
+                borderRadius: 8, 
+                padding: '12px 20px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, lineHeight: 1 }}>
+                  {show.attendances?.length}
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold }}>
+                  CURATORS
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {show.attendances?.map(att => (
+                <div 
+                  key={att.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    background: hexToRgba(att.profile.avatar_color, 0.1),
+                    border: `1px solid ${att.profile.avatar_color}`,
+                    borderRadius: 6,
+                    padding: '8px 12px'
+                  }}
+                >
+                  <div style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    background: att.profile.avatar_color,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: "'Bebas Neue'",
+                    fontSize: '1rem',
+                    color: '#000'
+                  }}>
+                    {att.profile.username[0].toUpperCase()}
+                  </div>
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: '#fff', fontWeight: 900 }}>
+                    {att.profile.username.toUpperCase()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        );
+      })}
     </div>
   );
 }
