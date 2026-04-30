@@ -9227,10 +9227,77 @@ const getCuratorTitle = (stats, concerts) => {
   if (!isAdmin) return;
   try {
     const primaryArtist = payload.bands?.[0]?.name || payload.artist || 'Unknown';
-    const safeVenue = payload.venue || payload.festival_name || 'Unknown Venue';
     
-    // Check if show exists in collaborative DB
+    // EDITING MODE: Update existing show directly
+    if (id) {
+      const { error } = await supabase
+        .from('shows')
+        .update({
+          date: payload.date,
+          artist: primaryArtist,
+          bands: payload.bands,
+          venue: payload.venue || 'Unknown Venue',
+          city: payload.city,
+          state: payload.state,
+          is_festival: payload.is_festival,
+          festival_name: payload.festival_name,
+          festival_day: payload.festival_day,
+          genre: payload.bands[0]?.genre || 'Indie Rock',
+          image_url: payload.image_url,
+          personal_photo_url: payload.personal_photo_url,
+          setlist_image_url: payload.setlist_image_url,
+          festival_poster_url: payload.festival_poster_url,
+          wristband_image_url: payload.wristband_image_url
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
+      await fetchData();
+      return;
+    }
+    
+    // NEW MODE: Check for duplicates, then create
+    const safeVenue = payload.venue || payload.festival_name || 'Unknown Venue';
     const { data: existingShow } = await supabase
+      .from('shows')
+      .select('id')
+      .eq('date', payload.date)
+      .ilike('venue', safeVenue)
+      .ilike('artist', primaryArtist)
+      .single();
+    
+    let showId = existingShow?.id;
+    
+    if (!showId) {
+      const { data: newShow, error: showError } = await supabase
+        .from('shows')
+        .insert([{
+          date: payload.date,
+          artist: primaryArtist,
+          bands: payload.bands,
+          venue: safeVenue,
+          city: payload.city,
+          state: payload.state,
+          is_festival: payload.is_festival,
+          festival_name: payload.festival_name,
+          festival_day: payload.festival_day,
+          genre: payload.bands[0]?.genre || 'Indie Rock',
+          created_by: session.user.id
+        }])
+        .select()
+        .single();
+      
+      if (showError) throw showError;
+      showId = newShow.id;
+    }
+    
+    await supabase.from('attendances').insert([{
+      user_id: session.user.id,
+      show_id: showId,
+      is_public: true
+    }]);
+    
+    await fetchData();
       .from('shows')
       .select('id')
       .eq('date', payload.date)
