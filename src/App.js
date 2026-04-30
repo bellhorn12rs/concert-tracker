@@ -7845,7 +7845,7 @@ function CollaborationWebTab() {
 
     const isMobile = window.innerWidth < 768;
     const containerWidth = isMobile ? window.innerWidth - 40 : 800;
-    const containerHeight = isMobile ? 500 : 700;
+    const containerHeight = isMobile ? 400 : 700;
     const centerX = containerWidth / 2;
     const centerY = containerHeight / 2;
     const baseOrbitRadius = isMobile ? 120 : 220;
@@ -8012,7 +8012,7 @@ function CollaborationWebTab() {
     scene.fog = new window.THREE.Fog(0x020204, 800, 1500);
     
     const camera = new window.THREE.PerspectiveCamera(60, width / height, 1, 2000);
-    camera.position.z = isMobile ? 400 : 500;
+    camera.position.z = isMobile ? 350 : 500;
     
     const renderer = new window.THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
@@ -8340,7 +8340,7 @@ function CollaborationWebTab() {
       </div>
     </div>
 
-    <div style={{ width: '100%', maxWidth: `${containerWidth}px`, height: `${containerHeight}px`, margin: '0 auto', position: 'relative', background: '#050508', border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
+    <div style={{ width: '100%', maxWidth: `${containerWidth}px`, height: `${containerHeight}px`, margin: '0 auto', position: 'relative', background: '#050508', border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden',marginTop: isMobile ? '20px' : '0'  }}>
       
       {viewMode === '2d' ? (
         <>
