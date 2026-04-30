@@ -8836,56 +8836,98 @@ export default function App() {
   const [selectedSignals, setSelectedSignals] = useState([]);
 
   const handleBulkSync = async () => {
-    if (!selectedSignals || selectedSignals.length === 0) {
-      alert("NO SIGNALS SELECTED");
-      return;
-    }
-    if (!session?.user?.id) {
-      alert("LOGIN REQUIRED TO CLONE SIGNALS");
-      return;
-    }
+  if (!selectedSignals || selectedSignals.length === 0) {
+    alert("NO SIGNALS SELECTED");
+    return;
+  }
+  if (!session?.user?.id) {
+    alert("LOGIN REQUIRED TO CLONE SIGNALS");
+    return;
+  }
 
-    const count = selectedSignals.length;
-    if (!window.confirm(`SYNC ${count} SIGNALS TO YOUR ARCHIVE?`)) return;
+  console.log('🔄 Starting bulk sync for', selectedSignals.length, 'shows');
 
-    // 🟢 THE DATA TRANSLATOR
-    const newRecords = selectedSignals.map(s => {
-      return { 
-        date: s.date,
-        // Map the array correctly
-        bands: Array.isArray(s.bands) ? s.bands : [s.artist], 
-        venue: s.venue,
-        city: s.city,
-        state: s.state,
-        genre: s.genre,
-        is_festival: s.is_festival,
-        festival_name: s.festival_name,
-        festival_day: s.festival_day,
-        // System Data
-        user_id: session.user.id,
-        is_public: true, 
-        date_added: new Date().toISOString(),
-        // 🛡️ SECURITY: Strip original IDs and private media
-        image_url: null,
-        personal_photo_url: null,
-        setlist_image_url: null,
-        festival_poster_url: null
-      };
-    });
+  let succeeded = 0;
+  let failed = 0;
 
+  for (const signal of selectedSignals) {
     try {
-      const { error } = await supabase.from('concerts').insert(newRecords);
-      if (error) throw error;
-
-      alert(`⚡ SUCCESS: ${count} SIGNALS SYNCHRONIZED.`);
-      setSelectedSignals([]);
-      setBulkMode(false);
-      fetchConcerts();
+      console.log('Processing:', signal.artist, signal.date);
+      
+      const primaryArtist = signal.bands?.[0]?.name || signal.bands?.[0] || signal.artist || 'Unknown';
+      const safeVenue = signal.venue || signal.festival_name || 'Unknown Venue';
+      
+      // Check if show already exists
+      const { data: matchingShows } = await supabase
+        .from('shows')
+        .select('*')
+        .eq('date', signal.date);
+      
+      let showId = null;
+      if (matchingShows) {
+        const match = matchingShows.find(s => 
+          s.venue?.toLowerCase().includes(safeVenue.toLowerCase().substring(0, 10)) &&
+          s.artist?.toLowerCase().includes(primaryArtist.toLowerCase().substring(0, 10))
+        );
+        showId = match?.id;
+      }
+      
+      // Create show if it doesn't exist
+      if (!showId) {
+        console.log('Creating new show for', primaryArtist);
+        const { data: newShow, error } = await supabase
+          .from('shows')
+          .insert([{
+            date: signal.date,
+            artist: primaryArtist,
+            bands: signal.bands || [primaryArtist],
+            venue: safeVenue,
+            city: signal.city || '',
+            state: signal.state || '',
+            is_festival: signal.is_festival || false,
+            festival_name: signal.festival_name || null,
+            festival_day: signal.festival_day || null,
+            genre: signal.genre || 'Indie Rock',
+            created_by: session.user.id
+          }])
+          .select()
+          .single();
+        
+        if (error) throw error;
+        showId = newShow.id;
+      }
+      
+      // Add your attendance
+      console.log('Inserting attendance for show', showId);
+      const { error: attError } = await supabase
+        .from('attendances')
+        .insert([{
+          user_id: session.user.id,
+          show_id: showId,
+          is_public: true
+        }]);
+      
+      if (attError) {
+        if (attError.code === '23505') {
+          console.log('Already exists, skipping');
+        } else {
+          throw attError;
+        }
+      }
+      
+      succeeded++;
+      console.log('✅ Success:', primaryArtist);
+      
     } catch (err) {
-      console.error("Bulk Sync Error:", err);
-      alert("DATABASE REJECTED SYNC: " + err.message);
+      failed++;
+      console.error('❌ Failed:', signal.artist, err.message);
     }
-  };
+  }
+  
+  alert(`✅ ${succeeded} synced, ${failed} failed`);
+  console.log('Final:', { succeeded, failed });
+  window.location.reload();
+};
 
   // ── 4. BROWSER & FILTER STATE ──
   const [search, setSearch] = useState('');
