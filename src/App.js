@@ -7471,7 +7471,9 @@ function ShowsTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const clustered = useMemo(() => {
+  
+
+const clustered = useMemo(() => {
   const groups = [];
   const festMap = {};
   
@@ -7514,46 +7516,6 @@ function ShowsTab() {
   
   return groups;
 }, [shows]);
-
-  // 🟢 CLUSTERING LOGIC - Groups festivals by name + year
-  const clustered = useMemo(() => {
-    const groups = [];
-    const festMap = {};
-    
-    shows.forEach(s => {
-      if (s.is_festival && s.festival_name) {
-        const key = `${s.festival_name}-${getYear(s.date)}`;
-        if (!festMap[key]) {
-          festMap[key] = {
-            festival_name: s.festival_name,
-            year: getYear(s.date),
-            days: [],
-            allAttendances: new Map() // Track unique attendances across all days
-          };
-        }
-        festMap[key].days.push(s);
-        // Merge attendances
-        s.attendances?.forEach(att => {
-          festMap[key].allAttendances.set(att.user_id, att);
-        });
-      } else {
-        groups.push({ type: 'solo', show: s });
-      }
-    });
-    
-    // Convert festival map to groups
-    Object.values(festMap).forEach(fg => {
-      groups.push({ 
-        type: 'festival', 
-        festival_name: fg.festival_name,
-        year: fg.year,
-        days: fg.days.sort((a, b) => a.date.localeCompare(b.date)),
-        attendances: Array.from(fg.allAttendances.values())
-      });
-    });
-    
-    return groups;
-  }, [shows]);
 
   useEffect(() => {
     const fetch = async () => {
