@@ -7471,6 +7471,50 @@ function ShowsTab() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const clustered = useMemo(() => {
+  const groups = [];
+  const festMap = {};
+  
+  console.log('🔍 CLUSTERING DEBUG:', shows.length, 'total shows');
+  console.log('Sample show:', shows[0]);
+  
+  shows.forEach(s => {
+    if (s.is_festival && s.festival_name) {
+      const key = `${s.festival_name}-${getYear(s.date)}`;
+      console.log('Festival found:', key);
+      if (!festMap[key]) {
+        festMap[key] = {
+          festival_name: s.festival_name,
+          year: getYear(s.date),
+          days: [],
+          allAttendances: new Map()
+        };
+      }
+      festMap[key].days.push(s);
+      s.attendances?.forEach(att => {
+        festMap[key].allAttendances.set(att.user_id, att);
+      });
+    } else {
+      groups.push({ type: 'solo', show: s });
+    }
+  });
+  
+  console.log('Festival groups:', Object.keys(festMap).length);
+  console.log('Solo shows:', groups.filter(g => g.type === 'solo').length);
+  
+  Object.values(festMap).forEach(fg => {
+    groups.push({ 
+      type: 'festival', 
+      festival_name: fg.festival_name,
+      year: fg.year,
+      days: fg.days.sort((a, b) => a.date.localeCompare(b.date)),
+      attendances: Array.from(fg.allAttendances.values())
+    });
+  });
+  
+  return groups;
+}, [shows]);
+
   // 🟢 CLUSTERING LOGIC - Groups festivals by name + year
   const clustered = useMemo(() => {
     const groups = [];
@@ -9674,10 +9718,15 @@ async function fetchConcerts() {
   const showIds = (attendances || []).map(a => a.show?.id).filter(Boolean);
   
   const { data: userArtifacts } = await supabase
-    .from('artifacts')
-    .select('*')
-    .eq('user_id', targetId)
-    .in('show_id', showIds);
+  .from('artifacts')
+  .select('*')
+  .eq('user_id', targetId)
+  .in('show_id', showIds);
+
+// Filter by privacy - if viewing someone else, only show public artifacts
+const filteredArtifacts = viewingUser 
+  ? (userArtifacts || []).filter(art => art.is_public === true)
+  : (userArtifacts || []);
   
   const collaborativeShows = (attendances || []).map(a => {
     const showArtifacts = (userArtifacts || []).filter(art => art.show_id === a.show.id);
