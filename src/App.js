@@ -8544,62 +8544,190 @@ function CollaborationWebTab() {
       {viewMode === '2d' ? '🕸️ GOLD MESH = COLLABORATORS WHO ATTENDED TOGETHER' : '🌍 YOUR AVATAR MAPPED TO SPHERE // DRAG TO ROTATE'}
     </div>
 
-    {detailView && (
-      <div style={{ marginTop: 40 }}>
-        <Card neon style={{ border: `2px solid ${detailView.color}`, boxShadow: `0 0 30px ${hexToRgba(detailView.color, 0.3)}` }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <div>
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '3rem', color: detailView.color }}>{detailView.username.toUpperCase()}</div>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray }}>{detailView.count} SHARED ({Math.round((detailView.count / totalShows) * 100)}%)</div>
-            </div>
-            <button onClick={() => setDetailView(null)} style={{ background: 'none', border: `1px solid ${C.border}`, color: C.gray, padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 }}>CLOSE</button>
-          </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(250px, 1fr))', gap: 15 }}>
-  {shows.filter(s => detailView.showIds.includes(s.id)).map(s => {
-    // Find who else attended this show
-    const otherAttendees = collaborators.filter(c => 
-      c.id !== detailView.id && c.showIds.includes(s.id)
-    );
+    {detailView && (() => {
+  // 🟢 CLUSTERING LOGIC FOR DETAIL VIEW
+  const detailShows = shows.filter(s => detailView.showIds.includes(s.id));
+  
+  console.log('🔍 DETAIL VIEW CLUSTERING:', detailShows.length, 'shows for', detailView.username);
+  
+  const clustered = [];
+  const festMap = {};
+  
+  detailShows.forEach((s, idx) => {
+    console.log(`[${idx}] ${s.artist || s.festival_name} - fest: ${s.is_festival}, name: ${s.festival_name}`);
     
-    return (
-      <div key={s.id} style={{ background: hexToRgba(detailView.color, 0.05), border: `1px solid ${hexToRgba(detailView.color, 0.3)}`, borderRadius: 8, padding: 15 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff' }}>{s.is_festival ? s.festival_name?.toUpperCase() : s.artist?.toUpperCase()}</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 5 }}>{fmtDateShort(s.date)}</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: detailView.color, marginTop: 3 }}>{s.venue?.toUpperCase()}</div>
-        
-        {otherAttendees.length > 0 && (
-          <div style={{ 
-            marginTop: 8, 
-            paddingTop: 8, 
-            borderTop: `1px solid ${hexToRgba(detailView.color, 0.2)}`,
-            display: 'flex',
-            gap: 4,
-            alignItems: 'center'
-          }}>
-            <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold }}>WITH:</span>
-            {otherAttendees.map(att => (
-              <span key={att.id} style={{ 
-                fontFamily: "'Space Mono'", 
-                fontSize: 7, 
-                color: att.color,
-                background: hexToRgba(att.color, 0.15),
-                padding: '2px 6px',
-                borderRadius: 4,
-                border: `1px solid ${hexToRgba(att.color, 0.4)}`
-              }}>
-                {att.username.toUpperCase()}
-              </span>
-            ))}
+    if (s.is_festival && s.festival_name) {
+      const key = `${s.festival_name}-${getYear(s.date)}`;
+      console.log('  ✅ Fest key:', key);
+      
+      if (!festMap[key]) {
+        festMap[key] = {
+          festival_name: s.festival_name,
+          year: getYear(s.date),
+          days: []
+        };
+      }
+      festMap[key].days.push(s);
+    } else {
+      console.log('  ❌ Solo');
+      clustered.push({ type: 'solo', show: s });
+    }
+  });
+  
+  Object.values(festMap).forEach(fg => {
+    clustered.push({
+      type: 'festival',
+      festival_name: fg.festival_name,
+      year: fg.year,
+      days: fg.days.sort((a, b) => a.date.localeCompare(b.date))
+    });
+  });
+  
+  console.log('✅ Clustered groups:', clustered.length);
+  console.log('📊 Festival clusters:', Object.keys(festMap).length);
+  console.log('📊 Solo shows:', clustered.filter(c => c.type === 'solo').length);
+  
+  return (
+    <div style={{ marginTop: 40 }}>
+      <Card neon style={{ border: `2px solid ${detailView.color}`, boxShadow: `0 0 30px ${hexToRgba(detailView.color, 0.3)}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '3rem', color: detailView.color }}>{detailView.username.toUpperCase()}</div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray }}>{detailView.count} SHARED ({Math.round((detailView.count / totalShows) * 100)}%)</div>
           </div>
-        )}
-      </div>
-    );
-  })}
-</div>
-        </Card>
-      </div>
-    )}
+          <button onClick={() => setDetailView(null)} style={{ background: 'none', border: `1px solid ${C.border}`, color: C.gray, padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 }}>CLOSE</button>
+        </div>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {clustered.map((cluster, ci) => {
+            if (cluster.type === 'festival') {
+              // FESTIVAL CLUSTER CARD
+              return (
+                <div key={`fest-${cluster.festival_name}-${cluster.year}`} style={{ 
+                  background: hexToRgba(C.gold, 0.05), 
+                  border: `2px solid ${C.gold}`, 
+                  borderRadius: 12, 
+                  padding: 20 
+                }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, marginBottom: 10, lineHeight: 1 }}>
+                    {cluster.festival_name.toUpperCase()} {cluster.year}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 15 }}>
+                    {cluster.days.length} DAYS ATTENDED TOGETHER
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {cluster.days.map(day => {
+                      const otherAttendees = collaborators.filter(c => 
+                        c.id !== detailView.id && c.showIds.includes(day.id)
+                      );
+                      
+                      return (
+                        <div key={day.id} style={{ 
+                          background: hexToRgba(detailView.color, 0.05), 
+                          border: `1px solid ${hexToRgba(detailView.color, 0.3)}`, 
+                          borderRadius: 8, 
+                          padding: 12,
+                          borderLeft: `3px solid ${C.gold}`
+                        }}>
+                          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff' }}>
+                            {day.festival_day?.toUpperCase() || fmtDateShort(day.date)}
+                          </div>
+                          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 3 }}>
+                            {day.venue?.toUpperCase()}
+                          </div>
+                          
+                          {otherAttendees.length > 0 && (
+                            <div style={{ 
+                              marginTop: 8, 
+                              paddingTop: 8, 
+                              borderTop: `1px solid ${hexToRgba(detailView.color, 0.2)}`,
+                              display: 'flex',
+                              gap: 4,
+                              alignItems: 'center',
+                              flexWrap: 'wrap'
+                            }}>
+                              <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold }}>ALSO WITH:</span>
+                              {otherAttendees.map(att => (
+                                <span key={att.id} style={{ 
+                                  fontFamily: "'Space Mono'", 
+                                  fontSize: 7, 
+                                  color: att.color,
+                                  background: hexToRgba(att.color, 0.15),
+                                  padding: '2px 6px',
+                                  borderRadius: 4,
+                                  border: `1px solid ${hexToRgba(att.color, 0.4)}`
+                                }}>
+                                  {att.username.toUpperCase()}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            }
+            
+            // SOLO SHOW CARD
+            const s = cluster.show;
+            const otherAttendees = collaborators.filter(c => 
+              c.id !== detailView.id && c.showIds.includes(s.id)
+            );
+            
+            return (
+              <div key={s.id} style={{ 
+                background: hexToRgba(detailView.color, 0.05), 
+                border: `1px solid ${hexToRgba(detailView.color, 0.3)}`, 
+                borderRadius: 8, 
+                padding: 15 
+              }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff' }}>
+                  {s.is_festival ? s.festival_name?.toUpperCase() : s.artist?.toUpperCase()}
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 5 }}>
+                  {fmtDateShort(s.date)}
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: detailView.color, marginTop: 3 }}>
+                  {s.venue?.toUpperCase()}
+                </div>
+                
+                {otherAttendees.length > 0 && (
+                  <div style={{ 
+                    marginTop: 8, 
+                    paddingTop: 8, 
+                    borderTop: `1px solid ${hexToRgba(detailView.color, 0.2)}`,
+                    display: 'flex',
+                    gap: 4,
+                    alignItems: 'center',
+                    flexWrap: 'wrap'
+                  }}>
+                    <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold }}>WITH:</span>
+                    {otherAttendees.map(att => (
+                      <span key={att.id} style={{ 
+                        fontFamily: "'Space Mono'", 
+                        fontSize: 7, 
+                        color: att.color,
+                        background: hexToRgba(att.color, 0.15),
+                        padding: '2px 6px',
+                        borderRadius: 4,
+                        border: `1px solid ${hexToRgba(att.color, 0.4)}`
+                      }}>
+                        {att.username.toUpperCase()}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    </div>
+  );
+})()}
   </div>
 );
 }
