@@ -4132,6 +4132,71 @@ if (typeof onRefresh === 'function') await onRefresh();
     }
   };
 
+const onSync = async () => {
+  if (selectedSignals.length === 0) return;
+  
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) {
+    alert("LOGIN REQUIRED");
+    return;
+  }
+
+  try {
+    for (const signal of selectedSignals) {
+      const primaryArtist = signal.bands?.[0]?.name || signal.artist || 'Unknown';
+      const safeVenue = signal.venue || signal.festival_name || 'Unknown Venue';
+      
+      const { data: matchingShows } = await supabase
+        .from('shows')
+        .select('*')
+        .eq('date', signal.date);
+      
+      let showId = null;
+      if (matchingShows) {
+        const match = matchingShows.find(s => 
+          s.venue?.toLowerCase().includes(safeVenue.toLowerCase()) &&
+          s.artist?.toLowerCase().includes(primaryArtist.toLowerCase())
+        );
+        showId = match?.id;
+      }
+      
+      if (!showId) {
+        const { data: newShow } = await supabase
+          .from('shows')
+          .insert([{
+            date: signal.date,
+            artist: primaryArtist,
+            bands: signal.bands,
+            venue: safeVenue,
+            city: signal.city,
+            state: signal.state,
+            is_festival: signal.is_festival,
+            festival_name: signal.festival_name,
+            genre: signal.genre || 'Indie Rock',
+            created_by: session.user.id
+          }])
+          .select()
+          .single();
+        
+        showId = newShow.id;
+      }
+      
+      await supabase.from('attendances').insert([{
+        user_id: session.user.id,
+        show_id: showId,
+        is_public: true
+      }]);
+    }
+    
+    alert(`✅ ${selectedSignals.length} SHOWS CLONED`);
+    window.location.reload();
+    
+  } catch (err) {
+    console.error('Bulk sync error:', err);
+    alert('SYNC FAILED: ' + err.message);
+  }
+};
+
   // Detect if we are on a curator's page (spectator mode)
   const isSpectator = window.location.hash.includes('#/u/');
 
@@ -4515,6 +4580,8 @@ function BrowseTab({
   const safeArtistRows = Array.isArray(artistRows) ? artistRows : [];
   const safeYears = Array.isArray(years) ? years : [];
   const safeGenreMap = genreMap || {};
+
+
 
   // ── 2. INTERNAL STYLING ──
   const internalInputSt = { 
