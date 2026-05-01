@@ -11136,6 +11136,13 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
   />
 )}
 
+{/* ── DEBUG (REMOVE AFTER TESTING) ── */}
+{console.log('DEBUG:', { 
+  viewingUser: viewingUser, 
+  session: session, 
+  shouldShow: viewingUser && !session 
+})}
+
 {/* ── SPECTATOR CTA BANNER (Only on public profiles when not logged in) ── */}
 {viewingUser && !session && (
   <div style={{
