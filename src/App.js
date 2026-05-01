@@ -2480,10 +2480,6 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
         // ARTISTS SEEN {HALL_OF_FAME_MIN || 3}+ TIMES //
       </div>
 
-      // Replace the entire selectedData detail view block in HallOfFame
-// Search for: {selectedData && (() => {
-// Replace everything until the closing })()} with this:
-
 {selectedData && (() => {
   const gc = selectedData.genre ? (GENRE_COLORS[selectedData.genre] || C.teal) : C.teal;
   
