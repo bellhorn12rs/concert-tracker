@@ -2956,50 +2956,6 @@ function ArtifactCluster({ artifacts, show, index, gc }) {
   );
 }
 
-
-{/* 3. 🟡 THE GRID VIEW (Restored Badge & Counter) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 15 }}>
-        {artists.map((a, i) => {
-          const gc = a.genre ? (GENRE_COLORS[a.genre] || C.teal) : null;
-          const isSelected = selected === a.artist;
-          const cardColor = isSelected ? (gc || C.teal) : gc;
-          
-          // 🟢 RESTORED COUNTER LOGIC
-          // Checks ALL possible setlist indicators
-          const setlistCount = a.shows.filter(s => 
-            s.has_setlist || 
-            (s.has_setlist_names && s.has_setlist_names.trim().length > 0) || 
-            s.setlist_image_url || 
-            s.image_url
-          ).length;
-
-          return (
-            <div key={a.artist} onClick={() => handleSelect(a.artist, isSelected)}
-              style={{ 
-                background: cardColor ? `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(cardColor, 0.12)})` : C.bgCard, 
-                border: `1px solid ${cardColor ? hexToRgba(cardColor, 0.5) : C.border}`, 
-                borderRadius: 12, padding: '20px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative'
-              }}>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: cardColor || C.tealDim, marginBottom: 8, fontWeight: 900 }}>{MEDAL[i] || 'RECORD'} #{i + 1}</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: C.white, marginBottom: 4, lineHeight: 1 }}>{a.artist.toUpperCase()}</div>
-              {a.genre && <GenreBadge genre={a.genre} color={gc} small />}
-              
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: cardColor || C.white, lineHeight: 1, marginTop: 10 }}>{a.shows.length}×</div>
-              
-              {/* 🟡 RESTORED YELLOW BADGE */}
-              {setlistCount > 0 && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10, background: `${C.gold}15`, border: `1px solid ${C.gold}44`, borderRadius: 10, padding: '4px 10px' }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.gold, boxShadow: `0 0 8px ${C.gold}` }} />
-                  <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, fontWeight: 900, textTransform: 'uppercase' }}>{setlistCount} SETLISTS</span>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 // ─── 1. TICKET & WRISTBAND DESIGN SYSTEM ─────────────────────────────────────
 const STUB_TEMPLATES = [
   { bg: '#e8dfa0', ink: '#1a1a1a', accent: '#8b0000', label: 'TICKETMASTER' },
