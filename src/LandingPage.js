@@ -249,9 +249,9 @@ export default function LandingPage({
         </div>
       </div>
 
-      {/* LOGOUT BUTTON */}
-      {currentSession && (
-        <div style={{ position: 'fixed', top: 50, left: 20, zIndex: 100 }}>
+      {/* TOP NAV - LOGIN/LOGOUT */}
+      <div style={{ position: 'fixed', top: 50, left: 20, zIndex: 100 }}>
+        {currentSession ? (
           <button
             onClick={onLogout}
             style={{
@@ -269,10 +269,30 @@ export default function LandingPage({
             onMouseEnter={e => { e.currentTarget.style.background = '#ff4466'; e.currentTarget.style.color = '#000'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 68, 68, 0.1)'; e.currentTarget.style.color = '#ff4466'; }}
           >
-            ⏻ LOGOUT
+            LOGOUT
           </button>
-        </div>
-      )}
+        ) : (
+          <button
+            onClick={() => setMode('login')}
+            style={{
+              background: 'rgba(0, 229, 204, 0.1)',
+              border: `1px solid ${TEAL}`,
+              color: TEAL,
+              padding: '6px 12px',
+              fontFamily: "'Space Mono'",
+              fontSize: 8,
+              borderRadius: 4,
+              cursor: 'pointer',
+              letterSpacing: 2,
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = TEAL; e.currentTarget.style.color = '#000'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0, 229, 204, 0.1)'; e.currentTarget.style.color = TEAL; }}
+          >
+            LOG IN
+          </button>
+        )}
+      </div>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* HERO SECTION - TRANSFORMATION FOCUSED */}
@@ -510,26 +530,55 @@ export default function LandingPage({
             </div>
           </div>
 
-          {/* CTAs */}
+          {/* CTAs - THREE OPTIONS */}
           <div className="fade-in" style={{ 
-            display: 'flex', 
-            gap: 20, 
-            flexWrap: 'wrap', 
-            justifyContent: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 20,
             marginBottom: 40,
             animationDelay: '0.3s'
           }}>
-            <button
-              onClick={() => setMode('signup')}
-              className="cta-primary"
-            >
-              START FREE
-            </button>
+            
+            {/* Primary buttons row */}
+            <div style={{
+              display: 'flex',
+              gap: 16,
+              flexWrap: 'wrap',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => setMode('signup')}
+                className="cta-primary"
+              >
+                START FREE
+              </button>
+              <button
+                onClick={() => setMode('login')}
+                className="cta-secondary"
+              >
+                LOG IN
+              </button>
+            </div>
+
+            {/* View example link */}
             <button
               onClick={() => onNavigateToUser('eric')}
-              className="cta-secondary"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: GRAY,
+                fontFamily: "'Space Mono'",
+                fontSize: 10,
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                letterSpacing: 1,
+                transition: 'color 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = TEAL}
+              onMouseLeave={e => e.currentTarget.style.color = GRAY}
             >
-              EXPLORE DEMO
+              or view a live example →
             </button>
           </div>
 
@@ -999,60 +1048,89 @@ export default function LandingPage({
           </div>
 
           <div style={{ 
-            display: 'flex', 
-            gap: 20, 
-            justifyContent: 'center', 
-            flexWrap: 'wrap',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 20,
             marginBottom: 64
           }}>
-            <button
-              onClick={() => setMode('signup')}
-              style={{
-                background: TEAL,
-                color: '#000',
-                border: 'none',
-                padding: isMobile ? '24px 48px' : '28px 72px',
-                fontFamily: "'Bebas Neue'",
-                fontSize: isMobile ? '1.6rem' : '2rem',
-                letterSpacing: 5,
-                cursor: 'pointer',
-                borderRadius: 4,
-                transition: 'all 0.3s',
-                boxShadow: `0 0 40px rgba(0,229,204,0.5)`,
-              }}
-              onMouseEnter={e => { 
-                e.currentTarget.style.transform = 'scale(1.05)'; 
-                e.currentTarget.style.boxShadow = `0 0 80px rgba(0,229,204,0.8)`; 
-              }}
-              onMouseLeave={e => { 
-                e.currentTarget.style.transform = 'scale(1)'; 
-                e.currentTarget.style.boxShadow = `0 0 40px rgba(0,229,204,0.5)`; 
-              }}
-            >
-              CREATE FREE ACCOUNT
-            </button>
+            
+            {/* Primary buttons row */}
+            <div style={{
+              display: 'flex',
+              gap: 20,
+              flexWrap: 'wrap',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => setMode('signup')}
+                style={{
+                  background: TEAL,
+                  color: '#000',
+                  border: 'none',
+                  padding: isMobile ? '24px 48px' : '28px 72px',
+                  fontFamily: "'Bebas Neue'",
+                  fontSize: isMobile ? '1.6rem' : '2rem',
+                  letterSpacing: 5,
+                  cursor: 'pointer',
+                  borderRadius: 4,
+                  transition: 'all 0.3s',
+                  boxShadow: `0 0 40px rgba(0,229,204,0.5)`,
+                }}
+                onMouseEnter={e => { 
+                  e.currentTarget.style.transform = 'scale(1.05)'; 
+                  e.currentTarget.style.boxShadow = `0 0 80px rgba(0,229,204,0.8)`; 
+                }}
+                onMouseLeave={e => { 
+                  e.currentTarget.style.transform = 'scale(1)'; 
+                  e.currentTarget.style.boxShadow = `0 0 40px rgba(0,229,204,0.5)`; 
+                }}
+              >
+                CREATE FREE ACCOUNT
+              </button>
+              <button
+                onClick={() => setMode('login')}
+                style={{
+                  background: 'transparent',
+                  color: TEAL,
+                  border: `2px solid ${TEAL}`,
+                  padding: isMobile ? '24px 48px' : '28px 72px',
+                  fontFamily: "'Bebas Neue'",
+                  fontSize: isMobile ? '1.6rem' : '2rem',
+                  letterSpacing: 5,
+                  cursor: 'pointer',
+                  borderRadius: 4,
+                  transition: 'all 0.3s',
+                }}
+                onMouseEnter={e => { 
+                  e.currentTarget.style.background = `${TEAL}15`; 
+                }}
+                onMouseLeave={e => { 
+                  e.currentTarget.style.background = 'transparent'; 
+                }}
+              >
+                LOG IN
+              </button>
+            </div>
+
+            {/* View example link */}
             <button
               onClick={() => onNavigateToUser('eric')}
               style={{
-                background: 'transparent',
-                color: TEAL,
-                border: `2px solid ${TEAL}`,
-                padding: isMobile ? '24px 48px' : '28px 72px',
-                fontFamily: "'Bebas Neue'",
-                fontSize: isMobile ? '1.6rem' : '2rem',
-                letterSpacing: 5,
+                background: 'none',
+                border: 'none',
+                color: GRAY,
+                fontFamily: "'Space Mono'",
+                fontSize: 10,
                 cursor: 'pointer',
-                borderRadius: 4,
-                transition: 'all 0.3s',
+                textDecoration: 'underline',
+                letterSpacing: 1,
+                transition: 'color 0.2s'
               }}
-              onMouseEnter={e => { 
-                e.currentTarget.style.background = `${TEAL}15`; 
-              }}
-              onMouseLeave={e => { 
-                e.currentTarget.style.background = 'transparent'; 
-              }}
+              onMouseEnter={e => e.currentTarget.style.color = TEAL}
+              onMouseLeave={e => e.currentTarget.style.color = GRAY}
             >
-              VIEW DEMO
+              or view a live example →
             </button>
           </div>
 
