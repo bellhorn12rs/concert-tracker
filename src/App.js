@@ -11139,6 +11139,108 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
     onFetchData={fetchConcerts} // 🟢 Passes the data refresher down
   />
 )}
+
+{/* ── SPECTATOR CTA BANNER (Only on public profiles when not logged in) ── */}
+{viewingUser && !session && (
+  <div style={{
+    position: 'fixed',
+    bottom: 0,
+    left: isMobile ? 0 : (navCollapsed ? '80px' : '280px'),
+    right: 0,
+    zIndex: 10000,
+    background: 'linear-gradient(to top, #000 0%, rgba(0,0,0,0.95) 100%)',
+    borderTop: `2px solid ${C.teal}`,
+    padding: isMobile ? '16px 20px' : '20px 40px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 20,
+    flexWrap: 'wrap',
+    boxShadow: '0 -10px 40px rgba(0,0,0,0.8)',
+    transition: 'left 0.3s ease-in-out'
+  }}>
+    <div>
+      <div style={{
+        fontFamily: "'Bebas Neue'",
+        fontSize: isMobile ? '1.2rem' : '1.5rem',
+        color: '#fff',
+        letterSpacing: 2,
+        marginBottom: 4
+      }}>
+        Want Your Own Concert Archive?
+      </div>
+      <div style={{
+        fontFamily: "'Space Mono'",
+        fontSize: isMobile ? 9 : 10,
+        color: C.gray,
+        letterSpacing: 1
+      }}>
+        Track your shows, upload artifacts, build your timeline
+      </div>
+    </div>
+    
+    <div style={{ display: 'flex', gap: 12, flexShrink: 0 }}>
+      <button
+        onClick={() => {
+          window.location.href = 'https://concert-tracker-eight.vercel.app';
+        }}
+        style={{
+          background: C.teal,
+          color: '#000',
+          border: 'none',
+          padding: isMobile ? '12px 24px' : '14px 32px',
+          fontFamily: "'Bebas Neue'",
+          fontSize: isMobile ? '1.1rem' : '1.3rem',
+          letterSpacing: 3,
+          cursor: 'pointer',
+          borderRadius: 4,
+          transition: 'all 0.2s',
+          boxShadow: `0 0 20px rgba(0,229,204,0.4)`,
+          fontWeight: 900
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.boxShadow = `0 0 30px rgba(0,229,204,0.6)`;
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = `0 0 20px rgba(0,229,204,0.4)`;
+        }}
+      >
+        START FREE
+      </button>
+      
+      <button
+        onClick={() => {
+          window.location.href = 'https://concert-tracker-eight.vercel.app';
+        }}
+        style={{
+          background: 'transparent',
+          color: C.gray,
+          border: `1px solid ${C.gray}`,
+          padding: isMobile ? '12px 24px' : '14px 32px',
+          fontFamily: "'Space Mono'",
+          fontSize: 9,
+          letterSpacing: 2,
+          cursor: 'pointer',
+          borderRadius: 4,
+          transition: 'all 0.2s'
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.borderColor = C.teal;
+          e.currentTarget.style.color = C.teal;
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.borderColor = C.gray;
+          e.currentTarget.style.color = C.gray;
+        }}
+      >
+        ← BACK
+      </button>
+    </div>
+  </div>
+)}
+
 </main>
 
             {/* ── MODALS LAYER ── */}
