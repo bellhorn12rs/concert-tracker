@@ -10533,10 +10533,10 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
     borderBottom: `1px solid ${C.border}`
   }}>
     {[
+  { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
   { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
   { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); } },
   { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); } },
-  { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
   { val: uniqueFestBrands, lbl: 'DIFFERENT FESTIVALS', col: C.gold, click: () => setActiveTab('passport') },
   { val: totalFestAttendances, lbl: 'FESTIVAL EDITIONS', col: C.gold, click: () => setActiveTab('passport') },
 ].map(s => (
