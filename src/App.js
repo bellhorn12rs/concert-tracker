@@ -9639,6 +9639,11 @@ const getCuratorTitle = (stats, concerts) => {
 
 // ── THE TELEPORT BRIDGE ──
   const handleNavigateToUser = (targetUsername) => {
+  window.location.hash = `#/u/${targetUsername}`;
+  setActiveTab('dashboard');
+  setOnLanding(false); // ← ADD THIS LINE
+  window.dispatchEvent(new HashChangeEvent('hashchange'));
+};
     // 1. Update the URL to the user's museum path
     window.location.hash = `#/u/${targetUsername}`;
     
