@@ -562,24 +562,31 @@ export default function LandingPage({
             </div>
 
             {/* View example link */}
-            <button
-              onClick={() => onNavigateToUser('eric')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: GRAY,
-                fontFamily: "'Space Mono'",
-                fontSize: 10,
-                cursor: 'pointer',
-                textDecoration: 'underline',
-                letterSpacing: 1,
-                transition: 'color 0.2s'
-              }}
-              onMouseEnter={e => e.currentTarget.style.color = TEAL}
-              onMouseLeave={e => e.currentTarget.style.color = GRAY}
-            >
-              or view a live example →
-            </button>
+<button
+  onClick={() => onNavigateToUser('eric')}
+  style={{
+    background: 'transparent',
+    border: `1px solid ${GRAY}`,
+    color: GRAY,
+    fontFamily: "'Space Mono'",
+    fontSize: 11,
+    cursor: 'pointer',
+    letterSpacing: 2,
+    padding: '10px 24px',
+    borderRadius: 4,
+    transition: 'all 0.2s'
+  }}
+  onMouseEnter={e => {
+    e.currentTarget.style.borderColor = TEAL;
+    e.currentTarget.style.color = TEAL;
+  }}
+  onMouseLeave={e => {
+    e.currentTarget.style.borderColor = GRAY;
+    e.currentTarget.style.color = GRAY;
+  }}
+>
+  VIEW LIVE EXAMPLE
+</button>
           </div>
 
           {/* Free + User count */}
