@@ -9638,21 +9638,12 @@ const getCuratorTitle = (stats, concerts) => {
   }, []);
 
 // ── THE TELEPORT BRIDGE ──
-  const handleNavigateToUser = (targetUsername) => {
+ const handleNavigateToUser = (targetUsername) => {
   window.location.hash = `#/u/${targetUsername}`;
   setActiveTab('dashboard');
   setOnLanding(false); // ← ADD THIS LINE
   window.dispatchEvent(new HashChangeEvent('hashchange'));
 };
-    // 1. Update the URL to the user's museum path
-    window.location.hash = `#/u/${targetUsername}`;
-    
-    // 2. Force navigation to dashboard
-    setActiveTab('dashboard');
-    
-    // 3. 🟢 THE FORCE: Tell React to look at the URL immediately
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
-  };
 
 const handleSave = async (id, payload) => {
   console.log('🔍 handleSave called:', { id, isAdmin, hasSession: !!session });
