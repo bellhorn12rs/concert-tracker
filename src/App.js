@@ -2402,348 +2402,7 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
     </div>
   );
 }
-// ─── HALL OFFAME (RESTORED & ARMORED) ───────────────────────────────────────
-function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
-  const [selected, setSelected] = useState(null);
-  const topRef = useRef(null);
-
-  // 1. Grouping Logic
-  const artists = useMemo(() => {
-    const m = {};
-    sets.forEach(s => { 
-      if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; 
-      m[s.artist].shows.push(s); 
-    });
-
-    return Object.values(m).map(a => {
-      const masterGenre = genreMap[a.artist];
-      return { ...a, genre: masterGenre || null };
-    })
-    // Use a fallback for the MIN constant if it's missing
-    .filter(a => a.shows.length >= (typeof HALL_OF_FAME_MIN !== 'undefined' ? HALL_OF_FAME_MIN : 3))
-    .sort((a, b) => b.shows.length - a.shows.length);
-  }, [sets, genreMap]);
-
-  const selectedData = selected ? artists.find(a => a.artist === selected) : null;
-  const MEDAL = ['🥇', '🥈', '🥉'];
-  
-  const handleSelect = (artist, isSelected) => { 
-    if (isSelected) { setSelected(null); return; } 
-    setSelected(artist); 
-    setTimeout(() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); 
-  };
-
-  // 2. 🟢 ROBUST MEDIA ARCHIVE
-  const archive = useMemo(() => {
-    if (!selectedData) return { setlists: [], photos: [], archivePosters: [] };
-    
-    const setlists = [];
-    const photos = [];
-    const archivePosters = [];
-
-    selectedData.shows.forEach(s => {
-      // 1. Standard Relic Scan
-      const slSource = s.setlist_image_url || s.image_url;
-      if (slSource) slSource.split(',').forEach(url => { if(url.trim()) setlists.push({ url: url.trim(), date: s.date }); });
-
-      // 2. Personal Photo Scan
-      if (s.personal_photo_url) s.personal_photo_url.split(',').forEach(url => { if(url.trim()) photos.push({ url: url.trim(), date: s.date }); });
-
-      // 🟢 3. THE RELATIONAL FIX: Festival Poster Scavenging
-      if (s.is_festival && s.festival_name) {
-        const festYear = getYear(s.date);
-        const masterFestPoster = posters.find(p => 
-          p.poster_type === 'festival_year' && 
-          p.festival_name === s.festival_name && 
-          getYear(p.date) === festYear
-        );
-        
-        if (masterFestPoster && !archivePosters.some(p => p.url === masterFestPoster.image_url)) {
-          archivePosters.push({ url: masterFestPoster.image_url, date: s.date });
-        }
-      }
-    });
-
-    // 4. Artist-Specific Poster Scan (Regular Gigs)
-    posters.filter(p => p.artist === selectedData.artist).forEach(p => {
-      if (!archivePosters.some(ap => ap.url === p.image_url)) {
-        archivePosters.push({ url: p.image_url, date: p.date });
-      }
-    });
-
-    return { setlists, photos, archivePosters };
-  }, [selectedData, posters]);
-
-  return (
-    <div ref={topRef} style={{ padding: '24px 0' }} className="fade-in">
-      <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 10, color: C.gray, marginBottom: 20, letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'center' }}>
-        // ARTISTS SEEN {HALL_OF_FAME_MIN || 3}+ TIMES //
-      </div>
-
-{selectedData && (() => {
-  const gc = selectedData.genre ? (GENRE_COLORS[selectedData.genre] || C.teal) : C.teal;
-  
-  // Build artifact packages for each show
-  const showPackages = selectedData.shows.map((show, idx) => {
-    const artifacts = {
-      setlists: [],
-      posters: [],
-      photos: [],
-      wristband: null
-    };
-    
-    // Gather setlists for this show
-    const slSource = show.setlist_image_url || show.image_url;
-    if (slSource) {
-      slSource.split(',').forEach(url => {
-        if (url.trim()) artifacts.setlists.push(url.trim());
-      });
-    }
-    
-    // Gather photos for this show
-    if (show.personal_photo_url) {
-      show.personal_photo_url.split(',').forEach(url => {
-        if (url.trim()) artifacts.photos.push(url.trim());
-      });
-    }
-    
-    // Gather wristband
-    if (show.wristband_image_url) {
-      artifacts.wristband = show.wristband_image_url;
-    }
-    
-    // Find matching posters for this show
-    if (show.is_festival && show.festival_name) {
-      const festYear = getYear(show.date);
-      const matchedPosters = posters.filter(p => 
-        p.poster_type === 'festival_year' && 
-        (
-          p.festival_name?.toLowerCase().trim() === show.festival_name?.toLowerCase().trim() || 
-          show.festival_name?.toLowerCase().includes(p.festival_name?.toLowerCase()) ||
-          p.festival_name?.toLowerCase().includes(show.festival_name?.toLowerCase())
-        ) &&
-        getYear(p.date) === festYear
-      );
-      artifacts.posters = matchedPosters.map(p => p.image_url);
-    } else {
-      // Artist posters
-      const artistPosters = posters.filter(p => 
-        p.artist === selectedData.artist && p.date === show.date
-      );
-      artifacts.posters = artistPosters.map(p => p.image_url);
-    }
-    
-    const hasArtifacts = artifacts.setlists.length > 0 || 
-                        artifacts.posters.length > 0 || 
-                        artifacts.photos.length > 0 ||
-                        artifacts.wristband;
-    
-    return {
-      show,
-      artifacts,
-      hasArtifacts,
-      isLeft: idx % 2 === 0
-    };
-  });
-
-  return (
-    <div className="fade-in" style={{ 
-      background: `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(gc, 0.05)})`, 
-      border: `2px solid ${gc}44`, 
-      borderRadius: 16, 
-      padding: '40px', 
-      marginBottom: 40, 
-      boxShadow: `0 30px 100px rgba(0,0,0,0.5), 0 0 40px ${hexToRgba(gc, 0.15)}`,
-      position: 'relative'
-    }}>
-      
-      {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'flex-start', 
-        marginBottom: 48, 
-        position: 'relative', 
-        zIndex: 5,
-        paddingBottom: 24,
-        borderBottom: `1px solid ${hexToRgba(gc, 0.2)}`
-      }}>
-        <div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: C.white, lineHeight: 0.9 }}>
-            {selectedData.artist.toUpperCase()}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 15, marginTop: 10 }}>
-            {selectedData.genre && <GenreBadge genre={selectedData.genre} color={gc} />}
-            <span style={{ fontFamily: "'Space Mono'", fontSize: 11, color: gc, fontWeight: 900 }}>
-              {selectedData.shows.length} SETS IN ARCHIVE
-            </span>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          {onShare && (
-            <button 
-              onClick={() => onShare(selectedData.artist, selectedData.shows)} 
-              style={{ 
-                fontFamily: "'Space Mono'", 
-                fontSize: 10, 
-                background: hexToRgba(gc, 0.2), 
-                border: `2px solid ${gc}`, 
-                color: '#fff', 
-                borderRadius: 6, 
-                padding: '8px 16px', 
-                cursor: 'pointer', 
-                fontWeight: 700 
-              }}
-            >
-              SHARE HISTORY
-            </button>
-          )}
-          <button 
-            onClick={() => setSelected(null)} 
-            style={{ 
-              background: 'rgba(255,255,255,0.05)', 
-              border: `1px solid rgba(255,255,255,0.1)`, 
-              color: '#fff', 
-              fontSize: 10, 
-              borderRadius: 6, 
-              padding: '8px 16px', 
-              cursor: 'pointer' 
-            }}
-          >
-            CLOSE
-          </button>
-        </div>
-      </div>
-
-      {/* 3-Column Layout */}
-      <div style={{ 
-        display: 'grid',
-        gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1.2fr 1fr',
-        gap: window.innerWidth < 768 ? '40px' : '60px',
-        position: 'relative',
-        alignItems: 'start'
-      }}>
-        
-        {/* LEFT COLUMN - Odd shows */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '80px' }}>
-          {showPackages.filter(pkg => pkg.isLeft && pkg.hasArtifacts).map((pkg, idx) => (
-            <ArtifactCluster 
-              key={`left-${pkg.show.id}`}
-              artifacts={pkg.artifacts}
-              show={pkg.show}
-              index={idx}
-              gc={gc}
-            />
-          ))}
-        </div>
-
-        {/* CENTER COLUMN - Timeline */}
-        <div style={{ 
-          position: 'relative',
-          paddingLeft: '25px',
-        }}>
-          {/* Timeline line */}
-          <div style={{ 
-            position: 'absolute', 
-            left: 5, 
-            top: 0, 
-            bottom: 0, 
-            width: 2, 
-            background: `linear-gradient(to bottom, ${gc}, transparent)`, 
-            opacity: 0.4 
-          }} />
-          
-          {/* Show list */}
-          {[...selectedData.shows].reverse().map((s, i) => (
-            <div key={i} style={{ 
-              position: 'relative', 
-              marginBottom: 32, 
-              paddingLeft: 20 
-            }}>
-              {/* Dot */}
-              <div style={{ 
-                position: 'absolute', 
-                left: -24, 
-                top: 4, 
-                width: 10, 
-                height: 10, 
-                borderRadius: '50%', 
-                background: s.is_festival ? gc : '#fff', 
-                boxShadow: `0 0 15px ${s.is_festival ? gc : '#fff'}` 
-              }} />
-              
-              {/* Show info */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ 
-                  fontFamily: "'Space Mono'", 
-                  fontSize: 11, 
-                  color: gc, 
-                  fontWeight: 900 
-                }}>
-                  {fmtDate(s.date)}
-                </span>
-                
-                {s.is_festival ? (
-                  <div>
-                    <span style={{ 
-                      fontSize: '1.1rem', 
-                      color: C.gold, 
-                      fontWeight: 700,
-                      fontFamily: "'Bebas Neue'"
-                    }}>
-                      {s.festival_name?.toUpperCase()} {getYear(s.date)}
-                    </span>
-                    {s.festival_day && (
-                      <div style={{ 
-                        fontFamily: "'Space Mono'", 
-                        fontSize: 8, 
-                        color: gc, 
-                        opacity: 0.7,
-                        marginTop: 2
-                      }}>
-                        {s.festival_day.toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{ fontSize: '1.1rem', color: C.white }}>
-                      {s.venue}
-                    </div>
-                    <div style={{ 
-                      fontFamily: "'Space Mono'", 
-                      fontSize: 9, 
-                      color: C.grayDim,
-                      marginTop: 2
-                    }}>
-                      {s.city}, {s.state}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* RIGHT COLUMN - Even shows */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '80px' }}>
-          {showPackages.filter(pkg => !pkg.isLeft && pkg.hasArtifacts).map((pkg, idx) => (
-            <ArtifactCluster 
-              key={`right-${pkg.show.id}`}
-              artifacts={pkg.artifacts}
-              show={pkg.show}
-              index={idx}
-              gc={gc}
-            />
-          ))}
-        </div>
-
-      </div>
-    </div>
-  );
-})()}
-
-// NEW COMPONENT - Add this right before the HallOfFame component
+// ─── ARTIFACT CLUSTER COMPONENT (ADD THIS RIGHT BEFORE HallOfFame) ───────────
 function ArtifactCluster({ artifacts, show, index, gc }) {
   const [lightboxSrc, setLightboxSrc] = useState(null);
   
@@ -2949,6 +2608,350 @@ function ArtifactCluster({ artifacts, show, index, gc }) {
         </div>
       )}
     </>
+  );
+}
+
+// ─── HALL OF FAME (COMPLETE FUNCTION) ────────────────────────────────────────
+function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
+  const [selected, setSelected] = useState(null);
+  const topRef = useRef(null);
+
+  // 1. Grouping Logic
+  const artists = useMemo(() => {
+    const m = {};
+    sets.forEach(s => { 
+      if (!m[s.artist]) m[s.artist] = { artist: s.artist, shows: [] }; 
+      m[s.artist].shows.push(s); 
+    });
+
+    return Object.values(m).map(a => {
+      const masterGenre = genreMap[a.artist];
+      return { ...a, genre: masterGenre || null };
+    })
+    .filter(a => a.shows.length >= (typeof HALL_OF_FAME_MIN !== 'undefined' ? HALL_OF_FAME_MIN : 3))
+    .sort((a, b) => b.shows.length - a.shows.length);
+  }, [sets, genreMap]);
+
+  const selectedData = selected ? artists.find(a => a.artist === selected) : null;
+  const MEDAL = ['🥇', '🥈', '🥉'];
+  
+  const handleSelect = (artist, isSelected) => { 
+    if (isSelected) { setSelected(null); return; } 
+    setSelected(artist); 
+    setTimeout(() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); 
+  };
+
+  return (
+    <div ref={topRef} style={{ padding: '24px 0' }} className="fade-in">
+      <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 10, color: C.gray, marginBottom: 20, letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'center' }}>
+        // ARTISTS SEEN {HALL_OF_FAME_MIN || 3}+ TIMES //
+      </div>
+
+      {/* DETAIL VIEW - 3 Column Layout */}
+      {selectedData && (() => {
+        const gc = selectedData.genre ? (GENRE_COLORS[selectedData.genre] || C.teal) : C.teal;
+        
+        // Build artifact packages for each show
+        const showPackages = selectedData.shows.map((show, idx) => {
+          const artifacts = {
+            setlists: [],
+            posters: [],
+            photos: [],
+            wristband: null
+          };
+          
+          // Gather setlists for this show
+          const slSource = show.setlist_image_url || show.image_url;
+          if (slSource) {
+            slSource.split(',').forEach(url => {
+              if (url.trim()) artifacts.setlists.push(url.trim());
+            });
+          }
+          
+          // Gather photos for this show
+          if (show.personal_photo_url) {
+            show.personal_photo_url.split(',').forEach(url => {
+              if (url.trim()) artifacts.photos.push(url.trim());
+            });
+          }
+          
+          // Gather wristband
+          if (show.wristband_image_url) {
+            artifacts.wristband = show.wristband_image_url;
+          }
+          
+          // Find matching posters for this show
+          if (show.is_festival && show.festival_name) {
+            const festYear = getYear(show.date);
+            const matchedPosters = posters.filter(p => 
+              p.poster_type === 'festival_year' && 
+              (
+                p.festival_name?.toLowerCase().trim() === show.festival_name?.toLowerCase().trim() || 
+                show.festival_name?.toLowerCase().includes(p.festival_name?.toLowerCase()) ||
+                p.festival_name?.toLowerCase().includes(show.festival_name?.toLowerCase())
+              ) &&
+              getYear(p.date) === festYear
+            );
+            artifacts.posters = matchedPosters.map(p => p.image_url);
+          } else {
+            // Artist posters
+            const artistPosters = posters.filter(p => 
+              p.artist === selectedData.artist && p.date === show.date
+            );
+            artifacts.posters = artistPosters.map(p => p.image_url);
+          }
+          
+          const hasArtifacts = artifacts.setlists.length > 0 || 
+                              artifacts.posters.length > 0 || 
+                              artifacts.photos.length > 0 ||
+                              artifacts.wristband;
+          
+          return {
+            show,
+            artifacts,
+            hasArtifacts,
+            isLeft: idx % 2 === 0
+          };
+        });
+
+        return (
+          <div className="fade-in" style={{ 
+            background: `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(gc, 0.05)})`, 
+            border: `2px solid ${gc}44`, 
+            borderRadius: 16, 
+            padding: '40px', 
+            marginBottom: 40, 
+            boxShadow: `0 30px 100px rgba(0,0,0,0.5), 0 0 40px ${hexToRgba(gc, 0.15)}`,
+            position: 'relative'
+          }}>
+            <div style={{ position: 'absolute', right: 20, bottom: -10, fontFamily: "'Bebas Neue'", fontSize: '12rem', color: hexToRgba(gc, 0.03), pointerEvents: 'none', userSelect: 'none', lineHeight: 1 }}>
+              {selectedData.shows.length}X
+            </div>
+
+            {/* Header */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'flex-start', 
+              marginBottom: 48, 
+              position: 'relative', 
+              zIndex: 5,
+              paddingBottom: 24,
+              borderBottom: `1px solid ${hexToRgba(gc, 0.2)}`
+            }}>
+              <div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: C.white, lineHeight: 0.9 }}>
+                  {selectedData.artist.toUpperCase()}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 15, marginTop: 10 }}>
+                  {selectedData.genre && <GenreBadge genre={selectedData.genre} color={gc} />}
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 11, color: gc, fontWeight: 900 }}>
+                    {selectedData.shows.length} SETS IN ARCHIVE
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                {onShare && (
+                  <button 
+                    onClick={() => onShare(selectedData.artist, selectedData.shows)} 
+                    style={{ 
+                      fontFamily: "'Space Mono'", 
+                      fontSize: 10, 
+                      background: hexToRgba(gc, 0.2), 
+                      border: `2px solid ${gc}`, 
+                      color: '#fff', 
+                      borderRadius: 6, 
+                      padding: '8px 16px', 
+                      cursor: 'pointer', 
+                      fontWeight: 700 
+                    }}
+                  >
+                    SHARE HISTORY
+                  </button>
+                )}
+                <button 
+                  onClick={() => setSelected(null)} 
+                  style={{ 
+                    background: 'rgba(255,255,255,0.05)', 
+                    border: `1px solid rgba(255,255,255,0.1)`, 
+                    color: '#fff', 
+                    fontSize: 10, 
+                    borderRadius: 6, 
+                    padding: '8px 16px', 
+                    cursor: 'pointer' 
+                  }}
+                >
+                  CLOSE
+                </button>
+              </div>
+            </div>
+
+            {/* 3-Column Layout */}
+            <div style={{ 
+              display: 'grid',
+              gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1.2fr 1fr',
+              gap: window.innerWidth < 768 ? '40px' : '60px',
+              position: 'relative',
+              alignItems: 'start'
+            }}>
+              
+              {/* LEFT COLUMN - Odd shows */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '80px' }}>
+                {showPackages.filter(pkg => pkg.isLeft && pkg.hasArtifacts).map((pkg, idx) => (
+                  <ArtifactCluster 
+                    key={`left-${pkg.show.id}`}
+                    artifacts={pkg.artifacts}
+                    show={pkg.show}
+                    index={idx}
+                    gc={gc}
+                  />
+                ))}
+              </div>
+
+              {/* CENTER COLUMN - Timeline */}
+              <div style={{ 
+                position: 'relative',
+                paddingLeft: '25px',
+              }}>
+                {/* Timeline line */}
+                <div style={{ 
+                  position: 'absolute', 
+                  left: 5, 
+                  top: 0, 
+                  bottom: 0, 
+                  width: 2, 
+                  background: `linear-gradient(to bottom, ${gc}, transparent)`, 
+                  opacity: 0.4 
+                }} />
+                
+                {/* Show list */}
+                {[...selectedData.shows].reverse().map((s, i) => (
+                  <div key={i} style={{ 
+                    position: 'relative', 
+                    marginBottom: 32, 
+                    paddingLeft: 20 
+                  }}>
+                    {/* Dot */}
+                    <div style={{ 
+                      position: 'absolute', 
+                      left: -24, 
+                      top: 4, 
+                      width: 10, 
+                      height: 10, 
+                      borderRadius: '50%', 
+                      background: s.is_festival ? gc : '#fff', 
+                      boxShadow: `0 0 15px ${s.is_festival ? gc : '#fff'}` 
+                    }} />
+                    
+                    {/* Show info */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <span style={{ 
+                        fontFamily: "'Space Mono'", 
+                        fontSize: 11, 
+                        color: gc, 
+                        fontWeight: 900 
+                      }}>
+                        {fmtDate(s.date)}
+                      </span>
+                      
+                      {s.is_festival ? (
+                        <div>
+                          <span style={{ 
+                            fontSize: '1.1rem', 
+                            color: C.gold, 
+                            fontWeight: 700,
+                            fontFamily: "'Bebas Neue'"
+                          }}>
+                            {s.festival_name?.toUpperCase()} {getYear(s.date)}
+                          </span>
+                          {s.festival_day && (
+                            <div style={{ 
+                              fontFamily: "'Space Mono'", 
+                              fontSize: 8, 
+                              color: gc, 
+                              opacity: 0.7,
+                              marginTop: 2
+                            }}>
+                              {s.festival_day.toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ fontSize: '1.1rem', color: C.white }}>
+                            {s.venue}
+                          </div>
+                          <div style={{ 
+                            fontFamily: "'Space Mono'", 
+                            fontSize: 9, 
+                            color: C.grayDim,
+                            marginTop: 2
+                          }}>
+                            {s.city}, {s.state}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* RIGHT COLUMN - Even shows */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '80px' }}>
+                {showPackages.filter(pkg => !pkg.isLeft && pkg.hasArtifacts).map((pkg, idx) => (
+                  <ArtifactCluster 
+                    key={`right-${pkg.show.id}`}
+                    artifacts={pkg.artifacts}
+                    show={pkg.show}
+                    index={idx}
+                    gc={gc}
+                  />
+                ))}
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* GRID VIEW - All artists */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 15 }}>
+        {artists.map((a, i) => {
+          const gc = a.genre ? (GENRE_COLORS[a.genre] || C.teal) : null;
+          const isSelected = selected === a.artist;
+          const cardColor = isSelected ? (gc || C.teal) : gc;
+          
+          const setlistCount = a.shows.filter(s => 
+            s.has_setlist || 
+            (s.has_setlist_names && s.has_setlist_names.trim().length > 0) || 
+            s.setlist_image_url || 
+            s.image_url
+          ).length;
+
+          return (
+            <div key={a.artist} onClick={() => handleSelect(a.artist, isSelected)}
+              style={{ 
+                background: cardColor ? `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(cardColor, 0.12)})` : C.bgCard, 
+                border: `1px solid ${cardColor ? hexToRgba(cardColor, 0.5) : C.border}`, 
+                borderRadius: 12, padding: '20px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative'
+              }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: cardColor || C.tealDim, marginBottom: 8, fontWeight: 900 }}>{MEDAL[i] || 'RECORD'} #{i + 1}</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: C.white, marginBottom: 4, lineHeight: 1 }}>{a.artist.toUpperCase()}</div>
+              {a.genre && <GenreBadge genre={a.genre} color={gc} small />}
+              
+              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: cardColor || C.white, lineHeight: 1, marginTop: 10 }}>{a.shows.length}×</div>
+              
+              {setlistCount > 0 && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10, background: `${C.gold}15`, border: `1px solid ${C.gold}44`, borderRadius: 10, padding: '4px 10px' }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.gold, boxShadow: `0 0 8px ${C.gold}` }} />
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, fontWeight: 900, textTransform: 'uppercase' }}>{setlistCount} SETLISTS</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
