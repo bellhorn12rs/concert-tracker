@@ -11144,7 +11144,7 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
 })}
 
 {/* ── SPECTATOR CTA BANNER (Only on public profiles when not logged in) ── */}
-{viewingUser && !session && (
+{viewingUser && !session?.user?.id && (
   <div style={{
     position: 'fixed',
     bottom: 0,
