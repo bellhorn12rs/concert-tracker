@@ -10533,13 +10533,13 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
     borderBottom: `1px solid ${C.border}`
   }}>
     {[
-      { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
-      { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); } },
-      { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); } },
-      { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
-      { val: totalFestAttendances, lbl: 'FESTS', col: C.gold, click: () => setActiveTab('passport') },
-      { val: uniqueFestBrands, lbl: 'BRANDS', col: C.gold, click: () => setActiveTab('passport') },
-    ].map(s => (
+  { val: headerStats.totalShows, lbl: 'DAYS', col: C.purple, click: () => setActiveTab('timeline') },
+  { val: headerStats.uniqueArtists, lbl: 'ACTS', col: C.cyan, click: () => { setBrowseView('artists'); setActiveTab('browse'); } },
+  { val: headerStats.totalSets, lbl: 'SETS', col: C.teal, click: () => { setBrowseView('shows'); setActiveTab('browse'); } },
+  { val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, lbl: 'VENUES', col: C.red, click: () => setActiveTab('venues') },
+  { val: uniqueFestBrands, lbl: 'DIFFERENT FESTIVALS', col: C.gold, click: () => setActiveTab('passport') },
+  { val: totalFestAttendances, lbl: 'FESTIVAL EDITIONS', col: C.gold, click: () => setActiveTab('passport') },
+].map(s => (
       <div key={s.lbl} onClick={s.click} style={{
         background: hexToRgba(s.col, 0.05), border: `2px solid ${s.col}`,
         borderRadius: '8px', display: 'flex', flexDirection: 'column',
@@ -10558,10 +10558,10 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
       boxShadow: `inset 0 0 15px ${hexToRgba(C.teal, 0.2)}`,
       minHeight: '90px'
     }} onClick={() => setActiveTab('vault')}>
-      <QuadStat val={headerStats.tickets} label="TIX" color={C.gold} />
-      <QuadStat val={headerStats.setlists} label="LST" color={C.teal} />
-      <QuadStat val={headerStats.posters} label="PST" color={C.purple} />
-      <QuadStat val={headerStats.photos} label="PHO" color={C.cyan} />
+      <QuadStat val={headerStats.tickets} label="STUBS" color={C.gold} />
+<QuadStat val={headerStats.setlists} label="RELICS" color={C.teal} />
+<QuadStat val={headerStats.posters} label="PRINTS" color={C.purple} />
+<QuadStat val={headerStats.photos} label="CAPTURES" color={C.cyan} />
     </div>
   </div>
 )}
