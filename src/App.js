@@ -11151,15 +11151,16 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
     left: isMobile ? 0 : (navCollapsed ? '80px' : '280px'),
     right: 0,
     zIndex: 10000,
-    background: 'linear-gradient(to top, #000 0%, rgba(0,0,0,0.95) 100%)',
-    borderTop: `2px solid ${C.teal}`,
-    padding: isMobile ? '16px 20px' : '20px 40px',
+    background: `linear-gradient(135deg, ${C.teal}22 0%, ${C.purple}22 100%)`,
+    backdropFilter: 'blur(20px)',
+    borderTop: `3px solid ${C.teal}`,
+    padding: isMobile ? '20px 20px' : '24px 40px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 20,
     flexWrap: 'wrap',
-    boxShadow: '0 -10px 40px rgba(0,0,0,0.8)',
+    boxShadow: `0 -20px 60px rgba(0,229,204,0.3), 0 0 100px rgba(153,102,255,0.2)`,
     transition: 'left 0.3s ease-in-out'
   }}>
     <div>
