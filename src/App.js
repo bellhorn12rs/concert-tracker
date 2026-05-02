@@ -298,7 +298,615 @@ const daysSince = d => { if (!d) return 0; return Math.floor((Date.now() - new D
     return `https://www.setlist.fm/search?query=${encodeURIComponent(searchString)}`;
   };
 
-// ─── MASTER LANYARD ───────────────────────────────────────────────────────────
+// ─── ONBOARDING FLOW (NEW USER WELCOME) ──────────────────────────────────────
+// Replace the "MUSEUM VACANT" empty state with this component
+
+function OnboardingFlow({ onComplete, onSkip }) {
+  const [step, setStep] = useState('welcome');
+  const [firstShow, setFirstShow] = useState({
+    band: '',
+    date: '',
+    venue: '',
+    city: '',
+    state: ''
+  });
+  const [uploadedArtifact, setUploadedArtifact] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  const isMobile = window.innerWidth < 768;
+
+  // Upload helper
+  async function uploadFirstArtifact(file, type) {
+    if (!file) return null;
+    setUploading(true);
+    
+    const bucketMap = { 
+      'stub': 'Ticket Stubs', 
+      'relic': 'setlists', 
+      'photo': 'polaroids', 
+      'poster': 'Posters'
+    };
+    
+    try {
+      const bucket = bucketMap[type];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const { data: { session } } = await supabase.auth.getSession();
+      const filePath = `${session?.user?.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage.from(bucket).upload(filePath, file);
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+      setUploading(false);
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Upload error:", error);
+      setUploading(false);
+      alert("Upload failed: " + error.message);
+      return null;
+    }
+  }
+
+  // Save first show + artifact
+  const saveFirstShow = async () => {
+    if (!firstShow.band || !firstShow.date) {
+      alert("Band and date required");
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        alert("Session expired");
+        return;
+      }
+
+      // Create show
+      const { data: newShow, error: showError } = await supabase
+        .from('shows')
+        .insert([{
+          date: firstShow.date,
+          artist: firstShow.band,
+          bands: [{ name: firstShow.band, genre: 'Indie Rock' }],
+          venue: firstShow.venue || 'Unknown Venue',
+          city: firstShow.city || '',
+          state: firstShow.state || '',
+          is_festival: false,
+          genre: 'Indie Rock',
+          created_by: session.user.id
+        }])
+        .select()
+        .single();
+
+      if (showError) throw showError;
+
+      // Create attendance
+      await supabase.from('attendances').insert([{
+        user_id: session.user.id,
+        show_id: newShow.id,
+        is_public: true
+      }]);
+
+      // If artifact was uploaded, save it
+      if (uploadedArtifact) {
+        const artifactType = uploadedArtifact.type;
+        await supabase.from('artifacts').insert([{
+          user_id: session.user.id,
+          show_id: newShow.id,
+          artifact_type: artifactType,
+          image_url: uploadedArtifact.url,
+          band_name: artifactType === 'relic' || artifactType === 'photo' ? firstShow.band : null,
+          is_public: true
+        }]);
+      }
+
+      setStep('complete');
+      
+      // Refresh after celebration
+      setTimeout(() => {
+        onComplete();
+      }, 2000);
+
+    } catch (err) {
+      console.error("Save error:", err);
+      alert("Failed to save: " + err.message);
+    }
+  };
+
+  const btnStyle = (color, isSecondary = false) => ({
+    background: isSecondary ? 'transparent' : color,
+    border: `2px solid ${color}`,
+    color: isSecondary ? color : '#000',
+    padding: isMobile ? '16px 32px' : '20px 40px',
+    borderRadius: 8,
+    fontFamily: "'Bebas Neue'",
+    fontSize: isMobile ? '1.3rem' : '1.6rem',
+    letterSpacing: 3,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    fontWeight: 900
+  });
+
+  const inputStyle = {
+    width: '100%',
+    background: '#000',
+    border: `1px solid ${C.teal}44`,
+    color: '#fff',
+    padding: '14px',
+    borderRadius: 8,
+    fontFamily: "'Space Mono'",
+    fontSize: '13px',
+    outline: 'none',
+    marginBottom: '12px'
+  };
+
+  return (
+    <div style={{ 
+      minHeight: '80vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      padding: isMobile ? 20 : 40
+    }}>
+      
+      {/* STEP 1: Welcome */}
+      {step === 'welcome' && (
+        <div className="fade-in" style={{ 
+          textAlign: 'center', 
+          maxWidth: 600,
+          background: hexToRgba(C.teal, 0.05),
+          border: `2px solid ${C.teal}44`,
+          borderRadius: 16,
+          padding: isMobile ? 40 : 60
+        }}>
+          <div style={{ fontSize: '4rem', marginBottom: 20 }}>🎸</div>
+          <div style={{ 
+            fontFamily: "'Bebas Neue'", 
+            fontSize: isMobile ? '2.5rem' : '3.5rem', 
+            color: '#fff', 
+            letterSpacing: 2,
+            marginBottom: 16
+          }}>
+            WELCOME TO TRACKRECORD
+          </div>
+          <div style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 11, 
+            color: C.gray, 
+            lineHeight: 1.8,
+            marginBottom: 40
+          }}>
+            Build your concert archive. Track shows,<br/>
+            upload artifacts, preserve your history.
+          </div>
+          <div style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 10, 
+            color: C.teal, 
+            marginBottom: 20,
+            letterSpacing: 2
+          }}>
+            Want help getting started?
+          </div>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={() => setStep('path-choice')} style={btnStyle(C.teal)}>
+              YES, GUIDE ME
+            </button>
+            <button onClick={onSkip} style={btnStyle(C.gray, true)}>
+              NO, I'LL EXPLORE
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 2: Path Choice */}
+      {step === 'path-choice' && (
+        <div className="fade-in" style={{ 
+          textAlign: 'center', 
+          maxWidth: 600,
+          background: hexToRgba(C.purple, 0.05),
+          border: `2px solid ${C.purple}44`,
+          borderRadius: 16,
+          padding: isMobile ? 40 : 60
+        }}>
+          <div style={{ 
+            fontFamily: "'Bebas Neue'", 
+            fontSize: isMobile ? '2rem' : '2.5rem', 
+            color: '#fff', 
+            letterSpacing: 2,
+            marginBottom: 24
+          }}>
+            DO YOU ALREADY HAVE A LIST OF SHOWS?
+          </div>
+          <div style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 10, 
+            color: C.gray, 
+            lineHeight: 1.8,
+            marginBottom: 40
+          }}>
+            If you have a spreadsheet, notes app, or CSV file<br/>
+            with your concert history, we can bulk import it.
+          </div>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={() => {
+              // Navigate to bulk import in Office
+              onComplete();
+              setTimeout(() => {
+                // Trigger office tab open
+                const officeBtn = document.querySelector('[data-tab="manage"]');
+                if (officeBtn) officeBtn.click();
+              }, 100);
+            }} style={btnStyle(C.gold)}>
+              YES, BULK IMPORT
+            </button>
+            <button onClick={() => setStep('first-show')} style={btnStyle(C.teal, true)}>
+              NO, START FRESH
+            </button>
+          </div>
+          <button 
+            onClick={() => setStep('welcome')} 
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: C.grayDim, 
+              marginTop: 20, 
+              cursor: 'pointer', 
+              fontFamily: "'Space Mono'", 
+              fontSize: 9 
+            }}
+          >
+            ← BACK
+          </button>
+        </div>
+      )}
+
+      {/* STEP 3: First Show */}
+      {step === 'first-show' && (
+        <div className="fade-in" style={{ 
+          maxWidth: 500,
+          background: hexToRgba(C.teal, 0.05),
+          border: `2px solid ${C.teal}44`,
+          borderRadius: 16,
+          padding: isMobile ? 30 : 50
+        }}>
+          <div style={{ 
+            fontFamily: "'Bebas Neue'", 
+            fontSize: isMobile ? '2rem' : '2.5rem', 
+            color: C.teal, 
+            letterSpacing: 2,
+            marginBottom: 12,
+            textAlign: 'center'
+          }}>
+            LOG YOUR FIRST SHOW
+          </div>
+          <div style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 9, 
+            color: C.gray, 
+            marginBottom: 30,
+            textAlign: 'center',
+            lineHeight: 1.6
+          }}>
+            Start with any show you've been to.<br/>
+            Recent, old, doesn't matter.
+          </div>
+
+          <label style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 8, 
+            color: C.teal, 
+            letterSpacing: 2, 
+            display: 'block', 
+            marginBottom: 6 
+          }}>
+            BAND / ARTIST
+          </label>
+          <input 
+            style={inputStyle}
+            value={firstShow.band}
+            onChange={e => setFirstShow(prev => ({ ...prev, band: e.target.value }))}
+            placeholder="e.g. Radiohead"
+            autoFocus
+          />
+
+          <label style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 8, 
+            color: C.teal, 
+            letterSpacing: 2, 
+            display: 'block', 
+            marginBottom: 6 
+          }}>
+            DATE
+          </label>
+          <input 
+            type="date"
+            style={{ ...inputStyle, colorScheme: 'dark' }}
+            value={firstShow.date}
+            onChange={e => setFirstShow(prev => ({ ...prev, date: e.target.value }))}
+          />
+
+          <label style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 8, 
+            color: C.teal, 
+            letterSpacing: 2, 
+            display: 'block', 
+            marginBottom: 6 
+          }}>
+            VENUE
+          </label>
+          <input 
+            style={inputStyle}
+            value={firstShow.venue}
+            onChange={e => setFirstShow(prev => ({ ...prev, venue: e.target.value }))}
+            placeholder="e.g. Madison Square Garden"
+          />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+            <div>
+              <label style={{ 
+                fontFamily: "'Space Mono'", 
+                fontSize: 8, 
+                color: C.teal, 
+                letterSpacing: 2, 
+                display: 'block', 
+                marginBottom: 6 
+              }}>
+                CITY (OPTIONAL)
+              </label>
+              <input 
+                style={inputStyle}
+                value={firstShow.city}
+                onChange={e => setFirstShow(prev => ({ ...prev, city: e.target.value }))}
+                placeholder="New York"
+              />
+            </div>
+            <div>
+              <label style={{ 
+                fontFamily: "'Space Mono'", 
+                fontSize: 8, 
+                color: C.teal, 
+                letterSpacing: 2, 
+                display: 'block', 
+                marginBottom: 6 
+              }}>
+                STATE
+              </label>
+              <input 
+                style={{ ...inputStyle, textTransform: 'uppercase' }}
+                value={firstShow.state}
+                onChange={e => setFirstShow(prev => ({ ...prev, state: e.target.value.toUpperCase() }))}
+                placeholder="NY"
+                maxLength={2}
+              />
+            </div>
+          </div>
+
+          <button 
+            onClick={() => setStep('first-artifact')}
+            disabled={!firstShow.band || !firstShow.date}
+            style={{
+              ...btnStyle(C.teal),
+              width: '100%',
+              marginTop: 20,
+              opacity: (!firstShow.band || !firstShow.date) ? 0.5 : 1,
+              cursor: (!firstShow.band || !firstShow.date) ? 'not-allowed' : 'pointer'
+            }}
+          >
+            LOCK FIRST SIGNAL →
+          </button>
+        </div>
+      )}
+
+      {/* STEP 4: First Artifact */}
+      {step === 'first-artifact' && (
+        <div className="fade-in" style={{ 
+          maxWidth: 550,
+          background: hexToRgba(C.gold, 0.05),
+          border: `2px solid ${C.gold}44`,
+          borderRadius: 16,
+          padding: isMobile ? 30 : 50,
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '3rem', marginBottom: 20 }}>🎉</div>
+          <div style={{ 
+            fontFamily: "'Bebas Neue'", 
+            fontSize: isMobile ? '2rem' : '2.8rem', 
+            color: C.gold, 
+            letterSpacing: 2,
+            marginBottom: 8
+          }}>
+            FIRST SIGNAL LOCKED
+          </div>
+          <div style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 10, 
+            color: '#fff', 
+            marginBottom: 40
+          }}>
+            {firstShow.band} • {fmtDateShort(firstShow.date)}
+          </div>
+
+          <div style={{ 
+            fontFamily: "'Bebas Neue'", 
+            fontSize: isMobile ? '1.5rem' : '1.8rem', 
+            color: '#fff', 
+            letterSpacing: 2,
+            marginBottom: 12
+          }}>
+            NOW LET'S ADD YOUR FIRST ARTIFACT
+          </div>
+          <div style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 9, 
+            color: C.gray, 
+            lineHeight: 1.8,
+            marginBottom: 30
+          }}>
+            Upload a setlist, ticket stub, poster, or photo<br/>
+            from any show in your history.
+          </div>
+
+          {uploadedArtifact ? (
+            <div style={{ 
+              marginBottom: 30,
+              padding: 20,
+              background: hexToRgba(C.green, 0.1),
+              border: `1px solid ${C.green}`,
+              borderRadius: 8
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: 8 }}>✅</div>
+              <div style={{ 
+                fontFamily: "'Space Mono'", 
+                fontSize: 10, 
+                color: C.green,
+                letterSpacing: 2
+              }}>
+                ARTIFACT UPLOADED
+              </div>
+            </div>
+          ) : (
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', 
+              gap: 12,
+              marginBottom: 30
+            }}>
+              {[
+                { type: 'stub', label: 'STUB', icon: '🎟️' },
+                { type: 'relic', label: 'SETLIST', icon: '🏺' },
+                { type: 'photo', label: 'PHOTO', icon: '📸' },
+                { type: 'poster', label: 'POSTER', icon: '🎨' }
+              ].map(item => (
+                <label
+                  key={item.type}
+                  style={{
+                    background: uploadedArtifact?.type === item.type ? hexToRgba(C.teal, 0.2) : '#0a0a0a',
+                    border: `1px solid ${uploadedArtifact?.type === item.type ? C.teal : '#222'}`,
+                    borderRadius: 8,
+                    padding: '20px 10px',
+                    cursor: uploading ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s',
+                    textAlign: 'center'
+                  }}
+                  onMouseEnter={e => {
+                    if (!uploading) e.currentTarget.style.borderColor = C.teal;
+                  }}
+                  onMouseLeave={e => {
+                    if (!uploadedArtifact || uploadedArtifact.type !== item.type) {
+                      e.currentTarget.style.borderColor = '#222';
+                    }
+                  }}
+                >
+                  <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>
+                    {uploadedArtifact?.type === item.type ? '✅' : item.icon}
+                  </div>
+                  <div style={{ 
+                    fontFamily: "'Space Mono'", 
+                    fontSize: 7, 
+                    color: C.gray,
+                    letterSpacing: 1
+                  }}>
+                    {item.label}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    disabled={uploading}
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const url = await uploadFirstArtifact(file, item.type);
+                        if (url) {
+                          setUploadedArtifact({ type: item.type, url });
+                        }
+                      }
+                    }}
+                  />
+                </label>
+              ))}
+            </div>
+          )}
+
+          {uploading && (
+            <div style={{ 
+              fontFamily: "'Space Mono'", 
+              fontSize: 9, 
+              color: C.teal,
+              marginBottom: 20,
+              letterSpacing: 2
+            }}>
+              📡 UPLOADING...
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button 
+              onClick={saveFirstShow}
+              disabled={uploading}
+              style={btnStyle(C.gold)}
+            >
+              {uploadedArtifact ? 'INITIALIZE ARCHIVE' : 'SKIP ARTIFACT'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 5: Complete */}
+      {step === 'complete' && (
+        <div className="fade-in" style={{ 
+          textAlign: 'center',
+          maxWidth: 500
+        }}>
+          <div style={{ fontSize: '5rem', marginBottom: 20 }}>🏆</div>
+          <div style={{ 
+            fontFamily: "'Bebas Neue'", 
+            fontSize: isMobile ? '3rem' : '4rem', 
+            color: C.gold, 
+            letterSpacing: 3,
+            marginBottom: 16,
+            textShadow: `0 0 40px ${hexToRgba(C.gold, 0.6)}`
+          }}>
+            ARCHIVE INITIALIZED
+          </div>
+          <div style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 11, 
+            color: '#fff',
+            marginBottom: 8
+          }}>
+            {firstShow.band}
+          </div>
+          <div style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 9, 
+            color: C.gray
+          }}>
+            {fmtDateShort(firstShow.date)} • {firstShow.venue}
+          </div>
+          {uploadedArtifact && (
+            <div style={{ 
+              fontFamily: "'Space Mono'", 
+              fontSize: 8, 
+              color: C.gold,
+              marginTop: 20,
+              letterSpacing: 2
+            }}>
+              + 1 ARTIFACT PRESERVED
+            </div>
+          )}
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+
 // ─── MASTER LANYARD ───────────────────────────────────────────────────────────
 function MasterLanyard({ concerts, artistGenres, genreStats }) {
   const [hovered, setHovered] = useState(false);
@@ -11389,112 +11997,14 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
   {activeTab === 'dashboard' && (
   <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
     
-    {/* ─── PHASE 1: THE GOLDEN SHRINE ─── */}
-{concerts.length === 0 ? (
-  <div style={{ 
-    height: '80vh', 
-    display: 'flex', 
-    flexDirection: 'column', 
-    alignItems: 'center', 
-    justifyContent: 'center',
-    background: 'radial-gradient(circle at center, #0a0a0c 0%, #000 100%)',
-    position: 'relative',
-    overflow: 'hidden',
-    pointerEvents: 'auto', 
-    zIndex: 1
-  }}>
-    
-    {/* Floating Interactive Pedestal */}
-    <div 
-      onClick={(e) => {
-        e.stopPropagation();
-        console.log("⚡ GOLDEN SIGNAL ACTIVATED");
-        
-        /* 🟢 THE CRITICAL FIX: */
-        /* In your App.js, the variable that opens the 'Photo?' screen is setEditTarget */
-        setEditTarget('new'); 
-      }}
-      className="shrine-active"
-      style={{
-        width: isMobile ? 220 : 300,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        cursor: 'pointer',
-        zIndex: 9999, 
-        position: 'relative',
-        pointerEvents: 'auto'
-      }}
-    >
-          {/* THE GOLDEN SIGNAL (Throbbing/Pulsing Core) */}
-          <div style={{
-            width: isMobile ? 130 : 170,
-            height: isMobile ? 130 : 170,
-            borderRadius: '50%',
-            background: `radial-gradient(circle at 35% 35%, #fff 0%, #ffcc00 40%, #8b6b00 80%, #000 100%)`,
-            boxShadow: `0 0 80px rgba(255, 204, 0, 0.3), inset 0 0 30px rgba(255, 255, 255, 0.4)`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: `1px solid rgba(255, 204, 0, 0.4)`,
-            position: 'relative'
-          }}>
-            {/* Hot Core Pulse */}
-            <div style={{ 
-              width: '30%', 
-              height: '30%', 
-              borderRadius: '50%', 
-              background: '#fff', 
-              filter: 'blur(15px)', 
-              opacity: 0.8 
-            }} />
-          </div>
 
-          {/* Holographic Pedestal Base */}
-          <div style={{ 
-            marginTop: -30,
-            width: '80%',
-            height: 100,
-            background: `linear-gradient(180deg, rgba(255, 204, 0, 0.2) 0%, transparent 100%)`,
-            clipPath: 'polygon(15% 0%, 85% 0%, 100% 100%, 0% 100%)',
-            borderTop: `2px solid #ffcc00`,
-            display: 'flex',
-            justifyContent: 'center',
-            paddingTop: 40,
-            opacity: 0.5
-          }}>
-             <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#ffcc00', letterSpacing: 5 }}>[ TAP_TO_AWAKEN ]</div>
-          </div>
-        </div>
+    {concerts.length === 0 && !viewingUser ? (
+  <OnboardingFlow 
+    onComplete={() => window.location.reload()}
+    onSkip={() => setActiveTab('manage')}
+  />
+) : (
 
-        {/* Text Hook */}
-        <div style={{ marginTop: 40, textAlign: 'center', zIndex: 5 }}>
-          <div style={{ 
-            fontFamily: "'Bebas Neue'", 
-            fontSize: isMobile ? '3.5rem' : '5rem', 
-            color: '#fff', 
-            letterSpacing: 10, 
-            lineHeight: 0.9 
-          }}>
-            MUSEUM <span style={{ color: '#ffcc00' }}>VACANT</span>
-          </div>
-          <div style={{ 
-            fontFamily: "'Space Mono'", 
-            fontSize: 10, 
-            color: '#888', 
-            letterSpacing: 3, 
-            marginTop: 15,
-            lineHeight: 2
-          }}>
-            SYSTEM STATUS: <span style={{ color: '#ffcc00' }}>IDLE</span><br />
-            REACH OUT TO BEGIN THE ARCHIVE.
-          </div>
-        </div>
-
-        {/* Scanline Overlay for the background */}
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,204,0,0.03) 2px, rgba(255,204,0,0.03) 4px)' }} />
-      </div>
-    ) : (
       /* ─── EXISTING USER FLOW: THE FULL MUSEUM ─── */
       <>
         <OnThisDay concerts={concerts} />
