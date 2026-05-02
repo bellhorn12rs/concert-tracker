@@ -2164,40 +2164,75 @@ function Reel({ items, spinning, TAPE_COLORS }) {
     </div>
   );
 }
-// ─── ARTIST INSIGHTS (POSTER EDITION) ─────────────────────────────────────────
+// ─── ARTIST INSIGHTS (REFINED EDITION) ────────────────────────────────────────
 function ArtistInsights({ concerts }) {
   const [index, setIndex] = useState(0);
+  
   const insights = useMemo(() => {
     if (!concerts.length) return [];
+    
+    // Year analysis
     const yrMap = {};
-    concerts.forEach(c => { const y=getYear(c.date); if(y) yrMap[y]=(yrMap[y]||0)+1; });
-    const peakYear = Object.entries(yrMap).sort((a,b)=>b[1]-a[1])[0];
-    const cityMap = {};
-    concerts.forEach(c => { if(c.city) cityMap[c.city]=(cityMap[c.city]||0)+1; });
-    const topCity = Object.entries(cityMap).sort((a,b)=>b[1]-a[1])[0];
-    const festDays = concerts.filter(c=>c.is_festival).length;
-    const festPct = Math.round((festDays/concerts.length)*100);
-    const venueMap = {};
-    concerts.forEach(c => { if(c.venue) venueMap[c.venue]=(venueMap[c.venue]||0)+1; });
-    const topVenue = Object.entries(venueMap).sort((a,b)=>b[1]-a[1])[0];
-    const allSets = [];
-    concerts.forEach(c => (c.bands||[]).forEach(b => { if(b) allSets.push({...c, artist:b}); }));
-    const artistDates = {};
-    allSets.forEach(s => { if(!artistDates[s.artist]) artistDates[s.artist]=[]; artistDates[s.artist].push(s.date); });
-    let longestRel = { artist:'', span:0, shows:0 };
-    Object.entries(artistDates).forEach(([artist,dates]) => {
-      if(dates.length<2) return;
-      const span = Math.round((new Date(dates.reduce((a,b)=>a>b?a:b))-new Date(dates.reduce((a,b)=>a<b?a:b)))/(1000*60*60*24*365));
-      if(span>longestRel.span) longestRel={artist,span,shows:dates.length};
+    concerts.forEach(c => { 
+      const y = getYear(c.date); 
+      if (y) yrMap[y] = (yrMap[y] || 0) + 1; 
     });
+    const peakYear = Object.entries(yrMap).sort((a, b) => b[1] - a[1])[0];
+    
+    // City analysis
+    const cityMap = {};
+    concerts.forEach(c => { 
+      if (c.city) cityMap[c.city] = (cityMap[c.city] || 0) + 1; 
+    });
+    const topCity = Object.entries(cityMap).sort((a, b) => b[1] - a[1])[0];
+    
+    // Venue analysis
+    const venueMap = {};
+    concerts.forEach(c => { 
+      if (c.venue) venueMap[c.venue] = (venueMap[c.venue] || 0) + 1; 
+    });
+    const topVenue = Object.entries(venueMap).sort((a, b) => b[1] - a[1])[0];
+    
+    // Festival analysis
+    const festDays = concerts.filter(c => c.is_festival).length;
+    const festPct = Math.round((festDays / concerts.length) * 100);
+    const uniqueFests = new Set(concerts.filter(c => c.is_festival && c.festival_name).map(c => c.festival_name));
+    
+    // Artist relationship analysis
+    const allSets = [];
+    concerts.forEach(c => (c.bands || []).forEach(b => { 
+      const bandName = typeof b === 'string' ? b : b?.name;
+      if (bandName) allSets.push({ ...c, artist: bandName }); 
+    }));
+    
+    const artistDates = {};
+    allSets.forEach(s => { 
+      if (!artistDates[s.artist]) artistDates[s.artist] = []; 
+      artistDates[s.artist].push(s.date); 
+    });
+    
+    // Longest relationship
+    let longestRel = { artist: '', span: 0, shows: 0 };
+    Object.entries(artistDates).forEach(([artist, dates]) => {
+      if (dates.length < 2) return;
+      const sorted = dates.sort();
+      const span = Math.round((new Date(sorted[sorted.length - 1]) - new Date(sorted[0])) / (1000 * 60 * 60 * 24 * 365));
+      if (span > longestRel.span) longestRel = { artist, span, shows: dates.length };
+    });
+    
+    // Consecutive years streak
     const years = Object.keys(yrMap).map(Number).sort();
-    let maxStreak=1, cur=1;
-    for(let i=1;i<years.length;i++){if(years[i]===years[i-1]+1){cur++;maxStreak=Math.max(maxStreak,cur);}else cur=1;}
-    const uniqueArtists = new Set(allSets.map(s=>s.artist));
-    const oneTimers = Object.values(artistDates).filter(d=>d.length===1).length;
-    const weekend = concerts.filter(c=>{const d=new Date(c.date+'T12:00:00');return[4,5,6].includes(d.getDay());}).length;
-    const uniqueFests = new Set(concerts.filter(c=>c.is_festival&&c.festival_name).map(c=>c.festival_name));
-    // NEW: Find the user's actual busiest month
+    let maxStreak = 1, curStreak = 1;
+    for (let i = 1; i < years.length; i++) {
+      if (years[i] === years[i - 1] + 1) {
+        curStreak++;
+        maxStreak = Math.max(maxStreak, curStreak);
+      } else {
+        curStreak = 1;
+      }
+    }
+    
+    // Month analysis
     const monthMap = {};
     concerts.forEach(c => {
       const d = new Date(c.date + 'T12:00:00');
@@ -2205,53 +2240,171 @@ function ArtistInsights({ concerts }) {
       monthMap[m] = (monthMap[m] || 0) + 1;
     });
     const peakMonth = Object.entries(monthMap).sort((a, b) => b[1] - a[1])[0] || ['NONE', 0];
-    const avgBands = (allSets.length/concerts.length).toFixed(1);
-    const heavy = Object.entries(artistDates).filter(([,d])=>d.length>=10).length;
+    
+    // Other stats
+    const uniqueArtists = new Set(allSets.map(s => s.artist));
+    const oneTimers = Object.values(artistDates).filter(d => d.length === 1).length;
+    const weekend = concerts.filter(c => {
+      const d = new Date(c.date + 'T12:00:00');
+      return [5, 6, 0].includes(d.getDay()); // Fri, Sat, Sun
+    }).length;
+    const weekendPct = Math.round((weekend / concerts.length) * 100);
+    const avgBands = (allSets.length / concerts.length).toFixed(1);
+    const heavy = Object.entries(artistDates).filter(([, d]) => d.length >= 10).length;
+    
+    // State analysis
+    const stateMap = {};
+    concerts.forEach(c => { 
+      if (c.state) stateMap[c.state] = (stateMap[c.state] || 0) + 1; 
+    });
+    const uniqueStates = Object.keys(stateMap).length;
+    
+    // Build insight array (NO DUPLICATES)
     return [
-      { label:'PEAK INTENSITY', val:peakYear?.[0], sub:`Your busiest year on record with ${peakYear?.[1]} shows logged.` },
-      { label:'HOME TURF', val:topCity?.[0]?.toUpperCase(), sub:`${topCity?.[1]} shows in your most-visited city.` },
-      { label:'FESTIVAL RATIO', val:`${festPct}%`, sub:`${festPct}% of your history happened in a field.` },
-      { label:'TOTAL LEGACY', val:concerts.length, sub:`Unique show days logged since you started.` },
-      { label:'MOST LOYAL STAGE', val:topVenue?.[0], sub:`You've been to ${topVenue?.[0]} ${topVenue?.[1]} times.` },
-      { label:'LONGEST STREAK', val:`${maxStreak} YRS`, sub:`${maxStreak} consecutive years without missing a single year.` },
-      { label:'RIDE OR DIE', val:longestRel.artist, sub:`${longestRel.span}-year relationship across ${longestRel.shows} shows.` },
-      { label:'UNIQUE ARTISTS', val:uniqueArtists.size, sub:`${oneTimers} of them you've only seen once.` },
-      { label:'WEEKEND WARRIOR', val:`${Math.round((weekend/concerts.length)*100)}%`, sub:`${Math.round((weekend/concerts.length)*100)}% of your shows fall on a Friday, Saturday, or Sunday.` },
-      { label:'FESTIVAL PASSPORT', val:`${uniqueFests.size} FESTS`, sub:`${uniqueFests.size} unique festivals across ${festDays} total days.` },
-      { label:'BANDS PER DAY', val:avgBands, sub:`Average ${avgBands} acts per show day. You never leave early.` },
-      { label:'HEAVY ROTATION', val:`${heavy} ARTISTS`, sub:`${heavy} artists you've seen 10 or more times.` },
-      { label:'PEAK MONTH', val:peakMonth[0], sub: `${peakMonth[1]} shows logged in ${peakMonth[0].toLowerCase()} across your history.` },
-      { label:'HOME TURF', val:topCity?.[0]?.toUpperCase() || 'UNKNOWN', sub:`${topCity?.[1] || 0} shows logged in your most-frequented city.` },
-      { label:'VENUE LOYALTY', val:topVenue?.[0]?.toUpperCase() || 'NONE', sub:`You have returned to this stage ${topVenue?.[1] || 0} times.` },
-    ];
+      { 
+        label: 'TOTAL LEGACY', 
+        val: concerts.length, 
+        sub: `Unique show days logged since you started tracking.` 
+      },
+      { 
+        label: 'PEAK YEAR', 
+        val: peakYear?.[0], 
+        sub: `Your busiest year on record with ${peakYear?.[1]} shows logged.` 
+      },
+      { 
+        label: 'HOME TURF', 
+        val: topCity?.[0]?.toUpperCase() || 'NOMAD', 
+        sub: `${topCity?.[1] || 0} shows logged in your most-visited city.` 
+      },
+      { 
+        label: 'FESTIVAL RATIO', 
+        val: `${festPct}%`, 
+        sub: `${festPct}% of your history happened in a field.` 
+      },
+      { 
+        label: 'VENUE LOYALTY', 
+        val: topVenue?.[0]?.substring(0, 20) || 'NONE', 
+        sub: `You've returned to this stage ${topVenue?.[1] || 0} times.` 
+      },
+      { 
+        label: 'LONGEST RELATIONSHIP', 
+        val: longestRel.artist || 'N/A', 
+        sub: longestRel.artist 
+          ? `${longestRel.span}-year journey across ${longestRel.shows} shows.` 
+          : 'No multi-year relationships yet.' 
+      },
+      { 
+        label: 'CONSECUTIVE YEARS', 
+        val: `${maxStreak} YRS`, 
+        sub: `${maxStreak} years in a row without missing a show.` 
+      },
+      { 
+        label: 'UNIQUE ARTISTS', 
+        val: uniqueArtists.size, 
+        sub: `${oneTimers} of them you've only seen once.` 
+      },
+      { 
+        label: 'WEEKEND WARRIOR', 
+        val: `${weekendPct}%`, 
+        sub: `${weekendPct}% of shows fall on Friday, Saturday, or Sunday.` 
+      },
+      { 
+        label: 'FESTIVAL PASSPORT', 
+        val: `${uniqueFests.size} STAMPS`, 
+        sub: `${uniqueFests.size} unique festivals across ${festDays} total days.` 
+      },
+      { 
+        label: 'BANDS PER DAY', 
+        val: avgBands, 
+        sub: `Average ${avgBands} acts per show. You stick around.` 
+      },
+      { 
+        label: 'HEAVY ROTATION', 
+        val: `${heavy} ACTS`, 
+        sub: `${heavy} artists you've seen 10+ times each.` 
+      },
+      { 
+        label: 'PEAK MONTH', 
+        val: peakMonth[0], 
+        sub: `${peakMonth[1]} shows logged in ${peakMonth[0].toLowerCase()}.` 
+      },
+      { 
+        label: 'STATE COUNT', 
+        val: `${uniqueStates} STATES`, 
+        sub: `You've seen live music in ${uniqueStates} different states.` 
+      }
+    ].filter(i => i.val && i.val !== 'undefined' && i.val !== 'NaN'); // Remove invalid entries
+    
   }, [concerts]);
 
   useEffect(() => {
     if (!insights.length) return;
-    const t = setInterval(() => setIndex(p => (p+1) % insights.length), 5500);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setIndex(p => (p + 1) % insights.length), 5500);
+    return () => clearInterval(timer);
   }, [insights.length]);
 
-  const active = insights[index] || { label:'LOADING', val:'...', sub:'' };
+  if (!insights.length) return null;
+  
+  const active = insights[index];
 
   return (
-    <Card neon className="card-texture" style={{ minHeight: 220, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+    <Card neon className="card-texture" style={{ 
+      minHeight: 220, 
+      display: 'flex', 
+      flexDirection: 'column', 
+      position: 'relative', 
+      overflow: 'hidden' 
+    }}>
       <div className="big-watermark">{active.label.split(' ')[0]}</div>
       <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ background: C.teal, color: C.bg, fontFamily: "'Space Mono'", fontSize: 9, padding: '4px 10px', width: 'fit-content', fontWeight: 900, marginBottom: 15, borderRadius: '2px' }}>
+        <div style={{ 
+          background: C.teal, 
+          color: C.bg, 
+          fontFamily: "'Space Mono'", 
+          fontSize: 9, 
+          padding: '4px 10px', 
+          width: 'fit-content', 
+          fontWeight: 900, 
+          marginBottom: 15, 
+          borderRadius: '2px' 
+        }}>
           ⚡ {active.label}
         </div>
         <div className="fade-in" key={index} style={{ flex: 1 }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: (active.val?.length || 0) > 8 ? '2.5rem' : '4rem', color: C.white, lineHeight: 0.9, marginBottom: 10, textShadow: `0 0 20px ${hexToRgba(C.teal, 0.3)}` }}>
+          <div style={{ 
+            fontFamily: "'Bebas Neue'", 
+            fontSize: String(active.val).length > 12 ? '2.5rem' : '4rem', 
+            color: C.white, 
+            lineHeight: 0.9, 
+            marginBottom: 10, 
+            textShadow: `0 0 20px ${hexToRgba(C.teal, 0.3)}` 
+          }}>
             {active.val}
           </div>
-          <div style={{ fontSize: '0.95rem', color: C.white, lineHeight: 1.4, maxWidth: '90%', fontFamily: "'Space Mono'", borderLeft: `2px solid ${C.teal}33`, paddingLeft: 12 }}>
+          <div style={{ 
+            fontSize: '0.95rem', 
+            color: C.white, 
+            lineHeight: 1.4, 
+            maxWidth: '90%', 
+            fontFamily: "'Space Mono'", 
+            borderLeft: `2px solid ${C.teal}33`, 
+            paddingLeft: 12 
+          }}>
             {active.sub}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 4, marginTop: 20 }}>
           {insights.map((_, i) => (
-            <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i === index ? C.teal : C.grayDim, transition: '0.3s' }} />
+            <div 
+              key={i} 
+              style={{ 
+                flex: 1, 
+                height: 3, 
+                borderRadius: 2, 
+                background: i === index ? C.teal : C.grayDim, 
+                transition: '0.3s' 
+              }} 
+            />
           ))}
         </div>
       </div>
