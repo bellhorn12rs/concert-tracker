@@ -4825,57 +4825,126 @@ function GigPoster({ src, artist, date, index = 0 }) {
 }
 
 // ─── 📸 STACKED POLAROIDS (PHYSICS & 3D EDITION) ────────────────────────────────
-function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
-  if (!src) return null;
+// ─── PERSONAL POLAROID (PRIVACY-AWARE) ───────────────────────────────────────
+// Replace your PersonalPolaroid component with this
 
-  const markerColors = ['#1a1a1a', '#2140ab', '#b02525', '#1e6337', '#732ba1', '#cc6600'];
-  const myColor = markerColors[index % markerColors.length];
-
+function PersonalPolaroid({ src, index, total, caption, isPrivate = false, isOwner = true }) {
+  const rotation = ((index % 2 === 0 ? 1 : -1) * ((index % 3) + 1)) * 3;
+  const offsetX = index * -15;
+  
+  // Determine if we should blur
+  const shouldBlur = isPrivate && !isOwner;
+  
   return (
     <div 
-      className="polaroid-gravity-swing"
-      style={{
-        padding: '12px 12px 20px 12px', // 🟢 Tightened bottom (was 75px)
-        background: '#fff', 
-        boxShadow: '0 15px 40px rgba(0,0,0,0.5), 0 0 5px rgba(0,0,0,0.1)',
-        width: '320px', 
-        border: '1px solid #efefef', 
+      style={{ 
+        marginLeft: index === 0 ? 0 : `${offsetX}px`,
+        transform: `rotate(${rotation}deg)`,
+        transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        zIndex: index,
+        cursor: shouldBlur ? 'default' : 'pointer',
         position: 'relative'
       }}
+      onMouseEnter={e => {
+        if (!shouldBlur) {
+          e.currentTarget.style.transform = 'scale(1.15) rotate(0deg) translateY(-5px)';
+          e.currentTarget.style.zIndex = 100;
+        }
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = `rotate(${rotation}deg)`;
+        e.currentTarget.style.zIndex = index;
+      }}
     >
-      {/* 📌 THE THUMB TACK */}
-      <div style={{
-        position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
-        width: 20, height: 20, background: '#d11111', borderRadius: '50%',
-        boxShadow: 'inset -4px -4px 6px rgba(0,0,0,0.5), 2px 8px 12px rgba(0,0,0,0.4)',
-        zIndex: 100, border: '1px solid #900'
-      }}>
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 4, height: 4, background: '#400', borderRadius: '50%', opacity: 0.5 }} />
-        <div className="tack-shine" />
-      </div>
-
-      {/* PHOTO AREA */}
-      <div className="polaroid-frame" style={{ 
-        width: '100%', aspectRatio: '1/1', 
-        background: `url(${src}) center/cover no-repeat`,
-        border: '1px solid rgba(0,0,0,0.1)'
-      }} />
-
-      {/* 🖊️ HANDWRITTEN LABELS */}
       <div style={{ 
-        fontFamily: "'Caveat', cursive", textAlign: 'center', 
-        marginTop: '15px', color: myColor, padding: '0 5px'
+        background: '#fff', 
+        padding: '6px 6px 40px 6px', 
+        boxShadow: '0 15px 40px rgba(0,0,0,0.6)',
+        borderRadius: 2,
+        width: '120px',
+        position: 'relative'
       }}>
-        <div style={{ fontSize: '2.3rem', fontWeight: 700, lineHeight: 0.8, transform: 'rotate(-1.5deg)', marginBottom: 6 }}>
-          {caption}
-        </div>
-        <div style={{ fontSize: '1.1rem', opacity: 0.9, transform: 'rotate(1deg)', fontWeight: 600 }}>
-          {date ? fmtDateShort(date) : ''} — {venue?.split(',')[0].toUpperCase()}
+        <img 
+          src={src} 
+          alt={caption || 'memory'} 
+          style={{ 
+            width: '100%', 
+            height: '120px', 
+            objectFit: 'cover',
+            display: 'block',
+            filter: shouldBlur ? 'blur(12px)' : 'none'
+          }} 
+        />
+        
+        {/* Privacy indicator for owner */}
+        {isPrivate && isOwner && (
+          <div style={{
+            position: 'absolute',
+            top: 10,
+            right: 10,
+            background: 'rgba(0,0,0,0.7)',
+            backdropFilter: 'blur(4px)',
+            border: '1px solid rgba(255,255,255,0.3)',
+            borderRadius: 4,
+            padding: '4px 6px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4
+          }}>
+            <span style={{ fontSize: '10px' }}>🔒</span>
+            <span style={{ 
+              fontFamily: "'Space Mono'", 
+              fontSize: 6, 
+              color: '#fff',
+              letterSpacing: 1
+            }}>
+              PRIVATE
+            </span>
+          </div>
+        )}
+        
+        {/* Blur notice for public viewers */}
+        {shouldBlur && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: 'rgba(0,0,0,0.8)',
+            backdropFilter: 'blur(4px)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: 6,
+            padding: '8px 12px',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '14px', marginBottom: 2 }}>🔒</div>
+            <div style={{ 
+              fontFamily: "'Space Mono'", 
+              fontSize: 7, 
+              color: '#fff',
+              letterSpacing: 1
+            }}>
+              PRIVATE
+            </div>
+          </div>
+        )}
+        
+        <div style={{ 
+          textAlign: 'center', 
+          fontFamily: "'Bebas Neue'", 
+          fontSize: '0.8rem', 
+          color: '#111', 
+          marginTop: 4,
+          lineHeight: 1.2
+        }}>
+          {caption ? caption.slice(0, 14).toUpperCase() : '•'}
         </div>
       </div>
     </div>
   );
 }
+
+
 // ─── 4. BY DAY TAB (SCRAPBOOK EDITION - FULL MULTI-MEDIA) ────────────────────
 // ─── 4. BY DAY TAB (SCRAPBOOK TIMELINE & FESTIVAL CLUSTERS) ──────────────────
 
