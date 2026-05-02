@@ -3285,50 +3285,83 @@ const parseMedia = (val) => {
   if (Array.isArray(val)) return val;
   return val.split(',').map(u => u.trim()).filter(Boolean);
 };
-function SetlistVaultTab({ concerts, genreMap }) {
-  if (!concerts || !Array.isArray(concerts)) {
+// ─── SETLIST VAULT TAB (ARTIFACT TABLE EDITION) ──────────────────────────────
+// Replace your entire SetlistVaultTab function with this:
+
+function SetlistVaultTab({ genreMap }) {
+  const [relics, setRelics] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchRelics() {
+      setLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.id) return;
+
+        // Query artifacts table for relics
+        const { data } = await supabase
+          .from('artifacts')
+          .select(`
+            id,
+            image_url,
+            band_name,
+            show:shows (
+              id,
+              date,
+              venue,
+              city,
+              state,
+              festival_name,
+              festival_day,
+              is_festival,
+              bands
+            )
+          `)
+          .eq('user_id', session.user.id)
+          .eq('artifact_type', 'relic')
+          .order('id', { ascending: false });
+
+        if (data) {
+          // Transform into display format
+          const formatted = data
+            .filter(r => r.show && r.image_url)
+            .map(r => ({
+              id: r.id,
+              band: r.band_name || r.show.bands?.[0]?.name || r.show.bands?.[0] || 'Unknown',
+              date: r.show.date,
+              venue: r.show.venue || r.show.festival_name || 'Unknown Venue',
+              city: r.show.city,
+              state: r.show.state,
+              festival_name: r.show.festival_name,
+              festival_day: r.show.festival_day,
+              is_festival: r.show.is_festival,
+              image_url: r.image_url
+            }))
+            .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+          setRelics(formatted);
+        }
+      } catch (err) {
+        console.error('Relics fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchRelics();
+  }, []);
+
+  if (loading) {
     return (
       <div style={{ padding: 100, textAlign: 'center' }}>
         <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray }}>
-          LOADING...
+          LOADING RELICS...
         </div>
       </div>
     );
   }
 
-  const setlists = useMemo(() => {
-    const results = [];
-    concerts.forEach(c => {
-      if (!c) return;
-      
-      // Check if concert has relics
-      const hasRelicImages = c.setlist_image_url && c.setlist_image_url.trim();
-      const hasSetlistNames = c.has_setlist_names && c.has_setlist_names.trim();
-      
-      if (!hasRelicImages && !hasSetlistNames) return;
-      
-      const bands = hasSetlistNames 
-        ? c.has_setlist_names.split(',').map(b => b.trim()).filter(Boolean)
-        : [c.artist || (c.bands?.[0]?.name || c.bands?.[0]) || 'Unknown'];
-      
-      const rawImages = c.setlist_image_url || c.image_url || '';
-      const images = rawImages ? rawImages.split(',').map(img => img.trim()).filter(Boolean) : [];
-      
-      bands.forEach((band, idx) => {
-        const img = images[idx] || (images.length === 1 ? images[0] : null);
-        results.push({ 
-          id: `${c.id}-${band}`, 
-          band, 
-          date: c.date || '', 
-          venue: c.venue || 'UNKNOWN VENUE', 
-          image_url: img 
-        });
-      });
-    });
-    return results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-  }, [concerts]);
-
-  if (setlists.length === 0) {
+  if (relics.length === 0) {
     return (
       <div style={{ padding: '120px 0', textAlign: 'center' }}>
         <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🏺</div>
@@ -3349,12 +3382,12 @@ function SetlistVaultTab({ concerts, genreMap }) {
           RELIC <span style={{ color: C.gold }}>VAULT</span>
         </div>
         <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: C.gray, marginTop: 15, letterSpacing: '4px', fontWeight: 900 }}>
-          {setlists.length} ARTIFACTS ARCHIVED
+          {relics.length} ARTIFACTS ARCHIVED
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '60px', alignItems: 'start' }}>
-        {setlists.map((s, i) => {
+        {relics.map((s, i) => {
           const rotation = (i % 2 === 0 ? 1 : -1) * (i % 3 + 1);
           const [yr, mo, dy] = (s.date || '2026-01-01').split('-');
           const searchUrl = `https://www.setlist.fm/search?query=${encodeURIComponent(`${s.band} ${mo}/${dy}/${yr}`)}`;
@@ -3429,7 +3462,12 @@ function SetlistVaultTab({ concerts, genreMap }) {
                 <div style={{ padding: '18px 10px 8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid #eee', marginTop: 5 }}>
                   <div style={{ color: '#000', fontSize: '10px', fontFamily: "'Space Mono'", fontWeight: 900, lineHeight: 1.5 }}>
                     {fmtDateShort(s.date)}<br/>
-                    <span style={{ opacity: 0.5, fontSize: '8px' }}>{s.venue.toUpperCase()}</span>
+                    <span style={{ opacity: 0.5, fontSize: '8px' }}>
+                      {s.is_festival 
+                        ? `${s.festival_name?.toUpperCase()} ${s.festival_day ? '• ' + s.festival_day.toUpperCase() : ''}`
+                        : s.venue.toUpperCase()
+                      }
+                    </span>
                   </div>
                   
                   <a 
@@ -3452,6 +3490,7 @@ function SetlistVaultTab({ concerts, genreMap }) {
     </div>
   );
 }
+
 // ─── 3. TIMELINE TAB ──────────────────────────────────────────────────────────
 function GenreLegend() {
   return (
