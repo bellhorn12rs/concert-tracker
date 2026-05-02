@@ -5088,7 +5088,7 @@ function ByDayTab({
             return (
               <div key={`cluster-${ci}`} id={`cluster-${ci}`}>
                 <ScrapbookRow 
-                  event={cluster.event} idx={ci} isAdmin={isAdmin} onEdit={onEdit} genreMap={genreMap}
+                  event={cluster.event} idx={ci} isAdmin={isAdmin} onEdit={onEdit} genreMap={genreMap} session={session} viewingUser={viewingUser}
                   bulkMode={bulkMode} selectedSignals={selectedSignals} setSelectedSignals={setSelectedSignals}
                 />
               </div>
@@ -5144,7 +5144,7 @@ function ByDayTab({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 {cluster.events.map((event, ei) => (
                   <ScrapbookRow 
-                    key={event.id} event={event} idx={ei} isAdmin={isAdmin} onEdit={onEdit} genreMap={genreMap} 
+                    key={event.id} event={event} idx={ei} isAdmin={isAdmin} onEdit={onEdit} genreMap={genreMap} session={session} viewingUser={viewingUser}
                     isClustered={true} clusterColor={themeColor}
                     bulkMode={bulkMode} selectedSignals={selectedSignals} setSelectedSignals={setSelectedSignals}
                   />
@@ -5161,8 +5161,37 @@ function ByDayTab({
 
 // ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With "I Was There" Trigger) ─────────────
 
-function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
-  // 🛡️ CRITICAL SAFETY GATES - Must be FIRST
+function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null, viewingUser = null, session = null }) {
+  const [photoArtifacts, setPhotoArtifacts] = useState([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
+
+  // Fetch photo artifacts for this show
+  useEffect(() => {
+    async function fetchPhotos() {
+      if (!event?.id) return;
+      
+      setLoadingPhotos(true);
+      try {
+        const { data } = await supabase
+          .from('artifacts')
+          .select('id, image_url, is_public')
+          .eq('show_id', event.id)
+          .eq('artifact_type', 'photo');
+        
+        if (data) {
+          setPhotoArtifacts(data);
+        }
+      } catch (err) {
+        console.error('Photo fetch error:', err);
+      } finally {
+        setLoadingPhotos(false);
+      }
+    }
+    
+    fetchPhotos();
+  }, [event?.id]);
+
+  // Safety gates
   if (!event) {
     console.error('ScrapbookRow: event is null/undefined');
     return null;
@@ -5176,27 +5205,21 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
   const isMobile = window.innerWidth < 768;
   const venueLabel = event.is_festival ? (event.festival_name || 'FESTIVAL') : (event.venue || 'UNKNOWN VENUE');
   const primaryColor = clusterColor || C.teal;
-  
-  // 🛰️ DATA SCAVENGING
-  // 1. Establish Naming Hierarchy
   const bands = Array.isArray(event.bands) ? event.bands : (event.artist ? [event.artist] : []);
   
-  // 🛡️ Ensure we always have at least one band
   if (bands.length === 0) {
     bands.push(event.festival_name || event.venue || 'UNKNOWN');
   }
   
   const headlinerName = (getBandName(bands[0]) || "LIVE").toUpperCase();
 
-  // 2. Standardize Media Sources
+  // Media sources (still using old fields for setlists/stubs - those will be migrated later)
   const rawSetlists = (event.setlist_image_url || "").split(',').map(u => u.trim()).filter(Boolean);
-  const rawPhotos = (event.personal_photo_url || "").split(',').map(u => u.trim()).filter(Boolean);
   
-  // 🛡️ Safety: Ensure personal photos don't duplicate setlist images
-  const finalPhotos = rawPhotos.filter(url => !rawSetlists.includes(url));
-  const finalSetlists = rawSetlists;
+  // Use artifact data for photos
+  const finalPhotos = photoArtifacts;
 
-  // 🎨 RELATIONAL POSTER CONSOLIDATION
+  // Posters logic (unchanged)
   const finalPosters = useMemo(() => {
     const list = [];
     if (event.festival_poster_url) {
@@ -5212,11 +5235,10 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
       });
     }
     
-    // 🟢 HIDE FESTIVAL-WIDE POSTERS FROM ROWS
     return list.filter(p => p.poster_type !== 'festival_year');
   }, [event.festival_poster_url, event.matchedPosters, event.date, headlinerName]);
 
-  // 🟢 SELF-CONTAINED CLONE LOGIC
+  // Clone logic (unchanged)
   const cloneSignal = async (e) => {
     e.stopPropagation();
     
@@ -5273,7 +5295,7 @@ function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = fal
       }]);
       
       alert(`⚡ CLONED: ${primaryArtist}`);
-if (typeof onRefresh === 'function') await onRefresh();
+      if (typeof onRefresh === 'function') await onRefresh();
       
     } catch (err) {
       if (err.code === '23505') {
@@ -5284,96 +5306,8 @@ if (typeof onRefresh === 'function') await onRefresh();
     }
   };
 
-const onSync = async () => {
-  if (selectedSignals.length === 0) return;
-  
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user) {
-    alert("LOGIN REQUIRED");
-    return;
-  }
-
-  console.log('🔄 Starting bulk sync for', selectedSignals.length, 'shows');
-
-  let succeeded = 0;
-  let failed = 0;
-
-  for (const signal of selectedSignals) {
-    try {
-      console.log('Processing:', signal.artist, signal.date);
-      
-      const primaryArtist = signal.bands?.[0]?.name || signal.artist || 'Unknown';
-      const safeVenue = signal.venue || signal.festival_name || 'Unknown Venue';
-      
-      const { data: matchingShows } = await supabase
-        .from('shows')
-        .select('*')
-        .eq('date', signal.date);
-      
-      let showId = null;
-      if (matchingShows) {
-        const match = matchingShows.find(s => 
-          s.venue?.toLowerCase().includes(safeVenue.toLowerCase()) &&
-          s.artist?.toLowerCase().includes(primaryArtist.toLowerCase())
-        );
-        showId = match?.id;
-      }
-      
-      if (!showId) {
-        console.log('Creating new show for', primaryArtist);
-        const { data: newShow, error } = await supabase
-          .from('shows')
-          .insert([{
-            date: signal.date,
-            artist: primaryArtist,
-            bands: signal.bands,
-            venue: safeVenue,
-            city: signal.city,
-            state: signal.state,
-            is_festival: signal.is_festival,
-            festival_name: signal.festival_name,
-            genre: signal.genre || 'Indie Rock',
-            created_by: session.user.id
-          }])
-          .select()
-          .single();
-        
-        if (error) throw error;
-        showId = newShow.id;
-      }
-      
-      console.log('Inserting attendance for show', showId);
-      const { error: attError } = await supabase
-        .from('attendances')
-        .insert([{
-          user_id: session.user.id,
-          show_id: showId,
-          is_public: true
-        }]);
-      
-      if (attError) {
-        if (attError.code === '23505') {
-          console.log('Already exists, skipping');
-        } else {
-          throw attError;
-        }
-      }
-      
-      succeeded++;
-      console.log('✅ Success:', primaryArtist);
-      
-    } catch (err) {
-      failed++;
-      console.error('❌ Failed:', signal.artist, err.message);
-    }
-  }
-  
-  alert(`✅ ${succeeded} synced, ${failed} failed`);
-  console.log('Final:', { succeeded, failed });
-  window.location.reload();
-};
-  // Detect if we are on a curator's page (spectator mode)
-  const isSpectator = window.location.hash.includes('#/u/');
+  const isSpectator = viewingUser && (!session || session.user?.id !== event.user_id);
+  const isOwner = !viewingUser || (session?.user?.id === event.user_id);
 
   return (
     <div style={{ 
@@ -5390,7 +5324,7 @@ const onSync = async () => {
       marginBottom: isMobile ? '10px' : '0'
     }}>
       
-      {/* 🟢 THE GHOST POSTER */}
+      {/* Ghost poster background */}
       {!isMobile && (
         <div style={{
           position: 'absolute', left: '-2%', top: '-10%', width: '100%', height: '120%',
@@ -5404,7 +5338,7 @@ const onSync = async () => {
         </div>
       )}
 
-      {/* 🟢 LEFT: THE TICKET STUB / WRISTBAND */}
+      {/* LEFT: Ticket/Wristband */}
       <div style={{ 
         flexShrink: 0, width: isMobile ? '100%' : '320px', position: 'relative', zIndex: 2,
         display: 'flex', flexDirection: 'column', gap: '15px', alignItems: isMobile ? 'center' : 'flex-start'
@@ -5417,7 +5351,7 @@ const onSync = async () => {
         </div>
       </div>
 
-      {/* 🟢 MIDDLE: THE INTERACTIVE LINEUP */}
+      {/* MIDDLE: Lineup */}
       <div style={{ flex: 1, paddingLeft: isMobile ? '0' : '50px', zIndex: 2, textAlign: isMobile ? 'center' : 'left' }}>
         <div style={{ 
           fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.2rem' : '3.8rem', lineHeight: 0.85,
@@ -5446,7 +5380,6 @@ const onSync = async () => {
           <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.1)' }} />
           <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>{event.venue?.toUpperCase()}</div>
           
-          {/* 🟢 THE CLONE BUTTON */}
           {isSpectator && !isAdmin && (
             <button
               onClick={cloneSignal}
@@ -5473,7 +5406,7 @@ const onSync = async () => {
         </div>
       </div>
 
-      {/* 🟢 RIGHT: MEDIA CLUSTER */}
+      {/* RIGHT: Media cluster */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
@@ -5494,8 +5427,8 @@ const onSync = async () => {
           gap: isMobile ? '10px' : '0',
           width: isMobile ? '100%' : 'auto'
         }}>
-          {finalSetlists.map((url, sIdx) => (
-            <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={finalSetlists.length} />
+          {rawSetlists.map((url, sIdx) => (
+            <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={rawSetlists.length} />
           ))}
           {finalPosters.map((poster, pIdx) => (
             <GigPoster
@@ -5507,14 +5440,22 @@ const onSync = async () => {
             />
           ))}
           <div style={{ 
-            marginLeft: isMobile ? '0' : ((finalSetlists.length > 0 || finalPosters.length > 0) ? '-20px' : '0'),
+            marginLeft: isMobile ? '0' : ((rawSetlists.length > 0 || finalPosters.length > 0) ? '-20px' : '0'),
             display: 'flex',
             flexWrap: isMobile ? 'wrap' : 'nowrap',
             gap: isMobile ? '10px' : '0',
             justifyContent: isMobile ? 'center' : 'flex-start'
           }}>
-            {finalPhotos.map((url, pIdx) => (
-              <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
+            {finalPhotos.map((photo, pIdx) => (
+              <PersonalPolaroid 
+                key={`${event.id}-p-${pIdx}`} 
+                src={photo.image_url} 
+                index={pIdx} 
+                total={finalPhotos.length} 
+                caption={venueLabel?.split(',')[0].toUpperCase()}
+                isPrivate={!photo.is_public}
+                isOwner={isOwner}
+              />
             ))}
           </div>
         </div>
@@ -5522,7 +5463,6 @@ const onSync = async () => {
     </div>
   );
 }
-
 const getDayColor = (baseHex, index) => {
   const variants = [1.0, 0.8, 0.6, 0.45, 0.3]; 
   return hexToRgba(baseHex || C.teal, variants[index % variants.length]);
