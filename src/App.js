@@ -6628,6 +6628,7 @@ const TAB_GROUPS = [
 
 const RIGHT_TABS = [
   ['manage', '⚙️ THE OFFICE', '#888'],
+  ['tagger', '🏷️ RELIC TAGGER', '#ffcc00'],
 ];
 
 function TrackRecordLogo({ size = 40 }) {
@@ -7514,6 +7515,305 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
     </div>
   );
 }
+
+// ─── RELIC TAGGER (ONE-TIME CLEANUP TOOL) ────────────────────────────────────
+// Add this as a new component, then add a tab for it in your SYSTEM BOOTH section
+
+function RelicTaggerTab() {
+  const [untaggedRelics, setUntaggedRelics] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [selections, setSelections] = useState({});
+
+  useEffect(() => {
+    async function fetch() {
+      setLoading(true);
+      try {
+        // Get all untagged relics on festival shows
+        const { data: relics } = await supabase
+          .from('artifacts')
+          .select(`
+            id,
+            image_url,
+            artifact_type,
+            show:shows (
+              id,
+              date,
+              festival_name,
+              festival_day,
+              bands,
+              venue
+            )
+          `)
+          .eq('artifact_type', 'relic')
+          .is('band_name', null);
+
+        if (relics) {
+          // Filter only festivals with multiple bands
+          const festivalRelics = relics.filter(r => 
+            r.show?.bands && 
+            Array.isArray(r.show.bands) && 
+            r.show.bands.length > 1
+          );
+          
+          setUntaggedRelics(festivalRelics);
+          
+          // Initialize selections (default to first band)
+          const initialSelections = {};
+          festivalRelics.forEach(r => {
+            initialSelections[r.id] = r.show.bands[0]?.name || '';
+          });
+          setSelections(initialSelections);
+        }
+      } catch (err) {
+        console.error('Fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetch();
+  }, []);
+
+  const handleSaveAll = async () => {
+    setSaving(true);
+    try {
+      // Update each relic with its selected band
+      for (const relic of untaggedRelics) {
+        const bandName = selections[relic.id];
+        if (bandName) {
+          await supabase
+            .from('artifacts')
+            .update({ band_name: bandName })
+            .eq('id', relic.id);
+        }
+      }
+      
+      alert('✅ ALL RELICS TAGGED');
+      // Refresh
+      window.location.reload();
+    } catch (err) {
+      alert('Save failed: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{ padding: 100, textAlign: 'center' }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, letterSpacing: 3 }}>
+          SCANNING FOR UNTAGGED RELICS...
+        </div>
+      </div>
+    );
+  }
+
+  if (untaggedRelics.length === 0) {
+    return (
+      <div style={{ padding: 100, textAlign: 'center' }}>
+        <div style={{ fontSize: '3rem', marginBottom: 20 }}>✅</div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff' }}>
+          ALL RELICS TAGGED
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginTop: 10 }}>
+          No orphaned artifacts detected
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fade-in" style={{ padding: '24px 0' }}>
+      
+      {/* Header */}
+      <div style={{ 
+        background: hexToRgba(C.gold, 0.1), 
+        border: `1px solid ${C.gold}`, 
+        borderRadius: 12, 
+        padding: 24, 
+        marginBottom: 30,
+        textAlign: 'center'
+      }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.gold, letterSpacing: 3 }}>
+          RELIC TAGGING PROTOCOL
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginTop: 8, letterSpacing: 2 }}>
+          {untaggedRelics.length} FESTIVAL RELICS AWAITING BAND ASSIGNMENT
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, marginTop: 12, lineHeight: 1.6 }}>
+          These setlists are from festival days with multiple bands.<br/>
+          Select which band each relic belongs to, then save all at once.
+        </div>
+      </div>
+
+      {/* Relic Grid */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(3, 1fr)', 
+        gap: 24 
+      }}>
+        {untaggedRelics.map((relic, idx) => {
+          const show = relic.show;
+          const bands = show?.bands || [];
+          
+          return (
+            <div 
+              key={relic.id}
+              style={{
+                background: C.bgCard,
+                border: `1px solid ${C.border}`,
+                borderRadius: 12,
+                overflow: 'hidden',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
+              }}
+            >
+              {/* Image Preview */}
+              <div style={{ 
+                background: '#000', 
+                padding: 12, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                minHeight: 200,
+                maxHeight: 300,
+                overflow: 'hidden'
+              }}>
+                <img 
+                  src={relic.image_url} 
+                  alt="relic" 
+                  style={{ 
+                    maxWidth: '100%', 
+                    maxHeight: '280px', 
+                    objectFit: 'contain' 
+                  }} 
+                />
+              </div>
+
+              {/* Info + Selector */}
+              <div style={{ padding: 16 }}>
+                {/* Festival info */}
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ 
+                    fontFamily: "'Bebas Neue'", 
+                    fontSize: '1.3rem', 
+                    color: C.gold, 
+                    lineHeight: 1 
+                  }}>
+                    {show.festival_name?.toUpperCase()}
+                  </div>
+                  <div style={{ 
+                    fontFamily: "'Space Mono'", 
+                    fontSize: 8, 
+                    color: C.gray, 
+                    marginTop: 4 
+                  }}>
+                    {show.festival_day?.toUpperCase()} • {fmtDateShort(show.date)}
+                  </div>
+                </div>
+
+                {/* Band selector */}
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ 
+                    fontFamily: "'Space Mono'", 
+                    fontSize: 7, 
+                    color: C.teal, 
+                    letterSpacing: 2, 
+                    display: 'block', 
+                    marginBottom: 6 
+                  }}>
+                    WHICH BAND IS THIS SETLIST FOR?
+                  </label>
+                  <select
+                    value={selections[relic.id] || ''}
+                    onChange={e => setSelections(prev => ({ 
+                      ...prev, 
+                      [relic.id]: e.target.value 
+                    }))}
+                    style={{
+                      width: '100%',
+                      background: '#000',
+                      border: `1px solid ${C.teal}44`,
+                      color: '#fff',
+                      padding: 10,
+                      borderRadius: 6,
+                      fontFamily: "'Space Mono'",
+                      fontSize: 10,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {bands.map((band, i) => {
+                      const bandName = typeof band === 'string' ? band : band.name;
+                      return (
+                        <option key={i} value={bandName}>
+                          {bandName}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                {/* Status indicator */}
+                <div style={{ 
+                  fontFamily: "'Space Mono'", 
+                  fontSize: 7, 
+                  color: selections[relic.id] ? C.green : C.grayDim,
+                  textAlign: 'center',
+                  padding: '4px',
+                  background: selections[relic.id] ? hexToRgba(C.green, 0.1) : 'transparent',
+                  borderRadius: 4
+                }}>
+                  {selections[relic.id] ? '✓ READY' : '○ SELECT BAND'}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Save All Button */}
+      <div style={{ 
+        position: 'sticky', 
+        bottom: 20, 
+        marginTop: 40,
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <button
+          onClick={handleSaveAll}
+          disabled={saving || Object.keys(selections).length === 0}
+          style={{
+            background: saving ? '#222' : C.gold,
+            border: 'none',
+            color: '#000',
+            padding: '20px 60px',
+            borderRadius: 8,
+            fontFamily: "'Bebas Neue'",
+            fontSize: '1.8rem',
+            letterSpacing: 4,
+            cursor: saving ? 'not-allowed' : 'pointer',
+            boxShadow: saving ? 'none' : `0 0 40px ${hexToRgba(C.gold, 0.5)}`,
+            fontWeight: 900,
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={e => {
+            if (!saving) {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.boxShadow = `0 0 60px ${hexToRgba(C.gold, 0.7)}`;
+            }
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = `0 0 40px ${hexToRgba(C.gold, 0.5)}`;
+          }}
+        >
+          {saving ? 'SYNCING...' : `COMMIT ${untaggedRelics.length} RELICS`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
 // ─── POSTER UPLOAD MODAL ──────────────────────────────────────────────────────
 function PosterUploadModal({ concerts, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -11418,6 +11718,8 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
     onFetchData={fetchConcerts} // 🟢 Passes the data refresher down
   />
 )}
+
+{isAdmin && activeTab === 'tagger' && <RelicTaggerTab />}
 
 {/* ── DEBUG (REMOVE AFTER TESTING) ── */}
 {console.log('DEBUG:', { 
