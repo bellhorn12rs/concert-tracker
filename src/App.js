@@ -6713,6 +6713,9 @@ function TrackRecordLogo({ size = 40 }) {
   );
 }
 
+// ─── EDIT MODAL (ARTIFACT-AWARE EDITION) ─────────────────────────────────────
+// Replace your entire EditModal function with this
+
 function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   const isMobile = window.innerWidth < 768;
 
@@ -6728,20 +6731,20 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     image_url: '', 
     personal_photo_url: '', 
     setlist_image_url: '', 
-    festival_poster_url: ''
+    festival_poster_url: '',
+    wristband_image_url: ''
   };
 
   const [form, setForm] = useState(initialState);
   const [uploading, setUploading] = useState(false);
   const [entryStep, setEntryStep] = useState(concert === 'new' ? 'gate' : 'form');
-  const [showPosterUpload, setShowPosterUpload] = useState(false);
+  
+  // NEW: Track band assignments for relics
+  const [relicBandSelections, setRelicBandSelections] = useState({});
+  const [showRelicBandPicker, setShowRelicBandPicker] = useState(null);
 
-
-
-  // 🟢 HELPER: Find most frequent location
   const getHomeTurf = () => {
     if (allConcerts.length === 0) return { city: '', state: '' };
-    // Scavenge the most recent show for a quick starting point
     const last = allConcerts[0];
     return { city: last.city || '', state: last.state || '' };
   };
@@ -6750,7 +6753,6 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     setForm(prev => {
       const newForm = { ...prev, [k]: v };
       
-      // Auto-fill City/State when a known venue is typed
       if (k === 'venue' && v && v.length > 2) {
         const match = allConcerts.find(c => c.venue?.toLowerCase() === v.toLowerCase());
         if (match) {
@@ -6759,7 +6761,6 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
         }
       }
 
-      // 🟢 AUTO-MIRROR: If Headliner is typed, sync it to the first Band slot
       if (!prev.is_festival && k === 'artist') {
          if (newForm.bands.length <= 1) {
             newForm.bands = [{ name: v, genre: prev.bands[0]?.genre || 'Indie Rock' }];
@@ -6791,7 +6792,13 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
       } catch (e) { console.log("📡 NO EXIF"); }
     }
 
-    const bucketMap = { 'TICKET': 'Ticket Stubs', 'SETLIST': 'setlists', 'POLAROID': 'polaroids', 'POSTER': 'Posters', 'WRISTBAND': 'Wristbands' };
+    const bucketMap = { 
+      'TICKET': 'Ticket Stubs', 
+      'SETLIST': 'setlists', 
+      'POLAROID': 'polaroids', 
+      'POSTER': 'Posters', 
+      'WRISTBAND': 'Wristbands' 
+    };
     
     try {
       const bucket = bucketMap[type];
@@ -6814,28 +6821,34 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     }
   }
 
-  useEffect(() => {
-    if (concert && concert !== 'new') {
-      let loadedBands = [];
-      if (Array.isArray(concert.bands) && concert.bands.length > 0) {
-        loadedBands = concert.bands.map(b => {
-          if (typeof b === 'string') return { name: b, genre: concert.genre || 'Indie Rock' };
-          if (typeof b === 'object' && b.name) return b;
-          return { name: '', genre: 'Indie Rock' };
-        });
-      } else if (concert.artist) {
-        loadedBands = [{ name: concert.artist, genre: concert.genre || 'Indie Rock' }];
-      }
-
-      setForm({ ...initialState, ...concert, artist: loadedBands[0]?.name || concert.artist || '', bands: loadedBands });
-    } else {
-      // 🟢 NEW USER FLOW: Pre-fill location from history
-      const turf = getHomeTurf();
-      setForm({ ...initialState, city: turf.city, state: turf.state, bands: [{ name: '', genre: 'Indie Rock' }] });
+  // NEW: Handle relic upload with band selection
+  async function handleRelicUpload(files) {
+    const urls = [];
+    for (const file of files) {
+      const url = await uploadToArchive(file, 'SETLIST');
+      if (url) urls.push(url);
     }
-  }, [concert]);
+    
+    if (urls.length > 0) {
+      const existing = form.setlist_image_url ? form.setlist_image_url.split(',').map(s => s.trim()).filter(Boolean) : [];
+      const allUrls = [...existing, ...urls];
+      set('setlist_image_url', allUrls.join(', '));
+      
+      // If festival with multiple bands, ask which band for each new relic
+      if (form.is_festival && form.bands.length > 1) {
+        // Show picker for the first new URL
+        setShowRelicBandPicker(urls[0]);
+      } else if (!form.is_festival && form.bands.length > 0) {
+        // Solo show - auto-assign to headliner
+        const newSelections = {};
+        urls.forEach(url => {
+          newSelections[url] = form.bands[0].name;
+        });
+        setRelicBandSelections(prev => ({ ...prev, ...newSelections }));
+      }
+    }
+  }
 
-  // 🎨 THE ONE-CLICK PIN (Relational Poster Logic)
   const handlePosterDirectUpload = async (file) => {
     if (!file) return;
     if (!form.date) return alert("DATE REQUIRED: Set a show date before pinning a poster.");
@@ -6843,17 +6856,12 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return alert("SESSION EXPIRED // RE-LOGIN REQUIRED");
 
-    // Diagnostic: Log what we are sending
-    console.log("POSTER ATTEMPT:", { artist: form.artist, fest: form.festival_name, date: form.date });
-
     const url = await uploadToArchive(file, 'POSTER');
     
     if (url) {
-      // 🛡️ DATA FALLBACKS: Ensure no 'null' values are sent to required columns
       const insertData = {
         image_url: url,
         poster_type: form.is_festival ? 'festival_year' : 'artist',
-        // Fallback: If form.artist is empty, try the first band in the list
         artist: form.artist || (form.bands?.[0]?.name) || 'Unknown Artist',
         festival_name: form.festival_name || '',
         date: form.date,
@@ -6867,16 +6875,154 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
       const { error } = await supabase.from('posters').insert([insertData]);
 
       if (error) {
-  console.error("Supabase DB Error:", error);
-  alert(`POSTER SYNC FAILED: ${error.message || 'Database connection error'}`);
-} else {
-  console.log("✅ POSTER PINNED SUCCESSFULLY");
-  onClose(); 
-}
+        console.error("Poster save error:", error);
+        alert(`POSTER SYNC FAILED: ${error.message || 'Database connection error'}`);
+      } else {
+        console.log("✅ POSTER PINNED");
+        onClose(); 
+      }
     }
   };
 
-  // Render logic remains similar but uses the updated 'set' and 'form' state
+  // NEW: Enhanced save that writes to BOTH old fields AND artifacts table
+  const handleSave = async () => {
+    const showId = (concert && concert !== 'new') ? concert.id : null;
+    
+    // 1. Save to shows table (old way - keeps existing code working)
+    await onSave(showId, form);
+    
+    // 2. Get the show ID (either existing or newly created)
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return;
+    
+    let targetShowId = showId;
+    
+    // If new show, we need to get its ID after creation
+    if (!showId) {
+      // Query for the show we just created
+      const { data: newShow } = await supabase
+        .from('shows')
+        .select('id')
+        .eq('date', form.date)
+        .eq('venue', form.venue)
+        .eq('created_by', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (newShow) targetShowId = newShow.id;
+    }
+    
+    if (!targetShowId) {
+      console.error("No show ID - artifacts not saved");
+      return;
+    }
+    
+    // 3. Save artifacts to artifacts table
+    const artifactsToInsert = [];
+    
+    // Stubs
+    if (form.image_url) {
+      form.image_url.split(',').forEach(url => {
+        if (url.trim()) {
+          artifactsToInsert.push({
+            user_id: session.user.id,
+            show_id: targetShowId,
+            artifact_type: 'stub',
+            image_url: url.trim(),
+            band_name: form.is_festival ? null : (form.bands[0]?.name || null),
+            is_public: true
+          });
+        }
+      });
+    }
+    
+    // Photos
+    if (form.personal_photo_url) {
+      form.personal_photo_url.split(',').forEach(url => {
+        if (url.trim()) {
+          artifactsToInsert.push({
+            user_id: session.user.id,
+            show_id: targetShowId,
+            artifact_type: 'photo',
+            image_url: url.trim(),
+            band_name: form.is_festival ? null : (form.bands[0]?.name || null),
+            is_public: true
+          });
+        }
+      });
+    }
+    
+    // Relics (with band selection)
+    if (form.setlist_image_url) {
+      form.setlist_image_url.split(',').forEach(url => {
+        if (url.trim()) {
+          const bandName = relicBandSelections[url.trim()] || (form.is_festival ? null : (form.bands[0]?.name || null));
+          artifactsToInsert.push({
+            user_id: session.user.id,
+            show_id: targetShowId,
+            artifact_type: 'relic',
+            image_url: url.trim(),
+            band_name: bandName,
+            is_public: true
+          });
+        }
+      });
+    }
+    
+    // Wristband
+    if (form.wristband_image_url && form.wristband_image_url.trim()) {
+      artifactsToInsert.push({
+        user_id: session.user.id,
+        show_id: targetShowId,
+        artifact_type: 'wristband',
+        image_url: form.wristband_image_url.trim(),
+        band_name: null,
+        is_public: true
+      });
+    }
+    
+    // Insert all artifacts
+    if (artifactsToInsert.length > 0) {
+      const { error: artifactError } = await supabase
+        .from('artifacts')
+        .upsert(artifactsToInsert, { 
+          onConflict: 'user_id,show_id,artifact_type,image_url',
+          ignoreDuplicates: true 
+        });
+      
+      if (artifactError) {
+        console.error("Artifact save error:", artifactError);
+      } else {
+        console.log(`✅ ${artifactsToInsert.length} artifacts saved`);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (concert && concert !== 'new') {
+      let loadedBands = [];
+      if (Array.isArray(concert.bands) && concert.bands.length > 0) {
+        loadedBands = concert.bands.map(b => {
+          if (typeof b === 'string') return { name: b, genre: concert.genre || 'Indie Rock' };
+          if (typeof b === 'object' && b.name) return b;
+          return { name: '', genre: 'Indie Rock' };
+        });
+      } else if (concert.artist) {
+        loadedBands = [{ name: concert.artist, genre: concert.genre || 'Indie Rock' }];
+      }
+
+      setForm({ 
+        ...initialState, 
+        ...concert, 
+        artist: loadedBands[0]?.name || concert.artist || '', 
+        bands: loadedBands 
+      });
+    } else {
+      const turf = getHomeTurf();
+      setForm({ ...initialState, city: turf.city, state: turf.state, bands: [{ name: '', genre: 'Indie Rock' }] });
+    }
+  }, [concert]);
 
   const gateBtn = (color) => ({
     background: hexToRgba(color, 0.1), border: `1px solid ${color}`, color: '#fff',
@@ -6964,7 +7110,6 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                   <input style={inputStyle} value={form.state} onChange={e => set('state', e.target.value)} placeholder="ST" maxLength={2} />
                 </div>
 
-                {/* 🎸 SMART BILL LINEUP */}
                 <label style={{ ...labelStyle, color: C.teal, marginTop: 10 }}>LINEUP & GENRES</label>
                 <div style={{ background: '#000', border: '1px solid #222', borderRadius: 8, padding: 12 }}>
                   {form.bands.map((b, idx) => (
@@ -7003,111 +7148,162 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
               </div>
 
               {/* RIGHT COLUMN: ARTIFACTS */}
-{/* RIGHT COLUMN: ARTIFACTS */}
-<div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
-  <label style={labelStyle}>// PHYSICAL ARTIFACTS</label>
-  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-    {[ 
-      {k:'image_url', l:'STUB', i:'🎟️', id:'e-stub', t:'TICKET', multi: true}, 
-      {k:'personal_photo_url', l:'PHOTO', i:'📸', id:'e-pic', t:'POLAROID', multi: true}, 
-      {k:'setlist_image_url', l:'RELIC', i:'🏺', id:'e-set', t:'SETLIST', multi: true}, 
-      ...(form.is_festival ? [{k:'wristband_image_url', l:'WRISTBAND', i:'🎫', id:'e-wrist', t:'WRISTBAND', multi: false}] : [])
-    ].map(item => {
-      const count = item.multi && form[item.k] ? form[item.k].split(',').filter(Boolean).length : 0;
-      const hasAny = form[item.k] && form[item.k] !== '';
-      
-      return (
-        <div key={item.k} onClick={() => document.getElementById(item.id).click()} style={{ background: hasAny ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${hasAny ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
-          <div style={{ fontSize: '1.2rem' }}>{hasAny ? '✅' : item.i}</div>
-          <div style={{ fontSize: 7, marginTop: 5, color: '#666' }}>{item.l}</div>
-          {item.multi && count > 0 && (
-            <div style={{ fontSize: 6, marginTop: 3, color: '#00cc88', fontFamily: "'Space Mono'" }}>
-              {count} UPLOADED
-            </div>
-          )}
-          <input 
-            id={item.id} 
-            type="file" 
-            multiple={item.multi}
-            hidden 
-            onChange={async (e) => { 
-              if (item.multi) {
-                // Handle multiple files
-                const files = Array.from(e.target.files);
-                const urls = [];
-                for (const file of files) {
-                  const url = await uploadToArchive(file, item.t);
-                  if (url) urls.push(url);
-                }
-                if (urls.length > 0) {
-                  const existing = form[item.k] ? form[item.k].split(',').map(s => s.trim()).filter(Boolean) : [];
-                  set(item.k, [...existing, ...urls].join(', '));
-                }
-              } else {
-                // Single file (wristband)
-                const url = await uploadToArchive(e.target.files[0], item.t);
-                if (url) set(item.k, url);
-              }
-            }} 
-          />
-        </div>
-      );
-    })}
-  </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+                <label style={labelStyle}>// PHYSICAL ARTIFACTS</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {[ 
+                    {k:'image_url', l:'STUB', i:'🎟️', id:'e-stub', t:'TICKET', multi: true}, 
+                    {k:'personal_photo_url', l:'PHOTO', i:'📸', id:'e-pic', t:'POLAROID', multi: true}, 
+                    {k:'setlist_image_url', l:'RELIC', i:'🏺', id:'e-set', t:'SETLIST', multi: true, handler: handleRelicUpload}, 
+                    ...(form.is_festival ? [{k:'wristband_image_url', l:'WRISTBAND', i:'🎫', id:'e-wrist', t:'WRISTBAND', multi: false}] : [])
+                  ].map(item => {
+                    const count = item.multi && form[item.k] ? form[item.k].split(',').filter(Boolean).length : 0;
+                    const hasAny = form[item.k] && form[item.k] !== '';
+                    
+                    return (
+                      <div key={item.k} onClick={() => document.getElementById(item.id).click()} style={{ background: hasAny ? '#00cc8811' : '#000', padding: 15, borderRadius: 8, border: `1px solid ${hasAny ? '#00cc88' : '#222'}`, textAlign: 'center', cursor: 'pointer' }}>
+                        <div style={{ fontSize: '1.2rem' }}>{hasAny ? '✅' : item.i}</div>
+                        <div style={{ fontSize: 7, marginTop: 5, color: '#666' }}>{item.l}</div>
+                        {item.multi && count > 0 && (
+                          <div style={{ fontSize: 6, marginTop: 3, color: '#00cc88', fontFamily: "'Space Mono'" }}>
+                            {count} UPLOADED
+                          </div>
+                        )}
+                        <input 
+                          id={item.id} 
+                          type="file" 
+                          multiple={item.multi}
+                          hidden 
+                          onChange={async (e) => {
+                            // Use custom handler for relics
+                            if (item.handler) {
+                              await item.handler(Array.from(e.target.files));
+                              return;
+                            }
+                            
+                            // Default handler for other types
+                            if (item.multi) {
+                              const files = Array.from(e.target.files);
+                              const urls = [];
+                              for (const file of files) {
+                                const url = await uploadToArchive(file, item.t);
+                                if (url) urls.push(url);
+                              }
+                              if (urls.length > 0) {
+                                const existing = form[item.k] ? form[item.k].split(',').map(s => s.trim()).filter(Boolean) : [];
+                                set(item.k, [...existing, ...urls].join(', '));
+                              }
+                            } else {
+                              const url = await uploadToArchive(e.target.files[0], item.t);
+                              if (url) set(item.k, url);
+                            }
+                          }} 
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
 
-  {/* 🎨 DIRECT POSTER PINNING */}
-  <div style={{ marginTop: 10 }}>
-    <label style={{ 
-      width: '100%', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      gap: '10px',
-      padding: '12px', 
-      background: 'rgba(255, 102, 153, 0.1)', 
-      border: '1px dashed #ff6699', 
-      color: '#ff6699', 
-      borderRadius: 8, 
-      fontFamily: "'Space Mono'", 
-      fontSize: 10, 
-      cursor: 'pointer',
-      transition: '0.2s'
-    }}>
-      <span>{uploading ? '📡 UPLOADING SIGNAL...' : '🎨 PIN POSTER TO WALL'}</span>
-      <input 
-        type="file" 
-        accept="image/*" 
-        hidden 
-        disabled={uploading || !form.date} 
-        onChange={(e) => handlePosterDirectUpload(e.target.files[0])} 
-      />
-    </label>
-    {!form.date && (
-      <div style={{ fontSize: 7, color: '#666', textAlign: 'center', marginTop: 5 }}>
-        [ DATE REQUIRED TO ANCHOR POSTER ]
-      </div>
-    )}
-  </div>
+                {/* NEW: Relic band picker */}
+                {showRelicBandPicker && form.is_festival && form.bands.length > 1 && (
+                  <div style={{ 
+                    background: hexToRgba(C.gold, 0.1), 
+                    border: `1px solid ${C.gold}`, 
+                    borderRadius: 8, 
+                    padding: 12 
+                  }}>
+                    <div style={{ 
+                      fontFamily: "'Space Mono'", 
+                      fontSize: 8, 
+                      color: C.gold, 
+                      marginBottom: 8, 
+                      letterSpacing: 2 
+                    }}>
+                      WHICH BAND IS THIS SETLIST FOR?
+                    </div>
+                    <select
+                      value={relicBandSelections[showRelicBandPicker] || ''}
+                      onChange={e => {
+                        setRelicBandSelections(prev => ({
+                          ...prev,
+                          [showRelicBandPicker]: e.target.value
+                        }));
+                        setShowRelicBandPicker(null);
+                      }}
+                      style={{
+                        width: '100%',
+                        background: '#000',
+                        border: `1px solid ${C.teal}`,
+                        color: '#fff',
+                        padding: 10,
+                        borderRadius: 6,
+                        fontFamily: "'Space Mono'",
+                        fontSize: 10
+                      }}
+                    >
+                      <option value="">Select band...</option>
+                      {form.bands.map((band, i) => (
+                        <option key={i} value={band.name}>
+                          {band.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-  {/* FOOTER ACTIONS */}
-  <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-    <button 
-      onClick={() => onSave((concert && concert !== 'new') ? concert.id : null, form)} 
-      disabled={uploading} 
-      style={{ width: '100%', padding: '18px', background: uploading ? '#222' : C.teal, color: '#000', borderRadius: '8px', fontFamily: "'Bebas Neue'", fontSize: '1.5rem', cursor: 'pointer' }}
-    >
-      {uploading ? 'SYNCING...' : 'COMMIT TO ARCHIVE'}
-    </button>
-    {concert !== 'new' && (
-      <button 
-        onClick={() => onDelete(concert.id)} 
-        style={{ background: 'none', border: '1px solid #441111', color: '#ff4444', padding: '10px', borderRadius: '6px', fontSize: '9px', cursor: 'pointer' }}
-      >
-        DELETE SIGNAL PERMANENTLY
-      </button>
-    )}
-  </div>
-</div>
+                {/* Poster upload */}
+                <div style={{ marginTop: 10 }}>
+                  <label style={{ 
+                    width: '100%', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    gap: '10px',
+                    padding: '12px', 
+                    background: 'rgba(255, 102, 153, 0.1)', 
+                    border: '1px dashed #ff6699', 
+                    color: '#ff6699', 
+                    borderRadius: 8, 
+                    fontFamily: "'Space Mono'", 
+                    fontSize: 10, 
+                    cursor: 'pointer',
+                    transition: '0.2s'
+                  }}>
+                    <span>{uploading ? '📡 UPLOADING SIGNAL...' : '🎨 PIN POSTER TO WALL'}</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      hidden 
+                      disabled={uploading || !form.date} 
+                      onChange={(e) => handlePosterDirectUpload(e.target.files[0])} 
+                    />
+                  </label>
+                  {!form.date && (
+                    <div style={{ fontSize: 7, color: '#666', textAlign: 'center', marginTop: 5 }}>
+                      [ DATE REQUIRED TO ANCHOR POSTER ]
+                    </div>
+                  )}
+                </div>
+
+                {/* Save/Delete buttons */}
+                <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <button 
+                    onClick={handleSave}
+                    disabled={uploading} 
+                    style={{ width: '100%', padding: '18px', background: uploading ? '#222' : C.teal, color: '#000', borderRadius: '8px', fontFamily: "'Bebas Neue'", fontSize: '1.5rem', cursor: uploading ? 'not-allowed' : 'pointer' }}
+                  >
+                    {uploading ? 'SYNCING...' : 'COMMIT TO ARCHIVE'}
+                  </button>
+                  {concert !== 'new' && (
+                    <button 
+                      onClick={() => onDelete(concert.id)} 
+                      style={{ background: 'none', border: '1px solid #441111', color: '#ff4444', padding: '10px', borderRadius: '6px', fontSize: '9px', cursor: 'pointer' }}
+                    >
+                      DELETE SIGNAL PERMANENTLY
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -7115,6 +7311,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     </div>
   );
 }
+
 // 🟢 Helper 1: Navigation Button Styling
 // This handles the "Active" glow and color switching for the Terminal row
 const navBtnStyle = (isActive, color) => ({
