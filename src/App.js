@@ -7470,9 +7470,14 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
   // Initialize form with show data or defaults
   const [form, setForm] = useState({ 
     artist: '', 
+    bands: [],
     venue: '', 
+    city: '',
+    state: '',
     date: '', 
-    status: 'TICKETS BOUGHT' 
+    status: 'TICKETS BOUGHT',
+    is_festival: false,
+    festival_name: ''
   });
   const [saving, setSaving] = useState(false);
 
@@ -7481,18 +7486,31 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
     if (show && show.id) {
       setForm({
         artist: show.artist || '',
+        bands: show.bands || [],
         venue: show.venue || '',
+        city: show.city || '',
+        state: show.state || '',
         date: show.date || '',
-        status: show.status || 'TICKETS BOUGHT'
+        status: show.status || 'TICKETS BOUGHT',
+        is_festival: show.is_festival || false,
+        festival_name: show.festival_name || ''
       });
     } else {
-      setForm({ artist: '', venue: '', date: '', status: 'TICKETS BOUGHT' });
+      setForm({ 
+        artist: '', 
+        bands: [],
+        venue: '', 
+        city: '',
+        state: '',
+        date: '', 
+        status: 'TICKETS BOUGHT',
+        is_festival: false,
+        festival_name: ''
+      });
     }
   }, [show]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
-
   
   const lbl = { 
     display: 'block', 
@@ -7530,7 +7548,7 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
         className="fade-in"
         style={{ 
           background: C.bgCard, border: `1px solid ${C.gold}`, 
-          borderRadius: 16, padding: 35, width: '100%', maxWidth: 420, 
+          borderRadius: 16, padding: 35, width: '100%', maxWidth: 500, 
           boxShadow: `0 0 50px ${hexToRgba(C.gold, 0.2)}`, position: 'relative' 
         }}
       >
@@ -7546,18 +7564,90 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
 
         {/* Form Body */}
         <form onSubmit={(e) => {
-  e.preventDefault();
-  setSaving(true);
-  onSave(show?.id, form);
-}}>
-          <label style={lbl}>Artist / Band *</label>
+          e.preventDefault();
+          setSaving(true);
+          onSave(show?.id, form);
+        }}>
+          
+          {/* Festival Mode Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 15 }}>
+            <label style={lbl}>FESTIVAL MODE</label>
+            <input 
+              type="checkbox" 
+              checked={form.is_festival} 
+              onChange={e => set('is_festival', e.target.checked)} 
+              style={{ accentColor: C.gold }} 
+            />
+          </div>
+
+          {/* Artist/Festival Name */}
+          <label style={lbl}>{form.is_festival ? 'FESTIVAL NAME' : 'Artist / Band'} *</label>
           <input 
             style={inpStLocal} 
-            value={form.artist} 
-            onChange={e => set('artist', e.target.value)} 
-            placeholder="e.g. Tame Impala" 
+            value={form.is_festival ? form.festival_name : form.artist} 
+            onChange={e => set(form.is_festival ? 'festival_name' : 'artist', e.target.value)} 
+            placeholder={form.is_festival ? 'e.g. Bonnaroo' : 'e.g. Tame Impala'}
             required
           />
+
+          {/* Lineup (for festivals) */}
+          {form.is_festival && (
+            <>
+              <label style={lbl}>LINEUP (OPTIONAL)</label>
+              <div style={{ 
+                background: '#000', 
+                border: '1px solid #222', 
+                borderRadius: 8, 
+                padding: 12,
+                marginBottom: 15
+              }}>
+                {(form.bands || []).map((band, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <input 
+                      style={{ ...inpStLocal, marginBottom: 0, flex: 1 }} 
+                      value={typeof band === 'string' ? band : band.name || ''}
+                      placeholder="Band Name"
+                      onChange={e => {
+                        const updated = [...(form.bands || [])];
+                        updated[idx] = e.target.value;
+                        set('bands', updated);
+                      }}
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => set('bands', form.bands.filter((_, i) => i !== idx))} 
+                      style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        color: '#ff4444', 
+                        cursor: 'pointer',
+                        fontSize: '1.2rem'
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button 
+                  type="button"
+                  onClick={() => set('bands', [...(form.bands || []), ''])} 
+                  style={{ 
+                    width: '100%', 
+                    padding: '8px', 
+                    background: '#0a0a0a', 
+                    color: C.gold, 
+                    border: '1px dashed #333', 
+                    borderRadius: 4, 
+                    fontSize: 9, 
+                    cursor: 'pointer',
+                    fontFamily: "'Space Mono'"
+                  }}
+                >
+                  + ADD BAND
+                </button>
+              </div>
+            </>
+          )}
 
           <label style={lbl}>Venue</label>
           <input 
@@ -7566,6 +7656,28 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
             onChange={e => set('venue', e.target.value)} 
             placeholder="e.g. Red Rocks" 
           />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10, marginBottom: 15 }}>
+            <div>
+              <label style={lbl}>City</label>
+              <input 
+                style={{ ...inpStLocal, marginBottom: 0 }} 
+                value={form.city} 
+                onChange={e => set('city', e.target.value)} 
+                placeholder="City" 
+              />
+            </div>
+            <div>
+              <label style={lbl}>State</label>
+              <input 
+                style={{ ...inpStLocal, marginBottom: 0 }} 
+                value={form.state} 
+                onChange={e => set('state', e.target.value)} 
+                placeholder="ST" 
+                maxLength={2}
+              />
+            </div>
+          </div>
 
           <label style={lbl}>Target Date *</label>
           <input 
