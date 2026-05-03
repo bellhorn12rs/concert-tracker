@@ -8073,37 +8073,6 @@ const [entryStep, setEntryStep] = useState('form');
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(15px)' }}>
       <div className="fade-in" style={{ background: '#0a0a0c', border: `2px solid ${C.teal}`, borderRadius: 16, padding: isMobile ? 20 : 40, width: '95%', maxWidth: 750, maxHeight: '95vh', overflowY: 'auto' }}>
 
-  
-  <div onClick={() => document.getElementById('init-relic').click()} style={gateBtn(C.gold)}>
-    🏺<br/>SETLIST
-    <input id="init-relic" type="file" hidden onChange={async (e) => {
-      const url = await uploadToArchive(e.target.files[0], 'SETLIST');
-      if (url) set('setlist_image_url', url);
-    }} />
-  </div>
-  
-  <div onClick={() => document.getElementById('init-poster').click()} style={gateBtn('#ff6699')}>
-    🎨<br/>POSTER
-    <input id="init-poster" type="file" hidden onChange={async (e) => {
-      await handlePosterDirectUpload(e.target.files[0]);
-    }} />
-  </div>
-  
-  <div onClick={() => document.getElementById('init-wrist').click()} style={gateBtn(C.orange)}>
-    🎫<br/>WRISTBAND
-    <input id="init-wrist" type="file" hidden onChange={async (e) => {
-      const url = await uploadToArchive(e.target.files[0], 'WRISTBAND');
-      if (url) set('wristband_image_url', url);
-    }} />
-  </div>
-  
-  <div onClick={() => setEntryStep('form')} style={{...gateBtn(C.grayDim), gridColumn: isMobile ? 'span 2' : 'auto'}}>
-    ⏭️<br/>SKIP ALL
-  </div>
-</div>
-        )}
-
-        {entryStep === 'form' && (
           <div className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
               <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal }}>
