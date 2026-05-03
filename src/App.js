@@ -12156,9 +12156,12 @@ async function fetchUpcoming() {
   
   // Get ALL attendees for these shows
   const { data: allAttendances } = await supabase
-    .from('upcoming_attendances')
-    .select('user_id, show_id')
-    .in('show_id', showIds);
+  .from('upcoming_attendances')
+  .select('user_id, show_id')
+  .in('show_id', showIds);
+
+console.log('All attendances fetched:', allAttendances);
+console.log('Show IDs:', showIds);
   
   // Get profiles for all attendees
   const userIds = [...new Set(allAttendances?.map(a => a.user_id) || [])];
@@ -12180,11 +12183,11 @@ async function fetchUpcoming() {
       
       // Get all attendees for this show
       const showAttendees = (allAttendances || [])
-        .filter(att => att.show_id === show.id)
-        .map(att => ({
-          user_id: att.user_id,
-          profile: profileMap[att.user_id] || { username: 'Unknown', avatar_color: C.gray }
-        }));
+  .filter(att => att.show_id === show.id)
+  .map(att => ({
+    user_id: att.user_id,
+    profile: profileMap[att.user_id] || { username: 'Unknown', avatar_color: C.gray }
+  }));
       
       return {
         ...show,
