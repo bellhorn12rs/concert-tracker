@@ -213,7 +213,7 @@ const ThemeContext = React.createContext({ themeId:'neon-noir', setThemeId:()=>{
 const useTheme = () => React.useContext(ThemeContext);
 
 // --- SETTINGS ---
-const HALL_OF_FAME_MIN = 6;
+const HALL_OF_FAME_MIN = 5;
 const PER_PAGE = 40;
 
 // ─── GENRE CONFIG ─────────────────────────────────────────────────────────────
