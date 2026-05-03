@@ -7631,33 +7631,14 @@ const togglePrivacy = async (url, currentState) => {
     return;
   }
 
-  // First, let's see if the row exists
-  const { data: existingRows, error: selectError } = await supabase
-    .from('artifacts')
-    .select('*')
-    .eq('user_id', session.user.id)
-    .eq('artifact_type', 'photo')
-    .eq('image_url', url);
-
-  console.log('Existing rows found:', existingRows);
-  console.log('Select error:', selectError);
-
-  if (!existingRows || existingRows.length === 0) {
-    alert('Photo not found in artifacts table. It may have been uploaded before the artifacts system was added.');
-    return;
-  }
-
   const newState = !currentState;
   console.log('Attempting to update to:', newState);
 
-  // Try the update
-  const { data: updateData, error: updateError } = await supabase
-    .from('artifacts')
-    .update({ is_public: newState })
-    .eq('user_id', session.user.id)
-    .eq('artifact_type', 'photo')
-    .eq('image_url', url)
-    .select();
+  // Use RPC function to bypass RLS
+  const { data: updateData, error: updateError } = await supabase.rpc('toggle_artifact_privacy', {
+    p_image_url: url,
+    p_new_state: newState
+  });
 
   console.log('Update data:', updateData);
   console.log('Update error:', updateError);
