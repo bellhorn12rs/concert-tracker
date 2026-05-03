@@ -7618,25 +7618,38 @@ function PhotoVaultTab({ concerts }) {
   }, [safeConcerts, photoPrivacy]);
 
   // Toggle privacy for a photo
-  const togglePrivacy = async (url, currentState) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) return;
+const togglePrivacy = async (url, currentState) => {
+  console.log('togglePrivacy called with:', url, currentState);
+  
+  const { data: { session } } = await supabase.auth.getSession();
+  console.log('Session check:', session?.user?.id);
+  
+  if (!session?.user?.id) {
+    alert('You must be logged in to change privacy settings');
+    return;
+  }
 
-    const newState = !currentState;
+  const newState = !currentState;
+  console.log('Attempting to update to:', newState);
 
-    const { error } = await supabase
-      .from('artifacts')
-      .update({ is_public: newState })
-      .eq('user_id', session.user.id)
-      .eq('artifact_type', 'photo')
-      .eq('image_url', url);
+  const { data, error } = await supabase
+    .from('artifacts')
+    .update({ is_public: newState })
+    .eq('user_id', session.user.id)
+    .eq('artifact_type', 'photo')
+    .eq('image_url', url)
+    .select();
 
-    if (!error) {
-      setPhotoPrivacy(prev => ({ ...prev, [url]: newState }));
-    } else {
-      console.error('Privacy toggle error:', error);
-    }
-  };
+  console.log('Update result:', { data, error });
+
+  if (!error) {
+    setPhotoPrivacy(prev => ({ ...prev, [url]: newState }));
+    console.log('Privacy updated successfully');
+  } else {
+    console.error('Privacy toggle error:', error);
+    alert(`Failed to update privacy: ${error.message}`);
+  }
+};
 
   // Empty state handler
   if (safeConcerts.length > 0 && photos.length === 0) {
