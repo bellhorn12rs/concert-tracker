@@ -389,67 +389,67 @@ export default function LandingPage({
   </div>
   
   <div style={{ 
-    position: 'relative',
-    width: isMobile ? 260 : 320,
-    height: isMobile ? 420 : 520,  // Match total height of 3 screenshots
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
+  position: 'relative',
+  width: isMobile ? 240 : 300,
+  height: isMobile ? 460 : 560,  // Increased to match right side better
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center'
+}}>
+  {/* Wristbands - top */}
+  <div style={{ 
+    position: 'absolute',
+    top: '2%',
+    left: '10%',
+    width: '55%',
+    transform: 'rotate(-10deg)',
+    boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
+    border: '2px solid #1a1a1a',
+    zIndex: 3
   }}>
-    {/* Wristbands - top */}
-    <div style={{ 
-      position: 'absolute',
-      top: '5%',
-      left: '5%',
-      width: '60%',
-      transform: 'rotate(-12deg)',
-      boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
-      border: '2px solid #1a1a1a',
-      zIndex: 3
-    }}>
-      <img 
-        src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/WristbandMess.jpeg"
-        alt="Wristband pile"
-        style={{ width: '100%', height: 'auto', display: 'block' }}
-      />
-    </div>
-    
-    {/* Tickets - middle */}
-    <div style={{ 
-      position: 'absolute',
-      top: '35%',
-      right: '8%',
-      width: '65%',
-      transform: 'rotate(8deg)',
-      boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
-      border: '2px solid #1a1a1a',
-      zIndex: 2
-    }}>
-      <img 
-        src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/ticketPile.jpeg"
-        alt="Ticket pile"
-        style={{ width: '100%', height: 'auto', display: 'block' }}
-      />
-    </div>
-    
-    {/* Posters - bottom */}
-    <div style={{ 
-      position: 'absolute',
-      bottom: '5%',
-      left: '12%',
-      width: '70%',
-      transform: 'rotate(-6deg)',
-      boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
-      border: '2px solid #1a1a1a',
-      zIndex: 1
-    }}>
-      <img 
-        src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/postersonfloor.jpeg"
-        alt="Posters on floor"
-        style={{ width: '100%', height: 'auto', display: 'block' }}
-      />
-    </div>
+    <img 
+      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/WristbandMess.jpeg"
+      alt="Wristband pile"
+      style={{ width: '100%', height: 'auto', display: 'block' }}
+    />
   </div>
+  
+  {/* Tickets - middle */}
+  <div style={{ 
+    position: 'absolute',
+    top: '32%',
+    right: '5%',
+    width: '58%',
+    transform: 'rotate(7deg)',
+    boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
+    border: '2px solid #1a1a1a',
+    zIndex: 2
+  }}>
+    <img 
+      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/ticketPile.jpeg"
+      alt="Ticket pile"
+      style={{ width: '100%', height: 'auto', display: 'block' }}
+    />
+  </div>
+  
+  {/* Posters - bottom */}
+  <div style={{ 
+    position: 'absolute',
+    bottom: '2%',
+    left: '8%',
+    width: '62%',
+    transform: 'rotate(-5deg)',
+    boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
+    border: '2px solid #1a1a1a',
+    zIndex: 1
+  }}>
+    <img 
+      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/postersonfloor.jpeg"
+      alt="Posters on floor"
+      style={{ width: '100%', height: 'auto', display: 'block' }}
+    />
+  </div>
+</div>
 
   <div style={{ 
     fontFamily: "'Space Mono'", 
