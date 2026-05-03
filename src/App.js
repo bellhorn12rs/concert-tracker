@@ -5095,7 +5095,8 @@ function GigPoster({ src, artist, date, index = 0 }) {
 }
 
 // ─── 📸 STACKED POLAROIDS (PHYSICS & 3D EDITION) ────────────────────────────────
-function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
+// ─── 📸 STACKED POLAROIDS (PHYSICS & 3D EDITION + PRIVACY) ────────────────────────────────
+function PersonalPolaroid({ src, caption, date, venue, index = 0, isPublic = true, isAdmin = false, onTogglePrivacy, onZoom }) {
   if (!src) return null;
 
   const markerColors = ['#1a1a1a', '#2140ab', '#b02525', '#1e6337', '#732ba1', '#cc6600'];
@@ -5104,13 +5105,15 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
   return (
     <div 
       className="polaroid-gravity-swing"
+      onClick={onZoom}
       style={{
-        padding: '12px 12px 20px 12px', // 🟢 Tightened bottom (was 75px)
+        padding: '12px 12px 20px 12px',
         background: '#fff', 
         boxShadow: '0 15px 40px rgba(0,0,0,0.5), 0 0 5px rgba(0,0,0,0.1)',
         width: '320px', 
         border: '1px solid #efefef', 
-        position: 'relative'
+        position: 'relative',
+        cursor: 'pointer'
       }}
     >
       {/* 📌 THE THUMB TACK */}
@@ -5124,12 +5127,70 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, onZoom }) {
         <div className="tack-shine" />
       </div>
 
+      {/* PRIVACY LOCK (Admin only) */}
+      {isAdmin && onTogglePrivacy && (
+        <button
+          onClick={onTogglePrivacy}
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            width: 36,
+            height: 36,
+            borderRadius: '50%',
+            background: isPublic ? 'rgba(0,204,136,0.9)' : 'rgba(255,68,68,0.9)',
+            border: `2px solid ${isPublic ? '#00cc88' : '#ff4444'}`,
+            color: '#fff',
+            fontSize: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            zIndex: 101,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = 'scale(1.1)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
+          {isPublic ? '🔓' : '🔒'}
+        </button>
+      )}
+
       {/* PHOTO AREA */}
       <div className="polaroid-frame" style={{ 
         width: '100%', aspectRatio: '1/1', 
         background: `url(${src}) center/cover no-repeat`,
-        border: '1px solid rgba(0,0,0,0.1)'
+        border: '1px solid rgba(0,0,0,0.1)',
+        filter: isPublic ? 'none' : 'blur(20px)',
+        transition: 'filter 0.3s'
       }} />
+
+      {/* Private overlay badge */}
+      {!isPublic && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'rgba(0,0,0,0.8)',
+          padding: '12px 20px',
+          borderRadius: 8,
+          fontFamily: "'Space Mono'",
+          fontSize: 10,
+          color: '#ff4444',
+          fontWeight: 900,
+          letterSpacing: 2,
+          border: '2px solid #ff4444',
+          pointerEvents: 'none'
+        }}>
+          🔒 PRIVATE
+        </div>
+      )}
 
       {/* 🖊️ HANDWRITTEN LABELS */}
       <div style={{ 
@@ -7467,12 +7528,46 @@ function ShareCard({ artist, shows, onClose }) {
   );
 }
 // --- PHOTO VAULT TAB ---
-// --- PHOTO VAULT TAB (MULTI-MEDIA UPGRADE) ---
+// --- PHOTO VAULT TAB (MULTI-MEDIA UPGRADE + PRIVACY) ---
 function PhotoVaultTab({ concerts }) {
   const safeConcerts = Array.isArray(concerts) ? concerts : [];
   
   // Local state to handle the Lightbox
   const [activePhoto, setActivePhoto] = React.useState(null);
+  const [photoPrivacy, setPhotoPrivacy] = React.useState({});
+  const [isAdmin, setIsAdmin] = React.useState(false);
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAdmin(!!session?.user?.id);
+    };
+    checkAdmin();
+  }, []);
+
+  // Fetch privacy settings for all photos
+  useEffect(() => {
+    const fetchPrivacy = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) return;
+
+      const { data, error } = await supabase
+        .from('artifacts')
+        .select('image_url, is_public')
+        .eq('user_id', session.user.id)
+        .eq('artifact_type', 'photo');
+
+      if (!error && data) {
+        const privacyMap = {};
+        data.forEach(artifact => {
+          privacyMap[artifact.image_url] = artifact.is_public;
+        });
+        setPhotoPrivacy(privacyMap);
+      }
+    };
+    fetchPrivacy();
+  }, []);
 
   const photos = useMemo(() => {
     const results = [];
@@ -7492,12 +7587,35 @@ function PhotoVaultTab({ concerts }) {
           artist: getBandName(c.bands?.[0]) || c.festival_name || 'UNKNOWN',
           date: c.date,
           venue: c.venue || c.festival_name,
-          rotation: startRotation
+          rotation: startRotation,
+          isPublic: photoPrivacy[url] !== false // Default to true if not found
         });
       });
     });
     return results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-  }, [safeConcerts]);
+  }, [safeConcerts, photoPrivacy]);
+
+  // Toggle privacy for a photo
+  const togglePrivacy = async (url, currentState) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return;
+
+    const newState = !currentState;
+
+    const { error } = await supabase
+      .from('artifacts')
+      .update({ is_public: newState })
+      .eq('user_id', session.user.id)
+      .eq('artifact_type', 'photo')
+      .eq('image_url', url);
+
+    if (!error) {
+      setPhotoPrivacy(prev => ({ ...prev, [url]: newState }));
+    } else {
+      console.error('Privacy toggle error:', error);
+    }
+  };
+
   // Empty state handler
   if (safeConcerts.length > 0 && photos.length === 0) {
     return (
@@ -7548,14 +7666,20 @@ function PhotoVaultTab({ concerts }) {
               position: 'relative',
               cursor: 'pointer'
             }}
-            onClick={() => setActivePhoto(p)}
           >
              <PersonalPolaroid 
                src={p.url} 
                caption={p.artist} 
                date={p.date} 
                venue={p.venue} 
-               index={i} 
+               index={i}
+               isPublic={p.isPublic}
+               isAdmin={isAdmin}
+               onTogglePrivacy={(e) => {
+                 e.stopPropagation(); // Prevent lightbox from opening
+                 togglePrivacy(p.url, p.isPublic);
+               }}
+               onZoom={() => setActivePhoto(p)}
              />
           </div>
         ))}
