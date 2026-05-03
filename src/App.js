@@ -9038,80 +9038,42 @@ function PosterWallTab({ posters, concerts, isAdmin, onRefresh }) {
           const shadowIntensity = poster.depth;
           
           return (
-            <div
-              key={poster.id}
-              className="poster-card"
-              onClick={() => setSelected(poster)}
-              style={{
-                display: 'inline-block',
-                width: '100%',
-                marginBottom: '24px',
-                breakInside: 'avoid',
-                '--rot': `${poster.rotation}deg`,
-                '--scale': poster.scale,
-                transform: `rotate(${poster.rotation}deg) scale(${poster.scale})`,
-                animation: `posterDrop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) ${idx * 0.04}s both`,
-                cursor: 'zoom-in',
-                position: 'relative',
-                transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.transform = `rotate(0deg) scale(${poster.scale * 1.08}) translateY(-8px)`;
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.transform = `rotate(${poster.rotation}deg) scale(${poster.scale})`;
-              }}
-            >
-              <img
-                loading="lazy"
-                src={poster.image_url}
-                alt={getLabel(poster)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  height: 'auto',
-                  boxShadow: `0 ${10 + shadowIntensity * 40}px ${30 + shadowIntensity * 70}px rgba(0,0,0,${0.7 + shadowIntensity * 0.3}), 0 4px 12px rgba(0,0,0,0.7)`,
-                }}
-              />
-
-              {wristband && (
-                <img
-                  loading="lazy"
-                  src={wristband}
-                  alt="wristband"
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    height: 'auto',
-                    marginTop: 4,
-                    boxShadow: '0 4px 15px rgba(0,0,0,0.7)',
-                    border: `1px solid rgba(255,102,153,0.2)`
-                  }}
-                />
-              )}
-
-              <div style={{
-                background: 'rgba(0,0,0,0.88)',
-                padding: '7px 10px',
-                backdropFilter: 'blur(6px)',
-              }}>
-                <div style={{
-                  fontFamily: "'Space Mono'",
-                  fontSize: 8,
-                  color: ACCENT,
-                  letterSpacing: 1,
-                  textTransform: 'uppercase',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}>
-                  {getLabel(poster)}
-                </div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#444', marginTop: 2 }}>
-                  {fmtDateShort(poster.date)}
-                </div>
-              </div>
-            </div>
+  <div
+    key={poster.id}
+    className="poster-card"
+    onClick={() => setSelected(poster)}
+    style={{
+      display: 'inline-block',
+      width: '100%',
+      marginBottom: '24px',
+      breakInside: 'avoid',
+      '--rot': `${poster.rotation}deg`,
+      '--scale': poster.scale,
+      transform: `rotate(${poster.rotation}deg) scale(${poster.scale})`,
+      animation: `posterDrop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) ${idx * 0.04}s both`,
+      cursor: 'zoom-in',
+      position: 'relative',
+      transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+    }}
+    onMouseEnter={e => {
+      e.currentTarget.style.transform = `rotate(0deg) scale(${poster.scale * 1.08}) translateY(-8px)`;
+    }}
+    onMouseLeave={e => {
+      e.currentTarget.style.transform = `rotate(${poster.rotation}deg) scale(${poster.scale})`;
+    }}
+  >
+    <img
+      loading="lazy"
+      src={poster.image_url}
+      alt={getLabel(poster)}
+      style={{
+        display: 'block',
+        width: '100%',
+        height: 'auto',
+        boxShadow: `0 ${10 + shadowIntensity * 40}px ${30 + shadowIntensity * 70}px rgba(0,0,0,${0.7 + shadowIntensity * 0.3})`,
+      }}
+    />
+  </div>
           );
         })}
 
