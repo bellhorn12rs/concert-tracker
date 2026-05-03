@@ -3164,7 +3164,7 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
   );
 }
 // ─── EXHIBITION WALL ARTIFACT CLUSTER ────────────────────────────────────────────────
-function ArtifactCluster({ artifacts, show, index, gc }) {
+function ArtifactCluster({ artifacts, show, index, gc, shouldBlurPhoto, currentUserId }) {
   const [lightboxSrc, setLightboxSrc] = useState(null);
   const isMobile = window.innerWidth < 768;
   
@@ -3404,7 +3404,8 @@ function ArtifactCluster({ artifacts, show, index, gc }) {
                   background: '#fff', 
                   padding: isMobile ? '5px 5px 20px 5px' : '6px 6px 24px 6px',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-                  width: isMobile ? '100px' : '130px'
+                  width: isMobile ? '100px' : '130px',
+                  position: 'relative'
                 }}>
                   <img 
                     src={url} 
@@ -3413,9 +3414,34 @@ function ArtifactCluster({ artifacts, show, index, gc }) {
                       width: '100%',
                       height: isMobile ? '100px' : '130px',
                       objectFit: 'cover',
-                      display: 'block'
+                      display: 'block',
+                      filter: shouldBlurPhoto && shouldBlurPhoto(url) ? 'blur(20px)' : 'none'
                     }} 
                   />
+                  
+                  {/* Private overlay */}
+                  {shouldBlurPhoto && shouldBlurPhoto(url) && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      background: 'rgba(0,0,0,0.9)',
+                      padding: '6px 10px',
+                      borderRadius: 4,
+                      fontFamily: "'Space Mono'",
+                      fontSize: 7,
+                      color: '#ff4444',
+                      fontWeight: 900,
+                      letterSpacing: 1,
+                      border: '1px solid #ff4444',
+                      pointerEvents: 'none',
+                      zIndex: 10,
+                      whiteSpace: 'nowrap'
+                    }}>
+                      🔒 PRIVATE
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -3458,7 +3484,7 @@ function ArtifactCluster({ artifacts, show, index, gc }) {
   );
 }
 // ─── HALL OF FAME (DENSE LAYOUT) ─────────────────────────────────────────────
-function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
+function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, currentUserId }) {
   const [selected, setSelected] = useState(null);
   const topRef = useRef(null);
 
@@ -3675,12 +3701,14 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
               }}>
                 {showPackages.filter(pkg => pkg.isLeft && pkg.hasArtifacts).map((pkg, idx) => (
                   <ArtifactCluster 
-                    key={`left-${pkg.show.id}`}
-                    artifacts={pkg.artifacts}
-                    show={pkg.show}
-                    index={idx}
-                    gc={gc}
-                  />
+  key={`left-${pkg.show.id}`}
+  artifacts={pkg.artifacts}
+  show={pkg.show}
+  index={idx}
+  gc={gc}
+  shouldBlurPhoto={shouldBlurPhoto}
+  currentUserId={currentUserId}
+/>
                 ))}
               </div>
 
@@ -3777,12 +3805,14 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
               }}>
                 {showPackages.filter(pkg => !pkg.isLeft && pkg.hasArtifacts).map((pkg, idx) => (
                   <ArtifactCluster 
-                    key={`right-${pkg.show.id}`}
-                    artifacts={pkg.artifacts}
-                    show={pkg.show}
-                    index={idx}
-                    gc={gc}
-                  />
+  key={`right-${pkg.show.id}`}
+  artifacts={pkg.artifacts}
+  show={pkg.show}
+  index={idx}
+  gc={gc}
+  shouldBlurPhoto={shouldBlurPhoto}
+  currentUserId={currentUserId}
+/>
                 ))}
               </div>
 
@@ -5235,7 +5265,7 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, isPublic = tru
 function ByDayTab({ 
   dayGroups, onEdit, genreMap, isAdmin, viewingUser, 
   bulkMode, setBulkMode, selectedSignals, setSelectedSignals, 
-  onSync, posters = [] 
+  onSync, posters = [], shouldBlurPhoto, currentUserId
 }) {
   const isMobile = window.innerWidth < 768;
   const [showJumpMenu, setShowJumpMenu] = useState(false);
@@ -5372,9 +5402,17 @@ function ByDayTab({
             return (
               <div key={`cluster-${ci}`} id={`cluster-${ci}`}>
                 <ScrapbookRow 
-                  event={cluster.event} idx={ci} isAdmin={isAdmin} onEdit={onEdit} genreMap={genreMap}
-                  bulkMode={bulkMode} selectedSignals={selectedSignals} setSelectedSignals={setSelectedSignals}
-                />
+  event={cluster.event} 
+  idx={ci} 
+  isAdmin={isAdmin} 
+  onEdit={onEdit} 
+  genreMap={genreMap}
+  bulkMode={bulkMode} 
+  selectedSignals={selectedSignals} 
+  setSelectedSignals={setSelectedSignals}
+  shouldBlurPhoto={shouldBlurPhoto}
+  currentUserId={currentUserId}
+/>
               </div>
             );
           }
@@ -5428,10 +5466,20 @@ function ByDayTab({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 {cluster.events.map((event, ei) => (
                   <ScrapbookRow 
-                    key={event.id} event={event} idx={ei} isAdmin={isAdmin} onEdit={onEdit} genreMap={genreMap} 
-                    isClustered={true} clusterColor={themeColor}
-                    bulkMode={bulkMode} selectedSignals={selectedSignals} setSelectedSignals={setSelectedSignals}
-                  />
+  key={event.id} 
+  event={event} 
+  idx={ei} 
+  isAdmin={isAdmin} 
+  onEdit={onEdit} 
+  genreMap={genreMap} 
+  isClustered={true} 
+  clusterColor={themeColor}
+  bulkMode={bulkMode} 
+  selectedSignals={selectedSignals} 
+  setSelectedSignals={setSelectedSignals}
+  shouldBlurPhoto={shouldBlurPhoto}
+  currentUserId={currentUserId}
+/>
                 ))}
               </div>
             </div>
@@ -5445,8 +5493,7 @@ function ByDayTab({
 
 // ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With "I Was There" Trigger) ─────────────
 
-function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null }) {
-  // 🛡️ CRITICAL SAFETY GATES - Must be FIRST
+function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null, shouldBlurPhoto, currentUserId }) {  // 🛡️ CRITICAL SAFETY GATES - Must be FIRST
   if (!event) {
     console.error('ScrapbookRow: event is null/undefined');
     return null;
@@ -5826,8 +5873,7 @@ const getDayColor = (baseHex, index) => {
   return hexToRgba(baseHex || C.teal, variants[index % variants.length]);
 };
 // ─── 1. BY FEST TAB (BOX SET EDITION + MEDIA CLUSTER) ───────────────────────
-function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = [] }) {
-  const FEST_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699', '#ff4400', '#a2ff00'];
+function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = [], shouldBlurPhoto, currentUserId }) {  const FEST_COLORS = [C.teal, C.cyan, C.purple, C.gold, C.green, '#ff6699', '#ff4400', '#a2ff00'];
 
   if (!festGroupings.length) return <div style={{ textAlign: 'center', color: C.gray, padding: 60 }}>No festival data yet.</div>;
 
@@ -5969,19 +6015,13 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = []
                                 {photos.length > 0 && (
                                   <div style={{ display: 'flex' }}>
                                     {photos.map((url, pIdx) => <PersonalPolaroid 
-  src={p.url} 
-  caption={p.artist} 
-  date={p.date} 
-  venue={p.venue} 
-  index={i}
-  isPublic={p.isPublic}
-  shouldBlur={p.shouldBlur}  // Add this
-  isAdmin={isAdmin}
-  onTogglePrivacy={(e) => {
-    e.stopPropagation();
-    togglePrivacy(p.url, p.isPublic);
-  }}
-  onZoom={() => setActivePhoto(p)}
+  key={`${show.id}-p-${pIdx}`} 
+  src={url} 
+  index={pIdx} 
+  caption={fest.name.toUpperCase()}
+  shouldBlur={shouldBlurPhoto ? shouldBlurPhoto(url) : false}
+  isPublic={shouldBlurPhoto ? !shouldBlurPhoto(url) : true}
+  isAdmin={currentUserId}
 />)}
                                   </div>
                                 )}
@@ -12944,7 +12984,9 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
     selectedSignals={selectedSignals}
     setSelectedSignals={setSelectedSignals}
     onSync={handleBulkSync}
-    posters={posters} // 🟢 CRITICAL: Ensure this prop is passed
+    posters={posters}
+    shouldBlurPhoto={shouldBlurPhoto}
+    currentUserId={currentUserId}
   />
 )}
   {/* 🟢 NEW PAPERTRAIL BLOCK GOES HERE */}
@@ -13067,7 +13109,9 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
     genreMap={artistGenres} 
     isAdmin={isAdmin} 
     onEdit={isAdmin ? setEditTarget : null} 
-    posters={posters} // 🟢 Ensure this is passed
+    posters={posters}
+    shouldBlurPhoto={shouldBlurPhoto}
+    currentUserId={currentUserId}
   />
 )}
   {activeTab === 'community' && <CommunityTab onEnterMuseum={handleNavigateToUser} />}
@@ -13085,7 +13129,7 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
   )}
 
   {/* 3. ARCHIVE TABS */}
-{activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} posters={posters} onShare={(a, s) => setShareCard({ artist: a, shows: s })} />}
+{activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} posters={posters} onShare={(a, s) => setShareCard({ artist: a, shows: s })} shouldBlurPhoto={shouldBlurPhoto} currentUserId={currentUserId} />}
   
   {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
   
