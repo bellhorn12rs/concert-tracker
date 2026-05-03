@@ -5845,21 +5845,18 @@ const onSync = async () => {
             justifyContent: isMobile ? 'center' : 'flex-start'
           }}>
             {finalPhotos.map((url, pIdx) => (
-              <PersonalPolaroid 
-  src={p.url} 
-  caption={p.artist} 
-  date={p.date} 
-  venue={p.venue} 
-  index={i}
-  isPublic={p.isPublic}
-  shouldBlur={p.shouldBlur}  // Add this
-  isAdmin={isAdmin}
-  onTogglePrivacy={(e) => {
-    e.stopPropagation();
-    togglePrivacy(p.url, p.isPublic);
-  }}
-  onZoom={() => setActivePhoto(p)}
-/>
+  <PersonalPolaroid 
+    key={`${event.id}-p-${pIdx}`}
+    src={url} 
+    caption={venueLabel?.split(',')[0].toUpperCase()}
+    date={event.date}
+    venue={event.venue}
+    index={pIdx}
+    shouldBlur={shouldBlurPhoto ? shouldBlurPhoto(url) : false}
+    isPublic={shouldBlurPhoto ? !shouldBlurPhoto(url) : true}
+    isAdmin={currentUserId}
+  />
+))}
             ))}
           </div>
         </div>
