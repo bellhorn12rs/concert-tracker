@@ -5095,7 +5095,6 @@ function GigPoster({ src, artist, date, index = 0 }) {
 }
 
 // ─── 📸 STACKED POLAROIDS (PHYSICS & 3D EDITION) ────────────────────────────────
-// ─── 📸 STACKED POLAROIDS (PHYSICS & 3D EDITION + PRIVACY) ────────────────────────────────
 function PersonalPolaroid({ src, caption, date, venue, index = 0, isPublic = true, isAdmin = false, onTogglePrivacy, onZoom }) {
   if (!src) return null;
 
@@ -5105,7 +5104,6 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, isPublic = tru
   return (
     <div 
       className="polaroid-gravity-swing"
-      onClick={onZoom}
       style={{
         padding: '12px 12px 20px 12px',
         background: '#fff', 
@@ -5130,7 +5128,12 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, isPublic = tru
       {/* PRIVACY LOCK (Admin only) */}
       {isAdmin && onTogglePrivacy && (
         <button
-          onClick={onTogglePrivacy}
+          onClick={(e) => {
+            console.log('Lock clicked!', isPublic);
+            e.stopPropagation();
+            e.preventDefault();
+            onTogglePrivacy(e);
+          }}
           style={{
             position: 'absolute',
             top: 8,
@@ -5148,7 +5151,8 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, isPublic = tru
             cursor: 'pointer',
             zIndex: 101,
             boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-            transition: 'all 0.2s'
+            transition: 'all 0.2s',
+            pointerEvents: 'auto'
           }}
           onMouseEnter={e => {
             e.currentTarget.style.transform = 'scale(1.1)';
@@ -5161,14 +5165,19 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, isPublic = tru
         </button>
       )}
 
-      {/* PHOTO AREA */}
-      <div className="polaroid-frame" style={{ 
-        width: '100%', aspectRatio: '1/1', 
-        background: `url(${src}) center/cover no-repeat`,
-        border: '1px solid rgba(0,0,0,0.1)',
-        filter: isPublic ? 'none' : 'blur(20px)',
-        transition: 'filter 0.3s'
-      }} />
+      {/* PHOTO AREA - Click handler here */}
+      <div 
+        className="polaroid-frame" 
+        onClick={onZoom}
+        style={{ 
+          width: '100%', 
+          aspectRatio: '1/1', 
+          background: `url(${src}) center/cover no-repeat`,
+          border: '1px solid rgba(0,0,0,0.1)',
+          filter: isPublic ? 'none' : 'blur(20px)',
+          transition: 'filter 0.3s'
+        }} 
+      />
 
       {/* Private overlay badge */}
       {!isPublic && (
@@ -5195,7 +5204,8 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, isPublic = tru
       {/* 🖊️ HANDWRITTEN LABELS */}
       <div style={{ 
         fontFamily: "'Caveat', cursive", textAlign: 'center', 
-        marginTop: '15px', color: myColor, padding: '0 5px'
+        marginTop: '15px', color: myColor, padding: '0 5px',
+        pointerEvents: 'none'
       }}>
         <div style={{ fontSize: '2.3rem', fontWeight: 700, lineHeight: 0.8, transform: 'rotate(-1.5deg)', marginBottom: 6 }}>
           {caption}
