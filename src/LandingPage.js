@@ -389,16 +389,23 @@ export default function LandingPage({
   </div>
   
   <div style={{ 
+    position: 'relative',
+    width: isMobile ? 260 : 320,
+    height: isMobile ? 420 : 520,  // Match total height of 3 screenshots
     display: 'flex',
-    flexDirection: 'column',
-    gap: 16,
-    width: isMobile ? 240 : 280
+    alignItems: 'center',
+    justifyContent: 'center'
   }}>
-    {/* Wristbands */}
+    {/* Wristbands - top */}
     <div style={{ 
-      transform: 'rotate(-4deg)',
+      position: 'absolute',
+      top: '5%',
+      left: '5%',
+      width: '60%',
+      transform: 'rotate(-12deg)',
       boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
-      border: '2px solid #1a1a1a'
+      border: '2px solid #1a1a1a',
+      zIndex: 3
     }}>
       <img 
         src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/WristbandMess.jpeg"
@@ -407,11 +414,16 @@ export default function LandingPage({
       />
     </div>
     
-    {/* Tickets */}
+    {/* Tickets - middle */}
     <div style={{ 
-      transform: 'rotate(3deg)',
+      position: 'absolute',
+      top: '35%',
+      right: '8%',
+      width: '65%',
+      transform: 'rotate(8deg)',
       boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
-      border: '2px solid #1a1a1a'
+      border: '2px solid #1a1a1a',
+      zIndex: 2
     }}>
       <img 
         src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/ticketPile.jpeg"
@@ -420,11 +432,16 @@ export default function LandingPage({
       />
     </div>
     
-    {/* Posters on floor */}
+    {/* Posters - bottom */}
     <div style={{ 
-      transform: 'rotate(-2deg)',
+      position: 'absolute',
+      bottom: '5%',
+      left: '12%',
+      width: '70%',
+      transform: 'rotate(-6deg)',
       boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
-      border: '2px solid #1a1a1a'
+      border: '2px solid #1a1a1a',
+      zIndex: 1
     }}>
       <img 
         src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/postersonfloor.jpeg"
