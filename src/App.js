@@ -7598,7 +7598,6 @@ function PhotoVaultTab({ concerts, shouldBlurPhoto, currentUserId }) {
     
     urls.forEach((url, idx) => {
       const startRotation = (Math.random() * 10 - 5).toFixed(2);
-      const photoIsPublic = photoPrivacy[url] !== false; // Default to true if not found
       results.push({
         id: `${c.id}-photo-${idx}`,
         url,
