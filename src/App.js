@@ -3163,60 +3163,88 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
     </div>
   );
 }
-// ─── COMPACT ARTIFACT CLUSTER ────────────────────────────────────────────────
+// ─── EXHIBITION WALL ARTIFACT CLUSTER ────────────────────────────────────────────────
 function ArtifactCluster({ artifacts, show, index, gc }) {
   const [lightboxSrc, setLightboxSrc] = useState(null);
+  const isMobile = window.innerWidth < 768;
   
   return (
     <>
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
-        gap: '8px', 
+        gap: isMobile ? '12px' : '16px',
         alignItems: 'center',
-        marginBottom: '10px'
+        marginBottom: isMobile ? '16px' : '20px',
+        position: 'relative'
       }}>
         
-        {/* Compact date label */}
+        {/* Date label with pin effect */}
         <div style={{ 
           fontFamily: "'Space Mono'", 
-          fontSize: 7, 
+          fontSize: isMobile ? 8 : 9,
           color: gc, 
           letterSpacing: 1,
-          opacity: 0.5,
-          marginBottom: '4px'
+          opacity: 0.7,
+          marginBottom: '8px',
+          background: hexToRgba(gc, 0.1),
+          padding: '4px 10px',
+          borderRadius: 6,
+          border: `1px solid ${hexToRgba(gc, 0.3)}`,
+          fontWeight: 700
         }}>
           {fmtDateShort(show.date).replace(', ', ' ')}
         </div>
 
-        {/* Setlists - tighter, smaller */}
+        {/* Setlists - BIGGER, more overlapped */}
         {artifacts.setlists.length > 0 && (
-          <div style={{ display: 'flex', marginLeft: `-${Math.min(artifacts.setlists.length * 8, 20)}px` }}>
+          <div style={{ 
+            display: 'flex', 
+            marginLeft: `-${Math.min(artifacts.setlists.length * 12, 30)}px`,
+            position: 'relative'
+          }}>
             {artifacts.setlists.map((url, i) => (
               <div
                 key={i}
                 onClick={() => setLightboxSrc(url)}
                 style={{
-                  marginLeft: i === 0 ? 0 : '-18px',
-                  transform: `rotate(${(i % 2 === 0 ? -1 : 1) * 1.5}deg)`,
+                  marginLeft: i === 0 ? 0 : isMobile ? '-25px' : '-35px',
+                  transform: `rotate(${(i % 2 === 0 ? -2 : 2) * (i % 3)}deg)`,
                   cursor: 'zoom-in',
-                  transition: 'all 0.2s',
-                  zIndex: i
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  zIndex: i,
+                  filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.6))'
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.transform = 'rotate(0deg) scale(1.1)';
+                  e.currentTarget.style.transform = 'rotate(0deg) scale(1.15) translateY(-4px)';
                   e.currentTarget.style.zIndex = 100;
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.transform = `rotate(${(i % 2 === 0 ? -1 : 1) * 1.5}deg)`;
+                  e.currentTarget.style.transform = `rotate(${(i % 2 === 0 ? -2 : 2) * (i % 3)}deg)`;
                   e.currentTarget.style.zIndex = i;
                 }}
               >
+                {/* Tape on top */}
+                <div style={{
+                  position: 'absolute',
+                  top: '-4px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: isMobile ? '35px' : '45px',
+                  height: isMobile ? '12px' : '16px',
+                  background: 'rgba(255,255,255,0.15)',
+                  borderLeft: '1px solid rgba(255,255,255,0.3)',
+                  borderRight: '1px solid rgba(255,255,255,0.3)',
+                  opacity: 0.6,
+                  zIndex: 10
+                }} />
+
                 <div style={{ 
-                  background: '#fdfdfd', 
-                  padding: '4px', 
-                  boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
-                  width: '85px'
+                  background: '#fefefe', 
+                  padding: isMobile ? '6px' : '8px',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.7)',
+                  width: isMobile ? '140px' : '180px',
+                  border: '1px solid rgba(0,0,0,0.1)'
                 }}>
                   <img 
                     src={url} 
@@ -3224,7 +3252,7 @@ function ArtifactCluster({ artifacts, show, index, gc }) {
                     style={{ 
                       width: '100%', 
                       height: 'auto',
-                      maxHeight: '120px',
+                      maxHeight: isMobile ? '200px' : '260px',
                       objectFit: 'contain',
                       display: 'block'
                     }} 
@@ -3235,39 +3263,62 @@ function ArtifactCluster({ artifacts, show, index, gc }) {
           </div>
         )}
 
-        {/* Posters - smaller, tighter */}
+        {/* Posters - BIGGER, festival poster style */}
         {artifacts.posters.length > 0 && (
-          <div style={{ display: 'flex', marginLeft: `-${Math.min(artifacts.posters.length * 6, 15)}px` }}>
+          <div style={{ 
+            display: 'flex', 
+            flexWrap: 'wrap',
+            gap: isMobile ? '8px' : '12px',
+            justifyContent: 'center',
+            marginLeft: `-${Math.min(artifacts.posters.length * 8, 20)}px`
+          }}>
             {artifacts.posters.map((url, i) => (
               <div
                 key={i}
                 onClick={() => setLightboxSrc(url)}
                 style={{
-                  marginLeft: i === 0 ? 0 : '-12px',
-                  transform: `rotate(${(i % 2 === 0 ? 1 : -1) * 1.5}deg)`,
+                  marginLeft: i === 0 ? 0 : isMobile ? '-20px' : '-30px',
+                  transform: `rotate(${(i % 2 === 0 ? 2 : -2) * (i % 3)}deg)`,
                   cursor: 'zoom-in',
-                  transition: 'all 0.2s',
-                  zIndex: i
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  zIndex: i,
+                  position: 'relative'
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.transform = 'rotate(0deg) scale(1.1)';
+                  e.currentTarget.style.transform = 'rotate(0deg) scale(1.12) translateY(-6px)';
                   e.currentTarget.style.zIndex = 100;
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.transform = `rotate(${(i % 2 === 0 ? 1 : -1) * 1.5}deg)`;
+                  e.currentTarget.style.transform = `rotate(${(i % 2 === 0 ? 2 : -2) * (i % 3)}deg)`;
                   e.currentTarget.style.zIndex = i;
                 }}
               >
+                {/* Push pin */}
+                <div style={{
+                  position: 'absolute',
+                  top: isMobile ? '6px' : '8px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: isMobile ? '8px' : '10px',
+                  height: isMobile ? '8px' : '10px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #ff4444, #cc0000)',
+                  boxShadow: `0 2px 8px rgba(255,0,0,0.5), inset 0 -2px 4px rgba(0,0,0,0.3)`,
+                  zIndex: 10,
+                  border: '1px solid rgba(0,0,0,0.2)'
+                }} />
+
                 <img 
                   src={url} 
                   alt="poster" 
                   style={{ 
-                    width: '75px',
+                    width: isMobile ? '120px' : '160px',
                     height: 'auto',
-                    maxHeight: '110px',
+                    maxHeight: isMobile ? '180px' : '240px',
                     objectFit: 'contain',
                     display: 'block',
-                    boxShadow: '0 6px 20px rgba(0,0,0,0.6)'
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
+                    border: '2px solid rgba(0,0,0,0.1)'
                   }} 
                 />
               </div>
@@ -3275,34 +3326,45 @@ function ArtifactCluster({ artifacts, show, index, gc }) {
           </div>
         )}
 
-        {/* Wristband - compact */}
+        {/* Wristband - bigger */}
         {artifacts.wristband && (
           <div 
             onClick={() => setLightboxSrc(artifacts.wristband)}
-            style={{ cursor: 'zoom-in', marginTop: '4px' }}
+            style={{ 
+              cursor: 'zoom-in', 
+              marginTop: '8px',
+              transform: `rotate(${index % 2 === 0 ? -3 : 3}deg)`,
+              transition: 'all 0.3s'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'rotate(0deg) scale(1.1)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = `rotate(${index % 2 === 0 ? -3 : 3}deg)`;
+            }}
           >
             <img 
               src={artifacts.wristband} 
               alt="wristband" 
               style={{ 
-                width: '100px',
+                width: isMobile ? '150px' : '200px',
                 height: 'auto',
                 display: 'block',
-                borderRadius: 2,
-                border: `1px solid ${hexToRgba(gc, 0.3)}`,
-                boxShadow: `0 3px 12px rgba(0,0,0,0.4)`
+                borderRadius: 4,
+                border: `2px solid ${hexToRgba(gc, 0.4)}`,
+                boxShadow: `0 8px 24px rgba(0,0,0,0.5), 0 0 20px ${hexToRgba(gc, 0.2)}`
               }} 
             />
           </div>
         )}
 
-        {/* Photos - compact grid */}
+        {/* Photos - BIGGER polaroid style */}
         {artifacts.photos.length > 0 && (
           <div style={{ 
             display: 'grid',
             gridTemplateColumns: artifacts.photos.length === 1 ? '1fr' : 'repeat(2, 1fr)',
-            gap: '6px',
-            marginTop: '4px'
+            gap: isMobile ? '10px' : '14px',
+            marginTop: '8px'
           }}>
             {artifacts.photos.slice(0, 4).map((url, i) => (
               <div
@@ -3310,30 +3372,46 @@ function ArtifactCluster({ artifacts, show, index, gc }) {
                 onClick={() => setLightboxSrc(url)}
                 style={{
                   cursor: 'zoom-in',
-                  transform: `rotate(${(i % 2 === 0 ? -1 : 1)}deg)`,
-                  transition: 'all 0.2s'
+                  transform: `rotate(${(i % 2 === 0 ? -3 : 3) + (i % 3)}deg)`,
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative'
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.transform = 'rotate(0deg) scale(1.08)';
+                  e.currentTarget.style.transform = 'rotate(0deg) scale(1.12) translateY(-4px)';
                   e.currentTarget.style.zIndex = 100;
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.transform = `rotate(${(i % 2 === 0 ? -1 : 1)}deg)`;
+                  e.currentTarget.style.transform = `rotate(${(i % 2 === 0 ? -3 : 3) + (i % 3)}deg)`;
                   e.currentTarget.style.zIndex = 1;
                 }}
               >
+                {/* Tape corner */}
+                <div style={{
+                  position: 'absolute',
+                  top: '-3px',
+                  right: isMobile ? '8px' : '12px',
+                  width: isMobile ? '20px' : '25px',
+                  height: isMobile ? '10px' : '12px',
+                  background: 'rgba(255,255,255,0.2)',
+                  transform: 'rotate(35deg)',
+                  opacity: 0.6,
+                  zIndex: 10,
+                  borderLeft: '1px solid rgba(255,255,255,0.3)',
+                  borderRight: '1px solid rgba(255,255,255,0.3)'
+                }} />
+
                 <div style={{ 
                   background: '#fff', 
-                  padding: '3px 3px 12px 3px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                  width: '65px'
+                  padding: isMobile ? '5px 5px 20px 5px' : '6px 6px 24px 6px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                  width: isMobile ? '100px' : '130px'
                 }}>
                   <img 
                     src={url} 
                     alt="photo" 
                     style={{ 
                       width: '100%',
-                      height: '65px',
+                      height: isMobile ? '100px' : '130px',
                       objectFit: 'cover',
                       display: 'block'
                     }} 
@@ -3359,7 +3437,8 @@ function ArtifactCluster({ artifacts, show, index, gc }) {
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'zoom-out',
-            padding: 40
+            padding: isMobile ? 20 : 40,
+            backdropFilter: 'blur(10px)'
           }}
         >
           <img 
@@ -3369,7 +3448,8 @@ function ArtifactCluster({ artifacts, show, index, gc }) {
               maxWidth: '90vw',
               maxHeight: '90vh',
               objectFit: 'contain',
-              boxShadow: '0 20px 80px rgba(0,0,0,1)'
+              boxShadow: '0 30px 100px rgba(0,0,0,1)',
+              border: '4px solid rgba(255,255,255,0.1)'
             }} 
           />
         </div>
@@ -3377,7 +3457,6 @@ function ArtifactCluster({ artifacts, show, index, gc }) {
     </>
   );
 }
-
 // ─── HALL OF FAME (DENSE LAYOUT) ─────────────────────────────────────────────
 function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
   const [selected, setSelected] = useState(null);
