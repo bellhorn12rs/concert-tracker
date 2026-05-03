@@ -7579,45 +7579,12 @@ function ShareCard({ artist, shows, onClose }) {
 }
 // --- PHOTO VAULT TAB ---
 // --- PHOTO VAULT TAB (MULTI-MEDIA UPGRADE + PRIVACY) ---
-function PhotoVaultTab({ concerts }) {
+function PhotoVaultTab({ concerts, shouldBlurPhoto, currentUserId }) {
   const safeConcerts = Array.isArray(concerts) ? concerts : [];
   
   // Local state to handle the Lightbox
   const [activePhoto, setActivePhoto] = React.useState(null);
-  const [photoPrivacy, setPhotoPrivacy] = React.useState({});
-  const [isAdmin, setIsAdmin] = React.useState(false);
-
-  // Check if user is admin
-  useEffect(() => {
-    const checkAdmin = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAdmin(!!session?.user?.id);
-    };
-    checkAdmin();
-  }, []);
-
-  // Fetch privacy settings for all photos
-  useEffect(() => {
-    const fetchPrivacy = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user?.id) return;
-
-      const { data, error } = await supabase
-        .from('artifacts')
-        .select('image_url, is_public')
-        .eq('user_id', session.user.id)
-        .eq('artifact_type', 'photo');
-
-      if (!error && data) {
-        const privacyMap = {};
-        data.forEach(artifact => {
-          privacyMap[artifact.image_url] = artifact.is_public;
-        });
-        setPhotoPrivacy(privacyMap);
-      }
-    };
-    fetchPrivacy();
-  }, []);
+  const isAdmin = !!currentUserId;
 
   const photos = useMemo(() => {
   const results = [];
@@ -7639,13 +7606,12 @@ function PhotoVaultTab({ concerts }) {
         date: c.date,
         venue: c.venue || c.festival_name,
         rotation: startRotation,
-        isPublic: photoIsPublic,
-        shouldBlur: !photoIsPublic && !isAdmin  // Only blur if private AND not the owner
+        shouldBlur: shouldBlurPhoto(url)
       });
     });
   });
   return results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-}, [safeConcerts, photoPrivacy, isAdmin]);  // Add isAdmin dependency
+}, [safeConcerts, shouldBlurPhoto]);
 
   // Toggle privacy for a photo
 const togglePrivacy = async (url, currentState) => {
@@ -7674,7 +7640,7 @@ const togglePrivacy = async (url, currentState) => {
   console.log('Update error:', updateError);
 
   if (!updateError) {
-    setPhotoPrivacy(prev => ({ ...prev, [url]: newState }));
+window.location.reload();
     console.log('✅ Privacy updated successfully');
   } else {
     console.error('❌ Privacy toggle error:', updateError);
@@ -7733,18 +7699,18 @@ const togglePrivacy = async (url, currentState) => {
               cursor: 'pointer'
             }}
           >
-             <PersonalPolaroid 
+            <PersonalPolaroid 
   src={p.url} 
   caption={p.artist} 
   date={p.date} 
   venue={p.venue} 
   index={i}
-  isPublic={p.isPublic}
-  shouldBlur={p.shouldBlur}  // Add this
+  isPublic={!p.shouldBlur}
+  shouldBlur={p.shouldBlur}
   isAdmin={isAdmin}
   onTogglePrivacy={(e) => {
     e.stopPropagation();
-    togglePrivacy(p.url, p.isPublic);
+    togglePrivacy(p.url, !p.shouldBlur);
   }}
   onZoom={() => setActivePhoto(p)}
 />
@@ -11182,6 +11148,51 @@ boxShadow: item.type === 'wristband' ? `0 8px 30px rgba(0,0,0,0.7), 0 0 15px ${h
   );
 }
 
+// ─── GLOBAL PRIVACY HOOK ─────────────────────────────────────────────────────
+function usePhotoPrivacy() {
+  const [photoPrivacy, setPhotoPrivacy] = React.useState({});
+  const [currentUserId, setCurrentUserId] = React.useState(null);
+
+  useEffect(() => {
+    const fetchPrivacy = async () => {
+      // Get ALL photos and their privacy settings (not just current user's)
+      const { data, error } = await supabase
+        .from('artifacts')
+        .select('image_url, is_public, user_id')
+        .eq('artifact_type', 'photo');
+
+      if (!error && data) {
+        const privacyMap = {};
+        data.forEach(artifact => {
+          privacyMap[artifact.image_url] = {
+            isPublic: artifact.is_public,
+            ownerId: artifact.user_id
+          };
+        });
+        setPhotoPrivacy(privacyMap);
+      }
+
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
+      setCurrentUserId(session?.user?.id || null);
+    };
+
+    fetchPrivacy();
+  }, []);
+
+  // Helper function: should this photo be blurred for current viewer?
+  const shouldBlurPhoto = (url) => {
+    const photoData = photoPrivacy[url];
+    if (!photoData) return false; // Default to visible if not in artifacts table
+    if (photoData.isPublic) return false; // Public photos never blur
+    if (currentUserId === photoData.ownerId) return false; // Owner sees their own
+    return true; // Private photo, not the owner = blur it
+  };
+
+  return { photoPrivacy, shouldBlurPhoto, currentUserId };
+}
+
+
 // ─── MAIN APP ────────────────────────────────────────────────────
 export default function App() {
   // ── 1. AUTH & SYSTEM STATE ──
@@ -11210,6 +11221,9 @@ export default function App() {
   const [nudgeTarget, setNudgeTarget] = useState(null);
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedSignals, setSelectedSignals] = useState([]);
+
+  const { photoPrivacy, shouldBlurPhoto, currentUserId } = usePhotoPrivacy();
+
 
   const handleBulkSync = async () => {
   if (!selectedSignals || selectedSignals.length === 0) {
@@ -13076,7 +13090,7 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
   
   {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
   
-  {activeTab === 'photos' && <PhotoVaultTab concerts={concerts} />}
+{activeTab === 'photos' && <PhotoVaultTab concerts={concerts} shouldBlurPhoto={shouldBlurPhoto} currentUserId={currentUserId} />}
 
 {activeTab === 'shows' && <CollaborationWebTab />}
 
