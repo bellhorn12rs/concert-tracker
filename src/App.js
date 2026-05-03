@@ -4396,39 +4396,42 @@ const parseMedia = (val) => {
 // ─── SETLIST VAULT TAB (ARTIFACT TABLE EDITION) ──────────────────────────────
 // Replace your entire SetlistVaultTab function with this:
 
-function SetlistVaultTab({ genreMap }) {
+function SetlistVaultTab({ genreMap, viewingUser, currentUserId }) {
   const [relics, setRelics] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchRelics() {
-      setLoading(true);
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user?.id) return;
+  async function fetchRelics() {
+    setLoading(true);
+    try {
+      const targetId = viewingUser || currentUserId;
+      if (!targetId) {
+        setLoading(false);
+        return;
+      }
 
-        // Query artifacts table for relics
-        const { data } = await supabase
-          .from('artifacts')
-          .select(`
+      // Query artifacts table for relics
+      const { data } = await supabase
+        .from('artifacts')
+        .select(`
+          id,
+          image_url,
+          band_name,
+          show:shows (
             id,
-            image_url,
-            band_name,
-            show:shows (
-              id,
-              date,
-              venue,
-              city,
-              state,
-              festival_name,
-              festival_day,
-              is_festival,
-              bands
-            )
-          `)
-          .eq('user_id', session.user.id)
-          .eq('artifact_type', 'relic')
-          .order('id', { ascending: false });
+            date,
+            venue,
+            city,
+            state,
+            festival_name,
+            festival_day,
+            is_festival,
+            bands
+          )
+        `)
+        .eq('user_id', targetId)
+        .eq('artifact_type', 'relic')
+        .order('id', { ascending: false });
 
         if (data) {
           // Transform into display format
@@ -13466,7 +13469,7 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
   {/* 3. ARCHIVE TABS */}
 {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} posters={posters} onShare={(a, s) => setShareCard({ artist: a, shows: s })} shouldBlurPhoto={shouldBlurPhoto} currentUserId={currentUserId} />}
   
-  {activeTab === 'vault' && <SetlistVaultTab concerts={concerts} genreMap={artistGenres} />}
+{activeTab === 'vault' && <SetlistVaultTab genreMap={artistGenres} viewingUser={viewingUser} currentUserId={currentUserId} />}
   
 {activeTab === 'photos' && <PhotoVaultTab concerts={concerts} shouldBlurPhoto={shouldBlurPhoto} currentUserId={currentUserId} />}
 
@@ -13598,7 +13601,7 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
     <div style={{ display: 'flex', gap: 12, flexShrink: 0 }}>
       <button
         onClick={() => {
-          window.location.href = 'https://concert-tracker-eight.vercel.app';
+          window.location.href = 'https://mytrackrecord.live';
         }}
         style={{
           background: C.teal,
@@ -13628,7 +13631,7 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
       
       <button
         onClick={() => {
-          window.location.href = 'https://concert-tracker-eight.vercel.app';
+          window.location.href = 'https://mytrackrecord.live';
         }}
         style={{
           background: 'transparent',
