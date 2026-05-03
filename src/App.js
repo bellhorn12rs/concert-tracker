@@ -1716,15 +1716,14 @@ function TheaterMarquee({ upcoming, onAdd, onEdit, session }) {
           <div key={i} style={{ width:8, height:8, borderRadius:'50%', background:'#ffdd88', boxShadow:'0 0 6px #ffdd88, 0 0 12px #ffaa00', animation:`chasing-bulb 1.5s ease-in-out ${((BULB_COUNT - i) * 1.5/BULB_COUNT).toFixed(2)}s infinite` }} />
         ))}
       </div>
-
-      {/* Show list */}
+{/* Show list */}
       <div style={{ padding:'0 16px 16px' }}>
         <div style={{ maxHeight:190, overflowY:'auto' }}>
-          upcoming.sort((a,b) => a.date.localeCompare(b.date)).map((show, i) => {
-  console.log('Show:', show.artist, 'Attendees:', show.attendees);
-  const otherAttendees = (show.attendees || []).filter(att => att.user_id !== session?.user?.id);
-  console.log('Other attendees:', otherAttendees);
-  const hasCollaborators = otherAttendees.length > 0;
+          {upcoming.sort((a,b) => a.date.localeCompare(b.date)).map((show, i) => {
+            console.log('Show:', show.artist, 'Attendees:', show.attendees);
+            const otherAttendees = (show.attendees || []).filter(att => att.user_id !== session?.user?.id);
+            console.log('Other attendees:', otherAttendees);
+            const hasCollaborators = otherAttendees.length > 0;
             
             return (
               <div key={show.id||i} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto auto', alignItems:'center', gap:12, padding:'12px 0', borderBottom: i === upcoming.length -1 ? 'none' : '1px solid #1a1a1a' }}>
