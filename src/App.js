@@ -8085,26 +8085,53 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
         )}
 
         {entryStep === 'type' && (
-          <div className="fade-in" style={{ textAlign: 'center' }}>
-            <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#fff', marginBottom: 30 }}>SELECT ARTIFACT</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-              <div onClick={() => document.getElementById('init-stub').click()} style={gateBtn(C.teal)}>
-                TICKET STUB
-                <input id="init-stub" type="file" hidden onChange={async (e) => {
-                  const url = await uploadToArchive(e.target.files[0], 'TICKET');
-                  if (url) set('image_url', url);
-                }} />
-              </div>
-              <div onClick={() => document.getElementById('init-pic').click()} style={gateBtn(C.purple)}>
-                PHOTO
-                <input id="init-pic" type="file" hidden onChange={async (e) => {
-                  const url = await uploadToArchive(e.target.files[0], 'POLAROID');
-                  if (url) set('personal_photo_url', url);
-                }} />
-              </div>
-            </div>
-            <button onClick={() => setEntryStep('gate')} style={{ background: 'none', border: 'none', color: '#666', marginTop: 20, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 }}>← GO BACK</button>
-          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 15 }}>
+  <div onClick={() => document.getElementById('init-stub').click()} style={gateBtn(C.teal)}>
+    🎟️<br/>TICKET
+    <input id="init-stub" type="file" hidden onChange={async (e) => {
+      const url = await uploadToArchive(e.target.files[0], 'TICKET');
+      if (url) set('image_url', url);
+    }} />
+  </div>
+  
+  <div onClick={() => document.getElementById('init-pic').click()} style={gateBtn(C.purple)}>
+    📸<br/>PHOTO
+    <input id="init-pic" type="file" hidden onChange={async (e) => {
+      const url = await uploadToArchive(e.target.files[0], 'POLAROID');
+      if (url) {
+        set('personal_photo_url', url);
+        setPhotoPrivacySettings(prev => ({ ...prev, [url]: true }));
+      }
+    }} />
+  </div>
+  
+  <div onClick={() => document.getElementById('init-relic').click()} style={gateBtn(C.gold)}>
+    🏺<br/>SETLIST
+    <input id="init-relic" type="file" hidden onChange={async (e) => {
+      const url = await uploadToArchive(e.target.files[0], 'SETLIST');
+      if (url) set('setlist_image_url', url);
+    }} />
+  </div>
+  
+  <div onClick={() => document.getElementById('init-poster').click()} style={gateBtn('#ff6699')}>
+    🎨<br/>POSTER
+    <input id="init-poster" type="file" hidden onChange={async (e) => {
+      await handlePosterDirectUpload(e.target.files[0]);
+    }} />
+  </div>
+  
+  <div onClick={() => document.getElementById('init-wrist').click()} style={gateBtn(C.orange)}>
+    🎫<br/>WRISTBAND
+    <input id="init-wrist" type="file" hidden onChange={async (e) => {
+      const url = await uploadToArchive(e.target.files[0], 'WRISTBAND');
+      if (url) set('wristband_image_url', url);
+    }} />
+  </div>
+  
+  <div onClick={() => setEntryStep('form')} style={{...gateBtn(C.grayDim), gridColumn: isMobile ? 'span 2' : 'auto'}}>
+    ⏭️<br/>SKIP ALL
+  </div>
+</div>
         )}
 
         {entryStep === 'form' && (
