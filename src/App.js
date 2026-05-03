@@ -1720,9 +1720,11 @@ function TheaterMarquee({ upcoming, onAdd, onEdit, session }) {
       {/* Show list */}
       <div style={{ padding:'0 16px 16px' }}>
         <div style={{ maxHeight:190, overflowY:'auto' }}>
-          {upcoming.sort((a,b) => a.date.localeCompare(b.date)).map((show, i) => {
-            const otherAttendees = (show.attendees || []).filter(att => att.user_id !== session?.user?.id);
-            const hasCollaborators = otherAttendees.length > 0;
+          upcoming.sort((a,b) => a.date.localeCompare(b.date)).map((show, i) => {
+  console.log('Show:', show.artist, 'Attendees:', show.attendees);
+  const otherAttendees = (show.attendees || []).filter(att => att.user_id !== session?.user?.id);
+  console.log('Other attendees:', otherAttendees);
+  const hasCollaborators = otherAttendees.length > 0;
             
             return (
               <div key={show.id||i} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto auto', alignItems:'center', gap:12, padding:'12px 0', borderBottom: i === upcoming.length -1 ? 'none' : '1px solid #1a1a1a' }}>
