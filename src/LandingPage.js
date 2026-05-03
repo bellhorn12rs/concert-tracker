@@ -389,20 +389,16 @@ export default function LandingPage({
   </div>
   
   <div style={{ 
-    position: 'relative',
-    width: isMobile ? 240 : 280,
-    height: isMobile ? 280 : 340
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+    width: isMobile ? 240 : 280
   }}>
-    {/* Wristbands - top left */}
+    {/* Wristbands */}
     <div style={{ 
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: '65%',
-      transform: 'rotate(-8deg)',
+      transform: 'rotate(-4deg)',
       boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
-      border: '2px solid #1a1a1a',
-      zIndex: 3
+      border: '2px solid #1a1a1a'
     }}>
       <img 
         src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/WristbandMess.jpeg"
@@ -411,16 +407,11 @@ export default function LandingPage({
       />
     </div>
     
-    {/* Tickets - middle */}
+    {/* Tickets */}
     <div style={{ 
-      position: 'absolute',
-      top: '25%',
-      right: '5%',
-      width: '70%',
-      transform: 'rotate(5deg)',
+      transform: 'rotate(3deg)',
       boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
-      border: '2px solid #1a1a1a',
-      zIndex: 2
+      border: '2px solid #1a1a1a'
     }}>
       <img 
         src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/ticketPile.jpeg"
@@ -429,16 +420,11 @@ export default function LandingPage({
       />
     </div>
     
-    {/* Posters - bottom */}
+    {/* Posters on floor */}
     <div style={{ 
-      position: 'absolute',
-      bottom: 0,
-      left: '10%',
-      width: '75%',
-      transform: 'rotate(-3deg)',
+      transform: 'rotate(-2deg)',
       boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
-      border: '2px solid #1a1a1a',
-      zIndex: 1
+      border: '2px solid #1a1a1a'
     }}>
       <img 
         src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/postersonfloor.jpeg"
