@@ -584,6 +584,7 @@ export default function LandingPage({
                   Shareable. Forever.
                 </div>
               </div>
+            </div>
 
           {/* CTAs - THREE OPTIONS */}
           <div className="fade-in" style={{ 
