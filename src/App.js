@@ -1720,26 +1720,73 @@ function TheaterMarquee({ upcoming, onAdd, onEdit }) {
       {/* Show list */}
       <div style={{ padding:'0 16px 16px' }}>
         <div style={{ maxHeight:190, overflowY:'auto' }}>
-          {upcoming.sort((a,b) => a.date.localeCompare(b.date)).map((show, i) => (
-            <div key={show.id||i} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto auto', alignItems:'center', gap:12, padding:'12px 0', borderBottom: i === upcoming.length -1 ? 'none' : '1px solid #1a1a1a' }}>
-              <div style={{ fontFamily:"'Space Mono'", fontSize:9, color:'#888', whiteSpace:'nowrap' }}>{fmtDateShort(show.date)}</div>
-              <div style={{ textAlign:'center' }}>
-                <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.15rem', color:C.gold, letterSpacing:'0.06em', lineHeight:1 }}>{show.artist}</div>
-                {show.venue && <div style={{ fontFamily:"'Space Mono'", fontSize:7, color:'#555', marginTop:1 }}>{show.venue}</div>}
+          {upcoming.sort((a,b) => a.date.localeCompare(b.date)).map((show, i) => {
+            const otherAttendees = (show.attendees || []).filter(att => att.user_id !== session?.user?.id);
+            const hasCollaborators = otherAttendees.length > 0;
+            
+            return (
+              <div key={show.id||i} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto auto', alignItems:'center', gap:12, padding:'12px 0', borderBottom: i === upcoming.length -1 ? 'none' : '1px solid #1a1a1a' }}>
+                <div style={{ fontFamily:"'Space Mono'", fontSize:9, color:'#888', whiteSpace:'nowrap' }}>{fmtDateShort(show.date)}</div>
+                
+                <div style={{ textAlign:'center' }}>
+                  <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.15rem', color:C.gold, letterSpacing:'0.06em', lineHeight:1 }}>{show.artist}</div>
+                  {show.venue && <div style={{ fontFamily:"'Space Mono'", fontSize:7, color:'#555', marginTop:1 }}>{show.venue}</div>}
+                  
+                  {/* Collaboration indicator */}
+                  {hasCollaborators && (
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: 4, 
+                      marginTop: 6, 
+                      justifyContent: 'center',
+                      alignItems: 'center'
+                    }}>
+                      <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:C.purple }}>WITH:</span>
+                      {otherAttendees.slice(0, 3).map((att) => (
+                        <div 
+                          key={att.user_id}
+                          style={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: '50%',
+                            background: att.profile.avatar_color,
+                            border: `1px solid ${att.profile.avatar_color}`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontFamily: "'Bebas Neue'",
+                            fontSize: 8,
+                            color: '#000',
+                            fontWeight: 900
+                          }}
+                          title={att.profile.username}
+                        >
+                          {att.profile.username[0].toUpperCase()}
+                        </div>
+                      ))}
+                      {otherAttendees.length > 3 && (
+                        <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:C.purple }}>
+                          +{otherAttendees.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:C.gold, background:'rgba(255,204,0,0.12)', border:'1px solid rgba(255,204,0,0.3)', padding:'2px 6px', borderRadius:3, whiteSpace:'nowrap' }}>
+                  {show.status || 'TICKETS'}
+                </span>
+                <button
+                  onClick={() => onEdit(show)}
+                  style={{ background:'none', border:'1px solid #333', color:'#888', cursor:'pointer', fontSize:9, borderRadius:3, padding:'3px 8px', fontFamily:"'Space Mono'", transition:'all 0.2s' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.gold; e.currentTarget.style.color = C.gold; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#888'; }}
+                >
+                  EDIT
+                </button>
               </div>
-              <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:C.gold, background:'rgba(255,204,0,0.12)', border:'1px solid rgba(255,204,0,0.3)', padding:'2px 6px', borderRadius:3, whiteSpace:'nowrap' }}>
-                {show.status || 'TICKETS'}
-              </span>
-              <button
-                onClick={() => onEdit(show)}
-                style={{ background:'none', border:'1px solid #333', color:'#888', cursor:'pointer', fontSize:9, borderRadius:3, padding:'3px 8px', fontFamily:"'Space Mono'", transition:'all 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = C.gold; e.currentTarget.style.color = C.gold; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#888'; }}
-              >
-                EDIT
-              </button>
-            </div>
-          ))}
+            );
+          })}
           {isEmpty && (
             <div style={{ color:'#333', fontFamily:"'Space Mono'", fontSize:9, textAlign:'center', padding:'30px 20px', letterSpacing:'0.1em' }}>
               NO FUTURE SIGNALS DETECTED
@@ -1750,7 +1797,6 @@ function TheaterMarquee({ upcoming, onAdd, onEdit }) {
     </div>
   );
 }
-
 // ─── NEWS TICKER ──────────────────────────────────────────────────────────────
 function NewsTicker({ concerts, artistCounts, genreStats }) {
   const items = useMemo(() => {
@@ -12100,15 +12146,55 @@ async function fetchUpcoming() {
     .eq('user_id', targetId)
     .order('show(date)', { ascending: true });
   
-  if (attendances) {
-    const shows = attendances
-      .map(a => a.show)
-      .filter(Boolean)
-      .sort((a, b) => a.date.localeCompare(b.date));
-    
-    console.log('fetchUpcoming: done', shows.length);
-    setUpcoming(shows);
+  if (!attendances) {
+    setUpcoming([]);
+    return;
   }
+  
+  const showIds = attendances.map(a => a.show_id).filter(Boolean);
+  
+  // Get ALL attendees for these shows
+  const { data: allAttendances } = await supabase
+    .from('upcoming_attendances')
+    .select('user_id, show_id')
+    .in('show_id', showIds);
+  
+  // Get profiles for all attendees
+  const userIds = [...new Set(allAttendances?.map(a => a.user_id) || [])];
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_color')
+    .in('id', userIds);
+  
+  const profileMap = {};
+  (profiles || []).forEach(p => {
+    profileMap[p.id] = p;
+  });
+  
+  // Build shows with attendee info
+  const shows = attendances
+    .map(a => {
+      const show = a.show;
+      if (!show) return null;
+      
+      // Get all attendees for this show
+      const showAttendees = (allAttendances || [])
+        .filter(att => att.show_id === show.id)
+        .map(att => ({
+          user_id: att.user_id,
+          profile: profileMap[att.user_id] || { username: 'Unknown', avatar_color: C.gray }
+        }));
+      
+      return {
+        ...show,
+        attendees: showAttendees
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  
+  console.log('fetchUpcoming: done', shows.length);
+  setUpcoming(shows);
 }
 
 // ── 2. MODIFICATION HANDLERS (ADMIN ONLY) ──
