@@ -12072,17 +12072,43 @@ async function fetchGenres() {
 
 async function fetchUpcoming() {
   const targetId = viewingUser || session?.user?.id;
-  if (!targetId) { console.log('fetchUpcoming: no target id'); return; }
+  if (!targetId) { 
+    console.log('fetchUpcoming: no target id'); 
+    return; 
+  }
   
-  console.log('fetchUpcoming: starting');
-  const { data } = await supabase
-    .from('upcoming_concerts')
-    .select('*')
+  console.log('fetchUpcoming: starting for user', targetId);
+  
+  // Get shows this user is attending
+  const { data: attendances } = await supabase
+    .from('upcoming_attendances')
+    .select(`
+      show_id,
+      show:upcoming_shows(
+        id,
+        date,
+        artist,
+        bands,
+        venue,
+        city,
+        state,
+        status,
+        is_festival,
+        festival_name
+      )
+    `)
     .eq('user_id', targetId)
-    .order('date', { ascending: true });
+    .order('show(date)', { ascending: true });
+  
+  if (attendances) {
+    const shows = attendances
+      .map(a => a.show)
+      .filter(Boolean)
+      .sort((a, b) => a.date.localeCompare(b.date));
     
-  console.log('fetchUpcoming: done', data?.length);
-  if (data) setUpcoming(data);
+    console.log('fetchUpcoming: done', shows.length);
+    setUpcoming(shows);
+  }
 }
 
 // ── 2. MODIFICATION HANDLERS (ADMIN ONLY) ──
@@ -12172,34 +12198,85 @@ async function handleDelete(id) {
 }
 
   const handleUpcomingSave = async (id, formData) => {
-  if (viewingUser) return; // 🛡️ Stay in spectator mode
+  if (viewingUser) return;
+  
   try {
-    // 🟢 THE FIX: Ensure the show is linked to the logged-in user
-    const finalData = { 
-      ...formData, 
-      user_id: session?.user?.id 
-    };
-
-    if (id) {
-      const { error } = await supabase
-        .from('upcoming_concerts')
-        .update(finalData) // Use stamped data
-        .eq('id', id);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase
-        .from('upcoming_concerts')
-        .insert([finalData]); // Use stamped data
-      if (error) throw error;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) {
+      alert("LOGIN REQUIRED");
+      return;
     }
 
-    // Refresh the local list so the Marquee sees it
+    let showId = id;
+
+    if (id) {
+      // Update existing show
+      const { error } = await supabase
+        .from('upcoming_shows')
+        .update({
+          date: formData.date,
+          artist: formData.artist,
+          bands: formData.bands || [formData.artist],
+          venue: formData.venue,
+          city: formData.city,
+          state: formData.state,
+          status: formData.status,
+          is_festival: formData.is_festival,
+          festival_name: formData.festival_name
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
+    } else {
+      // Check if this show already exists (someone else added it)
+      const { data: existing } = await supabase
+        .from('upcoming_shows')
+        .select('id')
+        .eq('date', formData.date)
+        .eq('artist', formData.artist)
+        .maybeSingle();
+      
+      if (existing) {
+        // Show exists, just add your attendance
+        showId = existing.id;
+      } else {
+        // Create new show
+        const { data: newShow, error } = await supabase
+          .from('upcoming_shows')
+          .insert([{
+            date: formData.date,
+            artist: formData.artist,
+            bands: formData.bands || [formData.artist],
+            venue: formData.venue,
+            city: formData.city,
+            state: formData.state,
+            status: formData.status,
+            is_festival: formData.is_festival,
+            festival_name: formData.festival_name,
+            created_by: session.user.id
+          }])
+          .select()
+          .single();
+        
+        if (error) throw error;
+        showId = newShow.id;
+      }
+      
+      // Add attendance if new show
+      if (!id) {
+        await supabase
+          .from('upcoming_attendances')
+          .insert([{
+            user_id: session.user.id,
+            show_id: showId
+          }]);
+      }
+    }
+
     await fetchUpcoming();
-    
-    // Close the modal
     setUpcomingModal(null);
+    console.log("📡 SIGNAL SYNCED: Upcoming show saved.");
     
-    console.log("📡 SIGNAL SYNCED: Upcoming show added to archive.");
   } catch (err) {
     console.error("Save failed:", err);
     alert("Save failed: " + err.message);
@@ -12207,27 +12284,70 @@ async function handleDelete(id) {
 };
 
   const handleReconcile = async (upcomingId, payload) => {
-    if (viewingUser) return;
-    await handleSave(null, payload); 
-    const { error } = await supabase
-      .from('upcoming_concerts')
+  if (viewingUser) return;
+  
+  await handleSave(null, payload); 
+  
+  // Remove YOUR attendance from upcoming
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user?.id) return;
+  
+  await supabase
+    .from('upcoming_attendances')
+    .delete()
+    .eq('user_id', session.user.id)
+    .eq('show_id', upcomingId);
+  
+  // Check if anyone else is still attending
+  const { data: otherAttendees } = await supabase
+    .from('upcoming_attendances')
+    .select('id')
+    .eq('show_id', upcomingId);
+  
+  // If you were the only one, delete the show
+  if (!otherAttendees || otherAttendees.length === 0) {
+    await supabase
+      .from('upcoming_shows')
       .delete()
       .eq('id', upcomingId);
-
-    if (!error) {
-      setNudgeTarget(null);
-      fetchUpcoming();
-    }
-  };
+  }
+  
+  setNudgeTarget(null);
+  fetchUpcoming();
+};
 
   async function handleUpcomingDelete(id) {
-    if (viewingUser) return;
-    if (window.confirm('Remove show?')) {
-      await supabase.from('upcoming_concerts').delete().eq('id', id);
-      fetchUpcoming();
-      setUpcomingModal(null);
+  if (viewingUser) return;
+  
+  if (window.confirm('Remove this show from your upcoming list?')) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return;
+    
+    // Just remove YOUR attendance
+    await supabase
+      .from('upcoming_attendances')
+      .delete()
+      .eq('user_id', session.user.id)
+      .eq('show_id', id);
+    
+    // Check if anyone else is attending
+    const { data: otherAttendees } = await supabase
+      .from('upcoming_attendances')
+      .select('id')
+      .eq('show_id', id);
+    
+    // If you were the only one, delete the show itself
+    if (!otherAttendees || otherAttendees.length === 0) {
+      await supabase
+        .from('upcoming_shows')
+        .delete()
+        .eq('id', id);
     }
+    
+    fetchUpcoming();
+    setUpcomingModal(null);
   }
+}
 
   async function handleDuplicate(concert) {
     if (viewingUser) return;
