@@ -7768,7 +7768,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
 
   const [form, setForm] = useState(initialState);
   const [uploading, setUploading] = useState(false);
-  const [entryStep, setEntryStep] = useState(concert === 'new' ? 'gate' : 'form');
+const [entryStep, setEntryStep] = useState('form');
   const [photoPrivacySettings, setPhotoPrivacySettings] = useState({});
   
   // NEW: Track band assignments for relics
@@ -8072,27 +8072,6 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(15px)' }}>
       <div className="fade-in" style={{ background: '#0a0a0c', border: `2px solid ${C.teal}`, borderRadius: 16, padding: isMobile ? 20 : 40, width: '95%', maxWidth: 750, maxHeight: '95vh', overflowY: 'auto' }}>
-        
-        {entryStep === 'gate' && (
-          <div className="fade-in" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: 20 }}>📸</div>
-            <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff' }}>DO YOU HAVE A PHOTO?</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 30 }}>
-              <button onClick={() => setEntryStep('type')} style={gateBtn(C.teal)}>YES</button>
-              <button onClick={() => setEntryStep('form')} style={gateBtn(C.grayDim)}>NO, SKIP</button>
-            </div>
-          </div>
-        )}
-
-        {entryStep === 'type' && (
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 15 }}>
-  <div onClick={() => document.getElementById('init-stub').click()} style={gateBtn(C.teal)}>
-    🎟️<br/>TICKET
-    <input id="init-stub" type="file" hidden onChange={async (e) => {
-      const url = await uploadToArchive(e.target.files[0], 'TICKET');
-      if (url) set('image_url', url);
-    }} />
-  </div>
   
   <div onClick={() => document.getElementById('init-pic').click()} style={gateBtn(C.purple)}>
     📸<br/>PHOTO
