@@ -5095,11 +5095,21 @@ function GigPoster({ src, artist, date, index = 0 }) {
 }
 
 // ─── 📸 STACKED POLAROIDS (PHYSICS & 3D EDITION) ────────────────────────────────
+// ─── 📸 STACKED POLAROIDS (PHYSICS & 3D EDITION + PRIVACY) ────────────────────────────────
 function PersonalPolaroid({ src, caption, date, venue, index = 0, isPublic = true, isAdmin = false, onTogglePrivacy, onZoom }) {
   if (!src) return null;
 
   const markerColors = ['#1a1a1a', '#2140ab', '#b02525', '#1e6337', '#732ba1', '#cc6600'];
   const myColor = markerColors[index % markerColors.length];
+
+  const handleLockClick = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    console.log('Lock button clicked! Current state:', isPublic);
+    if (onTogglePrivacy) {
+      onTogglePrivacy(e);
+    }
+  };
 
   return (
     <div 
@@ -5110,8 +5120,7 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, isPublic = tru
         boxShadow: '0 15px 40px rgba(0,0,0,0.5), 0 0 5px rgba(0,0,0,0.1)',
         width: '320px', 
         border: '1px solid #efefef', 
-        position: 'relative',
-        cursor: 'pointer'
+        position: 'relative'
       }}
     >
       {/* 📌 THE THUMB TACK */}
@@ -5119,50 +5128,50 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, isPublic = tru
         position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
         width: 20, height: 20, background: '#d11111', borderRadius: '50%',
         boxShadow: 'inset -4px -4px 6px rgba(0,0,0,0.5), 2px 8px 12px rgba(0,0,0,0.4)',
-        zIndex: 100, border: '1px solid #900'
+        zIndex: 100, border: '1px solid #900',
+        pointerEvents: 'none'
       }}>
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 4, height: 4, background: '#400', borderRadius: '50%', opacity: 0.5 }} />
         <div className="tack-shine" />
       </div>
 
-      {/* PRIVACY LOCK (Admin only) */}
+      {/* PRIVACY LOCK (Admin only) - OUTSIDE polaroid frame */}
       {isAdmin && onTogglePrivacy && (
-        <button
-          onClick={(e) => {
-            console.log('Lock clicked!', isPublic);
-            e.stopPropagation();
-            e.preventDefault();
-            onTogglePrivacy(e);
-          }}
+        <div
+          onClick={handleLockClick}
+          onMouseDown={(e) => e.stopPropagation()}
           style={{
             position: 'absolute',
             top: 8,
             right: 8,
-            width: 36,
-            height: 36,
+            width: 40,
+            height: 40,
             borderRadius: '50%',
-            background: isPublic ? 'rgba(0,204,136,0.9)' : 'rgba(255,68,68,0.9)',
-            border: `2px solid ${isPublic ? '#00cc88' : '#ff4444'}`,
+            background: isPublic ? 'rgba(0,204,136,0.95)' : 'rgba(255,68,68,0.95)',
+            border: `3px solid ${isPublic ? '#00cc88' : '#ff4444'}`,
             color: '#fff',
-            fontSize: '16px',
+            fontSize: '18px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            zIndex: 101,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            zIndex: 200,
+            boxShadow: '0 6px 16px rgba(0,0,0,0.5)',
             transition: 'all 0.2s',
-            pointerEvents: 'auto'
+            pointerEvents: 'all',
+            userSelect: 'none'
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.transform = 'scale(1.1)';
+            e.currentTarget.style.transform = 'scale(1.15)';
+            e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.7)';
           }}
           onMouseLeave={e => {
             e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.5)';
           }}
         >
           {isPublic ? '🔓' : '🔒'}
-        </button>
+        </div>
       )}
 
       {/* PHOTO AREA - Click handler here */}
@@ -5175,31 +5184,34 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, isPublic = tru
           background: `url(${src}) center/cover no-repeat`,
           border: '1px solid rgba(0,0,0,0.1)',
           filter: isPublic ? 'none' : 'blur(20px)',
-          transition: 'filter 0.3s'
+          transition: 'filter 0.3s',
+          cursor: 'pointer',
+          position: 'relative'
         }} 
-      />
-
-      {/* Private overlay badge */}
-      {!isPublic && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'rgba(0,0,0,0.8)',
-          padding: '12px 20px',
-          borderRadius: 8,
-          fontFamily: "'Space Mono'",
-          fontSize: 10,
-          color: '#ff4444',
-          fontWeight: 900,
-          letterSpacing: 2,
-          border: '2px solid #ff4444',
-          pointerEvents: 'none'
-        }}>
-          🔒 PRIVATE
-        </div>
-      )}
+      >
+        {/* Private overlay badge */}
+        {!isPublic && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: 'rgba(0,0,0,0.9)',
+            padding: '12px 20px',
+            borderRadius: 8,
+            fontFamily: "'Space Mono'",
+            fontSize: 10,
+            color: '#ff4444',
+            fontWeight: 900,
+            letterSpacing: 2,
+            border: '2px solid #ff4444',
+            pointerEvents: 'none',
+            zIndex: 10
+          }}>
+            🔒 PRIVATE
+          </div>
+        )}
+      </div>
 
       {/* 🖊️ HANDWRITTEN LABELS */}
       <div style={{ 
