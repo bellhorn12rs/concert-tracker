@@ -1636,12 +1636,7 @@ function CountUpStat({ value, label, sub, color = C.white }) {
   );
 }
 // Theater Marquee (RECONFIGURED WITH FULL-WIDTH CALL TO ACTION)
-<TheaterMarquee 
-  upcoming={upcoming} 
-  onAdd={isAdmin ? () => setUpcomingModal('new') : null} 
-  onEdit={isAdmin ? setUpcomingModal : null}
-  session={session}
-/>
+function TheaterMarquee({ upcoming, onAdd, onEdit, session }) {
   const BULB_COUNT = 28;
   const isEmpty = upcoming.length === 0;
 
@@ -12969,10 +12964,11 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
 
           {/* ⚪ 2. THEATER MARQUEE (REMAINS MIDDLE) */}
           <TheaterMarquee 
-            upcoming={upcoming} 
-            onAdd={isAdmin ? () => setUpcomingModal('new') : null} 
-            onEdit={isAdmin ? setUpcomingModal : null} 
-          />
+  upcoming={upcoming} 
+  onAdd={isAdmin ? () => setUpcomingModal('new') : null} 
+  onEdit={isAdmin ? setUpcomingModal : null}
+  session={session}
+/>
 
           {/* 🟡 3. ARTIST INSIGHTS (NOW TOP RIGHT / THIRD ON MOBILE) */}
           <ArtistInsights concerts={concerts} />
