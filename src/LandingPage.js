@@ -376,7 +376,7 @@ export default function LandingPage({
               marginBottom: 40
             }}>
 
-              {/* BEFORE: THE CHAOS */}
+              {/* BEFORE: THE CHAOS - 3 IMAGE STACK */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
                 <div style={{ 
                   fontFamily: "'Space Mono'", 
@@ -388,36 +388,47 @@ export default function LandingPage({
                   BEFORE
                 </div>
                 
-                <div style={{ position: 'relative', width: isMobile ? 260 : 320, height: isMobile ? 320 : 380 }}>
-                  {/* Ticket pile */}
-                  <div style={{ 
-                    position: 'absolute', 
-                    bottom: 0, 
-                    left: 0,
-                    width: '85%',
-                    transform: 'rotate(-3deg)',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
-                    border: '3px solid #1a1a1a'
-                  }}>
-                    <img 
-                      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/ticketPile.jpeg"
-                      alt="Pile of tickets"
-                      style={{ width: '100%', height: 'auto', display: 'block' }}
-                    />
-                  </div>
+                <div style={{ 
+                  display: 'grid',
+                  gridTemplateColumns: '1fr',
+                  gap: 12,
+                  width: isMobile ? 280 : 340
+                }}>
                   {/* Wristbands */}
                   <div style={{ 
-                    position: 'absolute', 
-                    top: '-10px', 
-                    right: 0,
-                    width: '50%',
-                    transform: 'rotate(4deg)',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
+                    transform: 'rotate(-2deg)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
                     border: '3px solid #1a1a1a'
                   }}>
                     <img 
                       src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/WristbandMess.jpeg"
                       alt="Wristband pile"
+                      style={{ width: '100%', height: 'auto', display: 'block' }}
+                    />
+                  </div>
+                  
+                  {/* Tickets */}
+                  <div style={{ 
+                    transform: 'rotate(1deg)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
+                    border: '3px solid #1a1a1a'
+                  }}>
+                    <img 
+                      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/ticketPile.jpeg"
+                      alt="Ticket pile"
+                      style={{ width: '100%', height: 'auto', display: 'block' }}
+                    />
+                  </div>
+                  
+                  {/* Posters on floor */}
+                  <div style={{ 
+                    transform: 'rotate(-1deg)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
+                    border: '3px solid #1a1a1a'
+                  }}>
+                    <img 
+                      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/postersonfloor.jpeg"
+                      alt="Posters on floor"
                       style={{ width: '100%', height: 'auto', display: 'block' }}
                     />
                   </div>
@@ -430,7 +441,7 @@ export default function LandingPage({
                   textAlign: 'center', 
                   lineHeight: 1.8,
                   marginTop: 8,
-                  maxWidth: 280
+                  maxWidth: 300
                 }}>
                   Lost in shoeboxes.<br/>
                   Fading. Forgotten.
@@ -457,7 +468,7 @@ export default function LandingPage({
                 </div>
               </div>
 
-              {/* AFTER: THE ARCHIVE */}
+              {/* AFTER: THE ARCHIVE - 3 SCREENSHOT STACK */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
                 <div style={{ 
                   fontFamily: "'Space Mono'", 
@@ -469,46 +480,92 @@ export default function LandingPage({
                   AFTER
                 </div>
 
-                <div style={{ width: isMobile ? 260 : 320, position: 'relative' }}>
+                <div style={{ 
+                  display: 'grid',
+                  gridTemplateColumns: '1fr',
+                  gap: 12,
+                  width: isMobile ? 280 : 340
+                }}>
+                  {/* Stub Case */}
                   <div style={{
                     background: '#0a0a0f',
                     border: `1px solid ${TEAL}44`,
-                    borderRadius: 12,
+                    borderRadius: 8,
                     overflow: 'hidden',
-                    boxShadow: `0 20px 60px rgba(0,0,0,0.8), 0 0 40px ${TEAL}11`
+                    boxShadow: `0 12px 40px rgba(0,0,0,0.8), 0 0 20px ${TEAL}11`,
+                    transform: 'rotate(-1deg)'
                   }}>
-                    {/* Browser chrome */}
                     <div style={{
                       background: '#050508',
-                      padding: '8px 12px',
+                      padding: '6px 10px',
                       borderBottom: `1px solid ${TEAL}22`,
                       display: 'flex', 
                       alignItems: 'center', 
                       gap: 6
                     }}>
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff4466' }} />
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: GOLD }} />
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#00cc88' }} />
-                      <div style={{ 
-                        flex: 1, 
-                        background: '#111', 
-                        borderRadius: 3, 
-                        padding: '2px 8px', 
-                        marginLeft: 8 
-                      }}>
-                        <div style={{ 
-                          fontFamily: "'Space Mono'", 
-                          fontSize: 6, 
-                          color: '#444', 
-                          letterSpacing: 1 
-                        }}>
-                          trackrecord.app
-                        </div>
-                      </div>
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#ff4466' }} />
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD }} />
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#00cc88' }} />
                     </div>
                     <img
                       src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/Screenshot%202026-04-22%20at%203.03.33%20PM.png"
-                      alt="TrackRecord App"
+                      alt="Stub wall organized"
+                      style={{ width: '100%', height: 'auto', display: 'block' }}
+                    />
+                  </div>
+
+                  {/* Poster Wall */}
+                  <div style={{
+                    background: '#0a0a0f',
+                    border: `1px solid ${TEAL}44`,
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                    boxShadow: `0 12px 40px rgba(0,0,0,0.8), 0 0 20px ${TEAL}11`,
+                    transform: 'rotate(1deg)'
+                  }}>
+                    <div style={{
+                      background: '#050508',
+                      padding: '6px 10px',
+                      borderBottom: `1px solid ${TEAL}22`,
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 6
+                    }}>
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#ff4466' }} />
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD }} />
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#00cc88' }} />
+                    </div>
+                    <img
+                      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/posterwall.png"
+                      alt="Poster wall organized"
+                      style={{ width: '100%', height: 'auto', display: 'block' }}
+                    />
+                  </div>
+
+                  {/* Heavy Rotation */}
+                  <div style={{
+                    background: '#0a0a0f',
+                    border: `1px solid ${TEAL}44`,
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                    boxShadow: `0 12px 40px rgba(0,0,0,0.8), 0 0 20px ${TEAL}11`,
+                    transform: 'rotate(-0.5deg)'
+                  }}>
+                    <div style={{
+                      background: '#050508',
+                      padding: '6px 10px',
+                      borderBottom: `1px solid ${TEAL}22`,
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 6
+                    }}>
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#ff4466' }} />
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD }} />
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#00cc88' }} />
+                    </div>
+                    <img
+                      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/Screenshot%202026-05-03%20at%2011.14.54%20AM.png"
+                      alt="Heavy rotation tab"
                       style={{ width: '100%', height: 'auto', display: 'block' }}
                     />
                   </div>
@@ -521,14 +578,12 @@ export default function LandingPage({
                   textAlign: 'center', 
                   lineHeight: 1.8, 
                   marginTop: 8,
-                  maxWidth: 280
+                  maxWidth: 300
                 }}>
                   Organized. Searchable.<br/>
                   Shareable. Forever.
                 </div>
               </div>
-            </div>
-          </div>
 
           {/* CTAs - THREE OPTIONS */}
           <div className="fade-in" style={{ 
