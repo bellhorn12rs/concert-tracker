@@ -8174,6 +8174,8 @@ const [entryStep, setEntryStep] = useState('form');
                           multiple={item.multi}
                           hidden 
                           onChange={async (e) => {
+  console.log('Upload triggered for:', item.k, item.t);
+  
   // Use custom handler for relics
   if (item.handler) {
     await item.handler(Array.from(e.target.files));
@@ -8183,22 +8185,30 @@ const [entryStep, setEntryStep] = useState('form');
   // Default handler for other types
   if (item.multi) {
     const files = Array.from(e.target.files);
+    console.log('Files selected:', files.length);
     const urls = [];
     
-    // If photos need privacy setting, prompt for each
+    // If photos need privacy setting, handle specially
     if (item.needsPrivacy) {
+      console.log('Photo upload detected');
       for (const file of files) {
         const url = await uploadToArchive(file, item.t);
+        console.log('Photo uploaded, URL:', url);
         if (url) {
           urls.push(url);
           // Default to public
-          setPhotoPrivacySettings(prev => ({ ...prev, [url]: true }));
+          setPhotoPrivacySettings(prev => ({ 
+            ...prev, 
+            [url]: true 
+          }));
         }
       }
       
       if (urls.length > 0) {
         const existing = form[item.k] ? form[item.k].split(',').map(s => s.trim()).filter(Boolean) : [];
-        set(item.k, [...existing, ...urls].join(', '));
+        const newValue = [...existing, ...urls].join(', ');
+        console.log('Setting photo URLs:', newValue);
+        set(item.k, newValue);
       }
     } else {
       // Non-photo artifacts
