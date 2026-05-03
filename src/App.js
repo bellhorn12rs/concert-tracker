@@ -7769,6 +7769,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
   const [form, setForm] = useState(initialState);
   const [uploading, setUploading] = useState(false);
   const [entryStep, setEntryStep] = useState(concert === 'new' ? 'gate' : 'form');
+  const [photoPrivacySettings, setPhotoPrivacySettings] = useState({});
   
   // NEW: Track band assignments for relics
   const [relicBandSelections, setRelicBandSelections] = useState({});
@@ -7970,18 +7971,20 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
     
     // Photos
     if (form.personal_photo_url) {
-      form.personal_photo_url.split(',').forEach(url => {
-        if (url.trim()) {
-          artifactsToInsert.push({
-            user_id: session.user.id,
-            show_id: targetShowId,
-            artifact_type: 'photo',
-            image_url: url.trim(),
-            band_name: form.is_festival ? null : (form.bands[0]?.name || null),
-            is_public: true
-          });
-        }
+  form.personal_photo_url.split(',').forEach(url => {
+    if (url.trim()) {
+      const isPublic = photoPrivacySettings[url.trim()] !== false; // Default to true if not set
+      artifactsToInsert.push({
+        user_id: session.user.id,
+        show_id: targetShowId,
+        artifact_type: 'photo',
+        image_url: url.trim(),
+        band_name: form.is_festival ? null : (form.bands[0]?.name || null),
+        is_public: isPublic  // Changed from hardcoded true
       });
+    }
+  });
+
     }
     
     // Relics (with band selection)
@@ -8184,7 +8187,7 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   {[ 
                     {k:'image_url', l:'STUB', i:'🎟️', id:'e-stub', t:'TICKET', multi: true}, 
-                    {k:'personal_photo_url', l:'PHOTO', i:'📸', id:'e-pic', t:'POLAROID', multi: true}, 
+                    {k:'personal_photo_url', l:'PHOTO', i:'📸', id:'e-pic', t:'POLAROID', multi: true, needsPrivacy: true}, 
                     {k:'setlist_image_url', l:'RELIC', i:'🏺', id:'e-set', t:'SETLIST', multi: true, handler: handleRelicUpload}, 
                     ...(form.is_festival ? [{k:'wristband_image_url', l:'WRISTBAND', i:'🎫', id:'e-wrist', t:'WRISTBAND', multi: false}] : [])
                   ].map(item => {
@@ -8206,34 +8209,131 @@ function EditModal({ concert, onClose, onSave, onDelete, allConcerts = [] }) {
                           multiple={item.multi}
                           hidden 
                           onChange={async (e) => {
-                            // Use custom handler for relics
-                            if (item.handler) {
-                              await item.handler(Array.from(e.target.files));
-                              return;
-                            }
-                            
-                            // Default handler for other types
-                            if (item.multi) {
-                              const files = Array.from(e.target.files);
-                              const urls = [];
-                              for (const file of files) {
-                                const url = await uploadToArchive(file, item.t);
-                                if (url) urls.push(url);
-                              }
-                              if (urls.length > 0) {
-                                const existing = form[item.k] ? form[item.k].split(',').map(s => s.trim()).filter(Boolean) : [];
-                                set(item.k, [...existing, ...urls].join(', '));
-                              }
-                            } else {
-                              const url = await uploadToArchive(e.target.files[0], item.t);
-                              if (url) set(item.k, url);
-                            }
-                          }} 
+  // Use custom handler for relics
+  if (item.handler) {
+    await item.handler(Array.from(e.target.files));
+    return;
+  }
+  
+  // Default handler for other types
+  if (item.multi) {
+    const files = Array.from(e.target.files);
+    const urls = [];
+    
+    // If photos need privacy setting, prompt for each
+    if (item.needsPrivacy) {
+      for (const file of files) {
+        const url = await uploadToArchive(file, item.t);
+        if (url) {
+          urls.push(url);
+          // Default to public
+          setPhotoPrivacySettings(prev => ({ ...prev, [url]: true }));
+        }
+      }
+      
+      if (urls.length > 0) {
+        const existing = form[item.k] ? form[item.k].split(',').map(s => s.trim()).filter(Boolean) : [];
+        set(item.k, [...existing, ...urls].join(', '));
+      }
+    } else {
+      // Non-photo artifacts
+      for (const file of files) {
+        const url = await uploadToArchive(file, item.t);
+        if (url) urls.push(url);
+      }
+      if (urls.length > 0) {
+        const existing = form[item.k] ? form[item.k].split(',').map(s => s.trim()).filter(Boolean) : [];
+        set(item.k, [...existing, ...urls].join(', '));
+      }
+    }
+  } else {
+    const url = await uploadToArchive(e.target.files[0], item.t);
+    if (url) set(item.k, url);
+  }
+}}
+                          
                         />
                       </div>
                     );
                   })}
                 </div>
+
+                {/* NEW: Photo Privacy Toggles */}
+                {form.personal_photo_url && form.personal_photo_url.trim() && (
+                  <div style={{
+                    background: 'rgba(100,100,255,0.05)',
+                    border: '1px solid rgba(100,100,255,0.3)',
+                    borderRadius: 8,
+                    padding: 12,
+                    marginTop: 10
+                  }}>
+                    <div style={{
+                      fontFamily: "'Space Mono'",
+                      fontSize: 8,
+                      color: '#8888ff',
+                      marginBottom: 10,
+                      letterSpacing: 1
+                    }}>
+                      📸 PHOTO PRIVACY SETTINGS
+                    </div>
+                    {form.personal_photo_url.split(',').map((url, idx) => {
+                      const trimmedUrl = url.trim();
+                      if (!trimmedUrl) return null;
+                      const isPublic = photoPrivacySettings[trimmedUrl] !== false;
+                      
+                      return (
+                        <div key={idx} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px',
+                          background: '#000',
+                          borderRadius: 6,
+                          marginBottom: 8,
+                          border: `1px solid ${isPublic ? '#00cc88' : '#ff4444'}`
+                        }}>
+                          <div style={{
+                            fontFamily: "'Space Mono'",
+                            fontSize: 8,
+                            color: '#999',
+                            flex: 1,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            marginRight: 10
+                          }}>
+                            Photo {idx + 1}
+                          </div>
+                          <button
+                            onClick={() => {
+                              setPhotoPrivacySettings(prev => ({
+                                ...prev,
+                                [trimmedUrl]: !isPublic
+                              }));
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              padding: '6px 12px',
+                              background: isPublic ? 'rgba(0,204,136,0.1)' : 'rgba(255,68,68,0.1)',
+                              border: `1px solid ${isPublic ? '#00cc88' : '#ff4444'}`,
+                              borderRadius: 6,
+                              color: isPublic ? '#00cc88' : '#ff4444',
+                              fontFamily: "'Space Mono'",
+                              fontSize: 8,
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            <span>{isPublic ? '🔓' : '🔒'}</span>
+                            <span>{isPublic ? 'PUBLIC' : 'PRIVATE'}</span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* NEW: Relic band picker */}
                 {showRelicBandPicker && form.is_festival && form.bands.length > 1 && (
