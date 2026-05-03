@@ -8072,17 +8072,7 @@ const [entryStep, setEntryStep] = useState('form');
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(15px)' }}>
       <div className="fade-in" style={{ background: '#0a0a0c', border: `2px solid ${C.teal}`, borderRadius: 16, padding: isMobile ? 20 : 40, width: '95%', maxWidth: 750, maxHeight: '95vh', overflowY: 'auto' }}>
-  
-  <div onClick={() => document.getElementById('init-pic').click()} style={gateBtn(C.purple)}>
-    📸<br/>PHOTO
-    <input id="init-pic" type="file" hidden onChange={async (e) => {
-      const url = await uploadToArchive(e.target.files[0], 'POLAROID');
-      if (url) {
-        set('personal_photo_url', url);
-        setPhotoPrivacySettings(prev => ({ ...prev, [url]: true }));
-      }
-    }} />
-  </div>
+
   
   <div onClick={() => document.getElementById('init-relic').click()} style={gateBtn(C.gold)}>
     🏺<br/>SETLIST
