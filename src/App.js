@@ -7619,20 +7619,39 @@ function PhotoVaultTab({ concerts }) {
 
   // Toggle privacy for a photo
 const togglePrivacy = async (url, currentState) => {
-  console.log('togglePrivacy called with:', url, currentState);
+  console.log('=== TOGGLE PRIVACY DEBUG ===');
+  console.log('URL:', url);
+  console.log('Current state:', currentState);
   
   const { data: { session } } = await supabase.auth.getSession();
-  console.log('Session check:', session?.user?.id);
+  console.log('User ID:', session?.user?.id);
   
   if (!session?.user?.id) {
     alert('You must be logged in to change privacy settings');
     return;
   }
 
+  // First, let's see if the row exists
+  const { data: existingRows, error: selectError } = await supabase
+    .from('artifacts')
+    .select('*')
+    .eq('user_id', session.user.id)
+    .eq('artifact_type', 'photo')
+    .eq('image_url', url);
+
+  console.log('Existing rows found:', existingRows);
+  console.log('Select error:', selectError);
+
+  if (!existingRows || existingRows.length === 0) {
+    alert('Photo not found in artifacts table. It may have been uploaded before the artifacts system was added.');
+    return;
+  }
+
   const newState = !currentState;
   console.log('Attempting to update to:', newState);
 
-  const { data, error } = await supabase
+  // Try the update
+  const { data: updateData, error: updateError } = await supabase
     .from('artifacts')
     .update({ is_public: newState })
     .eq('user_id', session.user.id)
@@ -7640,14 +7659,15 @@ const togglePrivacy = async (url, currentState) => {
     .eq('image_url', url)
     .select();
 
-  console.log('Update result:', { data, error });
+  console.log('Update data:', updateData);
+  console.log('Update error:', updateError);
 
-  if (!error) {
+  if (!updateError) {
     setPhotoPrivacy(prev => ({ ...prev, [url]: newState }));
-    console.log('Privacy updated successfully');
+    console.log('✅ Privacy updated successfully');
   } else {
-    console.error('Privacy toggle error:', error);
-    alert(`Failed to update privacy: ${error.message}`);
+    console.error('❌ Privacy toggle error:', updateError);
+    alert(`Failed to update privacy: ${updateError.message}\n\nCheck console for details.`);
   }
 };
 
