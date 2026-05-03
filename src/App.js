@@ -5096,7 +5096,7 @@ function GigPoster({ src, artist, date, index = 0 }) {
 
 // ─── 📸 STACKED POLAROIDS (PHYSICS & 3D EDITION) ────────────────────────────────
 // ─── 📸 STACKED POLAROIDS (PHYSICS & 3D EDITION + PRIVACY) ────────────────────────────────
-function PersonalPolaroid({ src, caption, date, venue, index = 0, isPublic = true, isAdmin = false, onTogglePrivacy, onZoom }) {
+function PersonalPolaroid({ src, caption, date, venue, index = 0, isPublic = true, shouldBlur = false, isAdmin = false, onTogglePrivacy, onZoom }) {
   if (!src) return null;
 
   const markerColors = ['#1a1a1a', '#2140ab', '#b02525', '#1e6337', '#732ba1', '#cc6600'];
@@ -5183,14 +5183,14 @@ function PersonalPolaroid({ src, caption, date, venue, index = 0, isPublic = tru
           aspectRatio: '1/1', 
           background: `url(${src}) center/cover no-repeat`,
           border: '1px solid rgba(0,0,0,0.1)',
-          filter: isPublic ? 'none' : 'blur(20px)',
+          filter: shouldBlur ? 'blur(20px)' : 'none',  // Changed from isPublic check
           transition: 'filter 0.3s',
           cursor: 'pointer',
           position: 'relative'
         }} 
       >
-        {/* Private overlay badge */}
-        {!isPublic && (
+        {/* Private overlay badge - only show to non-owners */}
+        {shouldBlur && (
           <div style={{
             position: 'absolute',
             top: '50%',
@@ -5798,7 +5798,21 @@ const onSync = async () => {
             justifyContent: isMobile ? 'center' : 'flex-start'
           }}>
             {finalPhotos.map((url, pIdx) => (
-              <PersonalPolaroid key={`${event.id}-p-${pIdx}`} src={url} index={pIdx} total={finalPhotos.length} caption={venueLabel?.split(',')[0].toUpperCase()} />
+              <PersonalPolaroid 
+  src={p.url} 
+  caption={p.artist} 
+  date={p.date} 
+  venue={p.venue} 
+  index={i}
+  isPublic={p.isPublic}
+  shouldBlur={p.shouldBlur}  // Add this
+  isAdmin={isAdmin}
+  onTogglePrivacy={(e) => {
+    e.stopPropagation();
+    togglePrivacy(p.url, p.isPublic);
+  }}
+  onZoom={() => setActivePhoto(p)}
+/>
             ))}
           </div>
         </div>
@@ -5954,7 +5968,21 @@ function ByFestTab({ festGroupings, genreMap = {}, onEdit, isAdmin, posters = []
                                 )}
                                 {photos.length > 0 && (
                                   <div style={{ display: 'flex' }}>
-                                    {photos.map((url, pIdx) => <PersonalPolaroid key={`${show.id}-p-${pIdx}`} src={url} index={pIdx} caption={fest.name.toUpperCase()} />)}
+                                    {photos.map((url, pIdx) => <PersonalPolaroid 
+  src={p.url} 
+  caption={p.artist} 
+  date={p.date} 
+  venue={p.venue} 
+  index={i}
+  isPublic={p.isPublic}
+  shouldBlur={p.shouldBlur}  // Add this
+  isAdmin={isAdmin}
+  onTogglePrivacy={(e) => {
+    e.stopPropagation();
+    togglePrivacy(p.url, p.isPublic);
+  }}
+  onZoom={() => setActivePhoto(p)}
+/>)}
                                   </div>
                                 )}
                               </div>
@@ -7592,30 +7620,32 @@ function PhotoVaultTab({ concerts }) {
   }, []);
 
   const photos = useMemo(() => {
-    const results = [];
-    safeConcerts.forEach(c => {
-      if (!c || !c.personal_photo_url) return;
-      
-      const urls = String(c.personal_photo_url)
-        .split(',')
-        .map(u => u.trim())
-        .filter(Boolean);
-      
-      urls.forEach((url, idx) => {
-        const startRotation = (Math.random() * 10 - 5).toFixed(2);
-        results.push({
-          id: `${c.id}-photo-${idx}`,
-          url,
-          artist: getBandName(c.bands?.[0]) || c.festival_name || 'UNKNOWN',
-          date: c.date,
-          venue: c.venue || c.festival_name,
-          rotation: startRotation,
-          isPublic: photoPrivacy[url] !== false // Default to true if not found
-        });
+  const results = [];
+  safeConcerts.forEach(c => {
+    if (!c || !c.personal_photo_url) return;
+    
+    const urls = String(c.personal_photo_url)
+      .split(',')
+      .map(u => u.trim())
+      .filter(Boolean);
+    
+    urls.forEach((url, idx) => {
+      const startRotation = (Math.random() * 10 - 5).toFixed(2);
+      const photoIsPublic = photoPrivacy[url] !== false; // Default to true if not found
+      results.push({
+        id: `${c.id}-photo-${idx}`,
+        url,
+        artist: getBandName(c.bands?.[0]) || c.festival_name || 'UNKNOWN',
+        date: c.date,
+        venue: c.venue || c.festival_name,
+        rotation: startRotation,
+        isPublic: photoIsPublic,
+        shouldBlur: !photoIsPublic && !isAdmin  // Only blur if private AND not the owner
       });
     });
-    return results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-  }, [safeConcerts, photoPrivacy]);
+  });
+  return results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+}, [safeConcerts, photoPrivacy, isAdmin]);  // Add isAdmin dependency
 
   // Toggle privacy for a photo
 const togglePrivacy = async (url, currentState) => {
@@ -7704,19 +7734,20 @@ const togglePrivacy = async (url, currentState) => {
             }}
           >
              <PersonalPolaroid 
-               src={p.url} 
-               caption={p.artist} 
-               date={p.date} 
-               venue={p.venue} 
-               index={i}
-               isPublic={p.isPublic}
-               isAdmin={isAdmin}
-               onTogglePrivacy={(e) => {
-                 e.stopPropagation(); // Prevent lightbox from opening
-                 togglePrivacy(p.url, p.isPublic);
-               }}
-               onZoom={() => setActivePhoto(p)}
-             />
+  src={p.url} 
+  caption={p.artist} 
+  date={p.date} 
+  venue={p.venue} 
+  index={i}
+  isPublic={p.isPublic}
+  shouldBlur={p.shouldBlur}  // Add this
+  isAdmin={isAdmin}
+  onTogglePrivacy={(e) => {
+    e.stopPropagation();
+    togglePrivacy(p.url, p.isPublic);
+  }}
+  onZoom={() => setActivePhoto(p)}
+/>
           </div>
         ))}
       </div>
