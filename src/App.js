@@ -12127,7 +12127,7 @@ async function fetchUpcoming() {
   console.log('fetchUpcoming: starting for user', targetId);
   
   // Get shows this user is attending
-  const { data: attendances } = await supabase
+  const { data: attendances, error: attError } = await supabase
     .from('upcoming_attendances')
     .select(`
       show_id,
@@ -12144,8 +12144,9 @@ async function fetchUpcoming() {
         festival_name
       )
     `)
-    .eq('user_id', targetId)
-    .order('show(date)', { ascending: true });
+    .eq('user_id', targetId);
+  
+  console.log('Attendances fetch:', { data: attendances, error: attError });
   
   if (!attendances) {
     setUpcoming([]);
@@ -12153,27 +12154,33 @@ async function fetchUpcoming() {
   }
   
   const showIds = attendances.map(a => a.show_id).filter(Boolean);
+  console.log('Show IDs to fetch attendees for:', showIds);
   
   // Get ALL attendees for these shows
-  const { data: allAttendances } = await supabase
-  .from('upcoming_attendances')
-  .select('user_id, show_id')
-  .in('show_id', showIds);
-
-console.log('All attendances fetched:', allAttendances);
-console.log('Show IDs:', showIds);
+  const { data: allAttendances, error: allAttError } = await supabase
+    .from('upcoming_attendances')
+    .select('user_id, show_id')
+    .in('show_id', showIds);
+  
+  console.log('All attendances fetch:', { data: allAttendances, error: allAttError });
   
   // Get profiles for all attendees
   const userIds = [...new Set(allAttendances?.map(a => a.user_id) || [])];
-  const { data: profiles } = await supabase
+  console.log('User IDs to fetch profiles for:', userIds);
+  
+  const { data: profiles, error: profileError } = await supabase
     .from('profiles')
     .select('id, username, avatar_color')
     .in('id', userIds);
+  
+  console.log('Profiles fetch:', { data: profiles, error: profileError });
   
   const profileMap = {};
   (profiles || []).forEach(p => {
     profileMap[p.id] = p;
   });
+  
+  console.log('Profile map:', profileMap);
   
   // Build shows with attendee info
   const shows = attendances
@@ -12183,21 +12190,29 @@ console.log('Show IDs:', showIds);
       
       // Get all attendees for this show
       const showAttendees = (allAttendances || [])
-  .filter(att => att.show_id === show.id)
-  .map(att => ({
-    user_id: att.user_id,
-    profile: profileMap[att.user_id] || { username: 'Unknown', avatar_color: C.gray }
-  }));
+        .filter(att => att.show_id === show.id);
+      
+      console.log(`Building show ${show.artist}:`, {
+        showId: show.id,
+        allAttendances: allAttendances?.length,
+        filtered: showAttendees.length,
+        showAttendees
+      });
+      
+      const mappedAttendees = showAttendees.map(att => ({
+        user_id: att.user_id,
+        profile: profileMap[att.user_id] || { username: 'Unknown', avatar_color: C.gray }
+      }));
       
       return {
         ...show,
-        attendees: showAttendees
+        attendees: mappedAttendees
       };
     })
     .filter(Boolean)
     .sort((a, b) => a.date.localeCompare(b.date));
   
-  console.log('fetchUpcoming: done', shows.length);
+  console.log('Final shows with attendees:', shows);
   setUpcoming(shows);
 }
 
