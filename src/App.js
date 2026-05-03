@@ -3557,7 +3557,7 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
           };
         });
 
-        return (
+        
           return (
   <div className="fade-in" style={{ 
     background: `
