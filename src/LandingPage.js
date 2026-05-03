@@ -585,9 +585,10 @@ export default function LandingPage({
                 </div>
               </div>
             </div>
+          </div>
 
           {/* CTAs - THREE OPTIONS */}
-          <div className="fade-in" style={{ 
+          <div className="fade-in" style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
