@@ -3558,15 +3558,43 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
         });
 
         return (
-          <div className="fade-in" style={{ 
-            background: `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(gc, 0.05)})`, 
-            border: `2px solid ${gc}44`, 
-            borderRadius: 16, 
-            padding: '30px', 
-            marginBottom: 40, 
-            boxShadow: `0 30px 100px rgba(0,0,0,0.5), 0 0 40px ${hexToRgba(gc, 0.15)}`,
-            position: 'relative'
-          }}>
+          return (
+  <div className="fade-in" style={{ 
+    background: `
+      radial-gradient(ellipse at 50% 30%, ${hexToRgba(gc, 0.12)} 0%, transparent 60%),
+      linear-gradient(135deg, 
+        rgba(30,30,35,1) 0%, 
+        rgba(20,20,25,1) 50%, 
+        rgba(15,15,20,1) 100%
+      ),
+      repeating-linear-gradient(
+        90deg,
+        rgba(255,255,255,0.02) 0px,
+        rgba(255,255,255,0.02) 1px,
+        transparent 1px,
+        transparent 3px
+      ),
+      repeating-linear-gradient(
+        180deg,
+        rgba(255,255,255,0.01) 0px,
+        rgba(255,255,255,0.01) 1px,
+        transparent 1px,
+        transparent 2px
+      )
+    `,
+    border: `2px solid ${gc}66`, 
+    borderRadius: 16, 
+    padding: window.innerWidth < 768 ? '24px' : '40px', 
+    marginBottom: 40, 
+    boxShadow: `
+      0 40px 120px rgba(0,0,0,0.7),
+      0 0 60px ${hexToRgba(gc, 0.2)},
+      inset 0 1px 1px rgba(255,255,255,0.05),
+      inset 0 -1px 1px rgba(0,0,0,0.5)
+    `,
+    position: 'relative',
+    overflow: 'hidden'
+  }}>
             <div style={{ position: 'absolute', right: 20, bottom: -10, fontFamily: "'Bebas Neue'", fontSize: '12rem', color: hexToRgba(gc, 0.03), pointerEvents: 'none', userSelect: 'none', lineHeight: 1 }}>
               {selectedData.shows.length}X
             </div>
