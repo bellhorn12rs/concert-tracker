@@ -3394,7 +3394,7 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
       const masterGenre = genreMap[a.artist];
       return { ...a, genre: masterGenre || null };
     })
-    .filter(a => a.shows.length >= (typeof HALL_OF_FAME_MIN !== 'undefined' ? HALL_OF_FAME_MIN : 3))
+    .filter(a => a.shows.length >= (typeof HALL_OF_FAME_MIN !== 'undefined' ? HALL_OF_FAME_MIN : 5))
     .sort((a, b) => b.shows.length - a.shows.length);
   }, [sets, genreMap]);
 
@@ -3679,8 +3679,15 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
         );
       })()}
 
-      {/* GRID VIEW - Unchanged */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 15 }}>
+      {/* MASONRY EXHIBITION WALL */}
+      <div style={{ 
+        display: 'grid',
+        gridTemplateColumns: window.innerWidth < 768 
+          ? 'repeat(2, 1fr)' 
+          : 'repeat(auto-fill, minmax(280px, 1fr))',
+        gap: window.innerWidth < 768 ? '16px' : '24px',
+        padding: window.innerWidth < 768 ? '0' : '0 20px'
+      }}>
         {artists.map((a, i) => {
           const gc = a.genre ? (GENRE_COLORS[a.genre] || C.teal) : null;
           const isSelected = selected === a.artist;
@@ -3693,25 +3700,176 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
             s.image_url
           ).length;
 
+          // Rotation for exhibition feel (less on mobile)
+          const rotation = window.innerWidth < 768 
+            ? (i % 2 === 0 ? -0.5 : 0.5)
+            : (i % 3 === 0 ? -1.5 : i % 3 === 1 ? 1 : -0.8);
+
+          // Varying heights for masonry effect
+          const heightMultiplier = i % 4 === 0 ? 1.2 : i % 3 === 0 ? 1.1 : 1;
+          
           return (
-            <div key={a.artist} onClick={() => handleSelect(a.artist, isSelected)}
+            <div 
+              key={a.artist} 
+              onClick={() => handleSelect(a.artist, isSelected)}
               style={{ 
-                background: cardColor ? `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(cardColor, 0.12)})` : C.bgCard, 
-                border: `1px solid ${cardColor ? hexToRgba(cardColor, 0.5) : C.border}`, 
-                borderRadius: 12, padding: '20px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative'
+                background: cardColor 
+                  ? `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(cardColor, 0.15)})` 
+                  : C.bgCard,
+                border: isSelected 
+                  ? `3px solid ${cardColor || C.teal}` 
+                  : `2px solid ${cardColor ? hexToRgba(cardColor, 0.4) : C.border}`,
+                borderRadius: 16,
+                padding: window.innerWidth < 768 ? '20px 16px' : '32px 24px',
+                cursor: 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative',
+                transform: isSelected 
+                  ? `rotate(0deg) scale(1.02)` 
+                  : `rotate(${rotation}deg)`,
+                boxShadow: isSelected
+                  ? `0 20px 60px rgba(0,0,0,0.4), 0 0 40px ${hexToRgba(cardColor || C.teal, 0.3)}`
+                  : `0 8px 24px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.2)`,
+                minHeight: window.innerWidth < 768 ? '180px' : `${200 * heightMultiplier}px`,
+                overflow: 'hidden',
+                backdropFilter: 'blur(10px)',
+                // Texture overlay
+                backgroundImage: `
+                  linear-gradient(135deg, ${cardColor ? hexToRgba(cardColor, 0.15) : 'rgba(255,255,255,0.02)'} 0%, transparent 100%),
+                  repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px)
+                `,
+              }}
+              onMouseEnter={(e) => {
+                if (window.innerWidth >= 768) {
+                  e.currentTarget.style.transform = `rotate(0deg) scale(1.05) translateY(-4px)`;
+                  e.currentTarget.style.zIndex = '10';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (window.innerWidth >= 768 && !isSelected) {
+                  e.currentTarget.style.transform = `rotate(${rotation}deg) scale(1)`;
+                  e.currentTarget.style.zIndex = '1';
+                }
+              }}
+            >
+              {/* Tape effect on top corners */}
+              <div style={{
+                position: 'absolute',
+                top: window.innerWidth < 768 ? '8px' : '12px',
+                right: window.innerWidth < 768 ? '8px' : '16px',
+                width: window.innerWidth < 768 ? '30px' : '40px',
+                height: window.innerWidth < 768 ? '12px' : '16px',
+                background: 'rgba(255,255,255,0.1)',
+                transform: 'rotate(45deg)',
+                opacity: 0.4,
+                borderLeft: '1px solid rgba(255,255,255,0.2)',
+                borderRight: '1px solid rgba(255,255,255,0.2)'
+              }} />
+
+              {/* Medal/Rank Badge */}
+              <div style={{ 
+                position: 'absolute',
+                top: window.innerWidth < 768 ? '12px' : '16px',
+                left: window.innerWidth < 768 ? '12px' : '16px',
+                fontFamily: "'Space Mono'", 
+                fontSize: window.innerWidth < 768 ? 10 : 11,
+                color: cardColor || C.tealDim,
+                fontWeight: 900,
+                background: cardColor 
+                  ? hexToRgba(cardColor, 0.2) 
+                  : 'rgba(255,255,255,0.05)',
+                padding: '6px 10px',
+                borderRadius: 8,
+                border: `1px solid ${cardColor ? hexToRgba(cardColor, 0.4) : 'rgba(255,255,255,0.1)'}`,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
               }}>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: cardColor || C.tealDim, marginBottom: 8, fontWeight: 900 }}>{MEDAL[i] || 'RECORD'} #{i + 1}</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: C.white, marginBottom: 4, lineHeight: 1 }}>{a.artist.toUpperCase()}</div>
-              {a.genre && <GenreBadge genre={a.genre} color={gc} small />}
+                <span style={{ fontSize: window.innerWidth < 768 ? 14 : 16 }}>
+                  {MEDAL[i] || '🎸'}
+                </span>
+                <span>#{i + 1}</span>
+              </div>
+
+              {/* Artist Name - Bigger */}
+              <div style={{ 
+                fontSize: window.innerWidth < 768 ? '1.3rem' : '1.8rem',
+                fontWeight: 900,
+                color: C.white,
+                marginBottom: window.innerWidth < 768 ? 8 : 12,
+                marginTop: window.innerWidth < 768 ? 36 : 48,
+                lineHeight: 1.1,
+                fontFamily: "'Bebas Neue'",
+                letterSpacing: '0.02em',
+                textShadow: `2px 2px 8px rgba(0,0,0,0.5)`
+              }}>
+                {a.artist.toUpperCase()}
+              </div>
               
-              <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: cardColor || C.white, lineHeight: 1, marginTop: 10 }}>{a.shows.length}×</div>
-              
-              {setlistCount > 0 && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10, background: `${C.gold}15`, border: `1px solid ${C.gold}44`, borderRadius: 10, padding: '4px 10px' }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.gold, boxShadow: `0 0 8px ${C.gold}` }} />
-                  <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, fontWeight: 900, textTransform: 'uppercase' }}>{setlistCount} SETLISTS</span>
+              {/* Genre Badge */}
+              {a.genre && (
+                <div style={{ marginBottom: window.innerWidth < 768 ? 10 : 16 }}>
+                  <GenreBadge genre={a.genre} color={gc} small={window.innerWidth < 768} />
                 </div>
               )}
+              
+              {/* Show Count - HUGE */}
+              <div style={{ 
+                fontFamily: "'Bebas Neue'", 
+                fontSize: window.innerWidth < 768 ? '3.5rem' : '5rem',
+                color: cardColor || C.white,
+                lineHeight: 1,
+                marginTop: window.innerWidth < 768 ? 8 : 12,
+                textShadow: `0 4px 20px ${hexToRgba(cardColor || C.white, 0.4)}`,
+                opacity: 0.95
+              }}>
+                {a.shows.length}×
+              </div>
+              
+              {/* Setlist Badge */}
+              {setlistCount > 0 && (
+                <div style={{ 
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  marginTop: window.innerWidth < 768 ? 12 : 16,
+                  background: `${C.gold}15`,
+                  border: `1px solid ${C.gold}44`,
+                  borderRadius: 10,
+                  padding: window.innerWidth < 768 ? '6px 10px' : '8px 14px',
+                  boxShadow: `0 0 16px ${hexToRgba(C.gold, 0.2)}`
+                }}>
+                  <div style={{ 
+                    width: window.innerWidth < 768 ? 6 : 8,
+                    height: window.innerWidth < 768 ? 6 : 8,
+                    borderRadius: '50%',
+                    background: C.gold,
+                    boxShadow: `0 0 12px ${C.gold}`
+                  }} />
+                  <span style={{ 
+                    fontFamily: "'Space Mono'",
+                    fontSize: window.innerWidth < 768 ? 8 : 9,
+                    color: C.gold,
+                    fontWeight: 900,
+                    textTransform: 'uppercase'
+                  }}>
+                    {setlistCount} SETLIST{setlistCount !== 1 ? 'S' : ''}
+                  </span>
+                </div>
+              )}
+
+              {/* Paper grain overlay */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                opacity: 0.03,
+                pointerEvents: 'none',
+                mixBlendMode: 'overlay',
+                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+              }} />
             </div>
           );
         })}
