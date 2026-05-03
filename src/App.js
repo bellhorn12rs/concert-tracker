@@ -1636,7 +1636,12 @@ function CountUpStat({ value, label, sub, color = C.white }) {
   );
 }
 // Theater Marquee (RECONFIGURED WITH FULL-WIDTH CALL TO ACTION)
-function TheaterMarquee({ upcoming, onAdd, onEdit }) {
+<TheaterMarquee 
+  upcoming={upcoming} 
+  onAdd={isAdmin ? () => setUpcomingModal('new') : null} 
+  onEdit={isAdmin ? setUpcomingModal : null}
+  session={session}
+/>
   const BULB_COUNT = 28;
   const isEmpty = upcoming.length === 0;
 
