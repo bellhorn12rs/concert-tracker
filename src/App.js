@@ -7545,6 +7545,22 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <div
+<<<<<<< HEAD
+  className="fade-in"
+  style={{ 
+    background: C.bgCard, 
+    border: `1px solid ${C.gold}`, 
+    borderRadius: 16, 
+    padding: 35, 
+    width: '100%', 
+    maxWidth: 500,
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    boxShadow: `0 0 50px ${hexToRgba(C.gold, 0.2)}`, 
+    position: 'relative' 
+  }}
+>
+=======
         className="fade-in"
         style={{ 
           background: C.bgCard, border: `1px solid ${C.gold}`, 
@@ -7552,6 +7568,7 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
           boxShadow: `0 0 50px ${hexToRgba(C.gold, 0.2)}`, position: 'relative' 
         }}
       >
+>>>>>>> f1cdc887d8aca6e0f57805e677493fe0d2442c93
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.white, letterSpacing: '1px' }}>
@@ -12031,13 +12048,44 @@ const handleSave = async (id, payload) => {
     
     // NEW MODE
     const safeVenue = payload.venue || payload.festival_name || 'Unknown Venue';
-    const { data: existingShow } = await supabase
+    
+    // Fuzzy match helper
+    const normalize = (str) => {
+      if (!str) return '';
+      return str
+        .toLowerCase()
+        .trim()
+        .replace(/^the\s+/i, '')
+        .replace(/[^\w\s]/g, '')
+        .replace(/\s+/g, ' ');
+    };
+
+    // Get all shows on this date
+    const { data: showsOnDate } = await supabase
       .from('shows')
-      .select('id')
-      .eq('date', payload.date)
-      .ilike('venue', safeVenue)
-      .ilike('artist', primaryArtist)
-      .single();
+      .select('id, artist, venue')
+      .eq('date', payload.date);
+
+    // Find matching show with fuzzy logic
+    const existingShow = showsOnDate?.find(s => {
+      const sArtist = normalize(s.artist);
+      const sVenue = normalize(s.venue);
+      const payloadArtist = normalize(primaryArtist);
+      const payloadVenue = normalize(safeVenue);
+      
+      // Artist match
+      const artistMatch = sArtist === payloadArtist || 
+                          sArtist.includes(payloadArtist) || 
+                          payloadArtist.includes(sArtist);
+      
+      // Venue match (if either is empty, skip venue check)
+      const venueMatch = !payloadVenue || !sVenue || 
+                         sVenue === payloadVenue ||
+                         sVenue.includes(payloadVenue) || 
+                         payloadVenue.includes(sVenue);
+      
+      return artistMatch && venueMatch;
+    });
     
     let showId = existingShow?.id;
     
