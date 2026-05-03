@@ -3497,7 +3497,10 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
         const gc = selectedData.genre ? (GENRE_COLORS[selectedData.genre] || C.teal) : C.teal;
         
         // Build artifact packages
-        const showPackages = selectedData.shows.map((show, idx) => {
+        const showPackages = [...selectedData.shows]
+  .sort((a, b) => new Date(b.date) - new Date(a.date))
+  .map((show, idx) => {
+
           const artifacts = {
             setlists: [],
             posters: [],
@@ -3628,12 +3631,13 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
 
             {/* DENSE 3-Column Grid */}
             <div style={{ 
-              display: 'grid',
-              gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '0.8fr 1.4fr 0.8fr',
-              gap: window.innerWidth < 768 ? '20px' : '30px',
-              position: 'relative',
-              alignItems: 'start'
-            }}>
+  display: 'grid',
+  gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1.2fr 1fr',
+  gap: window.innerWidth < 768 ? '20px' : '40px',
+  position: 'relative',
+  alignItems: 'start',
+  justifyItems: window.innerWidth < 768 ? 'stretch' : 'center'
+}}>
               
               {/* LEFT COLUMN - Compact */}
               <div style={{ 
@@ -3667,7 +3671,8 @@ function HallOfFame({ sets, genreMap, onShare, posters = [] }) {
                   opacity: 0.4 
                 }} />
                 
-                {[...selectedData.shows].reverse().map((s, i) => (
+                {[...selectedData.shows].sort((a, b) => new Date(b.date) - new Date(a.date)).map((s, i) => (
+
                   <div key={i} style={{ 
                     position: 'relative', 
                     marginBottom: 18, 
