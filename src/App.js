@@ -7545,30 +7545,20 @@ function UpcomingModal({ show, onClose, onSave, onDelete }) {
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <div
-<<<<<<< HEAD
-  className="fade-in"
-  style={{ 
-    background: C.bgCard, 
-    border: `1px solid ${C.gold}`, 
-    borderRadius: 16, 
-    padding: 35, 
-    width: '100%', 
-    maxWidth: 500,
-    maxHeight: '90vh',
-    overflowY: 'auto',
-    boxShadow: `0 0 50px ${hexToRgba(C.gold, 0.2)}`, 
-    position: 'relative' 
-  }}
->
-=======
         className="fade-in"
         style={{ 
-          background: C.bgCard, border: `1px solid ${C.gold}`, 
-          borderRadius: 16, padding: 35, width: '100%', maxWidth: 500, 
-          boxShadow: `0 0 50px ${hexToRgba(C.gold, 0.2)}`, position: 'relative' 
+          background: C.bgCard, 
+          border: `1px solid ${C.gold}`, 
+          borderRadius: 16, 
+          padding: 35, 
+          width: '100%', 
+          maxWidth: 500,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          boxShadow: `0 0 50px ${hexToRgba(C.gold, 0.2)}`, 
+          position: 'relative' 
         }}
       >
->>>>>>> f1cdc887d8aca6e0f57805e677493fe0d2442c93
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.white, letterSpacing: '1px' }}>
