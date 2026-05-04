@@ -1296,8 +1296,52 @@ export default function LandingPage({
             opacity: 0.6,
             animationDuration: '60s'
           }}>
-            {`FREE FOREVER /// ${concerts.length} SHOWS TRACKED /// ${uniqueStates} STATES COVERED /// NO CREDIT CARD REQUIRED /// `.repeat(3)}
+            {`FREE /// ${concerts.length} SHOWS TRACKED /// ${uniqueStates} STATES COVERED /// NO CREDIT CARD REQUIRED /// `.repeat(3)}
           </div>
+        </div>
+      </div>
+
+      {/* FOOTER */}
+      <div style={{
+        padding: '40px 20px 80px',
+        background: '#000',
+        borderTop: '1px solid #111',
+        textAlign: 'center',
+        position: 'relative',
+        zIndex: 999
+      }}>
+        <div style={{
+          fontFamily: "'Space Mono'",
+          fontSize: 9,
+          color: GRAY,
+          letterSpacing: 2,
+          marginBottom: 12
+        }}>
+          Questions? Ideas? Found a bug?
+        </div>
+        
+          href="mailto:trackrecordlive@gmail.com"
+          style={{
+            fontFamily: "'Space Mono'",
+            fontSize: 11,
+            color: TEAL,
+            textDecoration: 'none',
+            letterSpacing: 1,
+            transition: 'opacity 0.2s'
+          }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        >
+          trackrecordlive@gmail.com
+        </a>
+        <div style={{
+          fontFamily: "'Space Mono'",
+          fontSize: 7,
+          color: '#333',
+          letterSpacing: 2,
+          marginTop: 20
+        }}>
+          © 2026 TRACKRECORD
         </div>
       </div>
 
