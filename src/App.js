@@ -4402,13 +4402,16 @@ function SetlistVaultTab({ genreMap, viewingUser, currentUserId }) {
 
   useEffect(() => {
   async function fetchRelics() {
-    setLoading(true);
-    try {
-      const targetId = viewingUser || currentUserId;
-      if (!targetId) {
-        setLoading(false);
-        return;
-      }
+  setLoading(true);
+  try {
+    const targetId = viewingUser || currentUserId;
+    console.log('SetlistVaultTab fetch:', { viewingUser, currentUserId, targetId });
+    
+    if (!targetId) {
+      console.log('No targetId, returning empty');
+      setLoading(false);
+      return;
+    }
 
       // Query artifacts table for relics
       const { data } = await supabase
