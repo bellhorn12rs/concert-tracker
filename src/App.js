@@ -12757,36 +12757,33 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
 {/* ── SYSTEM BOOTH (ADMIN ONLY) ── */}
 {isAdmin && (
   <div style={{ 
-    padding: '20px 12px', borderTop: `1px solid ${hexToRgba(C.teal, 0.3)}`, 
-    background: 'rgba(0,0,0,0.3)', marginTop: 'auto' 
+    padding: '12px', 
+    borderTop: `1px solid ${hexToRgba(C.teal, 0.3)}`, 
+    background: 'rgba(0,0,0,0.3)', 
+    marginTop: 'auto' 
   }}>
-    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: C.teal, letterSpacing: 2, padding: '0 12px 10px' }}>
-      SYSTEM BOOTH
-    </div>
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {RIGHT_TABS.map(([id, label, color]) => (
-        <button key={id} onClick={() => setActiveTab(id)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 14, fontFamily: "'Space Mono'", fontSize: '11px',
-            color: activeTab === id ? '#fff' : C.grayDim, 
-            background: activeTab === id ? hexToRgba(color, 0.1) : 'transparent',
-            border: 'none', borderLeft: `3px solid ${activeTab === id ? color : 'transparent'}`,
-            padding: '10px 18px', cursor: 'pointer', borderRadius: '0 4px 4px 0', textAlign: 'left', textTransform: 'uppercase'
-          }}>
-          <span style={{ fontSize: '1.2rem' }}>{label.split(' ')[0]}</span>
-          {(!navCollapsed || isMobile) && <span>{label.split(' ').slice(1).join(' ')}</span>}
-        </button>
-      ))}
       
-      {/* Logout functionality tucked into the bottom of the Booth */}
+      {/* Logout */}
       <button 
         onClick={async () => { if(window.confirm("TERMINATE SESSION?")) await supabase.auth.signOut(); }}
         style={{
-          marginTop: 10, padding: '10px 18px', background: 'rgba(255, 68, 68, 0.05)', 
-          border: 'none', borderLeft: '3px solid #ff4444', color: '#ff4444', 
-          fontFamily: "'Space Mono'", fontSize: '10px', fontWeight: 900, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', gap: 14
+          padding: '10px 18px', 
+          background: 'rgba(255, 68, 68, 0.05)', 
+          border: 'none', 
+          borderLeft: '3px solid #ff4444', 
+          color: '#ff4444', 
+          fontFamily: "'Space Mono'", 
+          fontSize: '10px', 
+          fontWeight: 900, 
+          cursor: 'pointer',
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 14,
+          transition: 'all 0.2s'
         }}
+        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255, 68, 68, 0.1)'}
+        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255, 68, 68, 0.05)'}
       >
         <span style={{ fontSize: '1.2rem' }}>⏻</span>
         {(!navCollapsed || isMobile) && <span>LOGOUT</span>}
@@ -12794,10 +12791,8 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
 
       {/* Contact */}
       
-      <a
         href="mailto:trackrecordlive@gmail.com"
         style={{
-          marginTop: 10,
           padding: '10px 18px',
           background: 'rgba(0,229,204,0.05)',
           border: 'none',
