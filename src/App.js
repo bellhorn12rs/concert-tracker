@@ -6712,42 +6712,45 @@ function CommunityTab({ onEnterMuseum }) {
 
   useEffect(() => {
     async function fetchCurators() {
-      // 1. Fetch profiles with the necessary UUID (id)
-      const { data: profileData, error: profileError } = await supabase
+      // 1. Fetch profiles
+      const { data: profileData } = await supabase
         .from('profiles')
         .select('id, username, avatar_color, last_seen, last_artist, last_venue')
         .order('last_seen', { ascending: false });
 
-      if (profileError) {
-        console.error("Error fetching profiles:", profileError);
-        setLoading(false);
-        return;
-      }
+      // 2. Fetch BOTH tables: Concerts (creators) and Attendances (joiners)
+      const [concertsRes, attendancesRes] = await Promise.all([
+        supabase.from('concerts').select('id, user_id, venue, bands'),
+        supabase.from('attendances').select('user_id, show_id')
+      ]);
 
-      // 2. Fetch all concerts for everyone to calculate live stats
-      const { data: concertData, error: concertError } = await supabase
-        .from('concerts')
-        .select('user_id, venue, bands');
+      const concertData = concertsRes.data || [];
+      const attendanceData = attendancesRes.data || [];
 
       if (profileData) {
         const enrichedCurators = profileData.map(u => {
-          // Filter concerts belonging to this curator
-          const userConcerts = concertData ? concertData.filter(c => c.user_id === u.id) : [];
+          // A user's total shows = shows they created + shows they attended
+          // (Using a Set of IDs to ensure we don't double-count if they are in both)
+          const createdShowIds = concertData.filter(c => c.user_id === u.id).map(c => c.id);
+          const attendedShowIds = attendanceData.filter(a => a.user_id === u.id).map(a => a.show_id);
           
-          // Calculate Days (Total Concerts)
-          const totalShows = userConcerts.length;
+          const allShowIds = new Set([...createdShowIds, ...attendedShowIds]);
+          const totalShows = allShowIds.size;
 
-          // Calculate Venues (Unique Venues)
-          const uniqueVenues = new Set(userConcerts.map(c => c.venue?.toLowerCase()).filter(Boolean)).size;
+          // Get the actual concert objects for these IDs to count Venues and Sets
+          const relevantConcerts = concertData.filter(c => allShowIds.has(c.id));
 
-          // Calculate Sets (Total Bands seen)
+          // Calculate Venues
+          const uniqueVenues = new Set(relevantConcerts.map(c => c.venue?.toLowerCase()).filter(Boolean)).size;
+
+          // Calculate Sets
           let totalSets = 0;
-          userConcerts.forEach(c => {
+          relevantConcerts.forEach(c => {
             try {
               const bands = typeof c.bands === 'string' ? JSON.parse(c.bands) : c.bands;
               if (Array.isArray(bands)) totalSets += bands.length;
+              else if (bands) totalSets += 1;
             } catch (e) {
-              // Fallback if bands isn't valid JSON
               totalSets += 1; 
             }
           });
@@ -6829,7 +6832,6 @@ function CommunityTab({ onEnterMuseum }) {
                 </div>
               </div>
 
-              {/* 📊 LIVE CALCULATED STATS */}
               <div style={{ display: 'flex', gap: 30, textAlign: 'center', zIndex: 2, marginRight: '40px' }}>
                 {[
                   { label: 'DAYS', val: u.total_shows, color: C.purple },
@@ -6848,7 +6850,6 @@ function CommunityTab({ onEnterMuseum }) {
                   BOARDING →
                 </div>
               </div>
-              
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(rgba(153, 102, 255, 0.02) 50%, transparent 50%)', backgroundSize: '100% 4px', pointerEvents: 'none' }} />
             </div>
           );
