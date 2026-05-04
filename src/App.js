@@ -1958,7 +1958,6 @@ function OnThisDay({ concerts }) {
     </div>
   );
 }
-
 const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
   if (!data) return null;
   const charCode = data.id?.charCodeAt(data.id.length - 1) || 0;
@@ -1966,8 +1965,6 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
   const tapeColor = TAPE_COLORS[charCode % TAPE_COLORS.length];
   
   const hasImg = data.url && data.url.trim() !== "";
-  const isSideways = (data.rotation || 0) % 180 !== 0;
-  const isTicket = data.label?.toUpperCase() === 'TICKET STUB' || data.type === 'TICKET';
 
   return (
     <div style={{
@@ -1978,8 +1975,6 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
       transition: 'transform 0.3s ease',
       animation: 'peel-and-stick 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards',
       '--r': `${r}deg`,
-      /* 🟢 THE CRITICAL ADDITION: This stops the card from stretching vertically 
-         to match its neighbor in a Flex row (the Paper Trail view) */
       alignSelf: 'flex-start',
       width: '100%'
     }}>
@@ -1996,72 +1991,43 @@ const SpotlightScrap = ({ data, isTop, TAPE_COLORS }) => {
 
       {hasImg ? (
         <div style={{
-          background: '#fff', padding: '4px', boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
-          /* 🟢 BACK TO BLOCK: Flex on this specific div was causing 
-             vertical stretching issues in some browsers */
-          display: 'block', 
-          borderRadius: 2, border: '1px solid #ddd',
-          width: '100%', boxSizing: 'border-box'
+          boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+          borderRadius: 2,
+          overflow: 'hidden',
+          width: '100%',
+          boxSizing: 'border-box'
         }}>
-          {/* HEADER */}
-          <div style={{ padding: '8px 4px 6px', textAlign: 'center', background: '#111', marginBottom: 4 }}>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.4rem', color: '#fff', letterSpacing: '0.08em', lineHeight: 1 }}>
-              {data.band.toUpperCase()}
-            </div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: tapeColor, letterSpacing: 1, marginTop: 3, fontWeight: 900 }}>
-              {data.label || 'ARTIFACT'}
-            </div>
-          </div>
-
-          {/* 🟢 IMAGE BOX: Centers rotated images without pushing the footer down */}
-          <div style={{ 
-            background: '#000', 
-            overflow: 'hidden', display: 'flex', 
-            alignItems: 'center', justifyContent: 'center',
-            width: '100%',
-            /* 🟢 ONLY force ratio for tickets on the dashboard. 
-               Setlists get 'auto' so the paper trims to the image height. */
-            aspectRatio: isTicket ? '2.5 / 1' : 'auto',
-            minHeight: hasImg ? 100 : 0
-          }}>
-            <img 
-              src={data.url} 
-              alt={data.band}
-              style={{ 
-                width: '100%', 
-                height: 'auto', 
-                display: 'block',
-                objectFit: 'contain', 
-                /* Rotation and Scaling logic from your working build */
-                transform: `rotate(${data.rotation || 0}deg) scale(${isSideways ? 1.6 : 1})`,
-                transition: 'transform 0.3s ease'
-              }}
-            />
-          </div>
-
-          {/* FOOTER */}
-          <div style={{ padding: '8px 6px', borderTop: '1px solid #f0f0f0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-              <div style={{ overflow: 'hidden', paddingRight: 10 }}>
-                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '9px', color: '#000', fontWeight: 900, lineHeight: 1, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                  {data.venue?.toUpperCase() || 'UNKNOWN VENUE'}
-                </div>
-                <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '8px', color: '#888', marginTop: 3 }}>
-                  {fmtDateShort(data.date).toUpperCase()}
-                </div>
-              </div>
-              <a
-                href={`https://www.setlist.fm/search?query=${encodeURIComponent(`${data.band} ${data.date?.replace(/-/g, '/')}`)}`}
-                target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                style={{ background: C.gold, color: '#000', fontSize: 7, fontFamily: "'Space Mono'", padding: '3px 7px', borderRadius: 2, textDecoration: 'none', fontWeight: 900, boxShadow: '0 2px 5px rgba(0,0,0,0.1)', flexShrink: 0 }}
-              >
-                ARCHIVE ↗
-              </a>
-            </div>
-          </div>
+          <img 
+            src={data.url} 
+            alt={data.band}
+            style={{ 
+              width: '100%', 
+              height: 'auto', 
+              display: 'block',
+              objectFit: 'contain'
+            }}
+          />
         </div>
       ) : (
-        <PaperFallback />
+        <div style={{
+          width: '100%',
+          height: '200px',
+          background: '#0a0a0a',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '1px dashed #333',
+          borderRadius: 2
+        }}>
+          <div style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 8, 
+            color: '#444',
+            textAlign: 'center'
+          }}>
+            NO IMAGE
+          </div>
+        </div>
       )}
     </div>
   );
