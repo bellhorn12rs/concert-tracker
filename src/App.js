@@ -12596,7 +12596,7 @@ async function handleDelete(id) {
 if ((!session && !viewingUser && !viewingUsername) || onLanding) {
     return (
       <LandingPage 
-        currentSession={session}
+        currentSession={session?.user ? session : null}
         onEnterArchive={() => setOnLanding(false)}
         onNavigateToUser={handleNavigateToUser}
         onLogout={async () => {
