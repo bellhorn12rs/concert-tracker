@@ -6711,26 +6711,43 @@ function CommunityTab({ onEnterMuseum }) {
 
   useEffect(() => {
     async function fetchCurators() {
-  // Fetch profiles AND their concerts in one go
-  const { data, error } = await supabase
-    .from('profiles')
-    .select(`
-      username, avatar_color, last_seen, last_artist, last_venue,
-      concerts ( id )
-    `)
-    .order('last_seen', { ascending: false });
+      // We fetch profiles and include a count of the related concerts
+      // This bypasses the stale 'total_shows' column on the profile
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          username, 
+          avatar_color, 
+          last_seen, 
+          last_artist, 
+          last_venue, 
+          total_sets, 
+          total_venues,
+          concerts(count)
+        `)
+        .order('last_seen', { ascending: false });
 
-  if (data) {
-    // Map the data so total_shows is derived from the length of the concerts array
-    const enrichedCurators = data.map(u => ({
-      ...u,
-      total_shows: u.concerts?.length || 0,
-      // You'll need a similar join for sets/venues or use the static columns if you prefer
-    }));
-    setCurators(enrichedCurators);
-  }
-  setLoading(false);
-}
+      if (data) {
+        // Map the data so total_shows uses the live count from the join
+        const liveData = data.map(u => ({
+          ...u,
+          // Extract the count from the nested concerts object
+          total_shows: u.concerts?.[0]?.count || 0
+        }));
+        setCurators(liveData);
+      }
+      setLoading(false);
+    }
+    fetchCurators();
+  }, []);
+
+  if (loading) return (
+    <div style={{ padding: 100, textAlign: 'center' }}>
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.purple, letterSpacing: 4 }}>
+        [ ESTABLISHING CONNECTION TO REMOTE TERMINALS... ]
+      </div>
+    </div>
+  );
 
   return (
     <div className="fade-in" style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
