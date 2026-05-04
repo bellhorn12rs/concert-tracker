@@ -6705,16 +6705,17 @@ function VenuesTab({ concerts }) {
   );
 }
 // ─── THE STATION: REGIONAL TERMINAL BOARD ───
+// ─── THE STATION: REGIONAL TERMINAL BOARD ───
 function CommunityTab({ onEnterMuseum }) {
   const [curators, setCurators] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchCurators() {
-      // 1. Fetch profiles first
+      // 1. Fetch profiles with the necessary UUID (id)
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('username, avatar_color, last_seen, last_artist, last_venue, total_shows, total_sets, total_venues')
+        .select('id, username, avatar_color, last_seen, last_artist, last_venue')
         .order('last_seen', { ascending: false });
 
       if (profileError) {
@@ -6723,25 +6724,42 @@ function CommunityTab({ onEnterMuseum }) {
         return;
       }
 
-      // 2. Fetch all concert counts in one go to avoid relationship errors
+      // 2. Fetch all concerts for everyone to calculate live stats
       const { data: concertData, error: concertError } = await supabase
         .from('concerts')
-        .select('user_id');
+        .select('user_id, venue, bands');
 
       if (profileData) {
-        const liveData = profileData.map(u => {
-          // Manually count the shows for this user from the concerts array
-          // This is much safer than nested queries if foreign keys aren't set
-          const showCount = concertData 
-            ? concertData.filter(c => c.user_id === u.id || c.username === u.username).length 
-            : u.total_shows;
+        const enrichedCurators = profileData.map(u => {
+          // Filter concerts belonging to this curator
+          const userConcerts = concertData ? concertData.filter(c => c.user_id === u.id) : [];
+          
+          // Calculate Days (Total Concerts)
+          const totalShows = userConcerts.length;
+
+          // Calculate Venues (Unique Venues)
+          const uniqueVenues = new Set(userConcerts.map(c => c.venue?.toLowerCase()).filter(Boolean)).size;
+
+          // Calculate Sets (Total Bands seen)
+          let totalSets = 0;
+          userConcerts.forEach(c => {
+            try {
+              const bands = typeof c.bands === 'string' ? JSON.parse(c.bands) : c.bands;
+              if (Array.isArray(bands)) totalSets += bands.length;
+            } catch (e) {
+              // Fallback if bands isn't valid JSON
+              totalSets += 1; 
+            }
+          });
 
           return {
             ...u,
-            total_shows: showCount || 0
+            total_shows: totalShows,
+            total_venues: uniqueVenues,
+            total_sets: totalSets
           };
         });
-        setCurators(liveData);
+        setCurators(enrichedCurators);
       }
       setLoading(false);
     }
@@ -6768,7 +6786,7 @@ function CommunityTab({ onEnterMuseum }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
-        {curators.length > 0 ? curators.map((u, i) => {
+        {curators.map((u, i) => {
           const userColor = u.avatar_color || C.teal;
           return (
             <div 
@@ -6811,12 +6829,12 @@ function CommunityTab({ onEnterMuseum }) {
                 </div>
               </div>
 
-              {/* 📊 STATS */}
+              {/* 📊 LIVE CALCULATED STATS */}
               <div style={{ display: 'flex', gap: 30, textAlign: 'center', zIndex: 2, marginRight: '40px' }}>
                 {[
-                  { label: 'DAYS', val: u.total_shows || 0, color: C.purple },
-                  { label: 'SETS', val: u.total_sets || 0, color: C.teal },
-                  { label: 'VENUES', val: u.total_venues || 0, color: C.red }
+                  { label: 'DAYS', val: u.total_shows, color: C.purple },
+                  { label: 'SETS', val: u.total_sets, color: C.teal },
+                  { label: 'VENUES', val: u.total_venues, color: C.red }
                 ].map(stat => (
                   <div key={stat.label}>
                     <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: stat.color, lineHeight: 1 }}>{stat.val}</div>
@@ -6834,14 +6852,11 @@ function CommunityTab({ onEnterMuseum }) {
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(rgba(153, 102, 255, 0.02) 50%, transparent 50%)', backgroundSize: '100% 4px', pointerEvents: 'none' }} />
             </div>
           );
-        }) : (
-          <div style={{ color: '#fff', textAlign: 'center', fontFamily: "'Space Mono'" }}>NO CURATORS FOUND</div>
-        )}
+        })}
       </div>
     </div>
   );
 }
-
 // ─── POSTER GENERATOR ─────────────────────────────────────────────────────────
 const POSTER_TEMPLATES = [
   { id:0, name:'COACHELLA GRID', bg:'#f5f0e8', accent:'#1a1a2e', accent2:'#8b0000', font:'Bebas Neue', style:'grid', dark:false },
