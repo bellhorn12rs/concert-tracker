@@ -164,17 +164,26 @@ export default function LandingPage({
     e.preventDefault();
     setLoading(true);
     setMessage('');
-    const { error } = await supabase.auth.signUp({
+    
+    const { data, error } = await supabase.auth.signUp({ // Added 'data' here
       email, password,
       options: {
         data: { username },
         emailRedirectTo: 'https://concert-tracker-eight.vercel.app'
       }
     });
+
     if (error) {
       setMessage('Signup failed: ' + error.message);
     } else {
-      setMessage('Check your email to verify your account and get started.');
+      // CHANGE THIS PART:
+      setMessage('Welcome to the Museum! Redirecting you now...');
+      
+      // If Supabase logs them in immediately (which it does when Confirm Email is off),
+      // wait a second for the message to be read and then enter the archive.
+      setTimeout(() => {
+        onEnterArchive(); 
+      }, 1500);
     }
     setLoading(false);
   };
