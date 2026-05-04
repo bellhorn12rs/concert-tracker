@@ -6712,58 +6712,11 @@ function CommunityTab({ onEnterMuseum }) {
 
   useEffect(() => {
     async function fetchCurators() {
-      // 1. Fetch profiles
-      const { data: profileData } = await supabase
+      const { data } = await supabase
         .from('profiles')
-        .select('id, username, avatar_color, last_seen, last_artist, last_venue')
+        .select('username, avatar_color, last_seen, last_artist, last_venue, total_shows, total_sets, total_venues')
         .order('last_seen', { ascending: false });
-
-      // 2. Fetch BOTH tables: Concerts (creators) and Attendances (joiners)
-      const [concertsRes, attendancesRes] = await Promise.all([
-        supabase.from('concerts').select('id, user_id, venue, bands'),
-        supabase.from('attendances').select('user_id, show_id')
-      ]);
-
-      const concertData = concertsRes.data || [];
-      const attendanceData = attendancesRes.data || [];
-
-      if (profileData) {
-        const enrichedCurators = profileData.map(u => {
-          // A user's total shows = shows they created + shows they attended
-          // (Using a Set of IDs to ensure we don't double-count if they are in both)
-          const createdShowIds = concertData.filter(c => c.user_id === u.id).map(c => c.id);
-          const attendedShowIds = attendanceData.filter(a => a.user_id === u.id).map(a => a.show_id);
-          
-          const allShowIds = new Set([...createdShowIds, ...attendedShowIds]);
-          const totalShows = allShowIds.size;
-
-          // Get the actual concert objects for these IDs to count Venues and Sets
-          const relevantConcerts = concertData.filter(c => allShowIds.has(c.id));
-
-          // Calculate Venues
-          const uniqueVenues = new Set(relevantConcerts.map(c => c.venue?.toLowerCase()).filter(Boolean)).size;
-
-          // Calculate Sets
-          let totalSets = 0;
-          relevantConcerts.forEach(c => {
-            try {
-              const bands = typeof c.bands === 'string' ? JSON.parse(c.bands) : c.bands;
-              if (Array.isArray(bands)) totalSets += bands.length;
-              else if (bands) totalSets += 1;
-            } catch (e) {
-              totalSets += 1; 
-            }
-          });
-
-          return {
-            ...u,
-            total_shows: totalShows,
-            total_venues: uniqueVenues,
-            total_sets: totalSets
-          };
-        });
-        setCurators(enrichedCurators);
-      }
+      if (data) setCurators(data);
       setLoading(false);
     }
     fetchCurators();
@@ -6832,11 +6785,12 @@ function CommunityTab({ onEnterMuseum }) {
                 </div>
               </div>
 
+              {/* 📊 REAL HERO STATS */}
               <div style={{ display: 'flex', gap: 30, textAlign: 'center', zIndex: 2, marginRight: '40px' }}>
                 {[
-                  { label: 'DAYS', val: u.total_shows, color: C.purple },
-                  { label: 'SETS', val: u.total_sets, color: C.teal },
-                  { label: 'VENUES', val: u.total_venues, color: C.red }
+                  { label: 'DAYS', val: u.total_shows || 0, color: C.purple },
+                  { label: 'SETS', val: u.total_sets || 0, color: C.teal },
+                  { label: 'VENUES', val: u.total_venues || 0, color: C.red }
                 ].map(stat => (
                   <div key={stat.label}>
                     <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: stat.color, lineHeight: 1 }}>{stat.val}</div>
@@ -6850,6 +6804,7 @@ function CommunityTab({ onEnterMuseum }) {
                   BOARDING →
                 </div>
               </div>
+              
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(rgba(153, 102, 255, 0.02) 50%, transparent 50%)', backgroundSize: '100% 4px', pointerEvents: 'none' }} />
             </div>
           );
