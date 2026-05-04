@@ -12787,6 +12787,33 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
         <span style={{ fontSize: '1.2rem' }}>⏻</span>
         {(!navCollapsed || isMobile) && <span>LOGOUT</span>}
       </button>
+
+      {/* Contact */}
+      
+        href="mailto:trackrecordlive@gmail.com"
+        style={{
+          marginTop: 10,
+          padding: '10px 18px',
+          background: 'rgba(0,229,204,0.05)',
+          border: 'none',
+          borderLeft: `3px solid ${C.teal}`,
+          color: C.teal,
+          fontFamily: "'Space Mono'",
+          fontSize: '10px',
+          fontWeight: 900,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 14,
+          textDecoration: 'none',
+          transition: 'all 0.2s'
+        }}
+        onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,229,204,0.1)'}
+        onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,229,204,0.05)'}
+      >
+        <span style={{ fontSize: '1.2rem' }}>✉️</span>
+        {(!navCollapsed || isMobile) && <span>CONTACT</span>}
+      </a>
     </div>
   </div>
 )}
