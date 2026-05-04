@@ -7465,6 +7465,44 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      {(() => {
+        const filtered = useMemo(() => {
+          if (!search) return concerts;
+          const q = search.toLowerCase();
+          return concerts.filter(c => 
+            (c.bands || []).some(b => getBandName(b).toLowerCase().includes(q)) ||
+            (c.venue || '').toLowerCase().includes(q) ||
+            (c.city || '').toLowerCase().includes(q) ||
+            (c.festival_name || '').toLowerCase().includes(q)
+          );
+        }, [concerts, search]);
+
+        const totalPages = Math.ceil(filtered.length / PER);
+
+        return totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 20 }}>
+            <Btn 
+              variant="secondary" 
+              onClick={() => setPage(p => Math.max(1, p - 1))} 
+              disabled={page === 1}
+            >
+              ← Prev
+            </Btn>
+            <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray }}>
+              Page {page} of {totalPages}
+            </span>
+            <Btn 
+              variant="secondary" 
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
+              disabled={page === totalPages}
+            >
+              Next →
+            </Btn>
+          </div>
+        );
+      })()}
     </div>
   );
 }
