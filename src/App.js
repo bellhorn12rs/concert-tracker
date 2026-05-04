@@ -3589,12 +3589,16 @@ function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, cu
                               artifacts.wristband;
           
           return {
-            show,
-            artifacts,
-            hasArtifacts,
-            isLeft: idx % 2 === 0
-          };
-        });
+  show,
+  artifacts: {
+    setlists: [...new Set(artifacts.setlists)], // Dedupe
+    posters: [...new Set(artifacts.posters)],   // Dedupe
+    photos: [...new Set(artifacts.photos)],     // Dedupe
+    wristband: artifacts.wristband
+  },
+  hasArtifacts,
+  isLeft: idx % 2 === 0
+};
 
         
           return (
