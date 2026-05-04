@@ -1319,7 +1319,7 @@ export default function LandingPage({
         }}>
           Questions? Ideas? Found a bug?
         </div>
-        
+        <a
           href="mailto:trackrecordlive@gmail.com"
           style={{
             fontFamily: "'Space Mono'",
