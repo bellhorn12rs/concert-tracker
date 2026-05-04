@@ -12790,7 +12790,7 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
       </button>
 
       {/* Contact */}
-      
+      <a
         href="mailto:trackrecordlive@gmail.com"
         style={{
           padding: '10px 18px',
