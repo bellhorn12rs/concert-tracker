@@ -6711,29 +6711,36 @@ function CommunityTab({ onEnterMuseum }) {
 
   useEffect(() => {
     async function fetchCurators() {
-      // We fetch profiles and include a count of the related concerts
-      // This bypasses the stale 'total_shows' column on the profile
-      const { data, error } = await supabase
+      // 1. Fetch profiles first
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select(`
-          username, 
-          avatar_color, 
-          last_seen, 
-          last_artist, 
-          last_venue, 
-          total_sets, 
-          total_venues,
-          concerts(count)
-        `)
+        .select('username, avatar_color, last_seen, last_artist, last_venue, total_shows, total_sets, total_venues')
         .order('last_seen', { ascending: false });
 
-      if (data) {
-        // Map the data so total_shows uses the live count from the join
-        const liveData = data.map(u => ({
-          ...u,
-          // Extract the count from the nested concerts object
-          total_shows: u.concerts?.[0]?.count || 0
-        }));
+      if (profileError) {
+        console.error("Error fetching profiles:", profileError);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Fetch all concert counts in one go to avoid relationship errors
+      const { data: concertData, error: concertError } = await supabase
+        .from('concerts')
+        .select('user_id');
+
+      if (profileData) {
+        const liveData = profileData.map(u => {
+          // Manually count the shows for this user from the concerts array
+          // This is much safer than nested queries if foreign keys aren't set
+          const showCount = concertData 
+            ? concertData.filter(c => c.user_id === u.id || c.username === u.username).length 
+            : u.total_shows;
+
+          return {
+            ...u,
+            total_shows: showCount || 0
+          };
+        });
         setCurators(liveData);
       }
       setLoading(false);
@@ -6761,7 +6768,7 @@ function CommunityTab({ onEnterMuseum }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
-        {curators.map((u, i) => {
+        {curators.length > 0 ? curators.map((u, i) => {
           const userColor = u.avatar_color || C.teal;
           return (
             <div 
@@ -6804,7 +6811,7 @@ function CommunityTab({ onEnterMuseum }) {
                 </div>
               </div>
 
-              {/* 📊 REAL HERO STATS */}
+              {/* 📊 STATS */}
               <div style={{ display: 'flex', gap: 30, textAlign: 'center', zIndex: 2, marginRight: '40px' }}>
                 {[
                   { label: 'DAYS', val: u.total_shows || 0, color: C.purple },
@@ -6827,7 +6834,9 @@ function CommunityTab({ onEnterMuseum }) {
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(rgba(153, 102, 255, 0.02) 50%, transparent 50%)', backgroundSize: '100% 4px', pointerEvents: 'none' }} />
             </div>
           );
-        })}
+        }) : (
+          <div style={{ color: '#fff', textAlign: 'center', fontFamily: "'Space Mono'" }}>NO CURATORS FOUND</div>
+        )}
       </div>
     </div>
   );
