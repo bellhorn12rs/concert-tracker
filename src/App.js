@@ -3612,31 +3612,43 @@ const overflowPackages = showPackages
   .filter(pkg => pkg.hasArtifacts)
   .slice(artifactsPerSide * 2); // Everything after balanced sides
 
-  // 🟢 EXPORT FUNCTION
   const handleExport = async () => {
-    if (!cardRef.current) return;
+  if (!cardRef.current) return;
+  
+  try {
+    // Wait for all images to load
+    const images = cardRef.current.querySelectorAll('img');
+    await Promise.all(
+      Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve; // Continue even if image fails
+        });
+      })
+    );
     
-    try {
-      // Dynamically import html2canvas
-      const html2canvas = (await import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm')).default;
-      
-      const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: '#0a0a0f',
-        scale: 2,
-        logging: false
-      });
-      
-      const link = document.createElement('a');
-      link.download = `${selectedData.artist.replace(/\s+/g, '-')}-archive.png`;
-      link.href = canvas.toDataURL();
-      link.click();
-      
-      alert(`✅ EXPORTED: ${selectedData.artist} archive saved!`);
-    } catch (err) {
-      console.error('Export failed:', err);
-      alert('Export failed - try again');
-    }
-  };
+    const html2canvas = (await import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm')).default;
+    
+    const canvas = await html2canvas(cardRef.current, {
+      backgroundColor: '#0a0a0f',
+      scale: 2,
+      logging: false,
+      useCORS: true, // 🟢 Enable cross-origin images
+      allowTaint: true // 🟢 Allow Supabase URLs
+    });
+    
+    const link = document.createElement('a');
+    link.download = `${selectedData.artist.replace(/\s+/g, '-')}-archive.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+    
+    alert(`✅ EXPORTED: ${selectedData.artist} archive ready to share!`);
+  } catch (err) {
+    console.error('Export error:', err);
+    alert('Export failed - images may be loading. Wait a moment and try again.');
+  }
+};
 
   return (
     <div 
