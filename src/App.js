@@ -3500,6 +3500,7 @@ function ArtifactCluster({ artifacts, show, index, gc, shouldBlurPhoto, currentU
 function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, currentUserId }) {
   const [selected, setSelected] = useState(null);
   const topRef = useRef(null);
+  const cardRef = useRef(null);
 
   const artists = useMemo(() => {
     const m = {};
@@ -3534,7 +3535,7 @@ function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, cu
       {/* DETAIL VIEW - Dense 3 Column */}
      {selectedData && (() => {
   const gc = selectedData.genre ? (GENRE_COLORS[selectedData.genre] || C.teal) : C.teal;
-  const cardRef = useRef(null);
+  
   
   // Build artifact packages (same as before)
   const showPackages = [...selectedData.shows]
