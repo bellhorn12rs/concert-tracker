@@ -3616,14 +3616,21 @@ const overflowPackages = showPackages
   if (!cardRef.current) return;
   
   try {
-    // Wait for all images to load
+    // Temporarily remove effects that don't export well
+    const originalBg = cardRef.current.style.background;
+    const originalBackdrop = cardRef.current.style.backdropFilter;
+    
+    cardRef.current.style.background = `linear-gradient(135deg, #1a1a22, ${hexToRgba(gc, 0.15)})`;
+    cardRef.current.style.backdropFilter = 'none';
+    
+    // Wait for images
     const images = cardRef.current.querySelectorAll('img');
     await Promise.all(
       Array.from(images).map(img => {
         if (img.complete) return Promise.resolve();
         return new Promise((resolve) => {
           img.onload = resolve;
-          img.onerror = resolve; // Continue even if image fails
+          img.onerror = resolve;
         });
       })
     );
@@ -3634,9 +3641,13 @@ const overflowPackages = showPackages
       backgroundColor: '#0a0a0f',
       scale: 2,
       logging: false,
-      useCORS: true, // 🟢 Enable cross-origin images
-      allowTaint: true // 🟢 Allow Supabase URLs
+      useCORS: true,
+      allowTaint: true
     });
+    
+    // Restore original styles
+    cardRef.current.style.background = originalBg;
+    cardRef.current.style.backdropFilter = originalBackdrop;
     
     const link = document.createElement('a');
     link.download = `${selectedData.artist.replace(/\s+/g, '-')}-archive.png`;
@@ -3646,7 +3657,7 @@ const overflowPackages = showPackages
     alert(`✅ EXPORTED: ${selectedData.artist} archive ready to share!`);
   } catch (err) {
     console.error('Export error:', err);
-    alert('Export failed - images may be loading. Wait a moment and try again.');
+    alert('Export failed');
   }
 };
 
