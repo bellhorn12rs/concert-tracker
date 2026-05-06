@@ -3532,312 +3532,335 @@ function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, cu
       </div>
 
       {/* DETAIL VIEW - Dense 3 Column */}
-      {selectedData && (() => {
-        const gc = selectedData.genre ? (GENRE_COLORS[selectedData.genre] || C.teal) : C.teal;
-        
-        // Build artifact packages
-        const showPackages = [...selectedData.shows]
-  .sort((a, b) => new Date(b.date) - new Date(a.date))
-  .map((show, idx) => {
-
-          const artifacts = {
-            setlists: [],
-            posters: [],
-            photos: [],
-            wristband: null
-          };
-          
-          const slSource = show.setlist_image_url || show.image_url;
-          if (slSource) {
-            slSource.split(',').forEach(url => {
-              if (url.trim()) artifacts.setlists.push(url.trim());
-            });
-          }
-          
-          if (show.personal_photo_url) {
-            show.personal_photo_url.split(',').forEach(url => {
-              if (url.trim()) artifacts.photos.push(url.trim());
-            });
-          }
-          
-          if (show.wristband_image_url) {
-            artifacts.wristband = show.wristband_image_url;
-          }
-          
-          if (show.is_festival && show.festival_name) {
-            const festYear = getYear(show.date);
-            const matchedPosters = posters.filter(p => 
-              p.poster_type === 'festival_year' && 
-              (
-                p.festival_name?.toLowerCase().trim() === show.festival_name?.toLowerCase().trim() || 
-                show.festival_name?.toLowerCase().includes(p.festival_name?.toLowerCase()) ||
-                p.festival_name?.toLowerCase().includes(show.festival_name?.toLowerCase())
-              ) &&
-              getYear(p.date) === festYear
-            );
-            artifacts.posters = matchedPosters.map(p => p.image_url);
-          } else {
-            const artistPosters = posters.filter(p => 
-              p.artist === selectedData.artist && p.date === show.date
-            );
-            artifacts.posters = artistPosters.map(p => p.image_url);
-          }
-          
-          const hasArtifacts = artifacts.setlists.length > 0 || 
-                              artifacts.posters.length > 0 || 
-                              artifacts.photos.length > 0 ||
-                              artifacts.wristband;
-          
-          return {
-            show,
-            artifacts: {
-              setlists: [...new Set(artifacts.setlists)], // Dedupe URLs
-              posters: [...new Set(artifacts.posters)],   // Dedupe URLs
-              photos: [...new Set(artifacts.photos)],     // Dedupe URLs
-              wristband: artifacts.wristband
-            },
-            hasArtifacts,
-            isLeft: idx % 2 === 0
-          };
+     {selectedData && (() => {
+  const gc = selectedData.genre ? (GENRE_COLORS[selectedData.genre] || C.teal) : C.teal;
+  const cardRef = useRef(null);
+  
+  // Build artifact packages (same as before)
+  const showPackages = [...selectedData.shows]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .map((show, idx) => {
+      const artifacts = {
+        setlists: [],
+        posters: [],
+        photos: [],
+        wristband: null
+      };
+      
+      const slSource = show.setlist_image_url || show.image_url;
+      if (slSource) {
+        slSource.split(',').forEach(url => {
+          if (url.trim()) artifacts.setlists.push(url.trim());
         });
+      }
+      
+      if (show.personal_photo_url) {
+        show.personal_photo_url.split(',').forEach(url => {
+          if (url.trim()) artifacts.photos.push(url.trim());
+        });
+      }
+      
+      if (show.wristband_image_url) {
+        artifacts.wristband = show.wristband_image_url;
+      }
+      
+      if (show.is_festival && show.festival_name) {
+        const festYear = getYear(show.date);
+        const matchedPosters = posters.filter(p => 
+          p.poster_type === 'festival_year' && 
+          (
+            p.festival_name?.toLowerCase().trim() === show.festival_name?.toLowerCase().trim() || 
+            show.festival_name?.toLowerCase().includes(p.festival_name?.toLowerCase()) ||
+            p.festival_name?.toLowerCase().includes(show.festival_name?.toLowerCase())
+          ) &&
+          getYear(p.date) === festYear
+        );
+        artifacts.posters = matchedPosters.map(p => p.image_url);
+      } else {
+        const artistPosters = posters.filter(p => 
+          p.artist === selectedData.artist && p.date === show.date
+        );
+        artifacts.posters = artistPosters.map(p => p.image_url);
+      }
+      
+      const hasArtifacts = artifacts.setlists.length > 0 || 
+                          artifacts.posters.length > 0 || 
+                          artifacts.photos.length > 0 ||
+                          artifacts.wristband;
+      
+      return {
+        show,
+        artifacts: {
+          setlists: [...new Set(artifacts.setlists)],
+          posters: [...new Set(artifacts.posters)],
+          photos: [...new Set(artifacts.photos)],
+          wristband: artifacts.wristband
+        },
+        hasArtifacts,
+        isLeft: idx % 2 === 0
+      };
+    });
 
+  // 🟢 SMART SPLIT: First 8 go to sides, rest go to bottom
+  const leftPackages = showPackages.filter(pkg => pkg.isLeft && pkg.hasArtifacts).slice(0, 4);
+  const rightPackages = showPackages.filter(pkg => !pkg.isLeft && pkg.hasArtifacts).slice(0, 4);
+  const overflowPackages = showPackages
+    .filter(pkg => pkg.hasArtifacts)
+    .slice(8); // Everything after the first 8
+
+  // 🟢 EXPORT FUNCTION
+  const handleExport = async () => {
+    if (!cardRef.current) return;
+    
+    try {
+      // Dynamically import html2canvas
+      const html2canvas = (await import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm')).default;
+      
+      const canvas = await html2canvas(cardRef.current, {
+        backgroundColor: '#0a0a0f',
+        scale: 2,
+        logging: false
+      });
+      
+      const link = document.createElement('a');
+      link.download = `${selectedData.artist.replace(/\s+/g, '-')}-archive.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+      
+      alert(`✅ EXPORTED: ${selectedData.artist} archive saved!`);
+    } catch (err) {
+      console.error('Export failed:', err);
+      alert('Export failed - try again');
+    }
+  };
+
+  return (
+    <div 
+      ref={cardRef}
+      className="fade-in" 
+      style={{ 
+        background: `linear-gradient(135deg, ${C.bgCard}, ${hexToRgba(gc, 0.05)})`, 
+        border: `2px solid ${gc}66`, 
+        borderRadius: 16, 
+        padding: window.innerWidth < 768 ? '24px' : '40px', 
+        marginBottom: 40, 
+        boxShadow: `0 40px 120px rgba(0,0,0,0.7), 0 0 60px ${hexToRgba(gc, 0.2)}`,
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+    >
+      <div style={{ position: 'absolute', right: 20, bottom: -10, fontFamily: "'Bebas Neue'", fontSize: '12rem', color: hexToRgba(gc, 0.03), pointerEvents: 'none', userSelect: 'none', lineHeight: 1 }}>
+        {selectedData.shows.length}X
+      </div>
+
+      {/* Header */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-start', 
+        marginBottom: 32, 
+        position: 'relative', 
+        zIndex: 5,
+        paddingBottom: 16,
+        borderBottom: `1px solid ${hexToRgba(gc, 0.2)}`
+      }}>
+        <div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3.5rem', color: C.white, lineHeight: 0.9 }}>
+            {selectedData.artist.toUpperCase()}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+            {selectedData.genre && <GenreBadge genre={selectedData.genre} color={gc} />}
+            <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: gc, fontWeight: 900 }}>
+              {selectedData.shows.length} SETS
+            </span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {/* 🟢 EXPORT BUTTON */}
+          <button 
+            onClick={handleExport}
+            style={{ 
+              fontFamily: "'Space Mono'", 
+              fontSize: 9, 
+              background: hexToRgba(C.purple, 0.2), 
+              border: `2px solid ${C.purple}`, 
+              color: '#fff', 
+              borderRadius: 6, 
+              padding: '6px 12px', 
+              cursor: 'pointer', 
+              fontWeight: 700 
+            }}
+          >
+            📸 EXPORT
+          </button>
+          {onShare && (
+            <button 
+              onClick={() => onShare(selectedData.artist, selectedData.shows)} 
+              style={{ 
+                fontFamily: "'Space Mono'", 
+                fontSize: 9, 
+                background: hexToRgba(gc, 0.2), 
+                border: `2px solid ${gc}`, 
+                color: '#fff', 
+                borderRadius: 6, 
+                padding: '6px 12px', 
+                cursor: 'pointer', 
+                fontWeight: 700 
+              }}
+            >
+              SHARE
+            </button>
+          )}
+          <button 
+            onClick={() => setSelected(null)} 
+            style={{ 
+              background: 'rgba(255,255,255,0.05)', 
+              border: `1px solid rgba(255,255,255,0.1)`, 
+              color: '#fff', 
+              fontSize: 9, 
+              borderRadius: 6, 
+              padding: '6px 12px', 
+              cursor: 'pointer' 
+            }}
+          >
+            CLOSE
+          </button>
+        </div>
+      </div>
+
+      {/* 3-Column Grid */}
+      <div style={{ 
+        display: 'grid',
+        gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1.2fr 1fr',
+        gap: window.innerWidth < 768 ? '20px' : '40px',
+        position: 'relative',
+        alignItems: 'start',
+        justifyItems: window.innerWidth < 768 ? 'stretch' : 'center'
+      }}>
         
-          return (
-  <div className="fade-in" style={{ 
-    background: `
-      radial-gradient(ellipse at 50% 30%, ${hexToRgba(gc, 0.12)} 0%, transparent 60%),
-      linear-gradient(135deg, 
-        rgba(30,30,35,1) 0%, 
-        rgba(20,20,25,1) 50%, 
-        rgba(15,15,20,1) 100%
-      ),
-      repeating-linear-gradient(
-        90deg,
-        rgba(255,255,255,0.02) 0px,
-        rgba(255,255,255,0.02) 1px,
-        transparent 1px,
-        transparent 3px
-      ),
-      repeating-linear-gradient(
-        180deg,
-        rgba(255,255,255,0.01) 0px,
-        rgba(255,255,255,0.01) 1px,
-        transparent 1px,
-        transparent 2px
-      )
-    `,
-    border: `2px solid ${gc}66`, 
-    borderRadius: 16, 
-    padding: window.innerWidth < 768 ? '24px' : '40px', 
-    marginBottom: 40, 
-    boxShadow: `
-      0 40px 120px rgba(0,0,0,0.7),
-      0 0 60px ${hexToRgba(gc, 0.2)},
-      inset 0 1px 1px rgba(255,255,255,0.05),
-      inset 0 -1px 1px rgba(0,0,0,0.5)
-    `,
-    position: 'relative',
-    overflow: 'hidden'
-  }}>
-            <div style={{ position: 'absolute', right: 20, bottom: -10, fontFamily: "'Bebas Neue'", fontSize: '12rem', color: hexToRgba(gc, 0.03), pointerEvents: 'none', userSelect: 'none', lineHeight: 1 }}>
-              {selectedData.shows.length}X
-            </div>
+        {/* LEFT COLUMN */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {leftPackages.map((pkg, idx) => (
+            <ArtifactCluster 
+              key={`left-${pkg.show.id}`}
+              artifacts={pkg.artifacts}
+              show={pkg.show}
+              index={idx}
+              gc={gc}
+            />
+          ))}
+        </div>
 
-            {/* Compact Header */}
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'flex-start', 
-              marginBottom: 32, 
-              position: 'relative', 
-              zIndex: 5,
-              paddingBottom: 16,
-              borderBottom: `1px solid ${hexToRgba(gc, 0.2)}`
-            }}>
-              <div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3.5rem', color: C.white, lineHeight: 0.9 }}>
-                  {selectedData.artist.toUpperCase()}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
-                  {selectedData.genre && <GenreBadge genre={selectedData.genre} color={gc} />}
-                  <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: gc, fontWeight: 900 }}>
-                    {selectedData.shows.length} SETS
-                  </span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                {onShare && (
-                  <button 
-                    onClick={() => onShare(selectedData.artist, selectedData.shows)} 
-                    style={{ 
-                      fontFamily: "'Space Mono'", 
-                      fontSize: 9, 
-                      background: hexToRgba(gc, 0.2), 
-                      border: `2px solid ${gc}`, 
-                      color: '#fff', 
-                      borderRadius: 6, 
-                      padding: '6px 12px', 
-                      cursor: 'pointer', 
-                      fontWeight: 700 
-                    }}
-                  >
-                    SHARE
-                  </button>
-                )}
-                <button 
-                  onClick={() => setSelected(null)} 
-                  style={{ 
-                    background: 'rgba(255,255,255,0.05)', 
-                    border: `1px solid rgba(255,255,255,0.1)`, 
-                    color: '#fff', 
-                    fontSize: 9, 
-                    borderRadius: 6, 
-                    padding: '6px 12px', 
-                    cursor: 'pointer' 
-                  }}
-                >
-                  CLOSE
-                </button>
-              </div>
-            </div>
-
-            {/* DENSE 3-Column Grid */}
-            <div style={{ 
-  display: 'grid',
-  gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1.2fr 1fr',
-  gap: window.innerWidth < 768 ? '20px' : '40px',
-  position: 'relative',
-  alignItems: 'start',
-  justifyItems: window.innerWidth < 768 ? 'stretch' : 'center'
-}}>
+        {/* CENTER - Timeline */}
+        <div style={{ position: 'relative', paddingLeft: '20px' }}>
+          <div style={{ 
+            position: 'absolute', 
+            left: 5, 
+            top: 0, 
+            bottom: 0, 
+            width: 2, 
+            background: `linear-gradient(to bottom, ${gc}, transparent)`, 
+            opacity: 0.4 
+          }} />
+          
+          {[...selectedData.shows].sort((a, b) => new Date(b.date) - new Date(a.date)).map((s, i) => (
+            <div key={i} style={{ position: 'relative', marginBottom: 18, paddingLeft: 18 }}>
+              <div style={{ 
+                position: 'absolute', 
+                left: -22, 
+                top: 3, 
+                width: 8, 
+                height: 8, 
+                borderRadius: '50%', 
+                background: s.is_festival ? gc : '#fff', 
+                boxShadow: `0 0 12px ${s.is_festival ? gc : '#fff'}` 
+              }} />
               
-              {/* LEFT COLUMN - Compact */}
-              <div style={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: '16px'
-              }}>
-                {showPackages.filter(pkg => pkg.isLeft && pkg.hasArtifacts).map((pkg, idx) => (
-                  <ArtifactCluster 
-  key={`left-${pkg.show.id}`}
-  artifacts={pkg.artifacts}
-  show={pkg.show}
-  index={idx}
-  gc={gc}
-  shouldBlurPhoto={shouldBlurPhoto}
-  currentUserId={currentUserId}
-/>
-                ))}
-              </div>
-
-              {/* CENTER - Compact Timeline */}
-              <div style={{ 
-                position: 'relative',
-                paddingLeft: '20px',
-              }}>
-                <div style={{ 
-                  position: 'absolute', 
-                  left: 5, 
-                  top: 0, 
-                  bottom: 0, 
-                  width: 2, 
-                  background: `linear-gradient(to bottom, ${gc}, transparent)`, 
-                  opacity: 0.4 
-                }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: gc, fontWeight: 900 }}>
+                  {fmtDate(s.date)}
+                </span>
                 
-                {[...selectedData.shows].sort((a, b) => new Date(b.date) - new Date(a.date)).map((s, i) => (
-
-                  <div key={i} style={{ 
-                    position: 'relative', 
-                    marginBottom: 18, 
-                    paddingLeft: 18 
-                  }}>
-                    <div style={{ 
-                      position: 'absolute', 
-                      left: -22, 
-                      top: 3, 
-                      width: 8, 
-                      height: 8, 
-                      borderRadius: '50%', 
-                      background: s.is_festival ? gc : '#fff', 
-                      boxShadow: `0 0 12px ${s.is_festival ? gc : '#fff'}` 
-                    }} />
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <span style={{ 
-                        fontFamily: "'Space Mono'", 
-                        fontSize: 10, 
-                        color: gc, 
-                        fontWeight: 900 
-                      }}>
-                        {fmtDate(s.date)}
-                      </span>
-                      
-                      {s.is_festival ? (
-                        <div>
-                          <span style={{ 
-                            fontSize: '1rem', 
-                            color: C.gold, 
-                            fontWeight: 700,
-                            fontFamily: "'Bebas Neue'"
-                          }}>
-                            {s.festival_name?.toUpperCase()} {getYear(s.date)}
-                          </span>
-                          {s.festival_day && (
-                            <div style={{ 
-                              fontFamily: "'Space Mono'", 
-                              fontSize: 7, 
-                              color: gc, 
-                              opacity: 0.6,
-                              marginTop: 1
-                            }}>
-                              {s.festival_day.toUpperCase()}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div>
-                          <div style={{ fontSize: '1rem', color: C.white, fontWeight: 600 }}>
-                            {s.venue}
-                          </div>
-                          <div style={{ 
-                            fontFamily: "'Space Mono'", 
-                            fontSize: 8, 
-                            color: C.grayDim,
-                            marginTop: 1
-                          }}>
-                            {s.city}, {s.state}
-                          </div>
-                        </div>
-                      )}
+                {s.is_festival ? (
+                  <div>
+                    <span style={{ fontSize: '1rem', color: C.gold, fontWeight: 700, fontFamily: "'Bebas Neue'" }}>
+                      {s.festival_name?.toUpperCase()} {getYear(s.date)}
+                    </span>
+                    {s.festival_day && (
+                      <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: gc, opacity: 0.6, marginTop: 1 }}>
+                        {s.festival_day.toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ fontSize: '1rem', color: C.white, fontWeight: 600 }}>
+                      {s.venue}
+                    </div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, marginTop: 1 }}>
+                      {s.city}, {s.state}
                     </div>
                   </div>
-                ))}
+                )}
               </div>
-
-              {/* RIGHT COLUMN - Compact */}
-              <div style={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: '16px'
-              }}>
-                {showPackages.filter(pkg => !pkg.isLeft && pkg.hasArtifacts).map((pkg, idx) => (
-                  <ArtifactCluster 
-  key={`right-${pkg.show.id}`}
-  artifacts={pkg.artifacts}
-  show={pkg.show}
-  index={idx}
-  gc={gc}
-  shouldBlurPhoto={shouldBlurPhoto}
-  currentUserId={currentUserId}
-/>
-                ))}
-              </div>
-
             </div>
+          ))}
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {rightPackages.map((pkg, idx) => (
+            <ArtifactCluster 
+              key={`right-${pkg.show.id}`}
+              artifacts={pkg.artifacts}
+              show={pkg.show}
+              index={idx}
+              gc={gc}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* 🟢 OVERFLOW SECTION - Full width at bottom */}
+      {overflowPackages.length > 0 && (
+        <div style={{ 
+          marginTop: 60, 
+          paddingTop: 40, 
+          borderTop: `2px solid ${hexToRgba(gc, 0.2)}` 
+        }}>
+          <div style={{ 
+            fontFamily: "'Space Mono'", 
+            fontSize: 9, 
+            color: gc, 
+            letterSpacing: 2, 
+            marginBottom: 25, 
+            fontWeight: 900 
+          }}>
+            // ADDITIONAL ARTIFACTS
           </div>
-        );
-      })()}
+          <div style={{ 
+            display: 'grid',
+            gridTemplateColumns: window.innerWidth < 768 
+              ? 'repeat(2, 1fr)' 
+              : 'repeat(auto-fill, minmax(200px, 1fr))',
+            gap: 20
+          }}>
+            {overflowPackages.map((pkg, idx) => (
+              <ArtifactCluster 
+                key={`overflow-${pkg.show.id}`}
+                artifacts={pkg.artifacts}
+                show={pkg.show}
+                index={idx}
+                gc={gc}
+                compact={true}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+})()}
 
       {/* MASONRY EXHIBITION WALL */}
       <div style={{ 
