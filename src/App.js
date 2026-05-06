@@ -3612,19 +3612,37 @@ const overflowPackages = showPackages
   .filter(pkg => pkg.hasArtifacts)
   .slice(artifactsPerSide * 2); // Everything after balanced sides
 
-  const handleExport = async () => {
+const handleExport = async () => {
   if (!cardRef.current) return;
   
   try {
-    // Temporarily remove effects that don't export well
-    const originalBg = cardRef.current.style.background;
-    const originalBackdrop = cardRef.current.style.backdropFilter;
+    const card = cardRef.current;
     
-    cardRef.current.style.background = `linear-gradient(135deg, #1a1a22, ${hexToRgba(gc, 0.15)})`;
-    cardRef.current.style.backdropFilter = 'none';
+    // 🟢 SAVE original styles
+    const originalStyles = {
+      background: card.style.background,
+      backgroundImage: card.style.backgroundImage,
+      backdropFilter: card.style.backdropFilter
+    };
+    
+    // 🟢 FORCE solid dark background for export
+    card.style.background = `linear-gradient(135deg, #1a1a22 0%, ${hexToRgba(gc, 0.2)} 100%)`;
+    card.style.backgroundImage = 'none';
+    card.style.backdropFilter = 'none';
+    
+    // Also fix any nested transparent elements
+    const allDivs = card.querySelectorAll('div');
+    const originalBgs = [];
+    allDivs.forEach((div, i) => {
+      originalBgs[i] = div.style.background;
+      if (div.style.background && div.style.background.includes('rgba')) {
+        // Make semi-transparent backgrounds more opaque
+        div.style.background = div.style.background.replace(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/g, 'rgba($1, $2, $3, 0.95)');
+      }
+    });
     
     // Wait for images
-    const images = cardRef.current.querySelectorAll('img');
+    const images = card.querySelectorAll('img');
     await Promise.all(
       Array.from(images).map(img => {
         if (img.complete) return Promise.resolve();
@@ -3637,26 +3655,30 @@ const overflowPackages = showPackages
     
     const html2canvas = (await import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm')).default;
     
-    const canvas = await html2canvas(cardRef.current, {
-      backgroundColor: '#0a0a0f',
+    const canvas = await html2canvas(card, {
+      backgroundColor: '#000000',
       scale: 2,
       logging: false,
       useCORS: true,
       allowTaint: true
     });
     
-    // Restore original styles
-    cardRef.current.style.background = originalBg;
-    cardRef.current.style.backdropFilter = originalBackdrop;
+    // 🟢 RESTORE everything
+    card.style.background = originalStyles.background;
+    card.style.backgroundImage = originalStyles.backgroundImage;
+    card.style.backdropFilter = originalStyles.backdropFilter;
+    allDivs.forEach((div, i) => {
+      div.style.background = originalBgs[i];
+    });
     
     const link = document.createElement('a');
     link.download = `${selectedData.artist.replace(/\s+/g, '-')}-archive.png`;
-    link.href = canvas.toDataURL();
+    link.href = canvas.toDataURL('image/png', 1.0);
     link.click();
     
-    alert(`✅ EXPORTED: ${selectedData.artist} archive ready to share!`);
+    alert(`✅ EXPORTED`);
   } catch (err) {
-    console.error('Export error:', err);
+    console.error(err);
     alert('Export failed');
   }
 };
