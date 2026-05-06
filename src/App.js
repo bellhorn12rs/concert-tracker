@@ -3602,12 +3602,15 @@ function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, cu
       };
     });
 
-  // 🟢 SMART SPLIT: First 8 go to sides, rest go to bottom
-  const leftPackages = showPackages.filter(pkg => pkg.isLeft && pkg.hasArtifacts).slice(0, 4);
-  const rightPackages = showPackages.filter(pkg => !pkg.isLeft && pkg.hasArtifacts).slice(0, 4);
-  const overflowPackages = showPackages
-    .filter(pkg => pkg.hasArtifacts)
-    .slice(8); // Everything after the first 8
+  // 🟢 BALANCED SPLIT - Match timeline height
+const timelineLength = selectedData.shows.length;
+const artifactsPerSide = Math.min(Math.ceil(timelineLength / 3), 4); // Rough estimate
+
+const leftPackages = showPackages.filter(pkg => pkg.isLeft && pkg.hasArtifacts).slice(0, artifactsPerSide);
+const rightPackages = showPackages.filter(pkg => !pkg.isLeft && pkg.hasArtifacts).slice(0, artifactsPerSide);
+const overflowPackages = showPackages
+  .filter(pkg => pkg.hasArtifacts)
+  .slice(artifactsPerSide * 2); // Everything after balanced sides
 
   // 🟢 EXPORT FUNCTION
   const handleExport = async () => {
