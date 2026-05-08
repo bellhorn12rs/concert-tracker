@@ -7321,27 +7321,19 @@ function SmartPhotoUpload({ concerts, session, onComplete }) {
   const sm = { fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, letterSpacing: 1, lineHeight: 1.6 };
   const hd = { fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.teal, letterSpacing: 2, marginBottom: 6 };
 
-  if (!isOpen) return (
-    <button onClick={() => setIsOpen(true)} style={{ background: C.teal, border: 'none', color: '#000', padding: '12px 28px', borderRadius: 6, fontFamily: "'Bebas Neue'", fontSize: '1.3rem', letterSpacing: 2, cursor: 'pointer', boxShadow: `0 0 20px ${hexToRgba(C.teal, 0.4)}`, fontWeight: 900 }}>
-      📷 UPLOAD PHOTO
-    </button>
+ if (!isOpen) return (
+    <>
+      <button onClick={() => fileInputRef.current?.click()} style={{ background: C.teal, border: 'none', color: '#000', padding: '12px 28px', borderRadius: 6, fontFamily: "'Bebas Neue'", fontSize: '1.3rem', letterSpacing: 2, cursor: 'pointer', boxShadow: `0 0 20px ${hexToRgba(C.teal, 0.4)}`, fontWeight: 900 }}>
+        📷 UPLOAD PHOTO
+      </button>
+      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { setIsOpen(true); handleFileSelect(e); }} />
+    </>
   );
 
   return (
     <div onClick={e => e.target === e.currentTarget && close()} style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ background: C.bgCard, border: `1px solid ${C.teal}`, borderRadius: 16, padding: 30, width: '100%', maxWidth: 460, boxShadow: `0 0 50px ${hexToRgba(C.teal, 0.2)}`, position: 'relative' }}>
         <button onClick={close} style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', color: C.gray, fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
-
-        {step === 'idle' && (<>
-          <div style={hd}>UPLOAD PHOTO</div>
-          <p style={{ ...sm, marginBottom: 20 }}>SELECT A PHOTO — WE'LL READ THE DATE AND MATCH IT TO A SHOW.</p>
-          <div onClick={() => fileInputRef.current?.click()} style={{ border: `1.5px dashed ${C.teal}44`, borderRadius: 10, padding: '36px 24px', textAlign: 'center', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.background = hexToRgba(C.teal, 0.05)} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-            <div style={{ fontSize: 30, marginBottom: 8 }}>📷</div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', letterSpacing: 1 }}>CLICK TO SELECT</div>
-            <div style={{ ...sm, marginTop: 4 }}>JPG · PNG · HEIC</div>
-          </div>
-          <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileSelect} />
-        </>)}
 
         {step === 'reading' && (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
