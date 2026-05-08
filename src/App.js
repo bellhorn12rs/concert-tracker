@@ -7743,6 +7743,16 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
   <SmartPhotoUpload concerts={concerts} session={session} onComplete={onFetchData} />
 </Card>
 
+<Card neon style={{ marginBottom: 30 }}>
+  <CardTitle>CONTACT</CardTitle>
+  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 15, lineHeight: 1.6 }}>
+    QUESTIONS, BUGS, OR FEEDBACK?
+  </div>
+  <a href="mailto:trackrecordlive@gmail.com" style={{ background: C.teal, color: '#000', padding: '10px 20px', borderRadius: 6, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 2, textDecoration: 'none', display: 'inline-block' }}>
+    ✉️ EMAIL US
+  </a>
+</Card>
+
       {/* Standard Table Controls */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
         <input 
@@ -13145,31 +13155,29 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
         {(!navCollapsed || isMobile) && <span>LOGOUT</span>}
       </button>
 
-      {/* Contact */}
-      <a
-        href="mailto:trackrecordlive@gmail.com"
-        style={{
-          padding: '10px 18px',
-          background: 'rgba(0,229,204,0.05)',
-          border: 'none',
-          borderLeft: `3px solid ${C.teal}`,
-          color: C.teal,
-          fontFamily: "'Space Mono'",
-          fontSize: '10px',
-          fontWeight: 900,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 14,
-          textDecoration: 'none',
-          transition: 'all 0.2s'
-        }}
-        onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,229,204,0.1)'}
-        onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,229,204,0.05)'}
-      >
-        <span style={{ fontSize: '1.2rem' }}>✉️</span>
-        {(!navCollapsed || isMobile) && <span>CONTACT</span>}
-      </a>
+      {/* The Office */}
+      <button
+  onClick={() => { setActiveTab('manage'); setNavCollapsed(true); }}
+  style={{
+    padding: '10px 18px',
+    background: 'rgba(0,229,204,0.05)',
+    border: 'none',
+    borderLeft: `3px solid ${C.teal}`,
+    color: C.teal,
+    fontFamily: "'Space Mono'",
+    fontSize: '10px',
+    fontWeight: 900,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 14,
+    width: '100%',
+    transition: 'all 0.2s'
+  }}
+>
+  <span style={{ fontSize: '1.2rem' }}>⚙️</span>
+  {(!navCollapsed || isMobile) && <span>THE OFFICE</span>}
+</button>
     </div>
   </div>
 )}
