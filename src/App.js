@@ -13330,19 +13330,10 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
             }}
           >
             🚉
-          </button>
-          {!viewingUser && (
-            <button 
-              onClick={() => setEditTarget('new')}
-              style={{ 
-                background: C.teal, border: 'none', color: '#000', 
-                borderRadius: '4px', padding: '5px 10px', 
-                fontFamily: "'Bebas Neue'", fontSize: '1.1rem',
-                cursor: 'pointer', fontWeight: 900, letterSpacing: 1
-              }}
-            >
-              + SIGNAL
-            </button>
+          <div style={{ display: 'flex', gap: 6 }}>
+  <button onClick={() => setEditTarget('new')} style={{ background: C.teal, border: 'none', color: '#000', borderRadius: '4px', padding: '5px 10px', fontFamily: "'Bebas Neue'", fontSize: '1.1rem', cursor: 'pointer', fontWeight: 900, letterSpacing: 1 }}>+ SIGNAL</button>
+  <SmartPhotoUpload concerts={concerts} session={session} onComplete={fetchConcerts} />
+</div>
           )}
         </div>
       </div>
@@ -13408,15 +13399,15 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
         </button>
         {!viewingUser && (
           <button 
-            onClick={() => setEditTarget('new')}
-            style={{
-              background: 'none', border: `1px solid ${C.teal}`, color: C.teal, borderRadius: '4px',
-              padding: '4px 10px', fontFamily: "'Space Mono'", fontSize: '10px', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '5px'
-            }}
-          >
-            <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span> SIGNAL
-          </button>
+  onClick={() => setEditTarget('new')}
+  style={{
+    background: 'none', border: `1px solid ${C.teal}`, color: C.teal, borderRadius: '4px',
+    padding: '4px 10px', fontFamily: "'Space Mono'", fontSize: '10px', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', gap: '5px'
+  }}
+>
+  <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span> SIGNAL
+</button>
         )}
       </div>
 
