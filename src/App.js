@@ -7267,6 +7267,8 @@ if (!dateStr) {
   try {
     const result = await Tesseract.recognize(selected, 'eng');
     const text = result.data.text;
+    console.log('OCR TEXT:', text);
+
     const patterns = [
       /\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\b/,
       /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[\s,]+(\d{1,2})[\s,]+(\d{4})\b/i,
