@@ -7166,6 +7166,277 @@ function PosterGeneratorTab({ concerts, genreMap, allSetsList }) {
   );
 }
 
+// ─── SMART PHOTO UPLOAD ──────────────────────────────────────────────────────
+// Paste this entire block directly BEFORE the ManageTab function
+
+async function readExifDate(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const buffer = e.target.result;
+        const view = new DataView(buffer);
+        if (view.getUint16(0) !== 0xFFD8) { resolve(null); return; }
+        let offset = 2;
+        while (offset < buffer.byteLength - 2) {
+          const marker = view.getUint16(offset);
+          offset += 2;
+          if (marker === 0xFFE1) {
+            offset += 2;
+            const exifHeader = String.fromCharCode(view.getUint8(offset), view.getUint8(offset+1), view.getUint8(offset+2), view.getUint8(offset+3));
+            if (exifHeader !== 'Exif') { resolve(null); return; }
+            const tiffStart = offset + 6;
+            const littleEndian = view.getUint16(tiffStart) === 0x4949;
+            const getU16 = (o) => view.getUint16(tiffStart + o, littleEndian);
+            const getU32 = (o) => view.getUint32(tiffStart + o, littleEndian);
+            if (getU16(2) !== 42) { resolve(null); return; }
+            const ifdOffset = getU32(4);
+            const numEntries = getU16(ifdOffset);
+            let exifIfdOffset = null;
+            for (let i = 0; i < numEntries; i++) {
+              const e = ifdOffset + 2 + i * 12;
+              if (getU16(e) === 0x8769) { exifIfdOffset = getU32(e + 8); break; }
+            }
+            if (!exifIfdOffset) { resolve(null); return; }
+            const numExif = getU16(exifIfdOffset);
+            for (let i = 0; i < numExif; i++) {
+              const e = exifIfdOffset + 2 + i * 12;
+              if (getU16(e) === 0x9003) {
+                const valOffset = getU32(e + 8);
+                let dateStr = '';
+                for (let j = 0; j < 19; j++) {
+                  const ch = view.getUint8(tiffStart + valOffset + j);
+                  if (ch === 0) break;
+                  dateStr += String.fromCharCode(ch);
+                }
+                resolve(dateStr.length >= 10 ? dateStr.substring(0, 10).replace(/:/g, '-') : null);
+                return;
+              }
+            }
+            resolve(null); return;
+          } else {
+            if (offset + 2 > buffer.byteLength) { resolve(null); return; }
+            offset += view.getUint16(offset);
+          }
+        }
+        resolve(null);
+      } catch { resolve(null); }
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function SmartPhotoUpload({ concerts, session, onComplete }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [step, setStep] = useState('idle');
+  const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [exifDate, setExifDate] = useState(null);
+  const [candidates, setCandidates] = useState([]);
+  const [selectedConcert, setSelectedConcert] = useState(null);
+  const [photoType, setPhotoType] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
+  const fileInputRef = useRef(null);
+
+  const PHOTO_TYPES = [
+    { id: 'photo',     label: 'Polaroid', desc: 'Personal photo',      icon: '📷', bucket: 'polaroids',     showFor: 'all'      },
+    { id: 'stub',      label: 'Stub',     desc: 'Ticket stub',         icon: '🎟️', bucket: 'Ticket Stubs', showFor: 'all'      },
+    { id: 'relic',     label: 'Relic',    desc: 'Setlist or artifact', icon: '🏺', bucket: 'setlists',     showFor: 'all'      },
+    { id: 'wristband', label: 'Wristband',desc: 'Festival wristband',  icon: '🎫', bucket: 'Wristbands',   showFor: 'festival' },
+    { id: 'poster',    label: 'Poster',   desc: 'Gig poster',          icon: '🎨', bucket: 'Posters',      showFor: 'all'      },
+  ];
+
+  const reset = () => {
+    setStep('idle'); setFile(null); setPreviewUrl(null); setExifDate(null);
+    setCandidates([]); setSelectedConcert(null); setPhotoType(null); setErrorMsg('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+  const close = () => { reset(); setIsOpen(false); };
+
+  const handleFileSelect = async (e) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    setFile(selected);
+    setPreviewUrl(URL.createObjectURL(selected));
+    setStep('reading');
+    const dateStr = await readExifDate(selected);
+    if (!dateStr) { setExifDate(null); setStep('no_match'); return; }
+    setExifDate(dateStr);
+    const prev = new Date(dateStr); prev.setDate(prev.getDate() - 1);
+    const next = new Date(dateStr); next.setDate(next.getDate() + 1);
+    const matches = concerts.filter(c => c.date && c.date >= prev.toISOString().split('T')[0] && c.date <= next.toISOString().split('T')[0]);
+    if (!matches.length) { setStep('no_match'); return; }
+    setCandidates(matches);
+    if (matches.length === 1) setSelectedConcert(matches[0]);
+    setStep('confirm');
+  };
+
+  const handleUpload = async () => {
+    if (!selectedConcert || !photoType || !file) return;
+    setStep('uploading');
+    try {
+      const typeConfig = PHOTO_TYPES.find(t => t.id === photoType);
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${session.user.id}/${selectedConcert.id}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from(typeConfig.bucket).upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from(typeConfig.bucket).getPublicUrl(path);
+      if (photoType === 'poster') {
+        const primaryArtist = getBandName(selectedConcert.bands?.[0]) || selectedConcert.artist || 'Unknown';
+        const { error } = await supabase.from('posters').insert([{
+          image_url: publicUrl,
+          poster_type: selectedConcert.is_festival ? 'festival_year' : 'artist',
+          artist: primaryArtist,
+          festival_name: selectedConcert.festival_name || '',
+          date: selectedConcert.date,
+          venue: selectedConcert.venue || '',
+          city: selectedConcert.city || '',
+          state: selectedConcert.state || '',
+          user_id: session.user.id,
+          is_public: true,
+        }]);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('artifacts').insert([{
+          user_id: session.user.id,
+          show_id: selectedConcert.id,
+          artifact_type: photoType,
+          image_url: publicUrl,
+          band_name: selectedConcert.is_festival ? null : (getBandName(selectedConcert.bands?.[0]) || null),
+          is_public: true,
+        }]);
+        if (error) throw error;
+      }
+      setStep('done');
+      onComplete?.();
+    } catch (err) {
+      setErrorMsg(err.message || 'Upload failed');
+      setStep('error');
+    }
+  };
+
+  const getBands = (c) => Array.isArray(c?.bands) ? c.bands.map(b => getBandName(b)).filter(Boolean).join(', ') : (c?.artist || '');
+  const visibleTypes = PHOTO_TYPES.filter(t => t.showFor === 'all' || (t.showFor === 'festival' && selectedConcert?.is_festival));
+  const sm = { fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, letterSpacing: 1, lineHeight: 1.6 };
+  const hd = { fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.teal, letterSpacing: 2, marginBottom: 6 };
+
+  if (!isOpen) return (
+    <button onClick={() => setIsOpen(true)} style={{ background: C.teal, border: 'none', color: '#000', padding: '12px 28px', borderRadius: 6, fontFamily: "'Bebas Neue'", fontSize: '1.3rem', letterSpacing: 2, cursor: 'pointer', boxShadow: `0 0 20px ${hexToRgba(C.teal, 0.4)}`, fontWeight: 900 }}>
+      📷 UPLOAD PHOTO
+    </button>
+  );
+
+  return (
+    <div onClick={e => e.target === e.currentTarget && close()} style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: C.bgCard, border: `1px solid ${C.teal}`, borderRadius: 16, padding: 30, width: '100%', maxWidth: 460, boxShadow: `0 0 50px ${hexToRgba(C.teal, 0.2)}`, position: 'relative' }}>
+        <button onClick={close} style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', color: C.gray, fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
+
+        {step === 'idle' && (<>
+          <div style={hd}>UPLOAD PHOTO</div>
+          <p style={{ ...sm, marginBottom: 20 }}>SELECT A PHOTO — WE'LL READ THE DATE AND MATCH IT TO A SHOW.</p>
+          <div onClick={() => fileInputRef.current?.click()} style={{ border: `1.5px dashed ${C.teal}44`, borderRadius: 10, padding: '36px 24px', textAlign: 'center', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.background = hexToRgba(C.teal, 0.05)} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+            <div style={{ fontSize: 30, marginBottom: 8 }}>📷</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', letterSpacing: 1 }}>CLICK TO SELECT</div>
+            <div style={{ ...sm, marginTop: 4 }}>JPG · PNG · HEIC</div>
+          </div>
+          <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileSelect} />
+        </>)}
+
+        {step === 'reading' && (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <div style={{ fontSize: 30, marginBottom: 12 }}>🔍</div>
+            <div style={{ ...sm, color: C.teal, letterSpacing: 3 }}>READING PHOTO DATE...</div>
+          </div>
+        )}
+
+        {step === 'confirm' && (<>
+          <div style={hd}>WHICH SHOW?</div>
+          <p style={{ ...sm, marginBottom: 12 }}>{exifDate ? `PHOTO TAKEN ${new Date(exifDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}` : 'SELECT THE MATCHING SHOW'}</p>
+          {previewUrl && <img src={previewUrl} alt="" style={{ width: '100%', height: 110, objectFit: 'cover', borderRadius: 6, marginBottom: 12 }} />}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 240, overflowY: 'auto', marginBottom: 14 }}>
+            {candidates.map(c => (
+              <div key={c.id} onClick={() => setSelectedConcert(c)} style={{ padding: '11px 13px', borderRadius: 8, cursor: 'pointer', border: selectedConcert?.id === c.id ? `2px solid ${C.teal}` : `1px solid ${C.border}`, background: selectedConcert?.id === c.id ? hexToRgba(C.teal, 0.08) : 'transparent' }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff', lineHeight: 1.1 }}>{getBands(c) || 'Unknown'}</div>
+                <div style={{ ...sm, marginTop: 3 }}>{c.date}{c.venue ? ` · ${c.venue}` : ''}{c.city ? `, ${c.city}` : ''}{c.is_festival && c.festival_name ? ` · ${c.festival_name}` : ''}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={close} style={{ flex: 1, padding: 10, borderRadius: 6, border: `1px solid ${C.border}`, background: 'transparent', color: C.gray, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9 }}>CANCEL</button>
+            <button onClick={() => selectedConcert && setStep('pick_type')} disabled={!selectedConcert} style={{ flex: 2, padding: 10, borderRadius: 6, background: selectedConcert ? C.teal : C.bgCardAlt, color: selectedConcert ? '#000' : C.gray, border: 'none', cursor: selectedConcert ? 'pointer' : 'not-allowed', fontFamily: "'Bebas Neue'", fontSize: '1.1rem', letterSpacing: 1, fontWeight: 900 }}>
+              {selectedConcert ? 'CONFIRM →' : 'SELECT A SHOW'}
+            </button>
+          </div>
+        </>)}
+
+        {step === 'pick_type' && (<>
+          <div style={hd}>WHAT TYPE?</div>
+          <div style={{ ...sm, marginBottom: 12 }}>{getBands(selectedConcert)} · {selectedConcert?.date}</div>
+          {previewUrl && <img src={previewUrl} alt="" style={{ width: '100%', height: 90, objectFit: 'cover', borderRadius: 6, marginBottom: 14 }} />}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
+            {visibleTypes.map(t => (
+              <div key={t.id} onClick={() => setPhotoType(t.id)} style={{ padding: '14px 8px', borderRadius: 8, textAlign: 'center', cursor: 'pointer', border: photoType === t.id ? `2px solid ${C.teal}` : `1px solid ${C.border}`, background: photoType === t.id ? hexToRgba(C.teal, 0.1) : 'transparent', transition: 'all 0.15s' }}>
+                <div style={{ fontSize: 22, marginBottom: 5 }}>{t.icon}</div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.95rem', color: '#fff', letterSpacing: 1 }}>{t.label}</div>
+                <div style={{ ...sm, fontSize: 7, marginTop: 2 }}>{t.desc}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setStep('confirm')} style={{ flex: 1, padding: 10, borderRadius: 6, border: `1px solid ${C.border}`, background: 'transparent', color: C.gray, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9 }}>← BACK</button>
+            <button onClick={handleUpload} disabled={!photoType} style={{ flex: 2, padding: 10, borderRadius: 6, background: photoType ? C.teal : C.bgCardAlt, color: photoType ? '#000' : C.gray, border: 'none', cursor: photoType ? 'pointer' : 'not-allowed', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 1, fontWeight: 900 }}>UPLOAD</button>
+          </div>
+        </>)}
+
+        {step === 'uploading' && (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <div style={{ fontSize: 30, marginBottom: 12 }}>📡</div>
+            <div style={{ ...sm, color: C.teal, letterSpacing: 3 }}>UPLOADING TO ARCHIVE...</div>
+          </div>
+        )}
+
+        {step === 'done' && (
+          <div style={{ textAlign: 'center', padding: '24px 0' }}>
+            <div style={{ fontSize: 38, marginBottom: 10 }}>✅</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.teal, letterSpacing: 2 }}>SIGNAL ARCHIVED</div>
+            <div style={{ ...sm, marginTop: 6 }}>{getBands(selectedConcert)} · {selectedConcert?.date}</div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 22 }}>
+              <button onClick={reset} style={{ flex: 1, padding: 10, borderRadius: 6, border: `1px solid ${C.border}`, background: 'transparent', color: C.gray, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9 }}>UPLOAD ANOTHER</button>
+              <button onClick={close} style={{ flex: 1, padding: 10, borderRadius: 6, background: C.teal, color: '#000', border: 'none', cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 1 }}>DONE</button>
+            </div>
+          </div>
+        )}
+
+        {step === 'no_match' && (
+          <div style={{ textAlign: 'center', padding: '24px 0' }}>
+            <div style={{ fontSize: 34, marginBottom: 10 }}>🤔</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.white, letterSpacing: 2, marginBottom: 10 }}>NO SHOW FOUND</div>
+            <div style={{ ...sm, lineHeight: 1.9, marginBottom: 22 }}>
+              {exifDate ? `NO SHOW IN YOUR ARCHIVE NEAR ${new Date(exifDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}.` : 'NO DATE FOUND IN THIS PHOTO.'}
+              <br /><br />
+              TO ADD THIS PHOTO, FIND THE SHOW IN YOUR<br />
+              PAPER TRAIL AND UPLOAD IT FROM THE EDIT SCREEN.
+            </div>
+            <button onClick={close} style={{ padding: '10px 28px', borderRadius: 6, border: `1px solid ${C.border}`, background: 'transparent', color: C.gray, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9 }}>GOT IT</button>
+          </div>
+        )}
+
+        {step === 'error' && (
+          <div style={{ textAlign: 'center', padding: '24px 0' }}>
+            <div style={{ fontSize: 34, marginBottom: 10 }}>⚠️</div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.red, letterSpacing: 2, marginBottom: 8 }}>UPLOAD FAILED</div>
+            <div style={{ ...sm, marginBottom: 22 }}>{errorMsg}</div>
+            <button onClick={close} style={{ padding: '10px 28px', borderRadius: 6, border: `1px solid ${C.border}`, background: 'transparent', color: C.gray, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9 }}>CLOSE</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+// ─── END SMART PHOTO UPLOAD ───────────────────────────────────────────────────
+
+
 // ─── MANAGE TAB (WITH AVATAR UPLOAD) ──────────────────────────────────────────
 function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData, setActiveTab }) {
   const [search, setSearch] = useState('');
@@ -7463,6 +7734,14 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
           </div>
         </div>
       )}
+
+<Card neon style={{ marginBottom: 30 }}>
+  <CardTitle>SMART PHOTO UPLOAD</CardTitle>
+  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 15, lineHeight: 1.6 }}>
+    SELECT A PHOTO — WE'LL READ THE DATE AND MATCH IT TO A SHOW AUTOMATICALLY.
+  </div>
+  <SmartPhotoUpload concerts={concerts} session={session} onComplete={onFetchData} />
+</Card>
 
       {/* Standard Table Controls */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
