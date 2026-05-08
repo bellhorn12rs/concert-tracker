@@ -7261,6 +7261,8 @@ function SmartPhotoUpload({ concerts, session, onComplete }) {
     setPreviewUrl(URL.createObjectURL(selected));
     setStep('reading');
     let dateStr = await readExifDate(selected);
+    console.log('EXIF RESULT:', dateStr);
+
 
 if (!dateStr) {
   setStep('reading');
