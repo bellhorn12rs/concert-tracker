@@ -7331,7 +7331,8 @@ function SmartPhotoUpload({ concerts, session, onComplete }) {
   );
 
   return (
-    <div onClick={e => e.target === e.currentTarget && close()} style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+    <div onClick={e => e.target === e.currentTarget && close()} style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: 20, paddingTop: 60
+ }}>
       <div style={{ background: C.bgCard, border: `1px solid ${C.teal}`, borderRadius: 16, padding: 30, width: '100%', maxWidth: 460, boxShadow: `0 0 50px ${hexToRgba(C.teal, 0.2)}`, position: 'relative' }}>
         <button onClick={close} style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', color: C.gray, fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
 
