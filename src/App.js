@@ -7260,8 +7260,48 @@ function SmartPhotoUpload({ concerts, session, onComplete }) {
     setFile(selected);
     setPreviewUrl(URL.createObjectURL(selected));
     setStep('reading');
-    const dateStr = await readExifDate(selected);
-    if (!dateStr) { setExifDate(null); setStep('no_match'); return; }
+    let dateStr = await readExifDate(selected);
+
+if (!dateStr) {
+  setStep('reading');
+  try {
+    const result = await Tesseract.recognize(selected, 'eng');
+    const text = result.data.text;
+    const patterns = [
+      /\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\b/,
+      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[\s,]+(\d{1,2})[\s,]+(\d{4})\b/i,
+      /\b(\d{1,2})[\s,]+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[\s,]+(\d{4})\b/i,
+    ];
+    const MONTHS = { jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12 };
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match) {
+        let year, month, day;
+        if (/jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec/i.test(match[0])) {
+          const monthStr = match[0].match(/jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec/i)[0].toLowerCase();
+          month = MONTHS[monthStr];
+          const nums = match[0].match(/\d+/g);
+          day = parseInt(nums[0]);
+          year = parseInt(nums[1]);
+          if (year < 100) year += 2000;
+        } else {
+          month = parseInt(match[1]);
+          day = parseInt(match[2]);
+          year = parseInt(match[3]);
+          if (year < 100) year += 2000;
+        }
+        if (year > 1990 && year < 2030 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+          dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+          break;
+        }
+      }
+    }
+  } catch (err) {
+    console.log('OCR failed:', err);
+  }
+}
+
+if (!dateStr) { setExifDate(null); setStep('no_match'); return; }
     setExifDate(dateStr);
     const prev = new Date(dateStr); prev.setDate(prev.getDate() - 1);
     const next = new Date(dateStr); next.setDate(next.getDate() + 1);
