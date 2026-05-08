@@ -7270,7 +7270,10 @@ if (dateStr) {
 if (!dateStr) {
   setStep('reading');
   try {
-    const result = await Tesseract.recognize(selected, 'eng');
+    const result = await Tesseract.recognize(selected, 'eng', {
+  logger: () => {},
+  tessedit_pageseg_mode: '6',
+});
     const text = result.data.text;
     console.log('OCR TEXT:', text);
 
