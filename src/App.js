@@ -7274,12 +7274,30 @@ if (!dateStr) {
     const text = result.data.text;
     console.log('OCR TEXT:', text);
 
-    const patterns = [
-      /\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\b/,
-      /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[\s,]+(\d{1,2})[\s,]+(\d{4})\b/i,
-      /\b(\d{1,2})[\s,]+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[\s,]+(\d{4})\b/i,
-    ];
-    const MONTHS = { jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12 };
+const MONTHS = {
+  jan:1, january:1, feb:2, february:2, mar:3, march:3,
+  apr:4, april:4, may:5, jun:6, june:6, jul:7, july:7,
+  aug:8, august:8, sep:9, sept:9, september:9,
+  oct:10, october:10, nov:11, november:11, dec:12, december:12
+};
+
+const patterns = [
+  // JUNE 08 2023 / JUNE 8, 2023 / JUNE 8 2023
+  /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)[\s,]+(\d{1,2})[\s,]+(\d{4})\b/i,
+  // 08 JUNE 2023 / 8 JUNE, 2023
+  /\b(\d{1,2})[\s,]+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)[\s,]+(\d{4})\b/i,
+  // 06/08/2023 or 06-08-2023 or 06.08.2023
+  /\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})\b/,
+  // 6/8/23 or 6-8-23
+  /\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2})\b/,
+  // 2023-06-08 (ISO format)
+  /\b(20\d{2})\-(\d{2})\-(\d{2})\b/,
+  // Jun 8 2023 / Jun. 8, 2023
+  /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\.?[\s,]+(\d{1,2})[\s,]+(\d{4})\b/i,
+  // Saturday June 8 2023 / Friday, October 14, 2022
+  /\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday),?\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\.?\s+(\d{1,2}),?\s+(\d{4})\b/i,
+];
+
     for (const pattern of patterns) {
       const match = text.match(pattern);
       if (match) {
