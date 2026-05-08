@@ -13318,7 +13318,7 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
         />
 
         {/* Right: Station + Add Signal */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <button 
             onClick={() => { setActiveTab('community'); setNavCollapsed(true); }}
             style={{ 
@@ -13330,10 +13330,12 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
             }}
           >
             🚉
-          <div style={{ display: 'flex', gap: 6 }}>
-  <button onClick={() => setEditTarget('new')} style={{ background: C.teal, border: 'none', color: '#000', borderRadius: '4px', padding: '5px 10px', fontFamily: "'Bebas Neue'", fontSize: '1.1rem', cursor: 'pointer', fontWeight: 900, letterSpacing: 1 }}>+ SIGNAL</button>
-  <SmartPhotoUpload concerts={concerts} session={session} onComplete={fetchConcerts} />
-</div>
+          </button>
+          {!viewingUser && (
+            <>
+              <button onClick={() => setEditTarget('new')} style={{ background: C.teal, border: 'none', color: '#000', borderRadius: '4px', padding: '5px 10px', fontFamily: "'Bebas Neue'", fontSize: '1.1rem', cursor: 'pointer', fontWeight: 900, letterSpacing: 1 }}>+ SIGNAL</button>
+              <SmartPhotoUpload concerts={concerts} session={session} onComplete={fetchConcerts} />
+            </>
           )}
         </div>
       </div>
