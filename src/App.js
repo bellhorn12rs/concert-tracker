@@ -7396,7 +7396,7 @@ if (!dateStr) { setExifDate(null); setStep('no_match'); return; }
   
  if (!isOpen) return (
     <>
-      <button onClick={() => fileInputRef.current?.click()} style={{ background: C.teal, border: 'none', color: '#000', padding: '12px 28px', borderRadius: 6, fontFamily: "'Bebas Neue'", fontSize: '1.3rem', letterSpacing: 2, cursor: 'pointer', boxShadow: `0 0 20px ${hexToRgba(C.teal, 0.4)}`, fontWeight: 900 }}>
+      <button onClick={() => fileInputRef.current?.click()} style={{ background: C.teal, border: 'none', color: '#000', borderRadius: '4px', padding: '5px 8px', fontFamily: "'Bebas Neue'", fontSize: '0.85rem', letterSpacing: 1, cursor: 'pointer', fontWeight: 900}}>
         📷 UPLOAD PHOTO
       </button>
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { setIsOpen(true); handleFileSelect(e); }} />
@@ -13400,17 +13400,20 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
           <span>🚉</span> THE STATION
         </button>
         {!viewingUser && (
-          <button 
-  onClick={() => setEditTarget('new')}
-  style={{
-    background: 'none', border: `1px solid ${C.teal}`, color: C.teal, borderRadius: '4px',
-    padding: '4px 10px', fontFamily: "'Space Mono'", fontSize: '10px', cursor: 'pointer',
-    display: 'flex', alignItems: 'center', gap: '5px'
-  }}
->
-  <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span> SIGNAL
-</button>
-        )}
+  <>
+    <button 
+      onClick={() => setEditTarget('new')}
+      style={{
+        background: 'none', border: `1px solid ${C.teal}`, color: C.teal, borderRadius: '4px',
+        padding: '4px 10px', fontFamily: "'Space Mono'", fontSize: '10px', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', gap: '5px'
+      }}
+    >
+      <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span> SIGNAL
+    </button>
+    <SmartPhotoUpload concerts={concerts} session={session} onComplete={fetchConcerts} />
+  </>
+)}
       </div>
 
       <div style={{
