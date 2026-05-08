@@ -7238,6 +7238,9 @@ function SmartPhotoUpload({ concerts, session, onComplete }) {
   const [photoType, setPhotoType] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const fileInputRef = useRef(null);
+  const [selectedBand, setSelectedBand] = useState(null);
+
+  
 
   const PHOTO_TYPES = [
     { id: 'photo',     label: 'Polaroid', desc: 'Personal photo',      icon: '📷', bucket: 'polaroids',     showFor: 'all'      },
@@ -7249,7 +7252,7 @@ function SmartPhotoUpload({ concerts, session, onComplete }) {
 
   const reset = () => {
     setStep('idle'); setFile(null); setPreviewUrl(null); setExifDate(null);
-    setCandidates([]); setSelectedConcert(null); setPhotoType(null); setErrorMsg('');
+    setCandidates([]); setSelectedConcert(null); setPhotoType(null); setErrorMsg(''); setSelectedBand(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
   const close = () => { reset(); setIsOpen(false); };
@@ -7371,7 +7374,8 @@ if (!dateStr) { setExifDate(null); setStep('no_match'); return; }
           show_id: selectedConcert.id,
           artifact_type: photoType,
           image_url: publicUrl,
-          band_name: selectedConcert.is_festival ? null : (getBandName(selectedConcert.bands?.[0]) || null),
+          band_name: selectedBand || (selectedConcert.is_festival ? null : (getBandName(selectedConcert.bands?.[0]) || null)),
+
           is_public: true,
         }]);
         if (error) throw error;
@@ -7389,6 +7393,7 @@ if (!dateStr) { setExifDate(null); setStep('no_match'); return; }
   const sm = { fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, letterSpacing: 1, lineHeight: 1.6 };
   const hd = { fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.teal, letterSpacing: 2, marginBottom: 6 };
 
+  
  if (!isOpen) return (
     <>
       <button onClick={() => fileInputRef.current?.click()} style={{ background: C.teal, border: 'none', color: '#000', padding: '12px 28px', borderRadius: 6, fontFamily: "'Bebas Neue'", fontSize: '1.3rem', letterSpacing: 2, cursor: 'pointer', boxShadow: `0 0 20px ${hexToRgba(C.teal, 0.4)}`, fontWeight: 900 }}>
@@ -7398,9 +7403,8 @@ if (!dateStr) { setExifDate(null); setStep('no_match'); return; }
     </>
   );
 
-  return (
-    <div onClick={e => e.target === e.currentTarget && close()} style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: 20, paddingTop: 60
- }}>
+return (
+    <div onClick={e => e.target === e.currentTarget && close()} style={{ position: 'fixed', inset: 0, zIndex: 20000, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: 20, paddingTop: 60 }}>
       <div style={{ background: C.bgCard, border: `1px solid ${C.teal}`, borderRadius: 16, padding: 30, width: '100%', maxWidth: 460, boxShadow: `0 0 50px ${hexToRgba(C.teal, 0.2)}`, position: 'relative' }}>
         <button onClick={close} style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', color: C.gray, fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
 
@@ -7434,7 +7438,7 @@ if (!dateStr) { setExifDate(null); setStep('no_match'); return; }
         {step === 'pick_type' && (<>
           <div style={hd}>WHAT TYPE?</div>
           <div style={{ ...sm, marginBottom: 12 }}>{getBands(selectedConcert)} · {selectedConcert?.date}</div>
-          {previewUrl && <img src={previewUrl} alt="" style={{ width: '100%', height: 90, objectFit: 'cover', borderRadius: 6, marginBottom: 14 }} />}
+          {previewUrl && <img src={previewUrl} alt="" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6, marginBottom: 14, display: 'block' }} />}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
             {visibleTypes.map(t => (
               <div key={t.id} onClick={() => setPhotoType(t.id)} style={{ padding: '14px 8px', borderRadius: 8, textAlign: 'center', cursor: 'pointer', border: photoType === t.id ? `2px solid ${C.teal}` : `1px solid ${C.border}`, background: photoType === t.id ? hexToRgba(C.teal, 0.1) : 'transparent', transition: 'all 0.15s' }}>
@@ -7446,7 +7450,32 @@ if (!dateStr) { setExifDate(null); setStep('no_match'); return; }
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => setStep('confirm')} style={{ flex: 1, padding: 10, borderRadius: 6, border: `1px solid ${C.border}`, background: 'transparent', color: C.gray, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9 }}>← BACK</button>
-            <button onClick={handleUpload} disabled={!photoType} style={{ flex: 2, padding: 10, borderRadius: 6, background: photoType ? C.teal : C.bgCardAlt, color: photoType ? '#000' : C.gray, border: 'none', cursor: photoType ? 'pointer' : 'not-allowed', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 1, fontWeight: 900 }}>UPLOAD</button>
+            <button onClick={() => {
+              if (photoType === 'relic' && selectedConcert?.bands?.length > 1) {
+                setStep('pick_band');
+              } else {
+                handleUpload();
+              }
+            }} disabled={!photoType} style={{ flex: 2, padding: 10, borderRadius: 6, background: photoType ? C.teal : C.bgCardAlt, color: photoType ? '#000' : C.gray, border: 'none', cursor: photoType ? 'pointer' : 'not-allowed', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 1, fontWeight: 900 }}>UPLOAD</button>
+          </div>
+        </>)}
+
+        {step === 'pick_band' && (<>
+          <div style={hd}>WHOSE SETLIST?</div>
+          <div style={{ ...sm, marginBottom: 14 }}>{getBands(selectedConcert)} · {selectedConcert?.date}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+            {(selectedConcert?.bands || []).map((b, i) => {
+              const name = getBandName(b);
+              return (
+                <div key={i} onClick={() => setSelectedBand(name)} style={{ padding: '12px 14px', borderRadius: 8, cursor: 'pointer', border: selectedBand === name ? `2px solid ${C.teal}` : `1px solid ${C.border}`, background: selectedBand === name ? hexToRgba(C.teal, 0.08) : 'transparent' }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff' }}>{name}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setStep('pick_type')} style={{ flex: 1, padding: 10, borderRadius: 6, border: `1px solid ${C.border}`, background: 'transparent', color: C.gray, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9 }}>← BACK</button>
+            <button onClick={handleUpload} disabled={!selectedBand} style={{ flex: 2, padding: 10, borderRadius: 6, background: selectedBand ? C.teal : C.bgCardAlt, color: selectedBand ? '#000' : C.gray, border: 'none', cursor: selectedBand ? 'pointer' : 'not-allowed', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 1, fontWeight: 900 }}>UPLOAD</button>
           </div>
         </>)}
 
@@ -7495,6 +7524,7 @@ if (!dateStr) { setExifDate(null); setStep('no_match'); return; }
     </div>
   );
 }
+
 // ─── END SMART PHOTO UPLOAD ───────────────────────────────────────────────────
 
 
