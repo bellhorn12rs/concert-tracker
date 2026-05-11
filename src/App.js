@@ -7719,8 +7719,9 @@ function HowToTab() {
 
 // ─── MANAGE TAB (WITH AVATAR UPLOAD) ──────────────────────────────────────────
 function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData, setActiveTab, preferredQualifier, onSaveQualifier, colorUpgraded, currentAvatarColor, onClaimColor, genreStats }) {
-  const [page, setPage] = useState(1);
-  const PER = 30;
+  const [search, setSearch] = useState('');
+const [page, setPage] = useState(1);
+const PER = 30;
   const isMobile = window.innerWidth < 768;
 
   const handleCSVUpload = async (e) => {
