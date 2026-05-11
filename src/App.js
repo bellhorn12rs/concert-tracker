@@ -7718,7 +7718,7 @@ function HowToTab() {
 }
 
 // ─── MANAGE TAB (WITH AVATAR UPLOAD) ──────────────────────────────────────────
-function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData, setActiveTab }) {
+function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData, setActiveTab, preferredQualifier, onSaveQualifier }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const PER = 30;
@@ -7727,7 +7727,6 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
   const handleCSVUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
@@ -7735,12 +7734,10 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
         const rows = text.split(/\r?\n/).map(r => r.trim()).filter(Boolean);
         const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
         const dataRows = rows.slice(1);
-        
         const newShows = dataRows.map(row => {
           const values = row.split(',');
           const entry = {};
           headers.forEach((h, i) => { entry[h] = values[i]; });
-
           return {
             date: entry.date || null,
             bands: entry.lineup ? entry.lineup.split(';').map(b => b.trim()) : [entry.headliner],
@@ -7751,65 +7748,24 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
             festival_name: entry.festival_name || null,
           };
         });
-
         if (newShows.length > 0) {
           const previewShow = newShows[0];
-          const msg = `📡 SIGNAL ANALYZED: Found ${newShows.length} total shows.\n\n` +
-                      `PREVIEWING FIRST ENTRY:\n` +
-                      `Artist: ${previewShow.bands.join(', ')}\n` +
-                      `Venue: ${previewShow.venue}\n` +
-                      `Date: ${previewShow.date}\n\n` +
-                      `Ready to synchronize these to your museum archive?`;
-
+          const msg = `📡 SIGNAL ANALYZED: Found ${newShows.length} total shows.\n\nPREVIEWING FIRST ENTRY:\nArtist: ${previewShow.bands.join(', ')}\nVenue: ${previewShow.venue}\nDate: ${previewShow.date}\n\nReady to synchronize these to your museum archive?`;
           if (window.confirm(msg)) {
             for (const show of newShows) {
               try {
                 const primaryArtist = show.bands[0] || 'Unknown';
-                
-                const { data: existingShow } = await supabase
-                  .from('shows')
-                  .select('id')
-                  .eq('date', show.date)
-                  .ilike('venue', show.venue || 'Unknown')
-                  .ilike('artist', primaryArtist)
-                  .single();
-                
+                const { data: existingShow } = await supabase.from('shows').select('id').eq('date', show.date).ilike('venue', show.venue || 'Unknown').ilike('artist', primaryArtist).single();
                 let showId = existingShow?.id;
-                
                 if (!showId) {
-                  const { data: newShow } = await supabase
-                    .from('shows')
-                    .insert([{
-                      date: show.date,
-                      artist: primaryArtist,
-                      bands: show.bands,
-                      venue: show.venue,
-                      city: show.city,
-                      state: show.state,
-                      is_festival: show.is_festival,
-                      festival_name: show.festival_name,
-                      genre: 'Indie Rock',
-                      created_by: session.user.id
-                    }])
-                    .select()
-                    .single();
-                  
+                  const { data: newShow } = await supabase.from('shows').insert([{ date: show.date, artist: primaryArtist, bands: show.bands, venue: show.venue, city: show.city, state: show.state, is_festival: show.is_festival, festival_name: show.festival_name, genre: 'Indie Rock', created_by: session.user.id }]).select().single();
                   showId = newShow.id;
                 }
-                
-                await supabase.from('attendances').insert([{
-                  user_id: session.user.id,
-                  show_id: showId,
-                  is_public: true
-                }]);
-                
-              } catch (err) {
-                console.error(`Failed to import ${show.bands[0]}:`, err);
-              }
+                await supabase.from('attendances').insert([{ user_id: session.user.id, show_id: showId, is_public: true }]);
+              } catch (err) { console.error(`Failed to import ${show.bands[0]}:`, err); }
             }
-            
             alert("✅ ARCHIVE UPDATED: Your historical signals have been curated.");
-            if (onFetchData) await onFetchData(); 
+            if (onFetchData) await onFetchData();
             if (setActiveTab) setActiveTab('dashboard');
           }
         }
@@ -7820,11 +7776,38 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
     };
     reader.readAsText(file);
   };
-  
+
+  // Compute earned qualifiers
+  const artistCounts = {};
+  (concerts || []).forEach(c => (c.bands || []).forEach(b => {
+    const name = getBandName(b);
+    if (name) artistCounts[name] = (artistCounts[name] || 0) + 1;
+  }));
+  const maxArtistSeen = Math.max(0, ...Object.values(artistCounts));
+  const uniqueStates = new Set((concerts || []).map(c => c.state).filter(Boolean)).size;
+  const shows = concerts?.length || 0;
+  const festDays = (concerts || []).filter(c => c.is_festival).length;
+  const relics = (concerts || []).filter(c => c.setlist_image_url).length;
+  const photos = (concerts || []).filter(c => c.personal_photo_url).length;
+  const stubs = (concerts || []).filter(c => c.image_url).length;
+  const posters = (concerts || []).filter(c => c.festival_poster_url).length;
+
+  const QUALIFIER_DEFS = [
+    { id: 'CHASER',    icon: '🎯', label: 'SUPERFAN',       condition: 'Seen any artist 10+ times',      earned: maxArtistSeen >= 10 },
+    { id: 'FESTIVAL',  icon: '🎪', label: 'FESTIVAL',        condition: 'Over 50% of shows are festivals', earned: festDays > shows * 0.5 },
+    { id: 'GLOBE',     icon: '🌍', label: 'GLOBE TROTTER',  condition: 'Shows in 10+ different states',   earned: uniqueStates >= 10 },
+    { id: 'PHOTO',     icon: '📷', label: 'PHOTOGRAPHER',   condition: 'Photos on 60%+ of your shows',   earned: photos > shows * 0.6 },
+    { id: 'COLLECTOR', icon: '🏺', label: 'COLLECTOR',      condition: '50+ relics uploaded',             earned: relics >= 50 },
+    { id: 'POSTER',    icon: '🎨', label: 'POSTER HUNTER',  condition: '25+ posters uploaded',            earned: posters >= 25 },
+    { id: 'HOARDER',   icon: '🎟', label: 'TICKET HOARDER', condition: '50+ ticket stubs uploaded',       earned: stubs >= 50 },
+  ];
+
+  const earnedQualifiers = QUALIFIER_DEFS.filter(q => q.earned);
+
   const filtered = useMemo(() => {
     if (!search) return concerts;
     const q = search.toLowerCase();
-    return concerts.filter(c => 
+    return concerts.filter(c =>
       (c.bands || []).some(b => getBandName(b).toLowerCase().includes(q)) ||
       (c.venue || '').toLowerCase().includes(q) ||
       (c.city || '').toLowerCase().includes(q) ||
@@ -7833,181 +7816,154 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
   }, [concerts, search]);
 
   const paged = filtered.slice((page - 1) * PER, page * PER);
+  const totalPages = Math.ceil(filtered.length / PER);
 
-  const localInputStyle = { 
-    background: 'rgba(0,0,0,0.4)', border: `1px solid ${C.border}`, color: '#fff', 
+  const localInputStyle = {
+    background: 'rgba(0,0,0,0.4)', border: `1px solid ${C.border}`, color: '#fff',
     padding: '12px', borderRadius: '6px', fontFamily: "'Space Mono'", outline: 'none'
   };
 
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
-      
-      {/* 🎨 AVATAR UPLOAD SECTION */}
-      <Card neon style={{ marginBottom: 30 }}>
-        <CardTitle>YOUR PROFILE AVATAR</CardTitle>
-        <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-          <div style={{ position: 'relative' }}>
-            {session?.user?.user_metadata?.avatar_url ? (
-              <div style={{ 
-                width: 120, 
-                height: 120, 
-                borderRadius: '50%', 
-                backgroundImage: `url(${session.user.user_metadata.avatar_url})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                border: `3px solid ${C.teal}`,
-                boxShadow: `0 0 30px ${C.teal}66`
-              }} />
-            ) : (
-              <div style={{ 
-                width: 120, 
-                height: 120, 
-                borderRadius: '50%', 
-                background: C.teal,
-                border: `3px solid ${C.teal}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: "'Bebas Neue'",
-                fontSize: '3rem',
-                color: '#000'
-              }}>
-                {session?.user?.email?.[0].toUpperCase()}
-              </div>
-            )}
-          </div>
-          
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginBottom: 10 }}>
-              YOUR AVATAR APPEARS IN THE 3D GALAXY VIEW
+
+      {/* ── TOP SECTION: PROFILE ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 30 }}>
+
+        {/* Avatar */}
+        <Card neon>
+          <CardTitle>YOUR PROFILE</CardTitle>
+          <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+            <div>
+              {session?.user?.user_metadata?.avatar_url ? (
+                <div style={{ width: 80, height: 80, borderRadius: '50%', backgroundImage: `url(${session.user.user_metadata.avatar_url})`, backgroundSize: 'cover', backgroundPosition: 'center', border: `3px solid ${C.teal}`, boxShadow: `0 0 20px ${C.teal}66` }} />
+              ) : (
+                <div style={{ width: 80, height: 80, borderRadius: '50%', background: C.teal, border: `3px solid ${C.teal}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#000' }}>
+                  {session?.user?.email?.[0].toUpperCase()}
+                </div>
+              )}
             </div>
-            
-            <label style={{ 
-              display: 'inline-block',
-              background: C.teal, 
-              color: '#000', 
-              padding: '10px 20px', 
-              borderRadius: 6, 
-              fontFamily: "'Space Mono'", 
-              fontSize: 10, 
-              cursor: 'pointer',
-              fontWeight: 900
-            }}>
-              📸 UPLOAD PHOTO
-              <input 
-                type="file" 
-                accept="image/*" 
-                hidden 
-                onChange={async (e) => {
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 10, lineHeight: 1.5 }}>
+                YOUR AVATAR APPEARS IN THE 3D GALAXY VIEW
+              </div>
+              <label style={{ display: 'inline-block', background: C.teal, color: '#000', padding: '8px 16px', borderRadius: 6, fontFamily: "'Space Mono'", fontSize: 9, cursor: 'pointer', fontWeight: 900 }}>
+                📸 UPLOAD PHOTO
+                <input type="file" accept="image/*" hidden onChange={async (e) => {
                   const file = e.target.files[0];
                   if (!file) return;
-                  
                   try {
                     const fileExt = file.name.split('.').pop();
                     const fileName = `avatar-${Date.now()}.${fileExt}`;
                     const filePath = `${session.user.id}/${fileName}`;
-                    
-                    const { error: uploadError } = await supabase.storage
-                      .from('avatars')
-                      .upload(filePath, file);
-                    
+                    const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
                     if (uploadError) throw uploadError;
-                    
-                    const { data } = supabase.storage
-                      .from('avatars')
-                      .getPublicUrl(filePath);
-                    
-                    const { error: updateError } = await supabase
-                      .from('profiles')
-                      .update({ avatar_url: data.publicUrl })
-                      .eq('id', session.user.id);
-                    
+                    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+                    const { error: updateError } = await supabase.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', session.user.id);
                     if (updateError) throw updateError;
-                    
                     alert('✅ AVATAR UPLOADED! Refresh to see it.');
                     window.location.reload();
-                  } catch (err) {
-                    alert('Upload failed: ' + err.message);
-                  }
-                }}
-              />
-            </label>
+                  } catch (err) { alert('Upload failed: ' + err.message); }
+                }} />
+              </label>
+            </div>
           </div>
+        </Card>
+
+        {/* Contact */}
+        <Card neon>
+          <CardTitle>CONTACT</CardTitle>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 15, lineHeight: 1.6 }}>
+            QUESTIONS, BUGS, OR FEEDBACK? REPLY DIRECTLY AND I'LL GET BACK TO YOU.
+          </div>
+          <a href="mailto:trackrecordlive@gmail.com" style={{ background: C.teal, color: '#000', padding: '10px 20px', borderRadius: 6, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 2, textDecoration: 'none', display: 'inline-block' }}>
+            ✉️ EMAIL US
+          </a>
+        </Card>
+      </div>
+
+      {/* ── CURATOR TITLE SELECTOR ── */}
+      <Card neon style={{ marginBottom: 30 }}>
+        <CardTitle>YOUR CURATOR TITLE</CardTitle>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 20, lineHeight: 1.6 }}>
+          YOU HAVE EARNED {earnedQualifiers.length} QUALIFIER{earnedQualifiers.length !== 1 ? 'S' : ''}. SELECT WHICH ONE DEFINES YOUR TITLE.
         </div>
+        {earnedQualifiers.length === 0 ? (
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, lineHeight: 1.8 }}>
+            NO QUALIFIERS EARNED YET. KEEP LOGGING SHOWS AND UPLOADING ARTIFACTS.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {QUALIFIER_DEFS.map(q => {
+              const isSelected = preferredQualifier === q.id || (!preferredQualifier && earnedQualifiers[0]?.id === q.id);
+              return (
+                <div
+                  key={q.id}
+                  onClick={() => q.earned && onSaveQualifier(q.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    padding: '12px 16px', borderRadius: 8,
+                    border: isSelected ? `2px solid ${C.teal}` : `1px solid ${q.earned ? C.border : C.border}`,
+                    background: isSelected ? hexToRgba(C.teal, 0.08) : q.earned ? 'rgba(255,255,255,0.03)' : 'transparent',
+                    cursor: q.earned ? 'pointer' : 'not-allowed',
+                    opacity: q.earned ? 1 : 0.3,
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  <span style={{ fontSize: 18, flexShrink: 0 }}>{q.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: isSelected ? C.teal : C.white, letterSpacing: 1 }}>{q.label}</div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray, marginTop: 2 }}>{q.condition}</div>
+                  </div>
+                  {q.earned && (
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: q.earned ? C.green : C.grayDim, letterSpacing: 1 }}>
+                      {isSelected ? '● ACTIVE' : '✓ EARNED'}
+                    </div>
+                  )}
+                  {!q.earned && (
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, letterSpacing: 1 }}>LOCKED</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </Card>
 
-      {/* 🤝 CURATOR ONBOARDING GUIDE */}
+      {/* ── SMART UPLOAD ── */}
+      <Card neon style={{ marginBottom: 30 }}>
+        <CardTitle>SMART PHOTO UPLOAD</CardTitle>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 15, lineHeight: 1.6 }}>
+          SELECT A PHOTO — WE'LL READ THE DATE AND MATCH IT TO A SHOW AUTOMATICALLY.
+        </div>
+        <SmartPhotoUpload concerts={concerts} session={session} onComplete={onFetchData} />
+      </Card>
+
+      {/* ── ONBOARDING / CSV IMPORT ── */}
       {(!concerts || concerts.length < 50) && (
-        <div style={{ 
-          background: 'rgba(0, 229, 204, 0.05)', 
-          border: `1px dashed ${C.teal}44`, 
-          borderRadius: 12, 
-          padding: 25, 
-          marginBottom: 30
-        }}>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.teal, marginBottom: 10 }}>
-            WELCOME TO THE BACK OFFICE, CURATOR.
-          </div>
+        <div style={{ background: 'rgba(0,229,204,0.05)', border: `1px dashed ${C.teal}44`, borderRadius: 12, padding: 25, marginBottom: 30 }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.teal, marginBottom: 10 }}>WELCOME TO THE BACK OFFICE, CURATOR.</div>
           <p style={{ fontFamily: "'Space Mono'", fontSize: 11, color: C.gray, lineHeight: 1.6, maxWidth: 600 }}>
             The archive is currently at low capacity. To populate your museum floors quickly, follow the bulk processing protocol below:
           </p>
-          
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, marginTop: 20 }}>
             {[
-              { 
-                step: "01", 
-                title: "DOWNLOAD BLUEPRINT", 
-                desc: "Use our standardized template to organize your history.", 
-                action: "GET TEMPLATE", 
-                link: "/template.xlsx" 
-              },
-              { 
-                step: "02", 
-                title: "COMPILE DATA", 
-                desc: "Ensure dates are YYYY-MM-DD and lineups use semicolons.", 
-                action: "VIEW GUIDE", 
-                isAction: true,
-                onClick: () => alert(
-                  "📝 CURATOR'S COMPILATION GUIDE:\n\n" +
-                  "1. DATE: Use YYYY-MM-DD (Ex: 2026-04-17)\n" +
-                  "2. LINEUP: Use a semicolon (;) to separate bands (Ex: Eggy; Tapers Choice)\n" +
-                  "3. FESTIVALS: Write 'TRUE' in the is_festival column to unlock a Stamp.\n" +
-                  "4. SAVE: Export as .CSV (Comma Separated Values) before uploading."
-                )
-              },
-              { 
-                step: "03", 
-                title: "SYNC SIGNALS", 
-                desc: "Upload your finalized .CSV file to initialize the museum.", 
-                action: "READY TO SYNC", 
-                trigger: true 
-              }
+              { step: "01", title: "DOWNLOAD BLUEPRINT", desc: "Use our standardized template to organize your history.", action: "GET TEMPLATE", link: "/template.xlsx" },
+              { step: "02", title: "COMPILE DATA", desc: "Ensure dates are YYYY-MM-DD and lineups use semicolons.", action: "VIEW GUIDE", isAction: true, onClick: () => alert("📝 CURATOR'S COMPILATION GUIDE:\n\n1. DATE: Use YYYY-MM-DD (Ex: 2026-04-17)\n2. LINEUP: Use a semicolon (;) to separate bands (Ex: Eggy; Tapers Choice)\n3. FESTIVALS: Write 'TRUE' in the is_festival column to unlock a Stamp.\n4. SAVE: Export as .CSV (Comma Separated Values) before uploading.") },
+              { step: "03", title: "SYNC SIGNALS", desc: "Upload your finalized .CSV file to initialize the museum.", action: "READY TO SYNC", trigger: true }
             ].map((item, i) => (
               <div key={i} style={{ background: 'rgba(0,0,0,0.3)', padding: 15, borderRadius: 8, border: `1px solid ${C.border}` }}>
                 <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.teal, fontWeight: 900, marginBottom: 5 }}>{item.step}</div>
                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff' }}>{item.title}</div>
                 <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, margin: '8px 0 12px' }}>{item.desc}</div>
-                
                 {item.trigger ? (
                   <label style={{ cursor: 'pointer', color: C.gold, fontSize: 9, fontFamily: "'Space Mono'", fontWeight: 900 }}>
-                     [ INITIALIZE UPLOAD ]
-                     <input type="file" accept=".csv" hidden onChange={handleCSVUpload} />
+                    [ INITIALIZE UPLOAD ]
+                    <input type="file" accept=".csv" hidden onChange={handleCSVUpload} />
                   </label>
                 ) : item.isAction ? (
-                  <button 
-                    onClick={item.onClick}
-                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: C.teal, fontSize: 9, fontFamily: "'Space Mono'", fontWeight: 900, textAlign: 'left' }}
-                  >
-                    [ {item.action} ]
-                  </button>
+                  <button onClick={item.onClick} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: C.teal, fontSize: 9, fontFamily: "'Space Mono'", fontWeight: 900, textAlign: 'left' }}>[ {item.action} ]</button>
                 ) : (
-                  <a 
-                    href={item.link} 
-                    download 
-                    style={{ textDecoration: 'none', color: C.teal, fontSize: 9, fontFamily: "'Space Mono'", fontWeight: 900 }}
-                  >
-                    [ {item.action} ]
-                  </a>
+                  <a href={item.link} download style={{ textDecoration: 'none', color: C.teal, fontSize: 9, fontFamily: "'Space Mono'", fontWeight: 900 }}>[ {item.action} ]</a>
                 )}
               </div>
             ))}
@@ -8015,32 +7971,9 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
         </div>
       )}
 
-<Card neon style={{ marginBottom: 30 }}>
-  <CardTitle>SMART PHOTO UPLOAD</CardTitle>
-  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 15, lineHeight: 1.6 }}>
-    SELECT A PHOTO — WE'LL READ THE DATE AND MATCH IT TO A SHOW AUTOMATICALLY.
-  </div>
-  <SmartPhotoUpload concerts={concerts} session={session} onComplete={onFetchData} />
-</Card>
-
-<Card neon style={{ marginBottom: 30 }}>
-  <CardTitle>CONTACT</CardTitle>
-  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 15, lineHeight: 1.6 }}>
-    QUESTIONS, BUGS, OR FEEDBACK?
-  </div>
-  <a href="mailto:trackrecordlive@gmail.com" style={{ background: C.teal, color: '#000', padding: '10px 20px', borderRadius: 6, fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 2, textDecoration: 'none', display: 'inline-block' }}>
-    ✉️ EMAIL US
-  </a>
-</Card>
-
-      {/* Standard Table Controls */}
+      {/* ── ARCHIVE TABLE ── */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-        <input 
-          style={{ ...localInputStyle, flex: 1 }} 
-          placeholder="Search existing records..." 
-          value={search} 
-          onChange={e => { setSearch(e.target.value); setPage(1); }} 
-        />
+        <input style={{ ...localInputStyle, flex: 1 }} placeholder="Search existing records..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
         <Btn onClick={onAdd}>+ Add Single Entry</Btn>
       </div>
 
@@ -8078,43 +8011,13 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
         </table>
       </div>
 
-      {/* Pagination Controls */}
-      {(() => {
-        const filtered = useMemo(() => {
-          if (!search) return concerts;
-          const q = search.toLowerCase();
-          return concerts.filter(c => 
-            (c.bands || []).some(b => getBandName(b).toLowerCase().includes(q)) ||
-            (c.venue || '').toLowerCase().includes(q) ||
-            (c.city || '').toLowerCase().includes(q) ||
-            (c.festival_name || '').toLowerCase().includes(q)
-          );
-        }, [concerts, search]);
-
-        const totalPages = Math.ceil(filtered.length / PER);
-
-        return totalPages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 20 }}>
-            <Btn 
-              variant="secondary" 
-              onClick={() => setPage(p => Math.max(1, p - 1))} 
-              disabled={page === 1}
-            >
-              ← Prev
-            </Btn>
-            <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray }}>
-              Page {page} of {totalPages}
-            </span>
-            <Btn 
-              variant="secondary" 
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
-              disabled={page === totalPages}
-            >
-              Next →
-            </Btn>
-          </div>
-        );
-      })()}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 20 }}>
+          <Btn variant="secondary" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>← Prev</Btn>
+          <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray }}>Page {page} of {totalPages}</span>
+          <Btn variant="secondary" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next →</Btn>
+        </div>
+      )}
     </div>
   );
 }
@@ -12041,6 +11944,7 @@ export default function App() {
   const [upcomingModal, setUpcomingModal] = useState(null);
   const [nudgeTarget, setNudgeTarget] = useState(null);
   const [bulkMode, setBulkMode] = useState(false);
+  const [preferredQualifier, setPreferredQualifier] = useState(null);
   const [selectedSignals, setSelectedSignals] = useState([]);
 
   const { photoPrivacy, shouldBlurPhoto, currentUserId } = usePhotoPrivacy();
@@ -12311,7 +12215,8 @@ useEffect(() => {
 // --- END OF REPAIRED SYSTEM BLOCK ---
 
 
-const getCuratorTitle = (stats, concerts) => {
+const getCuratorTitle = (stats, concerts, preferredQualifier) => {
+
   const shows = stats.totalShows || 0;
   const festDays = stats.festDays || 0;
   const relics = stats.setlists || 0;
@@ -12339,15 +12244,20 @@ const getCuratorTitle = (stats, concerts) => {
   else if (shows < 500) base = 'LIVING_ARCHIVE';
   else                  base = 'IMMORTAL';
 
-  // QUALIFIER (priority order)
-  let qualifier = null;
-  if (maxArtistSeen >= 10)                      qualifier = 'CHASER';
-  else if (festDays > shows * 0.5)              qualifier = 'FESTIVAL';
-  else if (uniqueStates >= 10)                  qualifier = 'GLOBE';
-  else if (photos > shows * 0.6)                qualifier = 'PHOTO';
-  else if (relics >= 50)                        qualifier = 'COLLECTOR';
-  else if (posters >= 25)                       qualifier = 'POSTER';
-  else if (stubs >= 50)                         qualifier = 'HOARDER';
+  // EARNED QUALIFIERS
+  const earned = [];
+  if (maxArtistSeen >= 10)       earned.push('CHASER');
+  if (festDays > shows * 0.5)    earned.push('FESTIVAL');
+  if (uniqueStates >= 10)        earned.push('GLOBE');
+  if (photos > shows * 0.6)      earned.push('PHOTO');
+  if (relics >= 50)              earned.push('COLLECTOR');
+  if (posters >= 25)             earned.push('POSTER');
+  if (stubs >= 50)               earned.push('HOARDER');
+
+  // Use preferred if earned, otherwise fall back to first earned
+  const qualifier = (preferredQualifier && earned.includes(preferredQualifier))
+    ? preferredQualifier
+    : (earned[0] || null);
 
   // COMBINED TITLES
   const TITLES = {
@@ -12877,6 +12787,19 @@ async function fetchShowArtifacts(showId) {
 }
 
 // ═══════════════════════════════════════════════════════
+
+useEffect(() => {
+  if (!session?.user?.id) return;
+  supabase
+    .from('profiles')
+    .select('preferred_qualifier')
+    .eq('id', session.user.id)
+    .single()
+    .then(({ data }) => {
+      if (data?.preferred_qualifier) setPreferredQualifier(data.preferred_qualifier);
+    });
+}, [session?.user?.id]);
+
 
 async function fetchConcerts() {
   const targetId = viewingUser || session?.user?.id;
@@ -13653,9 +13576,13 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
         <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: C.teal, letterSpacing: '4px', opacity: 0.6 }}>
           CURRENT CURATOR STATUS
         </div>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff', letterSpacing: '3px', lineHeight: 1, textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}` }}>
-          {getCuratorTitle(headerStats, concerts)}
-        </div>
+        <div
+  onClick={() => { setActiveTab('manage'); setNavCollapsed(true); }}
+  title="Click to customize your title"
+  style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff', letterSpacing: '3px', lineHeight: 1, textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`, cursor: 'pointer' }}
+>
+  {getCuratorTitle(headerStats, concerts, preferredQualifier)}
+</div>
       </div>
     </>
   ) : (
@@ -13728,9 +13655,15 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
         <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: C.teal, letterSpacing: '4px', opacity: 0.6, marginBottom: 2 }}>
           CURRENT CURATOR STATUS:
         </div>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSpacing: '3px', textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`, lineHeight: 1 }}>
-          {getCuratorTitle(headerStats, concerts)}
-        </div>
+        <div
+  onClick={() => setActiveTab('manage')}
+  title="Click to customize your title"
+  style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSpacing: '3px', textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`, lineHeight: 1, cursor: 'pointer', transition: 'color 0.2s' }}
+  onMouseEnter={e => e.currentTarget.style.color = C.teal}
+  onMouseLeave={e => e.currentTarget.style.color = '#fff'}
+>
+  {getCuratorTitle(headerStats, concerts, preferredQualifier)}
+</div>
       </div>
 
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', zIndex: 2 }}>
@@ -14331,7 +14264,15 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
     onAdd={() => setEditTarget('new')} 
     onDuplicate={handleDuplicate}
     session={session}
-    onFetchData={fetchConcerts} // 🟢 Passes the data refresher down
+    onFetchData={fetchConcerts}
+    preferredQualifier={preferredQualifier}
+    onSaveQualifier={async (q) => {
+      setPreferredQualifier(q);
+      await supabase
+        .from('profiles')
+        .update({ preferred_qualifier: q })
+        .eq('id', session.user.id);
+    }}
   />
 )}
 
