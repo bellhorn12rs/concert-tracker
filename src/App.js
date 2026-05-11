@@ -7718,8 +7718,7 @@ function HowToTab() {
 }
 
 // ─── MANAGE TAB (WITH AVATAR UPLOAD) ──────────────────────────────────────────
-function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData, setActiveTab, preferredQualifier, onSaveQualifier }) {
-  const [search, setSearch] = useState('');
+function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData, setActiveTab, preferredQualifier, onSaveQualifier, colorUpgraded, currentAvatarColor, onClaimColor }) {  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const PER = 30;
   const isMobile = window.innerWidth < 768;
@@ -7825,6 +7824,75 @@ function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData,
 
   return (
     <div style={{ padding: '24px 0' }} className="fade-in">
+
+      {/* ── COLOR UPGRADE BANNER ── */}
+{!colorUpgraded && shows >= 50 && genreStats?.[0] && (
+  <div className="fade-in" style={{
+    background: `linear-gradient(135deg, ${hexToRgba(GENRE_COLORS[genreStats[0].name] || C.teal, 0.15)}, ${hexToRgba(C.purple, 0.1)})`,
+    border: `2px solid ${GENRE_COLORS[genreStats[0].name] || C.teal}`,
+    borderRadius: 16, padding: 30, marginBottom: 30, textAlign: 'center',
+    boxShadow: `0 0 40px ${hexToRgba(GENRE_COLORS[genreStats[0].name] || C.teal, 0.3)}`
+  }}>
+    <div style={{ fontSize: '3rem', marginBottom: 12 }}>🎨</div>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: '#fff', letterSpacing: 3, marginBottom: 8 }}>
+      YOUR ARCHIVE HAS AWAKENED
+    </div>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginBottom: 20, lineHeight: 1.8 }}>
+      YOU HAVE LOGGED {shows} SHOWS. YOUR DOMINANT GENRE IS{' '}
+      <span style={{ color: GENRE_COLORS[genreStats[0].name] || C.teal, fontWeight: 900 }}>
+        {genreStats[0].name.toUpperCase()}
+      </span>
+      .<br />
+      YOUR TRUE COLOR IS READY TO CLAIM.
+    </div>
+    {Object.values(GENRE_COLORS).some(c => c) && (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray }}>CURRENT</div>
+        <div style={{ width: 32, height: 32, borderRadius: '50%', background: currentAvatarColor || C.gray, border: '2px solid rgba(255,255,255,0.2)' }} />
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 16, color: C.gray }}>→</div>
+        <div style={{ width: 32, height: 32, borderRadius: '50%', background: GENRE_COLORS[genreStats[0].name] || C.teal, border: '2px solid rgba(255,255,255,0.2)', boxShadow: `0 0 20px ${GENRE_COLORS[genreStats[0].name] || C.teal}` }} />
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GENRE_COLORS[genreStats[0].name] || C.teal, fontWeight: 900 }}>YOUR TRUE COLOR</div>
+      </div>
+    )}
+    {genreStats[0] && !GENRE_COLORS[genreStats[0].name] || Object.keys(GENRE_COLORS).filter(g => (genreStats || []).find(s => s.name === g && s.count > 0)).length < 3 ? (
+      <div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gold, marginBottom: 12, lineHeight: 1.8 }}>
+          ⚠️ YOUR GENRES ARE NOT FULLY SET.<br />SET THEM IN THE DIGGING TAB TO UNLOCK YOUR TRUE COLOR.
+        </div>
+        <button
+          onClick={() => setActiveTab('browse')}
+          style={{ background: C.gold, border: 'none', color: '#000', padding: '12px 28px', borderRadius: 8, fontFamily: "'Bebas Neue'", fontSize: '1.3rem', letterSpacing: 2, cursor: 'pointer', fontWeight: 900 }}
+        >
+          SET MY GENRES →
+        </button>
+      </div>
+    ) : (
+      <button
+        onClick={async () => {
+          await onClaimColor();
+          const el = document.createElement('div');
+          el.style.cssText = 'position:fixed;inset:0;z-index:99999;pointer-events:none;';
+          el.innerHTML = `<div style="position:absolute;inset:0;background:${GENRE_COLORS[genreStats[0].name]};animation:colorFlash 1.2s ease forwards;"></div>`;
+          document.body.appendChild(el);
+          const style = document.createElement('style');
+          style.textContent = '@keyframes colorFlash{0%{opacity:0.8}100%{opacity:0}}';
+          document.head.appendChild(style);
+          setTimeout(() => { el.remove(); style.remove(); }, 1200);
+        }}
+        style={{
+          background: GENRE_COLORS[genreStats[0].name] || C.teal,
+          border: 'none', color: '#000', padding: '16px 40px', borderRadius: 8,
+          fontFamily: "'Bebas Neue'", fontSize: '1.8rem', letterSpacing: 3,
+          cursor: 'pointer', fontWeight: 900,
+          boxShadow: `0 0 30px ${hexToRgba(GENRE_COLORS[genreStats[0].name] || C.teal, 0.6)}`,
+          animation: 'pulse 2s infinite'
+        }}
+      >
+        ⚡ CLAIM YOUR COLOR
+      </button>
+    )}
+  </div>
+)}
 
       {/* ── TOP SECTION: PROFILE ── */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 30 }}>
@@ -11945,6 +12013,8 @@ export default function App() {
   const [nudgeTarget, setNudgeTarget] = useState(null);
   const [bulkMode, setBulkMode] = useState(false);
   const [preferredQualifier, setPreferredQualifier] = useState(null);
+  const [colorUpgraded, setColorUpgraded] = useState(false);
+  const [currentAvatarColor, setCurrentAvatarColor] = useState(null);
   const [selectedSignals, setSelectedSignals] = useState([]);
 
   const { photoPrivacy, shouldBlurPhoto, currentUserId } = usePhotoPrivacy();
@@ -12792,11 +12862,13 @@ useEffect(() => {
   if (!session?.user?.id) return;
   supabase
     .from('profiles')
-    .select('preferred_qualifier')
+    .select('preferred_qualifier, color_upgraded, avatar_color')
     .eq('id', session.user.id)
     .single()
     .then(({ data }) => {
       if (data?.preferred_qualifier) setPreferredQualifier(data.preferred_qualifier);
+      setColorUpgraded(data?.color_upgraded || false);
+      setCurrentAvatarColor(data?.avatar_color || null);
     });
 }, [session?.user?.id]);
 
@@ -14272,6 +14344,18 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
         .from('profiles')
         .update({ preferred_qualifier: q })
         .eq('id', session.user.id);
+    }}
+    colorUpgraded={colorUpgraded}
+    currentAvatarColor={currentAvatarColor}
+    onClaimColor={async () => {
+      const topGenre = genreStats?.[0]?.name;
+      const newColor = GENRE_COLORS[topGenre] || C.teal;
+      await supabase
+        .from('profiles')
+        .update({ avatar_color: newColor, color_upgraded: true })
+        .eq('id', session.user.id);
+      setColorUpgraded(true);
+      setCurrentAvatarColor(newColor);
     }}
   />
 )}
