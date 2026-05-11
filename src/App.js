@@ -12368,15 +12368,129 @@ useEffect(() => {
 
 
 const getCuratorTitle = (stats, concerts) => {
-  if (stats.totalShows < 5) return "GHOST IN THE STACK";
-  if (stats.festDays > (stats.totalShows * 0.5)) return "FESTIVAL NOMAD";
-  if (stats.setlists > 10) return "SETLIST SCHOLAR";
-  if (stats.photos > (stats.totalShows * 0.8)) return "FRONT ROW FREQUENCY";
-  if (stats.uniqueArtists > (stats.totalShows * 0.9)) return "CRATE DIGGER";
-  if (stats.totalShows > 100) return "LIFELONG HEADLINER";
-  
-  // Default fallback
-  return "THE ARCHIVIST";
+  const shows = stats.totalShows || 0;
+  const festDays = stats.festDays || 0;
+  const relics = stats.setlists || 0;
+  const photos = stats.photos || 0;
+  const stubs = stats.tickets || 0;
+  const posters = stats.posters || 0;
+  const uniqueStates = new Set(concerts.map(c => c.state).filter(Boolean)).size;
+
+  const artistCounts = {};
+  concerts.forEach(c => (c.bands || []).forEach(b => {
+    const name = getBandName(b);
+    if (name) artistCounts[name] = (artistCounts[name] || 0) + 1;
+  }));
+  const maxArtistSeen = Math.max(0, ...Object.values(artistCounts));
+
+  // BASE TIER
+  let base = null;
+  if (shows < 5)        base = 'GHOST';
+  else if (shows < 15)  base = 'GATE_CRASHER';
+  else if (shows < 30)  base = 'BARRICADE';
+  else if (shows < 50)  base = 'FLOOR_VETERAN';
+  else if (shows < 100) base = 'CIRCUIT';
+  else if (shows < 200) base = 'ALL_ACCESS';
+  else if (shows < 350) base = 'PRODUCTION';
+  else if (shows < 500) base = 'LIVING_ARCHIVE';
+  else                  base = 'IMMORTAL';
+
+  // QUALIFIER (priority order)
+  let qualifier = null;
+  if (maxArtistSeen >= 10)                      qualifier = 'CHASER';
+  else if (festDays > shows * 0.5)              qualifier = 'FESTIVAL';
+  else if (uniqueStates >= 10)                  qualifier = 'GLOBE';
+  else if (photos > shows * 0.6)                qualifier = 'PHOTO';
+  else if (relics >= 50)                        qualifier = 'COLLECTOR';
+  else if (posters >= 25)                       qualifier = 'POSTER';
+  else if (stubs >= 50)                         qualifier = 'HOARDER';
+
+  // COMBINED TITLES
+  const TITLES = {
+    GHOST:         { none: 'GHOST IN THE STACK' },
+    GATE_CRASHER:  {
+      none:      'GATE CRASHER',
+      CHASER:    'GATE CRASHING SUPERFAN',
+      FESTIVAL:  'FESTIVAL GATE CRASHER',
+      GLOBE:     'GLOBE TROTTING GATE CRASHER',
+      PHOTO:     'GATE CRASHING PHOTOGRAPHER',
+      COLLECTOR: 'COLLECTING GATE CRASHER',
+      POSTER:    'POSTER HUNTING GATE CRASHER',
+      HOARDER:   'GATE CRASHING TICKET HOARDER',
+    },
+    BARRICADE: {
+      none:      'BARRICADE REGULAR',
+      CHASER:    'BARRICADE SUPERFAN',
+      FESTIVAL:  'FESTIVAL BARRICADE REGULAR',
+      GLOBE:     'GLOBE TROTTING BARRICADE REGULAR',
+      PHOTO:     'BARRICADE PHOTOGRAPHER',
+      COLLECTOR: 'COLLECTING BARRICADE REGULAR',
+      POSTER:    'POSTER HUNTING BARRICADE',
+      HOARDER:   'BARRICADE TICKET HOARDER',
+    },
+    FLOOR_VETERAN: {
+      none:      'FLOOR SECTION VETERAN',
+      CHASER:    'FLOOR SECTION SUPERFAN',
+      FESTIVAL:  'FESTIVAL FLOOR VETERAN',
+      GLOBE:     'GLOBE TROTTING FLOOR VETERAN',
+      PHOTO:     'FLOOR SECTION PHOTOGRAPHER',
+      COLLECTOR: 'FLOOR SECTION COLLECTOR',
+      POSTER:    'FLOOR SECTION POSTER HUNTER',
+      HOARDER:   'FLOOR SECTION TICKET HOARDER',
+    },
+    CIRCUIT: {
+      none:      'CIRCUIT RIDER',
+      CHASER:    'CIRCUIT RIDING SUPERFAN',
+      FESTIVAL:  'FESTIVAL CIRCUIT RIDER',
+      GLOBE:     'GLOBE TROTTING CIRCUIT RIDER',
+      PHOTO:     'CIRCUIT RIDING PHOTOGRAPHER',
+      COLLECTOR: 'COLLECTING CIRCUIT RIDER',
+      POSTER:    'POSTER HUNTING CIRCUIT RIDER',
+      HOARDER:   'CIRCUIT RIDING TICKET HOARDER',
+    },
+    ALL_ACCESS: {
+      none:      'ALL ACCESS AUTHORITY',
+      CHASER:    'ALL ACCESS SUPERFAN',
+      FESTIVAL:  'ALL ACCESS FESTIVAL AUTHORITY',
+      GLOBE:     'ALL ACCESS GLOBE TROTTER',
+      PHOTO:     'ALL ACCESS PHOTOGRAPHER',
+      COLLECTOR: 'ALL ACCESS COLLECTOR',
+      POSTER:    'ALL ACCESS POSTER HUNTER',
+      HOARDER:   'ALL ACCESS TICKET AUTHORITY',
+    },
+    PRODUCTION: {
+      none:      'PRODUCTION INSIDER',
+      CHASER:    'PRODUCTION LEVEL SUPERFAN',
+      FESTIVAL:  'FESTIVAL PRODUCTION INSIDER',
+      GLOBE:     'GLOBE TROTTING PRODUCTION INSIDER',
+      PHOTO:     'PRODUCTION LEVEL PHOTOGRAPHER',
+      COLLECTOR: 'PRODUCTION LEVEL COLLECTOR',
+      POSTER:    'PRODUCTION POSTER INSIDER',
+      HOARDER:   'PRODUCTION LEVEL TICKET INSIDER',
+    },
+    LIVING_ARCHIVE: {
+      none:      'THE LIVING ARCHIVE',
+      CHASER:    'THE LIVING SUPERFAN ARCHIVE',
+      FESTIVAL:  'THE LIVING FESTIVAL ARCHIVE',
+      GLOBE:     'THE GLOBE TROTTING ARCHIVE',
+      PHOTO:     'THE LIVING PHOTO ARCHIVE',
+      COLLECTOR: 'THE LIVING COLLECTOR ARCHIVE',
+      POSTER:    'THE LIVING POSTER ARCHIVE',
+      HOARDER:   'THE LIVING TICKET ARCHIVE',
+    },
+    IMMORTAL: {
+      none:      'CONCERT IMMORTAL',
+      CHASER:    'THE IMMORTAL SUPERFAN',
+      FESTIVAL:  'THE FESTIVAL IMMORTAL',
+      GLOBE:     'THE GLOBE TROTTING IMMORTAL',
+      PHOTO:     'THE IMMORTAL PHOTOGRAPHER',
+      COLLECTOR: 'THE IMMORTAL COLLECTOR',
+      POSTER:    'THE IMMORTAL POSTER HUNTER',
+      HOARDER:   'THE IMMORTAL TICKET HOARDER',
+    },
+  };
+
+  return TITLES[base][qualifier] || TITLES[base]['none'];
 };
   // 3. THEME & CONTEXT SETUP
   const setThemeId = (id) => {
