@@ -7641,51 +7641,6 @@ function HowToTab() {
         </div>
       </div>
 
-      <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 12, padding: isMobile ? '20px 16px' : '28px 32px', marginBottom: 32 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: C.gold, letterSpacing: 2, marginBottom: 4 }}>YOUR CURATOR TITLE</div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 24, lineHeight: 1.6 }}>
-          Every curator has a rank based on total shows, plus a qualifier based on how you use the archive. They combine into one title.
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 24 : 32, marginBottom: 28 }}>
-          <div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, letterSpacing: 3, marginBottom: 12, fontWeight: 900 }}>RANKS // CLIMB BY LOGGING SHOWS</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {RANKS.map((r, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 10px', borderRadius: 6, background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}` }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.95rem', color: C.white, letterSpacing: 1 }}>{r.title}</div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray, whiteSpace: 'nowrap', marginLeft: 10 }}>{r.range}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 3, marginBottom: 12, fontWeight: 900 }}>QUALIFIERS // EARNED BY BEHAVIOR</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {QUALIFIERS.map((q, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '7px 10px', borderRadius: 6, background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}` }}>
-                  <span style={{ fontSize: 14, flexShrink: 0 }}>{q.icon}</span>
-                  <div>
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.95rem', color: C.gold, letterSpacing: 1, lineHeight: 1.1 }}>{q.label}</div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray, marginTop: 2 }}>{q.condition}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 20 }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.purple, letterSpacing: 3, marginBottom: 12, fontWeight: 900 }}>EXAMPLE COMBINED TITLES</div>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8 }}>
-            {EXAMPLES.map((ex, i) => (
-              <div key={i} style={{ padding: '10px 12px', borderRadius: 6, background: hexToRgba(C.purple, 0.05), border: `1px solid ${hexToRgba(C.purple, 0.2)}` }}>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: C.white, letterSpacing: 1, marginBottom: 3 }}>{ex.title}</div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray }}>{ex.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {SECTIONS.map(section => {
           const isOpen = openSection === section.id;
