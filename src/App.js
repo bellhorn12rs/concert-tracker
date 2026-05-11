@@ -14357,6 +14357,7 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
       setColorUpgraded(true);
       setCurrentAvatarColor(newColor);
     }}
+    genreStats={genreStats}
   />
 )}
 
