@@ -7463,33 +7463,45 @@ return (
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => setStep('confirm')} style={{ flex: 1, padding: 10, borderRadius: 6, border: `1px solid ${C.border}`, background: 'transparent', color: C.gray, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9 }}>← BACK</button>
             <button onClick={() => {
-              if (photoType === 'relic' && selectedConcert?.bands?.length > 1) {
+              const isFestivalPhoto = photoType === 'photo' && selectedConcert?.is_festival;
+              const isMultiBandRelic = photoType === 'relic' && selectedConcert?.bands?.length > 1;
+              if (isFestivalPhoto || isMultiBandRelic) {
                 setStep('pick_band');
               } else {
                 handleUpload();
               }
-            }} disabled={!photoType} style={{ flex: 2, padding: 10, borderRadius: 6, background: photoType ? C.teal : C.bgCardAlt, color: photoType ? '#000' : C.gray, border: 'none', cursor: photoType ? 'pointer' : 'not-allowed', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 1, fontWeight: 900 }}>UPLOAD</button>
+            }}
+            disabled={!photoType} style={{ flex: 2, padding: 10, borderRadius: 6, background: photoType ? C.teal : C.bgCardAlt, color: photoType ? '#000' : C.gray, border: 'none', cursor: photoType ? 'pointer' : 'not-allowed', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 1, fontWeight: 900 }}>UPLOAD</button>
           </div>
         </>)}
 
         {step === 'pick_band' && (<>
-          <div style={hd}>WHOSE SETLIST?</div>
-          <div style={{ ...sm, marginBottom: 14 }}>{getBands(selectedConcert)} · {selectedConcert?.date}</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-            {(selectedConcert?.bands || []).map((b, i) => {
-              const name = getBandName(b);
-              return (
-                <div key={i} onClick={() => setSelectedBand(name)} style={{ padding: '12px 14px', borderRadius: 8, cursor: 'pointer', border: selectedBand === name ? `2px solid ${C.teal}` : `1px solid ${C.border}`, background: selectedBand === name ? hexToRgba(C.teal, 0.08) : 'transparent' }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff' }}>{name}</div>
-                </div>
-              );
-            })}
+  <div style={hd}>{photoType === 'photo' ? "WHAT'S THIS A PHOTO OF?" : 'WHOSE SETLIST?'}</div>
+  <div style={{ ...sm, marginBottom: 14 }}>{getBands(selectedConcert)} · {selectedConcert?.date}</div>
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, maxHeight: 300, overflowY: 'auto' }}>
+    {(selectedConcert?.bands || []).map((b, i) => {
+      const name = getBandName(b);
+      return (
+        <div key={i} onClick={() => setSelectedBand(name)} style={{ padding: '12px 14px', borderRadius: 8, cursor: 'pointer', border: selectedBand === name ? `2px solid ${C.teal}` : `1px solid ${C.border}`, background: selectedBand === name ? hexToRgba(C.teal, 0.08) : 'transparent' }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff' }}>{name}</div>
+        </div>
+      );
+    })}
+    {photoType === 'photo' && (
+      <>
+        {['CROWD', 'ATMOSPHERE', 'STAGE', 'FRIENDS', 'OTHER'].map(label => (
+          <div key={label} onClick={() => setSelectedBand(label)} style={{ padding: '12px 14px', borderRadius: 8, cursor: 'pointer', border: selectedBand === label ? `2px solid ${C.purple}` : `1px solid ${C.border}`, background: selectedBand === label ? hexToRgba(C.purple, 0.08) : 'transparent' }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.gray, letterSpacing: 1 }}>{label}</div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => setStep('pick_type')} style={{ flex: 1, padding: 10, borderRadius: 6, border: `1px solid ${C.border}`, background: 'transparent', color: C.gray, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9 }}>← BACK</button>
-            <button onClick={handleUpload} disabled={!selectedBand} style={{ flex: 2, padding: 10, borderRadius: 6, background: selectedBand ? C.teal : C.bgCardAlt, color: selectedBand ? '#000' : C.gray, border: 'none', cursor: selectedBand ? 'pointer' : 'not-allowed', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 1, fontWeight: 900 }}>UPLOAD</button>
-          </div>
-        </>)}
+        ))}
+      </>
+    )}
+  </div>
+  <div style={{ display: 'flex', gap: 8 }}>
+    <button onClick={() => setStep('pick_type')} style={{ flex: 1, padding: 10, borderRadius: 6, border: `1px solid ${C.border}`, background: 'transparent', color: C.gray, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 9 }}>← BACK</button>
+    <button onClick={handleUpload} disabled={!selectedBand} style={{ flex: 2, padding: 10, borderRadius: 6, background: selectedBand ? C.teal : C.bgCardAlt, color: selectedBand ? '#000' : C.gray, border: 'none', cursor: selectedBand ? 'pointer' : 'not-allowed', fontFamily: "'Bebas Neue'", fontSize: '1.2rem', letterSpacing: 1, fontWeight: 900 }}>UPLOAD</button>
+  </div>
+</>)}
 
         {step === 'uploading' && (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
