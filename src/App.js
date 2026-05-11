@@ -3509,7 +3509,7 @@ function ArtifactCluster({ artifacts, show, index, gc, shouldBlurPhoto, currentU
   );
 }
 // ─── HALL OF FAME (DENSE LAYOUT) ─────────────────────────────────────────────
-function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, currentUserId }) {
+function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, currentUserId, artifacts = [] }) {
   const [selected, setSelected] = useState(null);
   const topRef = useRef(null);
   const cardRef = useRef(null);
@@ -3553,7 +3553,7 @@ function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, cu
   const showPackages = [...selectedData.shows]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .map((show, idx) => {
-      const artifacts = {
+      const showArtifactData = {
         setlists: [],
         posters: [],
         photos: [],
@@ -3563,18 +3563,23 @@ function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, cu
       const slSource = show.setlist_image_url || show.image_url;
       if (slSource) {
         slSource.split(',').forEach(url => {
-          if (url.trim()) artifacts.setlists.push(url.trim());
+          if (url.trim()) showArtifactData.setlists.push(url.trim());
         });
       }
       
-      if (show.personal_photo_url) {
+const showArtifacts = artifacts.filter(a => a.show_id === show.id && a.artifact_type === 'photo');
+      if (showArtifacts.length > 0) {
+        showArtifacts
+          .filter(a => !a.band_name || a.band_name === selectedData.artist)
+          .forEach(a => { if (a.image_url) showArtifactData.photos.push(a.image_url); });
+      } else if (show.personal_photo_url) {
         show.personal_photo_url.split(',').forEach(url => {
-          if (url.trim()) artifacts.photos.push(url.trim());
+          if (url.trim()) showArtifactData.photos.push(url.trim());
         });
       }
       
       if (show.wristband_image_url) {
-        artifacts.wristband = show.wristband_image_url;
+        showArtifactData.wristband = show.wristband_image_url;
       }
       
       if (show.is_festival && show.festival_name) {
@@ -3588,26 +3593,26 @@ function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, cu
           ) &&
           getYear(p.date) === festYear
         );
-        artifacts.posters = matchedPosters.map(p => p.image_url);
+        showArtifactData.posters = matchedPosters.map(p => p.image_url);
       } else {
         const artistPosters = posters.filter(p => 
           p.artist === selectedData.artist && p.date === show.date
         );
-        artifacts.posters = artistPosters.map(p => p.image_url);
+        showArtifactData.posters = artistPosters.map(p => p.image_url);
       }
       
-      const hasArtifacts = artifacts.setlists.length > 0 || 
-                          artifacts.posters.length > 0 || 
-                          artifacts.photos.length > 0 ||
-                          artifacts.wristband;
+      const hasArtifacts = showArtifactData.setlists.length > 0 || 
+                          showArtifactData.posters.length > 0 || 
+                          showArtifactData.photos.length > 0 ||
+                          showArtifactData.wristband;
       
       return {
         show,
         artifacts: {
-          setlists: [...new Set(artifacts.setlists)],
-          posters: [...new Set(artifacts.posters)],
-          photos: [...new Set(artifacts.photos)],
-          wristband: artifacts.wristband
+          setlists: [...new Set(showArtifactData.setlists)],
+          posters: [...new Set(showArtifactData.posters)],
+          photos: [...new Set(showArtifactData.photos)],
+          wristband: showArtifactData.wristband
         },
         hasArtifacts,
         isLeft: idx % 2 === 0
@@ -14169,7 +14174,7 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
 {activeTab === 'howto' && <HowToTab />}
 
   {/* 3. ARCHIVE TABS */}
-{activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} posters={posters} onShare={(a, s) => setShareCard({ artist: a, shows: s })} shouldBlurPhoto={shouldBlurPhoto} currentUserId={currentUserId} />}
+{activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} posters={posters} onShare={(a, s) => setShareCard({ artist: a, shows: s })} shouldBlurPhoto={shouldBlurPhoto} currentUserId={currentUserId} artifacts={filteredArtifacts} />}
   
 {activeTab === 'vault' && <SetlistVaultTab genreMap={artistGenres} viewingUser={viewingUser} currentUserId={currentUserId} />}
   
