@@ -8310,7 +8310,7 @@ function ShareCard({ artist, shows, onClose }) {
 }
 // --- PHOTO VAULT TAB ---
 // --- PHOTO VAULT TAB (MULTI-MEDIA UPGRADE + PRIVACY) ---
-function PhotoVaultTab({ concerts, shouldBlurPhoto, currentUserId }) {
+function PhotoVaultTab({ concerts, artifacts, shouldBlurPhoto, currentUserId }) {
   const safeConcerts = Array.isArray(concerts) ? concerts : [];
   
   // Local state to handle the Lightbox
@@ -8318,30 +8318,32 @@ function PhotoVaultTab({ concerts, shouldBlurPhoto, currentUserId }) {
   const isAdmin = !!currentUserId;
 
   const photos = useMemo(() => {
-  const results = [];
-  safeConcerts.forEach(c => {
-    if (!c || !c.personal_photo_url) return;
+  const safeArtifacts = Array.isArray(artifacts) ? artifacts : [];
+  const photoArtifacts = safeArtifacts.filter(a => a.artifact_type === 'photo');
+
+  return photoArtifacts.map(a => {
+    const show = safeConcerts.find(c => c.id === a.show_id);
+    const startRotation = (Math.random() * 10 - 5).toFixed(2);
     
-    const urls = String(c.personal_photo_url)
-      .split(',')
-      .map(u => u.trim())
-      .filter(Boolean);
-    
-    urls.forEach((url, idx) => {
-      const startRotation = (Math.random() * 10 - 5).toFixed(2);
-      results.push({
-        id: `${c.id}-photo-${idx}`,
-        url,
-        artist: getBandName(c.bands?.[0]) || c.festival_name || 'UNKNOWN',
-        date: c.date,
-        venue: c.venue || c.festival_name,
-        rotation: startRotation,
-        shouldBlur: shouldBlurPhoto(url)
-      });
-    });
-  });
-  return results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-}, [safeConcerts, shouldBlurPhoto]);
+    // Label priority: band_name from artifact → festival_name → first band → UNKNOWN
+    let label = a.band_name || null;
+    if (!label && show) {
+      label = show.is_festival
+        ? (show.festival_name || 'FESTIVAL')
+        : (getBandName(show.bands?.[0]) || show.artist || 'UNKNOWN');
+    }
+
+    return {
+      id: a.id,
+      url: a.image_url,
+      artist: label || 'UNKNOWN',
+      date: show?.date || '',
+      venue: show?.venue || show?.festival_name || '',
+      rotation: startRotation,
+      shouldBlur: shouldBlurPhoto(a.image_url)
+    };
+  }).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+}, [safeConcerts, artifacts, shouldBlurPhoto]);
 
   // Toggle privacy for a photo
 const togglePrivacy = async (url, currentState) => {
@@ -14171,7 +14173,7 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
   
 {activeTab === 'vault' && <SetlistVaultTab genreMap={artistGenres} viewingUser={viewingUser} currentUserId={currentUserId} />}
   
-{activeTab === 'photos' && <PhotoVaultTab concerts={concerts} shouldBlurPhoto={shouldBlurPhoto} currentUserId={currentUserId} />}
+{activeTab === 'photos' && <PhotoVaultTab concerts={concerts} artifacts={filteredArtifacts} shouldBlurPhoto={shouldBlurPhoto} currentUserId={currentUserId} />}
 
 {activeTab === 'shows' && <CollaborationWebTab />}
 
