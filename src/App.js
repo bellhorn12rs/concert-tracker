@@ -7527,6 +7527,251 @@ return (
 
 // ─── END SMART PHOTO UPLOAD ───────────────────────────────────────────────────
 
+// ─── HOW-TO TAB ──────────────────────────────────────────────────────────────
+// Paste this entire block before the closing of your tab render section
+// Then add ['howto', '📖 HOW-TO', '#00e5cc'] to the BROWSE tab group in TAB_GROUPS
+
+function HowToTab() {
+  const [openSection, setOpenSection] = useState(null);
+
+  const toggle = (id) => setOpenSection(prev => prev === id ? null : id);
+
+  const SECTIONS = [
+    {
+      id: 'getting-started',
+      icon: '🚀',
+      title: 'GETTING STARTED',
+      color: C.teal,
+      steps: [
+        {
+          heading: 'LOG A SHOW',
+          body: 'Tap + SIGNAL in the top bar. Fill in the band, date, and venue. That\'s it — one show logged. You can always add more detail later from the Paper Trail.',
+        },
+        {
+          heading: 'BULK IMPORT',
+          body: 'Have a spreadsheet or notes app with your history? Go to The Office and use the CSV import. Format: one row per show, columns for date (YYYY-MM-DD), lineup (bands separated by semicolons), venue, city, state. Export as .CSV and upload.',
+        },
+        {
+          heading: 'YOUR PROFILE',
+          body: 'Double-tap the TrackRecord logo in the sidebar to open the admin login. From The Office you can upload a profile photo — it shows up in the 3D Galaxy view.',
+        },
+      ]
+    },
+    {
+      id: 'smart-upload',
+      icon: '📷',
+      title: 'SMART PHOTO UPLOAD',
+      color: C.cyan,
+      steps: [
+        {
+          heading: 'HOW IT WORKS',
+          body: 'Tap UPLOAD PHOTO next to + SIGNAL. Select any photo from your camera roll. The app reads the date automatically — either from the photo\'s hidden metadata (EXIF) for phone photos, or by scanning the printed text (OCR) for tickets and setlists. It then matches the date to a show in your archive and asks you to confirm.',
+        },
+        {
+          heading: 'WHAT WORKS BEST',
+          body: '📱 Phone photos taken AT the show: nearly always match perfectly — the exact date is baked into the file.\n\n🎟️ Ticket stubs: work great as long as the date is clearly printed and readable.\n\n📋 Printed setlists: work well when the date is at the bottom in clear text (most are).\n\n🎨 Posters: work if the date is printed on the poster itself.',
+        },
+        {
+          heading: 'WHAT DOESN\'T WORK',
+          body: '❌ Screenshots — the date in the metadata will be today, not the show date.\n\n❌ Very dark, blurry, or low-resolution images — OCR can\'t read what it can\'t see.\n\n❌ Handwritten dates — OCR reads printed text only.\n\nFor any of these, just upload directly from the edit screen in Paper Trail instead.',
+        },
+        {
+          heading: 'MULTI-BAND SHOWS',
+          body: 'If you upload a setlist from a show with multiple acts, the app will ask you which band the setlist belongs to before saving. This keeps your Relic Vault organized by artist.',
+        },
+      ]
+    },
+    {
+      id: 'image-tips',
+      icon: '🖼️',
+      title: 'GETTING THE BEST IMAGE',
+      color: C.gold,
+      steps: [
+        {
+          heading: 'CROP BEFORE UPLOADING',
+          body: 'Crop out as much background as possible before uploading a ticket or setlist. The more of the frame is the actual artifact, the better OCR reads it. A tight crop of just the ticket beats a wide shot with your hand and a table in it.',
+        },
+        {
+          heading: 'USE YOUR PHONE\'S AUTO-ADJUST',
+          body: 'Before uploading, open the photo in your phone\'s native photo editor and tap Auto (iPhone) or Enhance (Android). This boosts contrast and sharpens text — makes a huge difference for OCR accuracy on older or faded tickets.',
+        },
+        {
+          heading: 'LIGHTING MATTERS',
+          body: 'Flat, even light is best. Avoid photographing tickets or setlists at an angle — shadows across the text will confuse OCR. Lay the item flat on a white surface and shoot straight down if possible.',
+        },
+        {
+          heading: 'ROTATE BEFORE UPLOADING',
+          body: 'Make sure your image is right-side up before uploading. OCR reads left-to-right, top-to-bottom — a sideways ticket will likely fail. Rotate in your photo app first.',
+        },
+        {
+          heading: 'FOR OLD OR FADED ITEMS',
+          body: 'For worn or faded tickets, try increasing contrast and brightness manually before uploading. iPhone\'s Photos app: Edit → drag Contrast up, drag Brightness up slightly. This can rescue dates that OCR would otherwise miss.',
+        },
+      ]
+    },
+    {
+      id: 'archive',
+      icon: '🗂️',
+      title: 'YOUR ARCHIVE',
+      color: C.purple,
+      steps: [
+        {
+          heading: 'PAPER TRAIL',
+          body: 'Your full show history in chronological order, newest first. Each row shows the ticket stub or wristband on the left, setlists and posters in the middle, and polaroids on the right. Tap any show to edit it.',
+        },
+        {
+          heading: 'WHAT GOES WHERE',
+          body: '📷 Polaroid — personal photos you took at the show\n🎟️ Stub — ticket stubs\n🏺 Relic — setlists, drumsticks, wristbands, anything physical\n🎫 Wristband — festival wristbands specifically\n🎨 Poster — gig posters (these also appear on the Poster Wall)',
+        },
+        {
+          heading: 'RELIC VAULT',
+          body: 'All your setlists in one place, displayed as physical paper pinned to a corkboard. Each one links to setlist.fm so you can find the full tracklist.',
+        },
+        {
+          heading: 'STUB CASE',
+          body: 'All your ticket stubs in a pile you can dig through. Tap any stub to see it full size. Filter by year or fest vs solo.',
+        },
+        {
+          heading: 'POSTER WALL',
+          body: 'A brick wall covered in all your gig posters. Tap any poster to see the full lineup for that show. Upload posters from the edit screen in Paper Trail.',
+        },
+        {
+          heading: 'POLAROID DECK',
+          body: 'All your personal show photos displayed as physical polaroids pinned to a wall. You can mark individual photos as private — they\'ll show as blurred on your public profile.',
+        },
+      ]
+    },
+    {
+      id: 'festivals',
+      icon: '🎪',
+      title: 'FESTIVALS',
+      color: C.gold,
+      steps: [
+        {
+          heading: 'LOGGING FESTIVAL DAYS',
+          body: 'Each day of a festival is its own show entry. When you add a show, toggle Festival Mode on and enter the festival name. The app groups all days of the same festival together automatically in Paper Trail and Box Sets.',
+        },
+        {
+          heading: 'FESTIVAL PASSPORT',
+          body: 'The Stamp Book tab shows every festival you\'ve attended as a passport stamp, with years attended and total days. Tap any stamp to jump to that festival\'s full Box Set view.',
+        },
+        {
+          heading: 'BOX SETS',
+          body: 'The Box Sets tab organizes every festival into a box set by year, showing day-by-day lineups, wristbands, setlists, and photos all together.',
+        },
+        {
+          heading: 'FESTIVAL POSTERS',
+          body: 'Upload a festival poster and set the type to Festival Year — it becomes the header image for that entire festival in Box Sets and Paper Trail, not just one day.',
+        },
+      ]
+    },
+    {
+      id: 'community',
+      icon: '🤝',
+      title: 'COMMUNITY',
+      color: C.purple,
+      steps: [
+        {
+          heading: 'THE STATION',
+          body: 'A directory of all TrackRecord users. Tap any curator to visit their public archive. You can browse their shows, see their artifacts, and clone any show to your own archive with the I WAS THERE button.',
+        },
+        {
+          heading: 'SHARED SHOWS',
+          body: 'The Shared Signals tab shows every show in your archive that another TrackRecord user also attended. The Collaboration Web visualizes these connections as an orbital map — the closer someone\'s orb, the more recently you saw a show together.',
+        },
+        {
+          heading: 'YOUR PUBLIC PROFILE',
+          body: 'Everything in your archive is public by default except photos you\'ve marked private. Share your profile link from The Office — anyone can view it without an account.',
+        },
+      ]
+    },
+  ];
+
+  return (
+    <div className="fade-in" style={{ padding: '24px 0', maxWidth: 800, margin: '0 auto' }}>
+
+      {/* Header */}
+      <div style={{ textAlign: 'center', marginBottom: 50 }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.teal, letterSpacing: 4, marginBottom: 10 }}>
+          // CURATOR MANUAL
+        </div>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: 'clamp(3rem, 8vw, 5rem)', color: C.white, lineHeight: 0.9, letterSpacing: 2 }}>
+          HOW TO USE<br /><span style={{ color: C.teal }}>TRACKRECORD</span>
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginTop: 16, maxWidth: 500, margin: '16px auto 0' }}>
+          Everything you need to know to build, maintain, and share your concert archive.
+        </div>
+      </div>
+
+      {/* Sections */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {SECTIONS.map(section => {
+          const isOpen = openSection === section.id;
+          return (
+            <div key={section.id} style={{ background: C.bgCard, border: `1px solid ${isOpen ? section.color : C.border}`, borderRadius: 12, overflow: 'hidden', transition: 'border-color 0.2s', boxShadow: isOpen ? `0 0 20px ${hexToRgba(section.color, 0.15)}` : 'none' }}>
+
+              {/* Section header — clickable */}
+              <div
+                onClick={() => toggle(section.id)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', cursor: 'pointer', userSelect: 'none' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <span style={{ fontSize: 22 }}>{section.icon}</span>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: isOpen ? section.color : C.white, letterSpacing: 2, transition: 'color 0.2s' }}>
+                    {section.title}
+                  </div>
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 12, color: section.color, transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'none' }}>
+                  ▼
+                </div>
+              </div>
+
+              {/* Section content */}
+              {isOpen && (
+                <div className="fade-in" style={{ borderTop: `1px solid ${C.border}`, padding: '24px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    {section.steps.map((step, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 16 }}>
+
+                        {/* Number */}
+                        <div style={{ flexShrink: 0, width: 28, height: 28, borderRadius: '50%', background: hexToRgba(section.color, 0.15), border: `1px solid ${hexToRgba(section.color, 0.4)}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Space Mono'", fontSize: 9, color: section.color, fontWeight: 900, marginTop: 2 }}>
+                          {i + 1}
+                        </div>
+
+                        {/* Content */}
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: section.color, letterSpacing: 1, marginBottom: 6 }}>
+                            {step.heading}
+                          </div>
+                          <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, lineHeight: 1.8, whiteSpace: 'pre-line' }}>
+                            {step.body}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer tip */}
+      <div style={{ marginTop: 50, padding: '20px 24px', background: hexToRgba(C.teal, 0.05), border: `1px dashed ${hexToRgba(C.teal, 0.3)}`, borderRadius: 12, textAlign: 'center' }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: C.teal, letterSpacing: 2, marginBottom: 6 }}>
+          SOMETHING NOT WORKING?
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, lineHeight: 1.8 }}>
+          Head to The Office and use the Contact button to reach us directly.<br />
+          Include a screenshot if you can — it helps a lot.
+        </div>
+      </div>
+    </div>
+  );
+}
+// ─── END HOW-TO TAB ───────────────────────────────────────────────────────────
+
 
 // ─── MANAGE TAB (WITH AVATAR UPLOAD) ──────────────────────────────────────────
 function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData, setActiveTab }) {
@@ -8518,6 +8763,7 @@ const TAB_GROUPS = [
       ['community', '🚉 THE STATION', '#9966ff'],
       ['shows', '🤝 SHARED SHOWS', '#ffcc00'],
       ['poster', '🎨 GIG POSTER', '#ff6699'],
+      ['howto', '📖 HOW-TO', '#00e5cc'],
     ]
   },
 ];
@@ -13946,6 +14192,7 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
       }} 
     />
   )}
+{activeTab === 'howto' && <HowToTab />}
 
   {/* 3. ARCHIVE TABS */}
 {activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} posters={posters} onShare={(a, s) => setShareCard({ artist: a, shows: s })} shouldBlurPhoto={shouldBlurPhoto} currentUserId={currentUserId} />}
