@@ -7855,7 +7855,13 @@ const PER = 30;
         <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GENRE_COLORS[genreStats[0].name] || C.teal, fontWeight: 900 }}>YOUR TRUE COLOR</div>
       </div>
     )}
-    {genreStats[0] && !GENRE_COLORS[genreStats[0].name] || Object.keys(GENRE_COLORS).filter(g => (genreStats || []).find(s => s.name === g && s.count > 0)).length < 3 ? (
+    {(() => {
+  const genresSet = Object.keys(GENRE_COLORS).filter(g =>
+    (genreStats || []).find(s => s.name === g && s.count > 0)
+  ).length >= 3;
+
+  if (!genresSet) {
+    return (
       <div>
         <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gold, marginBottom: 12, lineHeight: 1.8 }}>
           ⚠️ YOUR GENRES ARE NOT FULLY SET.<br />SET THEM IN THE DIGGING TAB TO UNLOCK YOUR TRUE COLOR.
@@ -7867,33 +7873,35 @@ const PER = 30;
           SET MY GENRES →
         </button>
       </div>
-    ) : (
-      <button
-        onClick={async () => {
-          await onClaimColor();
-          const el = document.createElement('div');
-          el.style.cssText = 'position:fixed;inset:0;z-index:99999;pointer-events:none;';
-          el.innerHTML = `<div style="position:absolute;inset:0;background:${GENRE_COLORS[genreStats[0].name]};animation:colorFlash 1.2s ease forwards;"></div>`;
-          document.body.appendChild(el);
-          const style = document.createElement('style');
-          style.textContent = '@keyframes colorFlash{0%{opacity:0.8}100%{opacity:0}}';
-          document.head.appendChild(style);
-          setTimeout(() => { el.remove(); style.remove(); }, 1200);
-        }}
-        style={{
-          background: GENRE_COLORS[genreStats[0].name] || C.teal,
-          border: 'none', color: '#000', padding: '16px 40px', borderRadius: 8,
-          fontFamily: "'Bebas Neue'", fontSize: '1.8rem', letterSpacing: 3,
-          cursor: 'pointer', fontWeight: 900,
-          boxShadow: `0 0 30px ${hexToRgba(GENRE_COLORS[genreStats[0].name] || C.teal, 0.6)}`,
-          animation: 'pulse 2s infinite'
-        }}
-      >
-        ⚡ CLAIM YOUR COLOR
-      </button>
-    )}
-  </div>
-)}
+    );
+  }
+
+  return (
+    <button
+      onClick={async () => {
+        await onClaimColor();
+        const el = document.createElement('div');
+        el.style.cssText = 'position:fixed;inset:0;z-index:99999;pointer-events:none;';
+        el.innerHTML = `<div style="position:absolute;inset:0;background:${GENRE_COLORS[genreStats[0].name]};animation:colorFlash 1.2s ease forwards;"></div>`;
+        document.body.appendChild(el);
+        const style = document.createElement('style');
+        style.textContent = '@keyframes colorFlash{0%{opacity:0.8}100%{opacity:0}}';
+        document.head.appendChild(style);
+        setTimeout(() => { el.remove(); style.remove(); }, 1200);
+      }}
+      style={{
+        background: GENRE_COLORS[genreStats[0].name] || C.teal,
+        border: 'none', color: '#000', padding: '16px 40px', borderRadius: 8,
+        fontFamily: "'Bebas Neue'", fontSize: '1.8rem', letterSpacing: 3,
+        cursor: 'pointer', fontWeight: 900,
+        boxShadow: `0 0 30px ${hexToRgba(GENRE_COLORS[genreStats[0].name] || C.teal, 0.6)}`,
+        animation: 'pulse 2s infinite'
+      }}
+    >
+      ⚡ CLAIM YOUR COLOR
+    </button>
+  );
+})()}
 
       {/* ── TOP SECTION: PROFILE ── */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 30 }}>
