@@ -11907,6 +11907,7 @@ export default function App() {
 
   // ── 2. DATA STATE ──
   const [concerts, setConcerts] = useState([]);
+  const [userArtifacts, setUserArtifacts] = useState([]);
   const [artistGenres, setArtistGenres] = useState({});
   const [upcoming, setUpcoming] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12824,6 +12825,7 @@ async function fetchConcerts() {
 const filteredArtifacts = viewingUser 
   ? (userArtifacts || []).filter(art => art.is_public === true)
   : (userArtifacts || []);
+setUserArtifacts(filteredArtifacts);
   
   const collaborativeShows = (attendances || []).map(a => {
     const showArtifacts = (userArtifacts || []).filter(art => art.show_id === a.show.id);
@@ -14174,11 +14176,11 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
 {activeTab === 'howto' && <HowToTab />}
 
   {/* 3. ARCHIVE TABS */}
-{activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} posters={posters} onShare={(a, s) => setShareCard({ artist: a, shows: s })} shouldBlurPhoto={shouldBlurPhoto} currentUserId={currentUserId} artifacts={filteredArtifacts} />}
+{activeTab === 'hof' && <HallOfFame sets={allSetsList} genreMap={artistGenres} posters={posters} onShare={(a, s) => setShareCard({ artist: a, shows: s })} shouldBlurPhoto={shouldBlurPhoto} currentUserId={currentUserId} artifacts={userArtifacts} />}
   
 {activeTab === 'vault' && <SetlistVaultTab genreMap={artistGenres} viewingUser={viewingUser} currentUserId={currentUserId} />}
   
-{activeTab === 'photos' && <PhotoVaultTab concerts={concerts} artifacts={filteredArtifacts} shouldBlurPhoto={shouldBlurPhoto} currentUserId={currentUserId} />}
+{activeTab === 'photos' && <PhotoVaultTab concerts={concerts} artifacts={userArtifacts} shouldBlurPhoto={shouldBlurPhoto} currentUserId={currentUserId} />}
 
 {activeTab === 'shows' && <CollaborationWebTab />}
 
