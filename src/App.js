@@ -7902,6 +7902,8 @@ const PER = 30;
     </button>
   );
 })()}
+  </div>
+)}
 
       {/* ── TOP SECTION: PROFILE ── */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 30 }}>
