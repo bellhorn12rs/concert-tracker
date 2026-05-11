@@ -1726,7 +1726,7 @@ function TheaterMarquee({ upcoming, onAdd, onEdit, session }) {
             const hasCollaborators = otherAttendees.length > 0;
             
             return (
-              <div key={show.id||i} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto auto', alignItems:'center', gap:12, padding:'12px 0', borderBottom: i === upcoming.length -1 ? 'none' : '1px solid #1a1a1a' }}>
+              <div key={show.id||i} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto auto auto', alignItems:'center', gap:12, padding:'12px 0', borderBottom: i === upcoming.length -1 ? 'none' : '1px solid #1a1a1a' }}>
                 <div style={{ fontFamily:"'Space Mono'", fontSize:9, color:'#888', whiteSpace:'nowrap' }}>{fmtDateShort(show.date)}</div>
                 
                 <div style={{ textAlign:'center' }}>
@@ -1777,14 +1777,26 @@ function TheaterMarquee({ upcoming, onAdd, onEdit, session }) {
                 <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:C.gold, background:'rgba(255,204,0,0.12)', border:'1px solid rgba(255,204,0,0.3)', padding:'2px 6px', borderRadius:3, whiteSpace:'nowrap' }}>
                   {show.status || 'TICKETS'}
                 </span>
-                <button
-                  onClick={() => onEdit(show)}
-                  style={{ background:'none', border:'1px solid #333', color:'#888', cursor:'pointer', fontSize:9, borderRadius:3, padding:'3px 8px', fontFamily:"'Space Mono'", transition:'all 0.2s' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.gold; e.currentTarget.style.color = C.gold; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#888'; }}
-                >
-                  EDIT
-                </button>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {show.date < new Date().toISOString().split('T')[0] && (
+                    <button
+                      onClick={() => onCommit(show)}
+                      style={{ background: 'rgba(0,229,204,0.1)', border: `1px solid ${C.teal}`, color: C.teal, cursor: 'pointer', fontSize: 9, borderRadius: 3, padding: '3px 8px', fontFamily: "'Space Mono'", transition: 'all 0.2s', whiteSpace: 'nowrap' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = hexToRgba(C.teal, 0.25); }}
+                      onMouseLeave={e => { e.currentTarget.style.background = hexToRgba(C.teal, 0.1); }}
+                    >
+                      ✓ ARCHIVE
+                    </button>
+                  )}
+                  <button
+                    onClick={() => onEdit(show)}
+                    style={{ background:'none', border:'1px solid #333', color:'#888', cursor:'pointer', fontSize:9, borderRadius:3, padding:'3px 8px', fontFamily:"'Space Mono'", transition:'all 0.2s' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = C.gold; e.currentTarget.style.color = C.gold; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#888'; }}
+                  >
+                    EDIT
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -8101,292 +8113,203 @@ const PER = 30;
   );
 }
 // ─── MODALS ───────────────────────────────────────────────────────────────────
-// ─── UPCOMING MODAL (CLEAN & ARMORED) ───────────────────────────────────
-function UpcomingModal({ show, onClose, onSave, onDelete }) {
+function UpcomingModal({ show, onClose, onSave, onDelete, session }) {
   const isNew = !show?.id;
-  
-  // Initialize form with show data or defaults
+  const [mode, setMode] = useState(isNew ? 'find' : 'edit');
   const [form, setForm] = useState({ 
-    artist: '', 
-    bands: [],
-    venue: '', 
-    city: '',
-    state: '',
-    date: '', 
-    status: 'TICKETS BOUGHT',
-    is_festival: false,
-    festival_name: ''
+    artist: '', bands: [], venue: '', city: '', state: '',
+    date: '', status: 'TICKETS BOUGHT', is_festival: false, festival_name: ''
   });
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [joining, setJoining] = useState(false);
 
-  // Sync state when "show" prop changes
   useEffect(() => {
     if (show && show.id) {
+      setMode('edit');
       setForm({
-        artist: show.artist || '',
-        bands: show.bands || [],
-        venue: show.venue || '',
-        city: show.city || '',
-        state: show.state || '',
-        date: show.date || '',
-        status: show.status || 'TICKETS BOUGHT',
-        is_festival: show.is_festival || false,
+        artist: show.artist || '', bands: show.bands || [], venue: show.venue || '',
+        city: show.city || '', state: show.state || '', date: show.date || '',
+        status: show.status || 'TICKETS BOUGHT', is_festival: show.is_festival || false,
         festival_name: show.festival_name || ''
-      });
-    } else {
-      setForm({ 
-        artist: '', 
-        bands: [],
-        venue: '', 
-        city: '',
-        state: '',
-        date: '', 
-        status: 'TICKETS BOUGHT',
-        is_festival: false,
-        festival_name: ''
       });
     }
   }, [show]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  
-  const lbl = { 
-    display: 'block', 
-    fontFamily: "'Space Mono', monospace", 
-    fontSize: 8, 
-    letterSpacing: '0.15em', 
-    textTransform: 'uppercase', 
-    color: C.gold, 
-    marginBottom: 4 
+
+  const handleSearch = async (q) => {
+    setSearchQuery(q);
+    if (q.length < 2) { setSearchResults([]); return; }
+    setSearching(true);
+    const { data } = await supabase
+      .from('upcoming_shows')
+      .select('id, artist, date, venue, city, status, festival_name')
+      .gte('date', new Date().toISOString().split('T')[0])
+      .ilike('artist', `%${q}%`)
+      .order('date', { ascending: true })
+      .limit(10);
+    setSearchResults(data || []);
+    setSearching(false);
   };
 
-  const inpStLocal = { 
-    width: '100%', 
-    background: 'rgba(0,0,0,0.5)', 
-    border: `1px solid ${C.gold}44`, 
-    color: '#fff', 
-    padding: '12px', 
-    fontFamily: "'Space Mono'", 
-    borderRadius: '6px', 
-    outline: 'none',
-    marginBottom: 15,
-    boxSizing: 'border-box'
+  const handleJoin = async (upcomingShow) => {
+    setJoining(true);
+    try {
+      const { data: existing } = await supabase
+        .from('upcoming_attendances')
+        .select('id')
+        .eq('show_id', upcomingShow.id)
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      if (!existing) {
+        await supabase.from('upcoming_attendances').insert([{
+          show_id: upcomingShow.id,
+          user_id: session.user.id
+        }]);
+      }
+      onClose();
+    } catch (err) {
+      alert('Failed to join: ' + err.message);
+    }
+    setJoining(false);
   };
+
+  const lbl = { display: 'block', fontFamily: "'Space Mono', monospace", fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.gold, marginBottom: 4 };
+  const inpStLocal = { width: '100%', background: 'rgba(0,0,0,0.5)', border: `1px solid ${C.gold}44`, color: '#fff', padding: '12px', fontFamily: "'Space Mono'", borderRadius: '6px', outline: 'none', marginBottom: 15, boxSizing: 'border-box' };
 
   return (
-    <div
-      style={{ 
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', 
-        zIndex: 9000, display: 'flex', alignItems: 'center', 
-        justifyContent: 'center', padding: 20, backdropFilter: 'blur(10px)' 
-      }}
-      onClick={e => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        className="fade-in"
-        style={{ 
-          background: C.bgCard, 
-          border: `1px solid ${C.gold}`, 
-          borderRadius: 16, 
-          padding: 35, 
-          width: '100%', 
-          maxWidth: 500,
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          boxShadow: `0 0 50px ${hexToRgba(C.gold, 0.2)}`, 
-          position: 'relative' 
-        }}
-      >
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(10px)' }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="fade-in" style={{ background: C.bgCard, border: `1px solid ${C.gold}`, borderRadius: 16, padding: 35, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto', boxShadow: `0 0 50px ${hexToRgba(C.gold, 0.2)}`, position: 'relative' }}>
+
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: C.white, letterSpacing: '1px' }}>
-            {isNew ? 'NEW PLAN' : 'UPDATE INTEL'}
+            {isNew ? 'ADD A SHOW' : 'UPDATE INTEL'}
           </div>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 2 }}>
-            STATUS: ACTIVE
-          </div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gold, letterSpacing: 2 }}>STATUS: ACTIVE</div>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          setSaving(true);
-          onSave(show?.id, form);
-        }}>
-          
-          {/* Festival Mode Toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 15 }}>
-            <label style={lbl}>FESTIVAL MODE</label>
-            <input 
-              type="checkbox" 
-              checked={form.is_festival} 
-              onChange={e => set('is_festival', e.target.checked)} 
-              style={{ accentColor: C.gold }} 
-            />
+        {/* Toggle — only show for new shows */}
+        {isNew && (
+          <div style={{ display: 'flex', marginBottom: 24, background: 'rgba(0,0,0,0.4)', borderRadius: 8, padding: 4, gap: 4 }}>
+            {[['find', '🔍 FIND EXISTING'], ['new', '+ ADD NEW']].map(([id, label]) => (
+              <button key={id} onClick={() => setMode(id)} style={{ flex: 1, padding: '10px', borderRadius: 6, border: 'none', background: mode === id ? C.gold : 'transparent', color: mode === id ? '#000' : C.gray, fontFamily: "'Bebas Neue'", fontSize: '1rem', letterSpacing: 1, cursor: 'pointer', fontWeight: 900, transition: 'all 0.15s' }}>
+                {label}
+              </button>
+            ))}
           </div>
+        )}
 
-          {/* Artist/Festival Name */}
-          <label style={lbl}>{form.is_festival ? 'FESTIVAL NAME' : 'Artist / Band'} *</label>
-          <input 
-            style={inpStLocal} 
-            value={form.is_festival ? form.festival_name : form.artist} 
-            onChange={e => set(form.is_festival ? 'festival_name' : 'artist', e.target.value)} 
-            placeholder={form.is_festival ? 'e.g. Bonnaroo' : 'e.g. Tame Impala'}
-            required
-          />
-
-          {/* Lineup (for festivals) */}
-          {form.is_festival && (
-            <>
-              <label style={lbl}>LINEUP (OPTIONAL)</label>
-              <div style={{ 
-                background: '#000', 
-                border: '1px solid #222', 
-                borderRadius: 8, 
-                padding: 12,
-                marginBottom: 15
-              }}>
-                {(form.bands || []).map((band, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                    <input 
-                      style={{ ...inpStLocal, marginBottom: 0, flex: 1 }} 
-                      value={typeof band === 'string' ? band : band.name || ''}
-                      placeholder="Band Name"
-                      onChange={e => {
-                        const updated = [...(form.bands || [])];
-                        updated[idx] = e.target.value;
-                        set('bands', updated);
-                      }}
-                    />
-                    <button 
-                      type="button"
-                      onClick={() => set('bands', form.bands.filter((_, i) => i !== idx))} 
-                      style={{ 
-                        background: 'none', 
-                        border: 'none', 
-                        color: '#ff4444', 
-                        cursor: 'pointer',
-                        fontSize: '1.2rem'
-                      }}
-                    >
-                      ×
+        {/* FIND EXISTING MODE */}
+        {mode === 'find' && (
+          <div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 16, lineHeight: 1.8 }}>
+              SEARCH FOR A SHOW SOMEONE ELSE HAS ALREADY ADDED AND JOIN IT WITH ONE TAP.
+            </div>
+            <input
+              style={{ ...inpStLocal, marginBottom: 8 }}
+              placeholder="Search by artist name..."
+              value={searchQuery}
+              onChange={e => handleSearch(e.target.value)}
+              autoFocus
+            />
+            {searching && (
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, padding: '12px 0' }}>SEARCHING...</div>
+            )}
+            {searchResults.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                {searchResults.map(s => (
+                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'rgba(255,255,255,0.03)' }}>
+                    <div>
+                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: C.white, letterSpacing: 1 }}>{s.artist || s.festival_name}</div>
+                      <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray, marginTop: 2 }}>
+                        {s.date}{s.venue ? ` · ${s.venue}` : ''}{s.city ? `, ${s.city}` : ''}
+                      </div>
+                    </div>
+                    <button onClick={() => handleJoin(s)} disabled={joining} style={{ background: C.gold, border: 'none', color: '#000', padding: '8px 16px', borderRadius: 6, fontFamily: "'Bebas Neue'", fontSize: '1rem', letterSpacing: 1, cursor: 'pointer', fontWeight: 900, flexShrink: 0 }}>
+                      {joining ? '...' : 'JOIN'}
                     </button>
                   </div>
                 ))}
-                <button 
-                  type="button"
-                  onClick={() => set('bands', [...(form.bands || []), ''])} 
-                  style={{ 
-                    width: '100%', 
-                    padding: '8px', 
-                    background: '#0a0a0a', 
-                    color: C.gold, 
-                    border: '1px dashed #333', 
-                    borderRadius: 4, 
-                    fontSize: 9, 
-                    cursor: 'pointer',
-                    fontFamily: "'Space Mono'"
-                  }}
-                >
-                  + ADD BAND
-                </button>
               </div>
-            </>
-          )}
-
-          <label style={lbl}>Venue</label>
-          <input 
-            style={inpStLocal} 
-            value={form.venue} 
-            onChange={e => set('venue', e.target.value)} 
-            placeholder="e.g. Red Rocks" 
-          />
-
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10, marginBottom: 15 }}>
-            <div>
-              <label style={lbl}>City</label>
-              <input 
-                style={{ ...inpStLocal, marginBottom: 0 }} 
-                value={form.city} 
-                onChange={e => set('city', e.target.value)} 
-                placeholder="City" 
-              />
-            </div>
-            <div>
-              <label style={lbl}>State</label>
-              <input 
-                style={{ ...inpStLocal, marginBottom: 0 }} 
-                value={form.state} 
-                onChange={e => set('state', e.target.value)} 
-                placeholder="ST" 
-                maxLength={2}
-              />
-            </div>
-          </div>
-
-          <label style={lbl}>Target Date *</label>
-          <input 
-            style={{ ...inpStLocal, colorScheme: 'dark' }} 
-            type="date" 
-            value={form.date} 
-            onChange={e => set('date', e.target.value)} 
-            required
-          />
-
-          <label style={lbl}>Logistics Status</label>
-          <select 
-            style={inpStLocal} 
-            value={form.status} 
-            onChange={e => set('status', e.target.value)}
-          >
-            <option value="TICKETS BOUGHT">TICKETS BOUGHT</option>
-            <option value="ON SALE SOON">ON SALE SOON</option>
-            <option value="DREAMING">DREAMING</option>
-            <option value="MANIFESTING">MANIFESTING</option>
-          </select>
-
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
-            {!isNew && (
-              <button
-                type="button"
-                onClick={() => { if(window.confirm('Delete this show?')) onDelete(show.id); }}
-                style={{ 
-                  background: 'rgba(255,68,68,0.1)', border: `1px solid ${C.red}`, 
-                  color: C.red, padding: '12px 20px', borderRadius: 8, cursor: 'pointer', 
-                  fontFamily: "'Bebas Neue'", fontSize: '1.2rem' 
-                }}
-              >
-                DELETE
-              </button>
             )}
-            
-            <button
-              type="button"
-              onClick={onClose}
-              style={{ 
-                flex: 1, background: 'transparent', border: `1px solid ${C.border}`, 
-                color: C.gray, padding: '12px 20px', borderRadius: 8, cursor: 'pointer', 
-                fontFamily: "'Bebas Neue'", fontSize: '1.2rem' 
-              }}
-            >
-              CANCEL
-            </button>
-
-            <button
-              type="submit"
-              disabled={saving}
-              style={{ 
-                flex: 2, background: C.gold, border: 'none', color: '#000', 
-                padding: '12px 20px', borderRadius: 8, cursor: saving ? 'not-allowed' : 'pointer', 
-                fontFamily: "'Bebas Neue'", fontSize: '1.4rem', fontWeight: 900,
-                boxShadow: `0 0 20px ${hexToRgba(C.gold, 0.4)}`
-              }}
-            >
-              {saving ? 'SYNCING...' : isNew ? 'CONFIRM' : 'UPDATE'}
-            </button>
+            {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, padding: '12px 0', lineHeight: 1.8 }}>
+                NO MATCHES FOUND.<br />
+                <span style={{ color: C.gold, cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setMode('new')}>ADD IT AS A NEW SHOW →</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <button onClick={onClose} style={{ flex: 1, background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, padding: '12px 20px', borderRadius: 8, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem' }}>CANCEL</button>
+            </div>
           </div>
-        </form>
+        )}
+
+        {/* ADD NEW / EDIT MODE */}
+        {(mode === 'new' || mode === 'edit') && (
+          <form onSubmit={(e) => { e.preventDefault(); setSaving(true); onSave(show?.id, form); }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 15 }}>
+              <label style={lbl}>FESTIVAL MODE</label>
+              <input type="checkbox" checked={form.is_festival} onChange={e => set('is_festival', e.target.checked)} style={{ accentColor: C.gold }} />
+            </div>
+
+            <label style={lbl}>{form.is_festival ? 'FESTIVAL NAME' : 'Artist / Band'} *</label>
+            <input style={inpStLocal} value={form.is_festival ? form.festival_name : form.artist} onChange={e => set(form.is_festival ? 'festival_name' : 'artist', e.target.value)} placeholder={form.is_festival ? 'e.g. Bonnaroo' : 'e.g. Tame Impala'} required />
+
+            {form.is_festival && (
+              <>
+                <label style={lbl}>LINEUP (OPTIONAL)</label>
+                <div style={{ background: '#000', border: '1px solid #222', borderRadius: 8, padding: 12, marginBottom: 15 }}>
+                  {(form.bands || []).map((band, idx) => (
+                    <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                      <input style={{ ...inpStLocal, marginBottom: 0, flex: 1 }} value={typeof band === 'string' ? band : band.name || ''} placeholder="Band Name" onChange={e => { const updated = [...(form.bands || [])]; updated[idx] = e.target.value; set('bands', updated); }} />
+                      <button type="button" onClick={() => set('bands', form.bands.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '1.2rem' }}>×</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => set('bands', [...(form.bands || []), ''])} style={{ width: '100%', padding: '8px', background: '#0a0a0a', color: C.gold, border: '1px dashed #333', borderRadius: 4, fontSize: 9, cursor: 'pointer', fontFamily: "'Space Mono'" }}>+ ADD BAND</button>
+                </div>
+              </>
+            )}
+
+            <label style={lbl}>Venue</label>
+            <input style={inpStLocal} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="e.g. Red Rocks" />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10, marginBottom: 15 }}>
+              <div>
+                <label style={lbl}>City</label>
+                <input style={{ ...inpStLocal, marginBottom: 0 }} value={form.city} onChange={e => set('city', e.target.value)} placeholder="City" />
+              </div>
+              <div>
+                <label style={lbl}>State</label>
+                <input style={{ ...inpStLocal, marginBottom: 0 }} value={form.state} onChange={e => set('state', e.target.value)} placeholder="ST" maxLength={2} />
+              </div>
+            </div>
+
+            <label style={lbl}>Target Date *</label>
+            <input style={{ ...inpStLocal, colorScheme: 'dark' }} type="date" value={form.date} onChange={e => set('date', e.target.value)} required />
+
+            <label style={lbl}>Logistics Status</label>
+            <select style={inpStLocal} value={form.status} onChange={e => set('status', e.target.value)}>
+              <option value="TICKETS BOUGHT">TICKETS BOUGHT</option>
+              <option value="ON SALE SOON">ON SALE SOON</option>
+              <option value="DREAMING">DREAMING</option>
+              <option value="MANIFESTING">MANIFESTING</option>
+            </select>
+
+            <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
+              {!isNew && (
+                <button type="button" onClick={() => { if(window.confirm('Delete this show?')) onDelete(show.id); }} style={{ background: 'rgba(255,68,68,0.1)', border: `1px solid ${C.red}`, color: C.red, padding: '12px 20px', borderRadius: 8, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem' }}>DELETE</button>
+              )}
+              <button type="button" onClick={onClose} style={{ flex: 1, background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, padding: '12px 20px', borderRadius: 8, cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.2rem' }}>CANCEL</button>
+              <button type="submit" disabled={saving} style={{ flex: 2, background: C.gold, border: 'none', color: '#000', padding: '12px 20px', borderRadius: 8, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.4rem', fontWeight: 900, boxShadow: `0 0 20px ${hexToRgba(C.gold, 0.4)}` }}>
+                {saving ? 'SYNCING...' : isNew ? 'CONFIRM' : 'UPDATE'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
@@ -12200,7 +12123,7 @@ export default function App() {
   
   // 🔍 THE TEMPORAL SCANNER (Post-Show Nudge)
   useEffect(() => {
-    if (upcoming.length > 0 && !loading && isAdmin) {
+if (upcoming.length > 0 && !loading && session?.user?.id) {
       const today = new Date().toISOString().split('T')[0];
       // Find the first upcoming show that happened yesterday or earlier
       const staleShow = upcoming.find(s => s.date < today);
@@ -13222,13 +13145,20 @@ async function handleDelete(id) {
       
       if (error) throw error;
     } else {
-      // Check if this show already exists (someone else added it)
-      const { data: existing } = await supabase
+      // Check if this show already exists with fuzzy matching
+      const { data: existingShows } = await supabase
         .from('upcoming_shows')
-        .select('id')
-        .eq('date', formData.date)
-        .eq('artist', formData.artist)
-        .maybeSingle();
+        .select('id, artist')
+        .eq('date', formData.date);
+
+      const artistInput = (formData.artist || formData.festival_name || '').toLowerCase().trim();
+      const existing = existingShows?.find(s => {
+        const a = (s.artist || '').toLowerCase().trim();
+        return a === artistInput || 
+               a.includes(artistInput) || 
+               artistInput.includes(a) ||
+               a.split(' ').some(word => word.length > 3 && artistInput.includes(word));
+      });
       
       if (existing) {
         // Show exists, just add your attendance
@@ -13902,6 +13832,7 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
   upcoming={upcoming} 
   onAdd={isAdmin ? () => setUpcomingModal('new') : null} 
   onEdit={isAdmin ? setUpcomingModal : null}
+  onCommit={isAdmin ? (show) => setNudgeTarget(show) : null}
   session={session}
 />
 
@@ -14506,7 +14437,7 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
             {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
             {shareCard && <ShareCard artist={shareCard.artist} shows={shareCard.shows} onClose={() => setShareCard(null)} />}
             {editTarget && <EditModal concert={editTarget === 'new' ? 'new' : editTarget} onClose={() => setEditTarget(null)} onSave={editTarget?.isNudge ? (id, payload) => handleReconcile(editTarget.id, payload) : handleSave} onDelete={handleDelete} allConcerts={concerts} />}
-            {upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} />}
+{upcomingModal !== null && <UpcomingModal show={upcomingModal === 'new' ? null : upcomingModal} onClose={() => setUpcomingModal(null)} onSave={handleUpcomingSave} onDelete={handleUpcomingDelete} session={session} />}
           </div>
         </div>
       </div>
