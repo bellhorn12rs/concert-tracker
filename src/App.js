@@ -13658,7 +13658,7 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
         <div
   onClick={() => setActiveTab('manage')}
   title="Click to customize your title"
-  style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSpacing: '3px', textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`, lineHeight: 1, cursor: 'pointer', transition: 'color 0.2s' }}
+style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSpacing: '3px', textShadow: `0 0 15px ${hexToRgba(C.purple, 0.5)}`, lineHeight: 1, cursor: 'pointer', transition: 'color 0.2s', pointerEvents: 'auto' }}
   onMouseEnter={e => e.currentTarget.style.color = C.teal}
   onMouseLeave={e => e.currentTarget.style.color = '#fff'}
 >
