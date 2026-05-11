@@ -7718,7 +7718,7 @@ function HowToTab() {
 }
 
 // ─── MANAGE TAB (WITH AVATAR UPLOAD) ──────────────────────────────────────────
-function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData, setActiveTab, preferredQualifier, onSaveQualifier, colorUpgraded, currentAvatarColor, onClaimColor }) {  const [search, setSearch] = useState('');
+function ManageTab({ concerts, onEdit, onAdd, onDuplicate, session, onFetchData, setActiveTab, preferredQualifier, onSaveQualifier, colorUpgraded, currentAvatarColor, onClaimColor, genreStats }) {
   const [page, setPage] = useState(1);
   const PER = 30;
   const isMobile = window.innerWidth < 768;
