@@ -8350,6 +8350,20 @@ function PhotoVaultTab({ concerts, artifacts, shouldBlurPhoto, currentUserId }) 
   }).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 }, [safeConcerts, artifacts, shouldBlurPhoto]);
 
+// Delete a photo artifact
+  const handleDeletePhoto = async (artifactId) => {
+    if (!window.confirm('DELETE THIS PHOTO? This cannot be undone.')) return;
+    const { error } = await supabase
+      .from('artifacts')
+      .delete()
+      .eq('id', artifactId);
+    if (error) {
+      alert('DELETE FAILED: ' + error.message);
+    } else {
+      window.location.reload();
+    }
+  };
+
   // Toggle privacy for a photo
 const togglePrivacy = async (url, currentState) => {
   console.log('=== TOGGLE PRIVACY DEBUG ===');
@@ -8436,7 +8450,34 @@ window.location.reload();
               cursor: 'pointer'
             }}
           >
-            <PersonalPolaroid 
+            {isAdmin && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDeletePhoto(p.id); }}
+                style={{
+                  position: 'absolute',
+                  top: -10,
+                  right: -10,
+                  zIndex: 20,
+                  background: '#ff4466',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: 28,
+                  height: 28,
+                  color: '#fff',
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.6)',
+                  opacity: 0.85,
+                }}
+                title="Delete photo"
+              >
+                ✕
+              </button>
+            )}
+            <PersonalPolaroid
   src={p.url} 
   caption={p.artist} 
   date={p.date} 
