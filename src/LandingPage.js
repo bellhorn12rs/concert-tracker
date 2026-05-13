@@ -77,14 +77,18 @@ export default function LandingPage({
   }, []);
 
   // ─── RECENT USERS ───
+  const [userCount, setUserCount] = useState(0);
   useEffect(() => {
     const fetchRecentUsers = async () => {
       const { data } = await supabase
         .from('profiles')
         .select('username, avatar_color, last_seen, last_artist, last_venue')
         .order('last_seen', { ascending: false })
-        .limit(10);
-      if (data) setRecentUsers(data);
+        .limit(1000);
+      if (data) {
+        setRecentUsers(data);
+        setUserCount(data.length);
+      }
     };
     fetchRecentUsers();
   }, []);
@@ -606,10 +610,12 @@ export default function LandingPage({
           {/* Stats strip — global numbers from `shows` table */}
           <div style={{ display: 'flex', gap: isMobile ? 32 : 80, justifyContent: 'center', flexWrap: 'wrap', padding: '40px 0', borderTop: `1px solid #111`, borderBottom: `1px solid #111` }}>
             {[
+              {[
               [shows.length, 'SHOWS', TEAL],
               [uniqueArtists, 'ARTISTS', GOLD],
               [uniqueVenues, 'VENUES', PURPLE],
               [uniqueStates, 'STATES', '#ff4466'],
+              [userCount, 'ARCHIVISTS', '#ff66cc'],
             ].map(([val, label, color]) => (
               <div key={label} style={{ textAlign: 'center' }}>
                 <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color, lineHeight: 1, textShadow: `0 0 20px ${color}88` }}>
