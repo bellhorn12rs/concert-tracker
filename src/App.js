@@ -12119,7 +12119,7 @@ useEffect(() => {
   supabase.auth.getSession().then(({ data: { session } }) => {
     if (session) {
       setSession(session);
-      // 🔥 CRITICAL: Don't just set loading false; trigger data check
+      setOnLanding(false); // ← FIX: recovered session = not on landing
     }
     setAuthLoading(false);
   });
@@ -12130,12 +12130,12 @@ useEffect(() => {
     setAuthLoading(false);
     
     if (session?.user?.id) {
-      // If we just signed in or recovered a session from another tab
       if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-        initRan.current = false; // Reset gate to ensure data is fetched
+        initRan.current = false;
+        setOnLanding(false); // ← FIX: covers tab restore + token refresh cases
       }
     } else if (event === 'SIGNED_OUT') {
-      setConcerts([]); // Clear history on logout
+      setConcerts([]);
       initRan.current = false;
     }
   });
