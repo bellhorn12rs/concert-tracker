@@ -10620,8 +10620,8 @@ function ShowsTab() {
   );
 }
 // ─── COLLABORATION WEB - MOBILE RESPONSIVE ────────────────────────────────────
-// ─── COLLABORATION WEB - WITH AVATARS & MESH ───────────────────────────────────
-function CollaborationWebTab() {
+// ─── COLLABORATION WEB ────────────────────────────────────────────────────────
+function CollaborationWebTab({ onNavigateToUser }) {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [collaborators, setCollaborators] = useState([]);
@@ -10632,114 +10632,72 @@ function CollaborationWebTab() {
   const [totalShows, setTotalShows] = useState(0);
   const [viewMode, setViewMode] = useState('2d');
   const [myAvatar, setMyAvatar] = useState(null);
+  const [hoveredNode, setHoveredNode] = useState(null);
   const canvasRef = useRef(null);
   const threeMountRef = useRef(null);
   const animationRef = useRef(null);
 
-  // Fetch data with avatars
+  const isMobile = window.innerWidth < 768;
+
+  // ─── DATA FETCH ───────────────────────────────────────────────────────────
   useEffect(() => {
     const fetch = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user?.id) {
-          setLoading(false);
-          return;
-        }
-        
+        if (!session?.user?.id) { setLoading(false); return; }
         const myUserId = session.user.id;
-        
-        // Fetch MY profile for avatar
+
         const { data: myProfile } = await supabase
-          .from('profiles')
-          .select('avatar_url')
-          .eq('id', myUserId)
-          .single();
-        
-        if (myProfile?.avatar_url) {
-          setMyAvatar(myProfile.avatar_url);
-        }
-        
+          .from('profiles').select('avatar_url').eq('id', myUserId).single();
+        if (myProfile?.avatar_url) setMyAvatar(myProfile.avatar_url);
+
         const { data: myAttendances } = await supabase
-          .from('attendances')
-          .select('show_id')
-          .eq('user_id', myUserId);
-        
-        if (!myAttendances || myAttendances.length === 0) {
-          setLoading(false);
-          return;
-        }
-        
+          .from('attendances').select('show_id').eq('user_id', myUserId);
+        if (!myAttendances || myAttendances.length === 0) { setLoading(false); return; }
+
         const myShowIds = myAttendances.map(a => a.show_id);
         setTotalShows(myShowIds.length);
-        
+
         const batchSize = 100;
         const showBatches = [];
-        
         for (let i = 0; i < myShowIds.length; i += batchSize) {
-          const batch = myShowIds.slice(i, i + batchSize);
-          const { data: batchShows } = await supabase
-            .from('shows')
-            .select('*')
-            .in('id', batch);
-          
-          if (batchShows) showBatches.push(...batchShows);
+          const { data: b } = await supabase.from('shows').select('*').in('id', myShowIds.slice(i, i + batchSize));
+          if (b) showBatches.push(...b);
         }
-        
-        const showsData = showBatches;
-        
+
         const attendanceBatches = [];
-        
         for (let i = 0; i < myShowIds.length; i += batchSize) {
-          const batch = myShowIds.slice(i, i + batchSize);
-          const { data: batchAttendances } = await supabase
-            .from('attendances')
-            .select('*')
-            .in('show_id', batch);
-          
-          if (batchAttendances) attendanceBatches.push(...batchAttendances);
+          const { data: b } = await supabase.from('attendances').select('*').in('show_id', myShowIds.slice(i, i + batchSize));
+          if (b) attendanceBatches.push(...b);
         }
-        
-        const allAttendances = attendanceBatches;
-        
-        const userIds = [...new Set(allAttendances.map(a => a.user_id))];
+
+        const userIds = [...new Set(attendanceBatches.map(a => a.user_id))];
         const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, username, avatar_color, avatar_url')
-          .in('id', userIds);
-        
+          .from('profiles').select('id, username, avatar_color, avatar_url').in('id', userIds);
+
         const profileMap = {};
-        (profiles || []).forEach(p => {
-          profileMap[p.id] = p;
-        });
-        
+        (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
         const attendancesByShow = {};
-        allAttendances.forEach(att => {
-          if (!attendancesByShow[att.show_id]) {
-            attendancesByShow[att.show_id] = [];
-          }
-          attendancesByShow[att.show_id].push({
-            ...att,
-            profile: profileMap[att.user_id] || { username: 'Unknown', avatar_color: C.gray }
-          });
+        attendanceBatches.forEach(att => {
+          if (!attendancesByShow[att.show_id]) attendancesByShow[att.show_id] = [];
+          attendancesByShow[att.show_id].push({ ...att, profile: profileMap[att.user_id] || { username: 'Unknown', avatar_color: C.gray } });
         });
-        
+
         const collabMap = {};
         const mySharedShows = [];
         const collabConnections = {};
-        
-        showsData.forEach(show => {
+
+        showBatches.forEach(show => {
           const attendances = attendancesByShow[show.id] || [];
-          
           if (attendances.length > 1) {
             mySharedShows.push(show);
-            
             const showCollaborators = [];
-            
+
             attendances.forEach(att => {
               if (att.user_id === myUserId) return;
-              
               showCollaborators.push(att.user_id);
-              
+
               if (!collabMap[att.user_id]) {
                 collabMap[att.user_id] = {
                   id: att.user_id,
@@ -10755,22 +10713,13 @@ function CollaborationWebTab() {
               collabMap[att.user_id].showIds.push(show.id);
               collabMap[att.user_id].shows.push(show);
             });
-            
-            // Track mesh connections
+
             if (showCollaborators.length >= 2) {
               for (let i = 0; i < showCollaborators.length; i++) {
                 for (let j = i + 1; j < showCollaborators.length; j++) {
-                  const userA = showCollaborators[i];
-                  const userB = showCollaborators[j];
-                  const key = [userA, userB].sort().join('-');
-                  
+                  const key = [showCollaborators[i], showCollaborators[j]].sort().join('-');
                   if (!collabConnections[key]) {
-                    collabConnections[key] = {
-                      userA: userA,
-                      userB: userB,
-                      count: 0,
-                      showIds: []
-                    };
+                    collabConnections[key] = { userA: showCollaborators[i], userB: showCollaborators[j], count: 0, showIds: [] };
                   }
                   collabConnections[key].count++;
                   collabConnections[key].showIds.push(show.id);
@@ -10779,65 +10728,58 @@ function CollaborationWebTab() {
             }
           }
         });
-        
-        console.log('🕸️ Mesh connections:', Object.keys(collabConnections).length);
-        
+
+        // Enrich each collaborator with firstSeen / lastSeen
+        Object.values(collabMap).forEach(c => {
+          const sorted = [...c.shows].sort((a, b) => a.date.localeCompare(b.date));
+          c.firstShow = sorted[0];
+          c.lastShow = sorted[sorted.length - 1];
+        });
+
         setShows(mySharedShows);
         setCollaborators(Object.values(collabMap).sort((a, b) => b.count - a.count));
         setCollabLinks(Object.values(collabConnections));
         setLoading(false);
       } catch (err) {
-        console.error('💥 ERROR:', err);
+        console.error('💥 CollabWeb error:', err);
         setLoading(false);
       }
     };
     fetch();
   }, []);
 
-  // 🌊 2D ORBITAL ANIMATION (unchanged, add avatar background later)
+  // ─── 2D ORBITAL ANIMATION ─────────────────────────────────────────────────
   useEffect(() => {
     if (collaborators.length === 0 || totalShows === 0 || viewMode !== '2d') return;
 
-    const isMobile = window.innerWidth < 768;
     const containerWidth = isMobile ? window.innerWidth - 40 : 800;
     const containerHeight = isMobile ? 400 : 700;
     const centerX = containerWidth / 2;
     const centerY = containerHeight / 2;
     const baseOrbitRadius = isMobile ? 120 : 220;
     const baseSize = isMobile ? 100 : 160;
-
     const maxCollabCount = Math.max(...collaborators.map(c => c.count));
 
     const nodeData = [
-      { 
-        id: 'you', 
-        label: 'YOU', 
-        color: C.teal, 
-        size: baseSize,
-        x: centerX, 
-        y: centerY,
-        isCenter: true,
-        count: totalShows,
-        avatar: myAvatar
-      },
+      { id: 'you', label: 'YOU', color: C.teal, size: baseSize, x: centerX, y: centerY, isCenter: true, count: totalShows, avatar: myAvatar },
       ...collaborators.map((c, i) => {
         const angle = (i / collaborators.length) * Math.PI * 2;
         const sizeFactor = Math.sqrt(c.count / maxCollabCount);
-        const proportionalSize = Math.max(
-          sizeFactor * (isMobile ? 60 : 110),
-          isMobile ? 35 : 60
-        );
-        
-        const mostRecentShow = c.shows.sort((a, b) => b.date.localeCompare(a.date))[0];
-        const daysSinceLastShow = mostRecentShow ? daysSince(mostRecentShow.date) : 9999;
-        
+        const proportionalSize = Math.max(sizeFactor * (isMobile ? 60 : 110), isMobile ? 35 : 60);
+        const daysSinceLastShow = c.lastShow ? daysSince(c.lastShow.date) : 9999;
+
         let distanceFactor = 1.0;
         if (daysSinceLastShow < 30) distanceFactor = 0.75;
         else if (daysSinceLastShow < 180) distanceFactor = 1.0;
         else distanceFactor = 1.2;
-        
+
+        // Line opacity: brighter = more recent
+        const lineOpacity = daysSinceLastShow < 30 ? 0.7
+          : daysSinceLastShow < 180 ? 0.4
+          : daysSinceLastShow < 365 ? 0.2
+          : 0.1;
+
         const orbitRadius = baseOrbitRadius * distanceFactor;
-        
         return {
           id: c.id,
           label: c.username,
@@ -10846,8 +10788,11 @@ function CollaborationWebTab() {
           showIds: c.showIds,
           size: proportionalSize,
           baseAngle: angle,
-          orbitRadius: orbitRadius,
+          orbitRadius,
           daysSince: daysSinceLastShow,
+          lastShow: c.lastShow,
+          firstShow: c.firstShow,
+          lineOpacity,
           avatar: c.avatar_url,
           x: centerX + Math.cos(angle) * orbitRadius,
           y: centerY + Math.sin(angle) * orbitRadius
@@ -10860,13 +10805,7 @@ function CollaborationWebTab() {
     const particlePool = [];
     collaborators.forEach((c, i) => {
       for (let p = 0; p < c.count; p++) {
-        particlePool.push({
-          nodeIndex: i,
-          progress: p / c.count,
-          speed: 0.015 + Math.random() * 0.01,
-          direction: p % 2 === 0 ? 1 : -1,
-          color: c.color
-        });
+        particlePool.push({ nodeIndex: i, progress: p / c.count, speed: 0.015 + Math.random() * 0.01, direction: p % 2 === 0 ? 1 : -1, color: c.color });
       }
     });
     setParticles(particlePool);
@@ -10874,59 +10813,36 @@ function CollaborationWebTab() {
     let time = 0;
     const animate = () => {
       time += 0.0006;
-
       const updatedNodes = nodeData.map(node => {
         if (node.isCenter) return node;
         const angle = node.baseAngle + time;
-        return {
-          ...node,
-          x: centerX + Math.cos(angle) * node.orbitRadius,
-          y: centerY + Math.sin(angle) * node.orbitRadius
-        };
+        return { ...node, x: centerX + Math.cos(angle) * node.orbitRadius, y: centerY + Math.sin(angle) * node.orbitRadius };
       });
-
       setNodes(updatedNodes);
 
-      setParticles(prevParticles => 
-        prevParticles.map(p => {
-          let newProgress = p.progress + (p.speed * p.direction);
-          let newDirection = p.direction;
-          
-          if (newProgress >= 1) {
-            newProgress = 0.99;
-            newDirection = -1;
-          } else if (newProgress <= 0) {
-            newProgress = 0.01;
-            newDirection = 1;
-          }
-          
-          return {
-            ...p,
-            progress: newProgress,
-            direction: newDirection
-          };
-        })
-      );
+      setParticles(prev => prev.map(p => {
+        let newProgress = p.progress + (p.speed * p.direction);
+        let newDirection = p.direction;
+        if (newProgress >= 1) { newProgress = 0.99; newDirection = -1; }
+        else if (newProgress <= 0) { newProgress = 0.01; newDirection = 1; }
+        return { ...p, progress: newProgress, direction: newDirection };
+      }));
 
       const canvas = canvasRef.current;
       if (canvas) {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, containerWidth, containerHeight);
-        
         particles.forEach(p => {
           const collabNode = updatedNodes[p.nodeIndex + 1];
           if (!collabNode) return;
-          
           const x = centerX + (collabNode.x - centerX) * p.progress;
           const y = centerY + (collabNode.y - centerY) * p.progress;
-          
           ctx.beginPath();
           ctx.arc(x, y, 5, 0, Math.PI * 2);
           ctx.fillStyle = p.color;
           ctx.shadowBlur = 20;
           ctx.shadowColor = p.color;
           ctx.fill();
-          
           ctx.beginPath();
           ctx.arc(x, y, 10, 0, Math.PI * 2);
           ctx.fillStyle = p.color;
@@ -10935,268 +10851,152 @@ function CollaborationWebTab() {
           ctx.globalAlpha = 1.0;
         });
       }
-
       animationRef.current = requestAnimationFrame(animate);
     };
-
     animate();
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
+    return () => { if (animationRef.current) cancelAnimationFrame(animationRef.current); };
   }, [collaborators, collabLinks, particles.length, totalShows, viewMode, myAvatar]);
 
-  // 🌍 3D GALAXY WITH AVATAR TEXTURES
+  // ─── 3D GALAXY ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (viewMode !== '3d' || !window.THREE || !threeMountRef.current || collaborators.length === 0 || totalShows === 0) return;
-    
     const container = threeMountRef.current;
-    
-    while (container.firstChild) {
-      container.removeChild(container.firstChild);
-    }
-    
+    while (container.firstChild) container.removeChild(container.firstChild);
+
     const width = container.clientWidth;
     const height = container.clientHeight;
-    const isMobile = window.innerWidth < 768;
-    
     const scene = new window.THREE.Scene();
     scene.background = new window.THREE.Color(0x020204);
     scene.fog = new window.THREE.Fog(0x020204, 800, 1500);
-    
+
     const camera = new window.THREE.PerspectiveCamera(60, width / height, 1, 2000);
     camera.position.z = isMobile ? 350 : 500;
-    
+
     const renderer = new window.THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
     container.appendChild(renderer.domElement);
-    
-    // Starfield
+
     const starGeo = new window.THREE.BufferGeometry();
-    const starCount = 800;
-    const starPositions = new Float32Array(starCount * 3);
-    
-    for (let i = 0; i < starCount * 3; i += 3) {
+    const starPositions = new Float32Array(800 * 3);
+    for (let i = 0; i < 800 * 3; i += 3) {
       starPositions[i] = (Math.random() - 0.5) * 2000;
       starPositions[i + 1] = (Math.random() - 0.5) * 2000;
       starPositions[i + 2] = (Math.random() - 0.5) * 1000 - 200;
     }
-    
     starGeo.setAttribute('position', new window.THREE.BufferAttribute(starPositions, 3));
-    const starMat = new window.THREE.PointsMaterial({ color: 0xffffff, size: 2, transparent: true, opacity: 0.6 });
-    const stars = new window.THREE.Points(starGeo, starMat);
+    const stars = new window.THREE.Points(starGeo, new window.THREE.PointsMaterial({ color: 0xffffff, size: 2, transparent: true, opacity: 0.6 }));
     scene.add(stars);
-    
-    const ambientLight = new window.THREE.AmbientLight(0xffffff, 0.4);
-    scene.add(ambientLight);
-    
+    scene.add(new window.THREE.AmbientLight(0xffffff, 0.4));
     const youLight = new window.THREE.PointLight(0x00e5cc, 3, 800);
     scene.add(youLight);
-    
+
     const galaxyRadius = isMobile ? 180 : 280;
-    const ringGeo = new window.THREE.RingGeometry(galaxyRadius, galaxyRadius + 2, 64);
     const ringMat = new window.THREE.MeshBasicMaterial({ color: 0x00e5cc, opacity: 0.15, transparent: true, side: window.THREE.DoubleSide });
-    const ring1 = new window.THREE.Mesh(ringGeo, ringMat);
-    ring1.rotation.x = Math.PI / 2;
-    scene.add(ring1);
-    
-    const ring2Geo = new window.THREE.RingGeometry(galaxyRadius * 0.6, galaxyRadius * 0.6 + 2, 64);
-    const ring2 = new window.THREE.Mesh(ring2Geo, ringMat);
-    ring2.rotation.x = Math.PI / 2;
-    scene.add(ring2);
-    
-    // 🎨 YOU sphere with avatar texture
+    [galaxyRadius, galaxyRadius * 0.6].forEach(r => {
+      const ring = new window.THREE.Mesh(new window.THREE.RingGeometry(r, r + 2, 64), ringMat);
+      ring.rotation.x = Math.PI / 2;
+      scene.add(ring);
+    });
+
     const youSize = isMobile ? 40 : 60;
     const youGeo = new window.THREE.SphereGeometry(youSize, 32, 32);
-    
-    let youMesh;
+    const tempMat = new window.THREE.MeshPhongMaterial({ color: 0x00e5cc, emissive: 0x00e5cc, emissiveIntensity: 0.8 });
+    const youMesh = new window.THREE.Mesh(youGeo, tempMat);
     if (myAvatar) {
-      const textureLoader = new window.THREE.TextureLoader();
-      textureLoader.load(myAvatar, (texture) => {
-        const youMat = new window.THREE.MeshPhongMaterial({ 
-          map: texture,
-          emissive: 0x00e5cc,
-          emissiveIntensity: 0.3,
-          shininess: 100
-        });
-        youMesh.material = youMat;
+      new window.THREE.TextureLoader().load(myAvatar, tex => {
+        youMesh.material = new window.THREE.MeshPhongMaterial({ map: tex, emissive: 0x00e5cc, emissiveIntensity: 0.3, shininess: 100 });
       });
-      
-      // Temporary material while loading
-      const tempMat = new window.THREE.MeshPhongMaterial({ 
-        color: 0x00e5cc,
-        emissive: 0x00e5cc,
-        emissiveIntensity: 0.8
-      });
-      youMesh = new window.THREE.Mesh(youGeo, tempMat);
-    } else {
-      const youMat = new window.THREE.MeshPhongMaterial({ 
-        color: 0x00e5cc,
-        emissive: 0x00e5cc,
-        emissiveIntensity: 0.8
-      });
-      youMesh = new window.THREE.Mesh(youGeo, youMat);
     }
-    
     scene.add(youMesh);
-    
-    const glowGeo = new window.THREE.SphereGeometry(youSize + 15, 32, 32);
-    const glowMat = new window.THREE.MeshBasicMaterial({ color: 0x00e5cc, transparent: true, opacity: 0.1 });
-    const glowMesh = new window.THREE.Mesh(glowGeo, glowMat);
+    const glowMesh = new window.THREE.Mesh(new window.THREE.SphereGeometry(youSize + 15, 32, 32), new window.THREE.MeshBasicMaterial({ color: 0x00e5cc, transparent: true, opacity: 0.1 }));
     scene.add(glowMesh);
-    
-    // Collaborators with avatars
+
     const maxCount = Math.max(...collaborators.map(c => c.count));
-    const collabMeshes = [];
-    const collabGlows = [];
-    const collabPositions = {};
-    
+    const collabMeshes = [], collabGlows = [], collabPositions = {};
+
     collaborators.forEach((c, i) => {
       const sizeFactor = Math.sqrt(c.count / maxCount);
       const size = Math.max(sizeFactor * (isMobile ? 30 : 50), isMobile ? 15 : 20);
-      
       const phi = Math.acos(-1 + (2 * (i + 1)) / (collaborators.length + 1));
       const theta = Math.sqrt((collaborators.length + 1) * Math.PI) * phi;
-      
       const x = galaxyRadius * Math.cos(theta) * Math.sin(phi);
       const y = galaxyRadius * Math.sin(theta) * Math.sin(phi);
       const z = galaxyRadius * Math.cos(phi);
-      
       collabPositions[c.id] = { x, y, z };
-      
+
       const colorInt = parseInt(c.color.replace('#', ''), 16);
-      
       const geo = new window.THREE.SphereGeometry(size, 28, 28);
-      
-      let mesh;
+      const fallbackMat = new window.THREE.MeshPhongMaterial({ color: colorInt, emissive: colorInt, emissiveIntensity: 0.7 });
+      const mesh = new window.THREE.Mesh(geo, fallbackMat);
       if (c.avatar_url) {
-        const textureLoader = new window.THREE.TextureLoader();
-        textureLoader.load(c.avatar_url, (texture) => {
-          const mat = new window.THREE.MeshPhongMaterial({ 
-            map: texture,
-            emissive: colorInt,
-            emissiveIntensity: 0.2
-          });
-          mesh.material = mat;
+        new window.THREE.TextureLoader().load(c.avatar_url, tex => {
+          mesh.material = new window.THREE.MeshPhongMaterial({ map: tex, emissive: colorInt, emissiveIntensity: 0.2 });
         });
-        
-        const tempMat = new window.THREE.MeshPhongMaterial({ color: colorInt, emissive: colorInt, emissiveIntensity: 0.7 });
-        mesh = new window.THREE.Mesh(geo, tempMat);
-      } else {
-        const mat = new window.THREE.MeshPhongMaterial({ color: colorInt, emissive: colorInt, emissiveIntensity: 0.7 });
-        mesh = new window.THREE.Mesh(geo, mat);
       }
-      
       mesh.position.set(x, y, z);
       scene.add(mesh);
       collabMeshes.push(mesh);
-      
-      const glowGeo2 = new window.THREE.SphereGeometry(size + 12, 20, 20);
-      const glowMat2 = new window.THREE.MeshBasicMaterial({ color: colorInt, transparent: true, opacity: 0.12 });
-      const glowMesh2 = new window.THREE.Mesh(glowGeo2, glowMat2);
+
+      const glowMesh2 = new window.THREE.Mesh(new window.THREE.SphereGeometry(size + 12, 20, 20), new window.THREE.MeshBasicMaterial({ color: colorInt, transparent: true, opacity: 0.12 }));
       glowMesh2.position.set(x, y, z);
       scene.add(glowMesh2);
       collabGlows.push(glowMesh2);
-      
-      // Line to YOU
-      const points = [new window.THREE.Vector3(0, 0, 0), new window.THREE.Vector3(x, y, z)];
-      const lineGeo = new window.THREE.BufferGeometry().setFromPoints(points);
-      const lineMat = new window.THREE.LineBasicMaterial({ color: colorInt, opacity: 0.4, transparent: true });
-      const line = new window.THREE.Line(lineGeo, lineMat);
+
+      const daysSinceLastShow = c.lastShow ? daysSince(c.lastShow.date) : 9999;
+      const lineOpacity = daysSinceLastShow < 30 ? 0.7 : daysSinceLastShow < 180 ? 0.4 : 0.15;
+      const line = new window.THREE.Line(
+        new window.THREE.BufferGeometry().setFromPoints([new window.THREE.Vector3(0, 0, 0), new window.THREE.Vector3(x, y, z)]),
+        new window.THREE.LineBasicMaterial({ color: colorInt, opacity: lineOpacity, transparent: true })
+      );
       scene.add(line);
-      
+
       const collabLight = new window.THREE.PointLight(colorInt, 1.5, 200);
       collabLight.position.set(x, y, z);
       scene.add(collabLight);
-      
-      // Labels
+
+      // Count label
       const countCanvas = document.createElement('canvas');
+      countCanvas.width = 128; countCanvas.height = 64;
       const countCtx = countCanvas.getContext('2d');
-      countCanvas.width = 128;
-      countCanvas.height = 64;
       countCtx.fillStyle = '#ffcc00';
       countCtx.font = 'bold 48px monospace';
-      countCtx.textAlign = 'center';
-      countCtx.textBaseline = 'middle';
+      countCtx.textAlign = 'center'; countCtx.textBaseline = 'middle';
       countCtx.fillText(c.count.toString(), 64, 32);
-      
-      const countTexture = new window.THREE.CanvasTexture(countCanvas);
-      const countMat = new window.THREE.SpriteMaterial({ map: countTexture });
-      const countSprite = new window.THREE.Sprite(countMat);
+      const countSprite = new window.THREE.Sprite(new window.THREE.SpriteMaterial({ map: new window.THREE.CanvasTexture(countCanvas) }));
       countSprite.position.set(x * 0.55, y * 0.55, z * 0.55);
       countSprite.scale.set(isMobile ? 35 : 50, isMobile ? 17 : 25, 1);
       scene.add(countSprite);
-      
+
+      // Name label
       const nameCanvas = document.createElement('canvas');
+      nameCanvas.width = 256; nameCanvas.height = 64;
       const nameCtx = nameCanvas.getContext('2d');
-      nameCanvas.width = 256;
-      nameCanvas.height = 64;
       nameCtx.fillStyle = c.color;
       nameCtx.font = 'bold 36px monospace';
-      nameCtx.textAlign = 'center';
-      nameCtx.textBaseline = 'middle';
+      nameCtx.textAlign = 'center'; nameCtx.textBaseline = 'middle';
       nameCtx.fillText(c.username.toUpperCase(), 128, 32);
-      
-      const nameTexture = new window.THREE.CanvasTexture(nameCanvas);
-      const nameMat = new window.THREE.SpriteMaterial({ map: nameTexture });
-      const nameSprite = new window.THREE.Sprite(nameMat);
+      const nameSprite = new window.THREE.Sprite(new window.THREE.SpriteMaterial({ map: new window.THREE.CanvasTexture(nameCanvas) }));
       nameSprite.position.set(x * 1.4, y * 1.4, z * 1.4);
       nameSprite.scale.set(isMobile ? 60 : 80, isMobile ? 15 : 20, 1);
       scene.add(nameSprite);
     });
-    
-    // 🕸️ MESH LINES between collaborators
+
     collabLinks.forEach(link => {
       const posA = collabPositions[link.userA];
       const posB = collabPositions[link.userB];
-      
       if (!posA || !posB) return;
-      
-      const points = [
-        new window.THREE.Vector3(posA.x, posA.y, posA.z),
-        new window.THREE.Vector3(posB.x, posB.y, posB.z)
-      ];
-      const meshLineGeo = new window.THREE.BufferGeometry().setFromPoints(points);
-      const meshLineMat = new window.THREE.LineBasicMaterial({ 
-        color: 0xffcc00,
-        opacity: 0.25,
-        transparent: true
-      });
-      const meshLine = new window.THREE.Line(meshLineGeo, meshLineMat);
-      scene.add(meshLine);
+      scene.add(new window.THREE.Line(
+        new window.THREE.BufferGeometry().setFromPoints([new window.THREE.Vector3(posA.x, posA.y, posA.z), new window.THREE.Vector3(posB.x, posB.y, posB.z)]),
+        new window.THREE.LineBasicMaterial({ color: 0xffcc00, opacity: 0.25, transparent: true })
+      ));
     });
-    
-    // Mouse/touch controls
-    let isDragging = false;
-    let prevMouse = { x: 0, y: 0 };
-    let rotation = { x: 0.2, y: 0 };
-    
-    const onStart = (e) => {
-      isDragging = true;
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      prevMouse = { x: clientX, y: clientY };
-    };
-    
-    const onMove = (e) => {
-      if (!isDragging) return;
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      rotation.y += (clientX - prevMouse.x) * 0.008;
-      rotation.x += (clientY - prevMouse.y) * 0.008;
-      rotation.x = Math.max(-1.5, Math.min(1.5, rotation.x));
-      prevMouse = { x: clientX, y: clientY };
-    };
-    
+
+    let isDragging = false, prevMouse = { x: 0, y: 0 }, rotation = { x: 0.2, y: 0 };
+    const onStart = e => { isDragging = true; const c = e.touches ? e.touches[0] : e; prevMouse = { x: c.clientX, y: c.clientY }; };
+    const onMove = e => { if (!isDragging) return; const c = e.touches ? e.touches[0] : e; rotation.y += (c.clientX - prevMouse.x) * 0.008; rotation.x = Math.max(-1.5, Math.min(1.5, rotation.x + (c.clientY - prevMouse.y) * 0.008)); prevMouse = { x: c.clientX, y: c.clientY }; };
     const onEnd = () => { isDragging = false; };
-    
-    const onWheel = (e) => {
-      e.preventDefault();
-      camera.position.z = Math.max(isMobile ? 250 : 300, Math.min(800, camera.position.z + e.deltaY * 0.5));
-    };
-    
+    const onWheel = e => { e.preventDefault(); camera.position.z = Math.max(isMobile ? 250 : 300, Math.min(800, camera.position.z + e.deltaY * 0.5)); };
+
     renderer.domElement.addEventListener('mousedown', onStart);
     renderer.domElement.addEventListener('mousemove', onMove);
     renderer.domElement.addEventListener('mouseup', onEnd);
@@ -11204,40 +11004,20 @@ function CollaborationWebTab() {
     renderer.domElement.addEventListener('touchmove', onMove, { passive: true });
     renderer.domElement.addEventListener('touchend', onEnd);
     renderer.domElement.addEventListener('wheel', onWheel);
-    
-    // Animation
-    const animate = () => {
-      requestAnimationFrame(animate);
-      
-      if (!isDragging) {
-        rotation.y += 0.004;
-      }
-      
-      scene.rotation.x = rotation.x;
-      scene.rotation.y = rotation.y;
-      
+
+    const animate3d = () => {
+      requestAnimationFrame(animate3d);
+      if (!isDragging) rotation.y += 0.004;
+      scene.rotation.x = rotation.x; scene.rotation.y = rotation.y;
       const pulse = 1 + Math.sin(Date.now() * 0.0025) * 0.15;
       youMesh.scale.set(pulse, pulse, pulse);
       glowMesh.scale.set(pulse * 1.1, pulse * 1.1, pulse * 1.1);
-      
-      collabMeshes.forEach((mesh, i) => {
-        const phase = i * 1.2;
-        const p = 1 + Math.sin(Date.now() * 0.002 + phase) * 0.08;
-        mesh.scale.set(p, p, p);
-        collabGlows[i].scale.set(p * 1.15, p * 1.15, p * 1.15);
-      });
-      
+      collabMeshes.forEach((mesh, i) => { const p = 1 + Math.sin(Date.now() * 0.002 + i * 1.2) * 0.08; mesh.scale.set(p, p, p); collabGlows[i].scale.set(p * 1.15, p * 1.15, p * 1.15); });
       stars.rotation.y += 0.0001;
-      
-      const ringPulse = 0.1 + Math.sin(Date.now() * 0.001) * 0.08;
-      ring1.material.opacity = ringPulse;
-      ring2.material.opacity = ringPulse * 0.8;
-      
       renderer.render(scene, camera);
     };
-    
-    animate();
-    
+    animate3d();
+
     return () => {
       renderer.domElement.removeEventListener('mousedown', onStart);
       renderer.domElement.removeEventListener('mousemove', onMove);
@@ -11246,314 +11026,279 @@ function CollaborationWebTab() {
       renderer.domElement.removeEventListener('touchmove', onMove);
       renderer.domElement.removeEventListener('touchend', onEnd);
       renderer.domElement.removeEventListener('wheel', onWheel);
-      if (container.contains(renderer.domElement)) {
-        container.removeChild(renderer.domElement);
-      }
+      if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement);
       renderer.dispose();
     };
   }, [viewMode, collaborators, collabLinks, totalShows, myAvatar]);
 
-  if (loading) return <div style={{ padding: 100, textAlign: 'center', color: C.teal }}>SCANNING...</div>;
+  // ─── DETAIL MODAL BUILDER ─────────────────────────────────────────────────
+  const buildDetailModal = (detailCollab) => {
+    if (!detailCollab) return null;
+    const detailShows = shows.filter(s => detailCollab.showIds.includes(s.id));
+    const clustered = [];
+    const festMap = {};
 
-  if (collaborators.length === 0) {
+    detailShows.forEach(s => {
+      if (s.is_festival && s.festival_name) {
+        const key = `${s.festival_name}-${getYear(s.date)}`;
+        if (!festMap[key]) festMap[key] = { festival_name: s.festival_name, year: getYear(s.date), days: [] };
+        festMap[key].days.push(s);
+      } else {
+        clustered.push({ type: 'solo', show: s });
+      }
+    });
+    Object.values(festMap).forEach(fg => {
+      clustered.push({ type: 'festival', ...fg, days: fg.days.sort((a, b) => a.date.localeCompare(b.date)) });
+    });
+    clustered.sort((a, b) => {
+      const dateA = a.type === 'festival' ? a.days[0]?.date : a.show?.date;
+      const dateB = b.type === 'festival' ? b.days[0]?.date : b.show?.date;
+      return (dateB || '').localeCompare(dateA || '');
+    });
+
     return (
-      <div style={{ padding: 100, textAlign: 'center' }}>
-        <div style={{ fontSize: '3rem', marginBottom: 20 }}>🤝</div>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff' }}>NO COLLABORATIONS YET</div>
+      <div
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? 12 : 40, backdropFilter: 'blur(8px)' }}
+        onClick={e => { if (e.target === e.currentTarget) setDetailView(null); }}
+      >
+        <div style={{ background: '#0a0a0f', border: `2px solid ${detailCollab.color}`, borderRadius: 16, boxShadow: `0 0 60px ${hexToRgba(detailCollab.color, 0.4)}`, width: '100%', maxWidth: 640, maxHeight: '85vh', overflowY: 'auto', padding: isMobile ? 20 : 36, position: 'relative' }}>
+          
+          {/* Close */}
+          <button onClick={() => setDetailView(null)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: `1px solid ${C.border}`, color: C.gray, width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+
+          {/* Header */}
+          <div style={{ marginBottom: 24, paddingRight: 40 }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '2.8rem', color: detailCollab.color, lineHeight: 1 }}>
+              {detailCollab.username.toUpperCase()}
+            </div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, marginTop: 4 }}>
+              {detailCollab.count} SHARED SHOWS · {Math.round((detailCollab.count / totalShows) * 100)}% OVERLAP
+            </div>
+
+            {/* First met + Last seen */}
+            <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
+              {detailCollab.firstShow && (
+                <div style={{ background: hexToRgba(C.teal, 0.08), border: `1px solid ${C.teal}44`, borderRadius: 8, padding: '10px 14px', flex: 1, minWidth: 160 }}>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.teal, letterSpacing: 2, marginBottom: 4 }}>⚡ FIRST CROSSED PATHS</div>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#fff' }}>
+                    {detailCollab.firstShow.artist || detailCollab.firstShow.festival_name}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 2 }}>
+                    {fmtDateShort(detailCollab.firstShow.date)}
+                  </div>
+                </div>
+              )}
+              {detailCollab.lastShow && (
+                <div style={{ background: hexToRgba(detailCollab.color, 0.08), border: `1px solid ${detailCollab.color}44`, borderRadius: 8, padding: '10px 14px', flex: 1, minWidth: 160 }}>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: detailCollab.color, letterSpacing: 2, marginBottom: 4 }}>🕐 LAST SEEN TOGETHER</div>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#fff' }}>
+                    {detailCollab.lastShow.artist || detailCollab.lastShow.festival_name}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 2 }}>
+                    {fmtDateShort(detailCollab.lastShow.date)} · {daysSince(detailCollab.lastShow.date) < 30 ? 'RECENT' : daysSince(detailCollab.lastShow.date) < 365 ? `${Math.floor(daysSince(detailCollab.lastShow.date) / 30)}mo AGO` : `${Math.floor(daysSince(detailCollab.lastShow.date) / 365)}yr AGO`}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Visit profile button */}
+            <button
+              onClick={() => {
+                setDetailView(null);
+                if (onNavigateToUser) {
+                  onNavigateToUser(detailCollab.username);
+                } else {
+                  window.location.hash = `#/u/${detailCollab.username}`;
+                }
+              }}
+              style={{ marginTop: 16, background: detailCollab.color, color: '#000', border: 'none', padding: '10px 24px', fontFamily: "'Bebas Neue'", fontSize: '1.1rem', letterSpacing: 2, borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = `0 0 20px ${detailCollab.color}88`; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              VIEW {detailCollab.username.toUpperCase()}'S ARCHIVE →
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div style={{ borderTop: `1px solid ${C.border}`, marginBottom: 20 }} />
+
+          {/* Show list */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {clustered.map((cluster, ci) => {
+              if (cluster.type === 'festival') {
+                return (
+                  <div key={`fest-${cluster.festival_name}-${cluster.year}`} style={{ background: hexToRgba(C.gold, 0.05), border: `1px solid ${C.gold}44`, borderRadius: 10, padding: 16 }}>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.6rem', color: C.gold, lineHeight: 1, marginBottom: 4 }}>
+                      {cluster.festival_name.toUpperCase()} {cluster.year}
+                    </div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginBottom: 12 }}>
+                      {cluster.days.length} DAYS TOGETHER
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {cluster.days.map(day => {
+                        const others = collaborators.filter(c => c.id !== detailCollab.id && c.showIds.includes(day.id));
+                        return (
+                          <div key={day.id} style={{ background: hexToRgba(detailCollab.color, 0.05), border: `1px solid ${hexToRgba(detailCollab.color, 0.25)}`, borderLeft: `3px solid ${C.gold}`, borderRadius: 6, padding: 10 }}>
+                            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#fff' }}>{day.festival_day?.toUpperCase() || fmtDateShort(day.date)}</div>
+                            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray, marginTop: 2 }}>{day.venue?.toUpperCase()}</div>
+                            {others.length > 0 && (
+                              <div style={{ marginTop: 6, display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                                <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.gold }}>ALSO WITH:</span>
+                                {others.map(o => <span key={o.id} style={{ fontFamily: "'Space Mono'", fontSize: 6, color: o.color, background: hexToRgba(o.color, 0.15), padding: '2px 6px', borderRadius: 4, border: `1px solid ${hexToRgba(o.color, 0.4)}` }}>{o.username.toUpperCase()}</span>)}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              }
+              const s = cluster.show;
+              const others = collaborators.filter(c => c.id !== detailCollab.id && c.showIds.includes(s.id));
+              return (
+                <div key={s.id} style={{ background: hexToRgba(detailCollab.color, 0.05), border: `1px solid ${hexToRgba(detailCollab.color, 0.25)}`, borderRadius: 8, padding: 12 }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>{s.artist?.toUpperCase() || s.festival_name?.toUpperCase()}</div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 2 }}>{fmtDateShort(s.date)}</div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: detailCollab.color, marginTop: 2 }}>{s.venue?.toUpperCase()}</div>
+                  {others.length > 0 && (
+                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${hexToRgba(detailCollab.color, 0.2)}`, display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.gold }}>WITH:</span>
+                      {others.map(o => <span key={o.id} style={{ fontFamily: "'Space Mono'", fontSize: 6, color: o.color, background: hexToRgba(o.color, 0.15), padding: '2px 6px', borderRadius: 4, border: `1px solid ${hexToRgba(o.color, 0.4)}` }}>{o.username.toUpperCase()}</span>)}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     );
-  }
+  };
 
-  const isMobile = window.innerWidth < 768;
+  // ─── RENDER ───────────────────────────────────────────────────────────────
+  if (loading) return <div style={{ padding: 100, textAlign: 'center', color: C.teal }}>SCANNING...</div>;
+  if (collaborators.length === 0) return (
+    <div style={{ padding: 100, textAlign: 'center' }}>
+      <div style={{ fontSize: '3rem', marginBottom: 20 }}>🤝</div>
+      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff' }}>NO COLLABORATIONS YET</div>
+    </div>
+  );
+
   const containerWidth = isMobile ? window.innerWidth - 40 : 800;
   const containerHeight = isMobile ? 500 : 700;
 
   return (
-  <div className="fade-in" style={{ padding: isMobile ? 20 : 40 }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 15 }}>
-      <div style={{ textAlign: 'center', flex: 1 }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff' }}>
-          COLLABORATION <span style={{ color: C.gold }}>WEB</span>
-        </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 8 : 10, color: C.gold }}>
-          {shows.length} SHARED · {collaborators.length} COLLABORATORS
-        </div>
-        {collabLinks.length > 0 && (
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.purple, marginTop: 5 }}>
-            🕸️ {collabLinks.length} MESH LINKS
+    <div className="fade-in" style={{ padding: isMobile ? 20 : 40 }}>
+      
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 15 }}>
+        <div style={{ textAlign: 'center', flex: 1 }}>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff' }}>
+            COLLABORATION <span style={{ color: C.gold }}>WEB</span>
           </div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 8 : 10, color: C.gold }}>
+            {shows.length} SHARED · {collaborators.length} COLLABORATORS
+          </div>
+          {collabLinks.length > 0 && (
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.purple, marginTop: 5 }}>
+              🕸️ {collabLinks.length} MESH LINKS
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 6, background: C.bgCard, padding: 4, borderRadius: 6, border: `1px solid ${C.border}` }}>
+          <button onClick={() => setViewMode('2d')} style={{ background: viewMode === '2d' ? C.teal : 'transparent', color: viewMode === '2d' ? '#000' : C.gray, border: 'none', padding: '8px 16px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 10, fontWeight: 900, cursor: 'pointer' }}>🌊 ORBITAL</button>
+          <button onClick={() => setViewMode('3d')} style={{ background: viewMode === '3d' ? C.purple : 'transparent', color: viewMode === '3d' ? '#000' : C.gray, border: 'none', padding: '8px 16px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 10, fontWeight: 900, cursor: 'pointer' }}>🌍 GALAXY</button>
+        </div>
+      </div>
+
+      {/* Visualization container */}
+      <div style={{ width: '100%', maxWidth: `${containerWidth}px`, height: `${containerHeight}px`, margin: '0 auto', position: 'relative', background: '#050508', border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginTop: isMobile ? 20 : 0 }}>
+        
+        {viewMode === '2d' ? (
+          <>
+            <canvas ref={canvasRef} width={containerWidth} height={containerHeight} style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none' }} />
+
+            {/* SVG lines — opacity tied to recency */}
+            <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+              {nodes.length > 1 && nodes.slice(1).map(node => {
+                const you = nodes[0];
+                if (!you || !node.x || !node.y) return null;
+                return <line key={`you-${node.id}`} x1={you.x} y1={you.y} x2={node.x} y2={node.y} stroke={node.color} strokeWidth={Math.max(node.count / 4, 2)} opacity={node.lineOpacity || 0.3} />;
+              })}
+              {collabLinks.map((link, i) => {
+                const nodeA = nodes.find(n => n.id === link.userA);
+                const nodeB = nodes.find(n => n.id === link.userB);
+                if (!nodeA || !nodeB) return null;
+                return <line key={`mesh-${i}`} x1={nodeA.x} y1={nodeA.y} x2={nodeB.x} y2={nodeB.y} stroke="#ffcc00" strokeWidth={Math.max(link.count / 2, 1.5)} opacity="0.25" strokeDasharray="4 4" />;
+              })}
+            </svg>
+
+            <style>{`@keyframes orbitPulse { 0%, 100% { box-shadow: 0 0 30px var(--node-color); } 50% { box-shadow: 0 0 50px var(--node-color); } }`}</style>
+
+            {/* Nodes */}
+            {nodes.map(node => {
+              const isYou = node.id === 'you';
+              if (!node.x || !node.y) return null;
+              const isHovered = hoveredNode?.id === node.id;
+
+              return (
+                <div
+                  key={node.id}
+                  onClick={() => !isYou && setDetailView(collaborators.find(c => c.id === node.id))}
+                  onMouseEnter={() => !isYou && setHoveredNode(node)}
+                  onMouseLeave={() => setHoveredNode(null)}
+                  style={{ position: 'absolute', left: node.x - (node.size / 2), top: node.y - (node.size / 2), width: node.size, height: node.size, borderRadius: '50%', background: node.avatar ? `url(${node.avatar}) center/cover` : node.color, border: `3px solid ${node.color}`, boxShadow: isHovered ? `0 0 60px ${node.color}` : `0 0 35px ${node.color}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: isYou ? 'flex-end' : 'center', fontFamily: "'Space Mono'", color: node.avatar ? '#fff' : '#000', fontWeight: 900, cursor: isYou ? 'default' : 'pointer', zIndex: isYou ? 100 : (isHovered ? 90 : 80), userSelect: 'none', '--node-color': node.color, animation: 'orbitPulse 2s ease-in-out infinite', gap: '4px', textShadow: node.avatar ? '0 2px 4px rgba(0,0,0,0.8)' : 'none', transform: isHovered ? 'scale(1.1)' : 'scale(1)', transition: 'transform 0.15s ease, box-shadow 0.15s ease' }}
+                >
+                  {!isYou && (
+                    <div style={{ fontSize: node.size > 90 ? (isMobile ? 11 : 16) : (isMobile ? 8 : 11) }}>{node.label.toUpperCase()}</div>
+                  )}
+                  <div style={{ position: node.avatar ? 'absolute' : 'relative', top: node.avatar ? '8px' : 'auto', right: node.avatar ? '8px' : 'auto', background: 'rgba(0,0,0,0.85)', borderRadius: '12px', padding: node.size > 90 ? '4px 10px' : '3px 7px', fontFamily: "'Bebas Neue'", fontSize: node.size > 90 ? '1.2rem' : (isMobile ? '0.85rem' : '1rem'), color: '#ffcc00', border: '1px solid rgba(0,0,0,0.9)', boxShadow: '0 2px 6px rgba(0,0,0,0.5)' }}>
+                    {node.count}
+                  </div>
+                  {!isYou && node.daysSince !== undefined && (
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 5 : 6, color: node.avatar ? '#fff' : 'rgba(0,0,0,0.5)', textShadow: node.avatar ? '0 1px 2px rgba(0,0,0,0.8)' : 'none' }}>
+                      {node.daysSince < 30 ? 'RECENT' : node.daysSince < 180 ? 'MONTHS' : 'YEARS'}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Hover tooltip */}
+            {hoveredNode && !hoveredNode.isCenter && (() => {
+              const tipX = Math.min(hoveredNode.x + hoveredNode.size / 2 + 8, containerWidth - 200);
+              const tipY = Math.max(hoveredNode.y - 60, 8);
+              return (
+                <div style={{ position: 'absolute', left: tipX, top: tipY, background: '#0a0a0f', border: `1px solid ${hoveredNode.color}`, borderRadius: 8, padding: '10px 14px', zIndex: 200, pointerEvents: 'none', minWidth: 160, boxShadow: `0 4px 20px rgba(0,0,0,0.8)` }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: hoveredNode.color, marginBottom: 4 }}>{hoveredNode.label.toUpperCase()}</div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray }}>{hoveredNode.count} SHARED SHOWS</div>
+                  {hoveredNode.lastShow && (
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.grayDim, marginTop: 4 }}>
+                      LAST: {hoveredNode.lastShow.artist || hoveredNode.lastShow.festival_name}<br/>
+                      {fmtDateShort(hoveredNode.lastShow.date)}
+                    </div>
+                  )}
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.teal, marginTop: 6 }}>CLICK TO EXPLORE →</div>
+                </div>
+              );
+            })()}
+          </>
+        ) : (
+          <div ref={threeMountRef} style={{ width: '100%', height: '100%' }} />
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: 6, background: C.bgCard, padding: 4, borderRadius: 6, border: `1px solid ${C.border}` }}>
-        <button onClick={() => setViewMode('2d')} style={{ background: viewMode === '2d' ? C.teal : 'transparent', color: viewMode === '2d' ? '#000' : C.gray, border: 'none', padding: '8px 16px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 10, fontWeight: 900, cursor: 'pointer' }}>
-          🌊 ORBITAL
-        </button>
-        <button onClick={() => setViewMode('3d')} style={{ background: viewMode === '3d' ? C.purple : 'transparent', color: viewMode === '3d' ? '#000' : C.gray, border: 'none', padding: '8px 16px', borderRadius: 4, fontFamily: "'Space Mono'", fontSize: 10, fontWeight: 900, cursor: 'pointer' }}>
-          🌍 GALAXY
-        </button>
+      <div style={{ textAlign: 'center', marginTop: 15, fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, letterSpacing: 1.5 }}>
+        {viewMode === '2d' ? '🕸️ GOLD MESH = COLLABORATORS WHO ATTENDED TOGETHER  ·  HOVER TO PREVIEW  ·  CLICK TO EXPLORE' : '🌍 YOUR AVATAR MAPPED TO SPHERE // DRAG TO ROTATE'}
       </div>
-    </div>
 
-    <div style={{ width: '100%', maxWidth: `${containerWidth}px`, height: `${containerHeight}px`, margin: '0 auto', position: 'relative', background: '#050508', border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden',marginTop: isMobile ? '20px' : '0'  }}>
-      
-      {viewMode === '2d' ? (
-        <>
-          <canvas ref={canvasRef} width={containerWidth} height={containerHeight} style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none' }} />
-
-          <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
-            {nodes.length > 1 && nodes.slice(1).map((node) => {
-              const you = nodes[0];
-              if (!you || !node.x || !node.y) return null;
-              
-              return (
-                <line key={`you-${node.id}`} x1={you.x} y1={you.y} x2={node.x} y2={node.y} stroke={node.color} strokeWidth={Math.max(node.count / 4, 2)} opacity="0.3" />
-              );
-            })}
-            
-            {collabLinks.map((link, i) => {
-              const nodeA = nodes.find(n => n.id === link.userA);
-              const nodeB = nodes.find(n => n.id === link.userB);
-              if (!nodeA || !nodeB) return null;
-              
-              return <line key={`mesh-${i}`} x1={nodeA.x} y1={nodeA.y} x2={nodeB.x} y2={nodeB.y} stroke="#ffcc00" strokeWidth={Math.max(link.count / 2, 1.5)} opacity="0.25" strokeDasharray="4 4" />;
-            })}
-          </svg>
-
-          <style>{`@keyframes orbitPulse { 0%, 100% { box-shadow: 0 0 30px var(--node-color); } 50% { box-shadow: 0 0 50px var(--node-color); } }`}</style>
-
-          {nodes.map((node) => {
-            const isYou = node.id === 'you';
-            if (!node.x || !node.y) return null;
-            
-            return (
-              <div key={node.id} onClick={() => !isYou && setDetailView(collaborators.find(c => c.id === node.id))} style={{ position: 'absolute', left: node.x - (node.size / 2), top: node.y - (node.size / 2), width: node.size, height: node.size, borderRadius: '50%', background: node.avatar ? `url(${node.avatar}) center/cover` : node.color, border: `3px solid ${node.color}`, boxShadow: `0 0 35px ${node.color}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: isYou ? 'flex-end' : 'center', fontFamily: "'Space Mono'", color: node.avatar ? '#fff' : '#000', fontWeight: 900, cursor: isYou ? 'default' : 'pointer', zIndex: isYou ? 100 : 80, userSelect: 'none', '--node-color': node.color, animation: 'orbitPulse 2s ease-in-out infinite', gap: '4px', textShadow: node.avatar ? '0 2px 4px rgba(0,0,0,0.8)' : 'none' }}>
-                
-                {!isYou && (
-                  <div style={{ fontSize: node.size > 90 ? (isMobile ? 11 : 16) : (isMobile ? 8 : 11) }}>{node.label.toUpperCase()}</div>
-                )}
-                
-                <div style={{ 
-  position: node.avatar ? 'absolute' : 'relative',
-  top: node.avatar ? '8px' : 'auto',
-  right: node.avatar ? '8px' : 'auto',
-  background: 'rgba(0,0,0,0.85)', 
-  borderRadius: '12px', 
-  padding: node.size > 90 ? '4px 10px' : '3px 7px', 
-  fontFamily: "'Bebas Neue'", 
-  fontSize: node.size > 90 ? '1.2rem' : (isMobile ? '0.85rem' : '1rem'), 
-  color: '#ffcc00',
-  border: '1px solid rgba(0,0,0,0.9)',
-  boxShadow: '0 2px 6px rgba(0,0,0,0.5)'
-}}>
-  {node.count}
-</div>
-                
-                {!isYou && node.daysSince !== undefined && (
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 5 : 6, color: node.avatar ? '#fff' : 'rgba(0,0,0,0.5)', textShadow: node.avatar ? '0 1px 2px rgba(0,0,0,0.8)' : 'none' }}>
-                    {node.daysSince < 30 ? 'RECENT' : node.daysSince < 180 ? 'MONTHS' : 'YEARS'}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </>
-      ) : (
-        <div ref={threeMountRef} style={{ width: '100%', height: '100%' }} />
-      )}
-    </div>
-
-    <div style={{ textAlign: 'center', marginTop: 15, fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, letterSpacing: 1.5 }}>
-      {viewMode === '2d' ? '🕸️ GOLD MESH = COLLABORATORS WHO ATTENDED TOGETHER' : '🌍 YOUR AVATAR MAPPED TO SPHERE // DRAG TO ROTATE'}
-    </div>
-
-    {detailView && (() => {
-  // 🟢 CLUSTERING LOGIC FOR DETAIL VIEW
-  const detailShows = shows.filter(s => detailView.showIds.includes(s.id));
-  
-  console.log('🔍 DETAIL VIEW CLUSTERING:', detailShows.length, 'shows for', detailView.username);
-  
-  const clustered = [];
-  const festMap = {};
-  
-  detailShows.forEach((s, idx) => {
-    console.log(`[${idx}] ${s.artist || s.festival_name} - fest: ${s.is_festival}, name: ${s.festival_name}`);
-    
-    if (s.is_festival && s.festival_name) {
-      const key = `${s.festival_name}-${getYear(s.date)}`;
-      console.log('  ✅ Fest key:', key);
-      
-      if (!festMap[key]) {
-        festMap[key] = {
-          festival_name: s.festival_name,
-          year: getYear(s.date),
-          days: []
-        };
-      }
-      festMap[key].days.push(s);
-    } else {
-      console.log('  ❌ Solo');
-      clustered.push({ type: 'solo', show: s });
-    }
-  });
-  
-  Object.values(festMap).forEach(fg => {
-    clustered.push({
-      type: 'festival',
-      festival_name: fg.festival_name,
-      year: fg.year,
-      days: fg.days.sort((a, b) => a.date.localeCompare(b.date))
-    });
-  });
-  
-  console.log('✅ Clustered groups:', clustered.length);
-  console.log('📊 Festival clusters:', Object.keys(festMap).length);
-  console.log('📊 Solo shows:', clustered.filter(c => c.type === 'solo').length);
-  
-  return (
-    <div style={{ marginTop: 40 }}>
-      <Card neon style={{ border: `2px solid ${detailView.color}`, boxShadow: `0 0 30px ${hexToRgba(detailView.color, 0.3)}` }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <div>
-            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2rem' : '3rem', color: detailView.color }}>{detailView.username.toUpperCase()}</div>
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray }}>{detailView.count} SHARED ({Math.round((detailView.count / totalShows) * 100)}%)</div>
-          </div>
-          <button onClick={() => setDetailView(null)} style={{ background: 'none', border: `1px solid ${C.border}`, color: C.gray, padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontFamily: "'Space Mono'", fontSize: 10 }}>CLOSE</button>
-        </div>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {clustered.map((cluster, ci) => {
-            if (cluster.type === 'festival') {
-              // FESTIVAL CLUSTER CARD
-              return (
-                <div key={`fest-${cluster.festival_name}-${cluster.year}`} style={{ 
-                  background: hexToRgba(C.gold, 0.05), 
-                  border: `2px solid ${C.gold}`, 
-                  borderRadius: 12, 
-                  padding: 20 
-                }}>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: C.gold, marginBottom: 10, lineHeight: 1 }}>
-                    {cluster.festival_name.toUpperCase()} {cluster.year}
-                  </div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 15 }}>
-                    {cluster.days.length} DAYS ATTENDED TOGETHER
-                  </div>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {cluster.days.map(day => {
-                      const otherAttendees = collaborators.filter(c => 
-                        c.id !== detailView.id && c.showIds.includes(day.id)
-                      );
-                      
-                      return (
-                        <div key={day.id} style={{ 
-                          background: hexToRgba(detailView.color, 0.05), 
-                          border: `1px solid ${hexToRgba(detailView.color, 0.3)}`, 
-                          borderRadius: 8, 
-                          padding: 12,
-                          borderLeft: `3px solid ${C.gold}`
-                        }}>
-                          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.1rem', color: '#fff' }}>
-                            {day.festival_day?.toUpperCase() || fmtDateShort(day.date)}
-                          </div>
-                          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 3 }}>
-                            {day.venue?.toUpperCase()}
-                          </div>
-                          
-                          {otherAttendees.length > 0 && (
-                            <div style={{ 
-                              marginTop: 8, 
-                              paddingTop: 8, 
-                              borderTop: `1px solid ${hexToRgba(detailView.color, 0.2)}`,
-                              display: 'flex',
-                              gap: 4,
-                              alignItems: 'center',
-                              flexWrap: 'wrap'
-                            }}>
-                              <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold }}>ALSO WITH:</span>
-                              {otherAttendees.map(att => (
-                                <span key={att.id} style={{ 
-                                  fontFamily: "'Space Mono'", 
-                                  fontSize: 7, 
-                                  color: att.color,
-                                  background: hexToRgba(att.color, 0.15),
-                                  padding: '2px 6px',
-                                  borderRadius: 4,
-                                  border: `1px solid ${hexToRgba(att.color, 0.4)}`
-                                }}>
-                                  {att.username.toUpperCase()}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            }
-            
-            // SOLO SHOW CARD
-            const s = cluster.show;
-            const otherAttendees = collaborators.filter(c => 
-              c.id !== detailView.id && c.showIds.includes(s.id)
-            );
-            
-            return (
-              <div key={s.id} style={{ 
-                background: hexToRgba(detailView.color, 0.05), 
-                border: `1px solid ${hexToRgba(detailView.color, 0.3)}`, 
-                borderRadius: 8, 
-                padding: 15 
-              }}>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.3rem', color: '#fff' }}>
-                  {s.is_festival ? s.festival_name?.toUpperCase() : s.artist?.toUpperCase()}
-                </div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray, marginTop: 5 }}>
-                  {fmtDateShort(s.date)}
-                </div>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: detailView.color, marginTop: 3 }}>
-                  {s.venue?.toUpperCase()}
-                </div>
-                
-                {otherAttendees.length > 0 && (
-                  <div style={{ 
-                    marginTop: 8, 
-                    paddingTop: 8, 
-                    borderTop: `1px solid ${hexToRgba(detailView.color, 0.2)}`,
-                    display: 'flex',
-                    gap: 4,
-                    alignItems: 'center',
-                    flexWrap: 'wrap'
-                  }}>
-                    <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold }}>WITH:</span>
-                    {otherAttendees.map(att => (
-                      <span key={att.id} style={{ 
-                        fontFamily: "'Space Mono'", 
-                        fontSize: 7, 
-                        color: att.color,
-                        background: hexToRgba(att.color, 0.15),
-                        padding: '2px 6px',
-                        borderRadius: 4,
-                        border: `1px solid ${hexToRgba(att.color, 0.4)}`
-                      }}>
-                        {att.username.toUpperCase()}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </Card>
+      {/* Detail modal */}
+      {detailView && buildDetailModal(collaborators.find(c => c.id === detailView.id) || detailView)}
     </div>
   );
-})()}
-  </div>
-);
 }
+
 // ─── STUB CASE TAB ────────────────────────────────────────────────────────────
 function StubCaseTab({ concerts, isAdmin, onEdit, artistGenres }) {
   const [selected, setSelected] = useState(null);
@@ -14232,8 +13977,7 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
   
 {activeTab === 'photos' && <PhotoVaultTab concerts={concerts} artifacts={userArtifacts} shouldBlurPhoto={shouldBlurPhoto} currentUserId={session?.user?.id} />}
 
-{activeTab === 'shows' && <CollaborationWebTab />}
-
+{activeTab === 'shows' && <CollaborationWebTab onNavigateToUser={handleNavigateToUser} />}
 
   {activeTab === 'stubs' && (
   <StubCaseTab 
