@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabaseClient';
 
 const TEAL = '#00e5cc';
@@ -16,23 +16,12 @@ const fmtDateShort = d => {
   return `${MONTHS_SHORT[dt.getMonth()]} ${dt.getDate()}, ${dt.getFullYear()}`;
 };
 
-const getYear = d => d ? new Date(d + 'T12:00:00').getFullYear() : null;
-
-const GENRE_COLORS = {
-  'Indie Rock':'#00f2ff','Alternative':'#9d00ff','Experimental':'#ff00ff',
-  'Electronic':'#ff0077','Jam':'#ffcc00','Folk':'#ffaa00','Classic Rock':'#ff4400',
-  'Pop':'#00e5ff','Hip Hop':'#a2ff00','Punk':'#ff3300','R&B':'#ff66cc',
-  'Country':'#cc8800','Metal':'#888888','Other':'#334455','Festival':'#ffcc00',
-};
-
 export default function LandingPage({ 
   currentSession, 
   onEnterArchive, 
   onNavigateToUser, 
   onLogout 
 }) {
-  const sessionChecked = true; 
-
   const [mode, setMode] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,34 +31,52 @@ export default function LandingPage({
   const [featuredIdx, setFeaturedIdx] = useState(0);
   const [tickerPaused, setTickerPaused] = useState(false);
   const [recentUsers, setRecentUsers] = useState([]);
-  const [concerts, setConcerts] = useState([]);
-  const [userCount, setUserCount] = useState(0);
 
+  // ─── GLOBAL SHOWS (from current `shows` table — no user filter, no image columns) ───
+  const [shows, setShows] = useState([]);
   useEffect(() => {
-    const fetchPublicConcerts = async () => {
+    const fetchShows = async () => {
       const { data } = await supabase
-        .from('concerts')
-        .select('id, date, bands, venue, city, state, genre, is_festival, festival_name, image_url, personal_photo_url, setlist_image_url, festival_poster_url, wristband_image_url, user_id')
+        .from('shows')
+        .select('id, date, artist, bands, venue, city, state, is_festival, festival_name, genre')
         .order('date', { ascending: false })
-        .limit(600);
-      if (data) setConcerts(data);
+        .limit(1000);
+      if (data) setShows(data);
     };
-    fetchPublicConcerts();
+    fetchShows();
   }, []);
 
-  const [posters, setPosters] = useState([]);
+  // ─── ERIC'S DEMO ARTIFACTS (for the rotating hero image + before/after section) ───
+  const [ericArtifacts, setEricArtifacts] = useState([]);
+  useEffect(() => {
+    const fetchEricArtifacts = async () => {
+      const { data } = await supabase
+        .from('artifacts')
+        .select('id, image_url, artifact_type')
+        .eq('user_id', 'e6497375-65df-4187-8767-1093dd13f97c')
+        .in('artifact_type', ['stub', 'photo', 'relic'])
+        .not('image_url', 'is', null)
+        .limit(20);
+      if (data) setEricArtifacts(data);
+    };
+    fetchEricArtifacts();
+  }, []);
 
+  // ─── POSTERS (Eric's, for the posters fetch — unchanged) ───
+  const [posters, setPosters] = useState([]);
   useEffect(() => {
     const fetchAllPosters = async () => {
       const { data } = await supabase
         .from('posters')
-        .select('*')
-        .eq('user_id', 'e6497375-65df-4187-8767-1093dd13f97c');
+        .select('id, image_url, artist')
+        .eq('user_id', 'e6497375-65df-4187-8767-1093dd13f97c')
+        .limit(50);
       if (data) setPosters(data);
     };
     fetchAllPosters();
   }, []);
 
+  // ─── RECENT USERS ───
   useEffect(() => {
     const fetchRecentUsers = async () => {
       const { data } = await supabase
@@ -77,49 +84,51 @@ export default function LandingPage({
         .select('username, avatar_color, last_seen, last_artist, last_venue')
         .order('last_seen', { ascending: false })
         .limit(10);
-      if (data) {
-        setRecentUsers(data);
-        setUserCount(data.length);
-      }
+      if (data) setRecentUsers(data);
     };
     fetchRecentUsers();
   }, []);
 
-  const [sliderYear, setSliderYear] = useState(null);
   const isMobile = window.innerWidth < 768;
 
-  const artifacts = useMemo(() =>
-    concerts
-      .filter(c => c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && (c.image_url || c.personal_photo_url || c.setlist_image_url))
+  // ─── ROTATING HERO ARTIFACTS (Eric's images, random order, 8 max) ───
+  const artifacts = useMemo(() => {
+    if (!ericArtifacts.length) return [];
+    return [...ericArtifacts]
       .sort(() => 0.5 - Math.random())
-      .slice(0, 8)
-  , [concerts]);
+      .slice(0, 8);
+  }, [ericArtifacts]);
 
-  const years = useMemo(() => {
-    const ys = [...new Set(concerts.map(c => getYear(c.date)).filter(Boolean))].sort();
-    return ys;
-  }, [concerts]);
+  // ─── GLOBAL STATS (from `shows` — accurate, current data) ───
+  const uniqueArtists = useMemo(() =>
+    new Set(shows.flatMap(s => [
+      s.artist,
+      ...(s.bands || []).map(getBandName)
+    ].filter(Boolean))).size
+  , [shows]);
 
-  const minYear = years[0] || 2000;
-  const maxYear = years[years.length - 1] || 2026;
+  const uniqueVenues = useMemo(() =>
+    new Set(shows.map(s => s.venue).filter(Boolean)).size
+  , [shows]);
 
-  useEffect(() => {
-    if (years.length) setSliderYear(maxYear);
-  }, [years.length]);
+  const uniqueStates = useMemo(() =>
+    new Set(shows.map(s => s.state).filter(Boolean)).size
+  , [shows]);
 
-  const sliderConcerts = useMemo(() => {
-    if (!sliderYear) return concerts;
-    return concerts.filter(c => getYear(c.date) === sliderYear);
-  }, [concerts, sliderYear]);
+  // ─── TICKER (global, from `shows`) ───
+  const tickerItems = useMemo(() => {
+    if (!shows.length) return 'INITIALIZING SIGNAL...';
+    const bits = shows.slice(0, 20).map(s => {
+      const band = s.artist || getBandName(s.bands?.[0]) || s.festival_name || 'UNKNOWN';
+      const venue = s.venue || 'UNKNOWN VENUE';
+      const city = s.city || '';
+      return `${band.toUpperCase()} @ ${venue.toUpperCase()}${city ? ` (${city.toUpperCase()})` : ''}`;
+    });
+    const txt = bits.join('   ///   ') + '   ///   ';
+    return txt + txt;
+  }, [shows]);
 
-  const sliderArtifact = useMemo(() => {
-    const withImg = sliderConcerts.filter(c => 
-      c.user_id === 'e6497375-65df-4187-8767-1093dd13f97c' && 
-      (c.image_url || c.personal_photo_url)
-    );
-    return withImg[0] || null;
-  }, [sliderConcerts]);
-
+  // ─── FEATURED IMAGE ROTATION ───
   useEffect(() => {
     if (!artifacts.length) return;
     const t = setInterval(() => {
@@ -128,25 +137,9 @@ export default function LandingPage({
     return () => clearInterval(t);
   }, [artifacts.length, tickerPaused]);
 
-  const featured = artifacts[featuredIdx] || concerts[0];
-  const uniqueArtists = new Set(concerts.flatMap(c => (c.bands || []).map(getBandName)).filter(Boolean)).size;
-  const uniqueVenues = useMemo(() => new Set(concerts.map(c => c.venue).filter(Boolean)).size, [concerts]);
-  const uniqueStates = useMemo(() => new Set(concerts.map(c => c.state).filter(Boolean)).size, [concerts]);
-  const uniqueGenres = useMemo(() => new Set(concerts.map(c => c.genre).filter(Boolean)).size, [concerts]);
+  const featuredImg = artifacts[featuredIdx]?.image_url?.split(',')[0] || null;
 
-  const tickerItems = useMemo(() => {
-    if (!concerts.length) return 'INITIALIZING SIGNAL...';
-    const bits = [];
-    concerts.slice(0, 15).forEach(c => {
-      const band = getBandName(c.bands?.[0]) || c.festival_name || 'UNKNOWN';
-      const venue = c.venue || 'UNKNOWN VENUE';
-      const city = c.city || '';
-      bits.push(`${band.toUpperCase()} @ ${venue.toUpperCase()}${city ? ` (${city.toUpperCase()})` : ''}`);
-    });
-    const txt = bits.join('   ///   ') + '   ///   ';
-    return txt + txt;
-  }, [concerts, uniqueVenues, uniqueStates]);
-
+  // ─── AUTH HANDLERS ───
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -156,7 +149,7 @@ export default function LandingPage({
       setMessage('Login failed: ' + error.message);
       setLoading(false);
     } else if (data?.session) {
-      onEnterArchive(); 
+      onEnterArchive();
     }
   };
   
@@ -164,34 +157,21 @@ export default function LandingPage({
     e.preventDefault();
     setLoading(true);
     setMessage('');
-    
-    const { data, error } = await supabase.auth.signUp({ // Added 'data' here
+    const { data, error } = await supabase.auth.signUp({
       email, password,
       options: {
         data: { username },
         emailRedirectTo: 'https://concert-tracker-eight.vercel.app'
       }
     });
-
     if (error) {
       setMessage('Signup failed: ' + error.message);
     } else {
-      // CHANGE THIS PART:
       setMessage('Welcome to the Museum! Redirecting you now...');
-      
-      // If Supabase logs them in immediately (which it does when Confirm Email is off),
-      // wait a second for the message to be read and then enter the archive.
-      setTimeout(() => {
-        onEnterArchive(); 
-      }, 1500);
+      setTimeout(() => { onEnterArchive(); }, 1500);
     }
     setLoading(false);
   };
-
-  const featuredImg = featured
-    ? (featured.image_url?.split(',')[0] || featured.personal_photo_url?.split(',')[0] || featured.setlist_image_url?.split(',')[0])
-    : null;
-  const featuredBand = featured ? (getBandName(featured.bands?.[0]) || featured.festival_name || 'UNKNOWN') : '';
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#fff', fontFamily: "'Space Mono', monospace", overflowX: 'hidden', position: 'relative' }}>
@@ -304,7 +284,7 @@ export default function LandingPage({
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* HERO SECTION - TRANSFORMATION FOCUSED */}
+      {/* HERO SECTION */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       <div style={{ 
         minHeight: '100vh', 
@@ -317,14 +297,11 @@ export default function LandingPage({
         overflow: 'hidden'
       }}>
         
-        {/* Background glow */}
         <div style={{ 
           position: 'absolute', 
-          top: '40%', 
-          left: '50%', 
+          top: '40%', left: '50%', 
           transform: 'translate(-50%, -50%)', 
-          width: 800, 
-          height: 800, 
+          width: 800, height: 800, 
           background: `radial-gradient(circle, rgba(0,229,204,0.08) 0%, transparent 70%)`, 
           pointerEvents: 'none' 
         }} />
@@ -341,18 +318,12 @@ export default function LandingPage({
           </div>
 
           {/* Main Headline */}
-          <div className="fade-in" style={{ 
-            textAlign: 'center', 
-            marginBottom: 20,
-            animationDelay: '0.1s'
-          }}>
+          <div className="fade-in" style={{ textAlign: 'center', marginBottom: 20, animationDelay: '0.1s' }}>
             <h1 style={{ 
               fontFamily: "'Bebas Neue'", 
               fontSize: isMobile ? '2.8rem' : '5rem', 
               color: '#fff', 
-              lineHeight: 1,
-              letterSpacing: 3,
-              marginBottom: 16
+              lineHeight: 1, letterSpacing: 3, marginBottom: 16
             }}>
               Your Concert History,<br/>
               <span style={{ color: TEAL }}>All in One Place</span>
@@ -360,22 +331,16 @@ export default function LandingPage({
             <p style={{ 
               fontFamily: "'Space Mono'", 
               fontSize: isMobile ? 11 : 13, 
-              color: GRAY, 
-              letterSpacing: 2,
-              maxWidth: 600,
-              margin: '0 auto',
-              lineHeight: 1.8
+              color: GRAY, letterSpacing: 2,
+              maxWidth: 600, margin: '0 auto', lineHeight: 1.8
             }}>
               Track every show. Store ticket stubs, setlists, and photos.<br/>
               See who else was there. Build your live music legacy.
             </p>
           </div>
 
-          {/* THE BIG TRANSFORMATION VISUAL */}
-          <div className="fade-in" style={{ 
-            marginBottom: 48,
-            animationDelay: '0.2s'
-          }}>
+          {/* BEFORE → AFTER VISUAL */}
+          <div className="fade-in" style={{ marginBottom: 48, animationDelay: '0.2s' }}>
             <div style={{ 
               display: 'flex', 
               flexDirection: isMobile ? 'column' : 'row',
@@ -385,305 +350,86 @@ export default function LandingPage({
               marginBottom: 40
             }}>
 
-              {/* BEFORE: THE CHAOS - 3 IMAGE STACK */}
-<div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
-  <div style={{ 
-    fontFamily: "'Space Mono'", 
-    fontSize: 8, 
-    color: '#ff4466', 
-    letterSpacing: 4, 
-    marginBottom: 8
-  }}>
-    BEFORE
-  </div>
-  
-  <div style={{ 
-  position: 'relative',
-  width: isMobile ? 240 : 300,
-  height: isMobile ? 460 : 560,  // Increased to match right side better
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center'
-}}>
-  {/* Wristbands - top */}
-  <div style={{ 
-    position: 'absolute',
-    top: '2%',
-    left: '10%',
-    width: '55%',
-    transform: 'rotate(-10deg)',
-    boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
-    border: '2px solid #1a1a1a',
-    zIndex: 3
-  }}>
-    <img 
-      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/WristbandMess.jpeg"
-      alt="Wristband pile"
-      style={{ width: '100%', height: 'auto', display: 'block' }}
-    />
-  </div>
-  
-  {/* Tickets - middle */}
-  <div style={{ 
-    position: 'absolute',
-    top: '32%',
-    right: '5%',
-    width: '58%',
-    transform: 'rotate(7deg)',
-    boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
-    border: '2px solid #1a1a1a',
-    zIndex: 2
-  }}>
-    <img 
-      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/ticketPile.jpeg"
-      alt="Ticket pile"
-      style={{ width: '100%', height: 'auto', display: 'block' }}
-    />
-  </div>
-  
-  {/* Posters - bottom */}
-  <div style={{ 
-    position: 'absolute',
-    bottom: '2%',
-    left: '8%',
-    width: '62%',
-    transform: 'rotate(-5deg)',
-    boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
-    border: '2px solid #1a1a1a',
-    zIndex: 1
-  }}>
-    <img 
-      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/postersonfloor.jpeg"
-      alt="Posters on floor"
-      style={{ width: '100%', height: 'auto', display: 'block' }}
-    />
-  </div>
-</div>
-
-  <div style={{ 
-    fontFamily: "'Space Mono'", 
-    fontSize: isMobile ? 9 : 10, 
-    color: '#666',
-    textAlign: 'center', 
-    lineHeight: 1.8,
-    marginTop: 8,
-    maxWidth: 280
-  }}>
-    Lost in shoeboxes.<br/>
-    Fading. Forgotten.
-  </div>
-</div>
+              {/* BEFORE */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#ff4466', letterSpacing: 4, marginBottom: 8 }}>
+                  BEFORE
+                </div>
+                <div style={{ 
+                  position: 'relative',
+                  width: isMobile ? 240 : 300,
+                  height: isMobile ? 460 : 560,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <div style={{ position: 'absolute', top: '2%', left: '10%', width: '55%', transform: 'rotate(-10deg)', boxShadow: '0 12px 40px rgba(0,0,0,0.8)', border: '2px solid #1a1a1a', zIndex: 3 }}>
+                    <img src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/WristbandMess.jpeg" alt="Wristband pile" style={{ width: '100%', height: 'auto', display: 'block' }} />
+                  </div>
+                  <div style={{ position: 'absolute', top: '32%', right: '5%', width: '58%', transform: 'rotate(7deg)', boxShadow: '0 12px 40px rgba(0,0,0,0.8)', border: '2px solid #1a1a1a', zIndex: 2 }}>
+                    <img src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/ticketPile.jpeg" alt="Ticket pile" style={{ width: '100%', height: 'auto', display: 'block' }} />
+                  </div>
+                  <div style={{ position: 'absolute', bottom: '2%', left: '8%', width: '62%', transform: 'rotate(-5deg)', boxShadow: '0 12px 40px rgba(0,0,0,0.8)', border: '2px solid #1a1a1a', zIndex: 1 }}>
+                    <img src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/postersonfloor.jpeg" alt="Posters on floor" style={{ width: '100%', height: 'auto', display: 'block' }} />
+                  </div>
+                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 9 : 10, color: '#666', textAlign: 'center', lineHeight: 1.8, marginTop: 8, maxWidth: 280 }}>
+                  Lost in shoeboxes.<br/>Fading. Forgotten.
+                </div>
+              </div>
 
               {/* ARROW */}
-              <div style={{ 
-                flexShrink: 0,
-                display: 'flex', 
-                flexDirection: 'column', 
-                alignItems: 'center',
-                gap: 12, 
-                padding: isMobile ? '0' : '0 40px'
-              }}>
-                <div style={{ 
-                  fontFamily: "'Bebas Neue'", 
-                  fontSize: isMobile ? '3rem' : '5rem',
-                  color: TEAL,
-                  textShadow: `0 0 30px ${TEAL}`,
-                  transform: isMobile ? 'rotate(90deg)' : 'none'
-                }}>
+              <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: isMobile ? '0' : '0 40px' }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '3rem' : '5rem', color: TEAL, textShadow: `0 0 30px ${TEAL}`, transform: isMobile ? 'rotate(90deg)' : 'none' }}>
                   →
                 </div>
               </div>
 
-              {/* AFTER: THE ARCHIVE - 3 SCREENSHOT STACK */}
+              {/* AFTER */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
-                <div style={{ 
-                  fontFamily: "'Space Mono'", 
-                  fontSize: 8, 
-                  color: TEAL, 
-                  letterSpacing: 4, 
-                  marginBottom: 8
-                }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: TEAL, letterSpacing: 4, marginBottom: 8 }}>
                   AFTER
                 </div>
-
-                <div style={{ 
-                  display: 'grid',
-                  gridTemplateColumns: '1fr',
-                  gap: 12,
-                  width: isMobile ? 280 : 340
-                }}>
-                  {/* Stub Case */}
-                  <div style={{
-                    background: '#0a0a0f',
-                    border: `1px solid ${TEAL}44`,
-                    borderRadius: 8,
-                    overflow: 'hidden',
-                    boxShadow: `0 12px 40px rgba(0,0,0,0.8), 0 0 20px ${TEAL}11`,
-                    transform: 'rotate(-1deg)'
-                  }}>
-                    <div style={{
-                      background: '#050508',
-                      padding: '6px 10px',
-                      borderBottom: `1px solid ${TEAL}22`,
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 6
-                    }}>
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#ff4466' }} />
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD }} />
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#00cc88' }} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, width: isMobile ? 280 : 340 }}>
+                  {[
+                    { src: "https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/Screenshot%202026-04-22%20at%203.03.33%20PM.png", alt: "Stub wall organized", rot: '-1deg' },
+                    { src: "https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/posterwall.png", alt: "Poster wall organized", rot: '1deg' },
+                    { src: "https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/Screenshot%202026-05-03%20at%2011.14.54%20AM.png", alt: "Heavy rotation tab", rot: '-0.5deg' },
+                  ].map((img, i) => (
+                    <div key={i} style={{ background: '#0a0a0f', border: `1px solid ${TEAL}44`, borderRadius: 8, overflow: 'hidden', boxShadow: `0 12px 40px rgba(0,0,0,0.8), 0 0 20px ${TEAL}11`, transform: `rotate(${img.rot})` }}>
+                      <div style={{ background: '#050508', padding: '6px 10px', borderBottom: `1px solid ${TEAL}22`, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#ff4466' }} />
+                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD }} />
+                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#00cc88' }} />
+                      </div>
+                      <img src={img.src} alt={img.alt} style={{ width: '100%', height: 'auto', display: 'block' }} />
                     </div>
-                    <img
-                      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/Screenshot%202026-04-22%20at%203.03.33%20PM.png"
-                      alt="Stub wall organized"
-                      style={{ width: '100%', height: 'auto', display: 'block' }}
-                    />
-                  </div>
-
-                  {/* Poster Wall */}
-                  <div style={{
-                    background: '#0a0a0f',
-                    border: `1px solid ${TEAL}44`,
-                    borderRadius: 8,
-                    overflow: 'hidden',
-                    boxShadow: `0 12px 40px rgba(0,0,0,0.8), 0 0 20px ${TEAL}11`,
-                    transform: 'rotate(1deg)'
-                  }}>
-                    <div style={{
-                      background: '#050508',
-                      padding: '6px 10px',
-                      borderBottom: `1px solid ${TEAL}22`,
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 6
-                    }}>
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#ff4466' }} />
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD }} />
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#00cc88' }} />
-                    </div>
-                    <img
-                      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/posterwall.png"
-                      alt="Poster wall organized"
-                      style={{ width: '100%', height: 'auto', display: 'block' }}
-                    />
-                  </div>
-
-                  {/* Heavy Rotation */}
-                  <div style={{
-                    background: '#0a0a0f',
-                    border: `1px solid ${TEAL}44`,
-                    borderRadius: 8,
-                    overflow: 'hidden',
-                    boxShadow: `0 12px 40px rgba(0,0,0,0.8), 0 0 20px ${TEAL}11`,
-                    transform: 'rotate(-0.5deg)'
-                  }}>
-                    <div style={{
-                      background: '#050508',
-                      padding: '6px 10px',
-                      borderBottom: `1px solid ${TEAL}22`,
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 6
-                    }}>
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#ff4466' }} />
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD }} />
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#00cc88' }} />
-                    </div>
-                    <img
-                      src="https://pirqtmtzearmugvzhmgl.supabase.co/storage/v1/object/public/avatars/Screenshot%202026-05-03%20at%2011.14.54%20AM.png"
-                      alt="Heavy rotation tab"
-                      style={{ width: '100%', height: 'auto', display: 'block' }}
-                    />
-                  </div>
+                  ))}
                 </div>
-
-                <div style={{
-                  fontFamily: "'Space Mono'", 
-                  fontSize: isMobile ? 9 : 10, 
-                  color: TEAL,
-                  textAlign: 'center', 
-                  lineHeight: 1.8, 
-                  marginTop: 8,
-                  maxWidth: 300
-                }}>
-                  Organized. Searchable.<br/>
-                  Shareable. Forever.
+                <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 9 : 10, color: TEAL, textAlign: 'center', lineHeight: 1.8, marginTop: 8, maxWidth: 300 }}>
+                  Organized. Searchable.<br/>Shareable. Forever.
                 </div>
               </div>
             </div>
           </div>
 
-          {/* CTAs - THREE OPTIONS */}
-          <div className="fade-in" style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 20,
-            marginBottom: 40,
-            animationDelay: '0.3s'
-          }}>
-            
-            {/* Primary buttons row */}
-            <div style={{
-              display: 'flex',
-              gap: 16,
-              flexWrap: 'wrap',
-              justifyContent: 'center'
-            }}>
-              <button
-                onClick={() => setMode('signup')}
-                className="cta-primary"
-              >
-                START FREE
-              </button>
-              <button
-                onClick={() => setMode('login')}
-                className="cta-secondary"
-              >
-                LOG IN
-              </button>
+          {/* CTAs */}
+          <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, marginBottom: 40, animationDelay: '0.3s' }}>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button onClick={() => setMode('signup')} className="cta-primary">START FREE</button>
+              <button onClick={() => setMode('login')} className="cta-secondary">LOG IN</button>
             </div>
-
-            {/* View example link */}
-<button
-  onClick={() => onNavigateToUser('eric')}
-  style={{
-    background: 'transparent',
-    border: `1px solid ${GRAY}`,
-    color: GRAY,
-    fontFamily: "'Space Mono'",
-    fontSize: 11,
-    cursor: 'pointer',
-    letterSpacing: 2,
-    padding: '10px 24px',
-    borderRadius: 4,
-    transition: 'all 0.2s'
-  }}
-  onMouseEnter={e => {
-    e.currentTarget.style.borderColor = TEAL;
-    e.currentTarget.style.color = TEAL;
-  }}
-  onMouseLeave={e => {
-    e.currentTarget.style.borderColor = GRAY;
-    e.currentTarget.style.color = GRAY;
-  }}
->
-  VIEW LIVE EXAMPLE
-</button>
+            <button
+              onClick={() => onNavigateToUser('eric')}
+              style={{ background: 'transparent', border: `1px solid ${GRAY}`, color: GRAY, fontFamily: "'Space Mono'", fontSize: 11, cursor: 'pointer', letterSpacing: 2, padding: '10px 24px', borderRadius: 4, transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.color = TEAL; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = GRAY; e.currentTarget.style.color = GRAY; }}
+            >
+              VIEW LIVE EXAMPLE
+            </button>
           </div>
 
-          {/* Free + User count */}
-          <div className="fade-in" style={{ 
-            textAlign: 'center',
-            animationDelay: '0.4s'
-          }}>
-            <div style={{ 
-              fontFamily: "'Space Mono'", 
-              fontSize: 9, 
-              color: GRAY, 
-              letterSpacing: 3 
-            }}>
-              FREE • NO CREDIT CARD • {concerts.length} SHOWS TRACKED
+          <div className="fade-in" style={{ textAlign: 'center', animationDelay: '0.4s' }}>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 3 }}>
+              FREE • NO CREDIT CARD • {shows.length} SHOWS TRACKED
             </div>
           </div>
 
@@ -693,358 +439,107 @@ export default function LandingPage({
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* HOW IT WORKS */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <div style={{ 
-        padding: isMobile ? '80px 20px' : '100px 40px', 
-        background: '#050508',
-        borderTop: '1px solid #111'
-      }}>
+      <div style={{ padding: isMobile ? '80px 20px' : '100px 40px', background: '#050508', borderTop: '1px solid #111' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <div style={{ 
-              fontFamily: "'Space Mono'", 
-              fontSize: 9, 
-              color: TEAL, 
-              letterSpacing: 4, 
-              marginBottom: 12 
-            }}>
-              // HOW IT WORKS
-            </div>
-            <h2 style={{ 
-              fontFamily: "'Bebas Neue'", 
-              fontSize: isMobile ? '2.5rem' : '3.5rem', 
-              color: '#fff', 
-              letterSpacing: 2,
-              marginBottom: 16
-            }}>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: TEAL, letterSpacing: 4, marginBottom: 12 }}>// HOW IT WORKS</div>
+            <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '3.5rem', color: '#fff', letterSpacing: 2, marginBottom: 16 }}>
               Three Steps to Your Archive
             </h2>
-            <p style={{ 
-              fontFamily: "'Space Mono'", 
-              fontSize: 11, 
-              color: GRAY, 
-              lineHeight: 1.8 
-            }}>
+            <p style={{ fontFamily: "'Space Mono'", fontSize: 11, color: GRAY, lineHeight: 1.8 }}>
               No scanning. No automation magic. Just you and your memories.
             </p>
           </div>
-
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', 
-            gap: isMobile ? 40 : 48 
-          }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? 40 : 48 }}>
             {[
-              {
-                num: '01',
-                title: 'Add a Show',
-                desc: 'Type the artist, venue, and date. Takes 30 seconds.',
-                color: TEAL
-              },
-              {
-                num: '02',
-                title: 'Attach Artifacts',
-                desc: 'Upload photos of ticket stubs, setlists, posters, wristbands.',
-                color: GOLD
-              },
-              {
-                num: '03',
-                title: 'Watch It Build',
-                desc: 'Your timeline grows. Your stats update. Your collection comes alive.',
-                color: PURPLE
-              }
+              { num: '01', title: 'Add a Show', desc: 'Type the artist, venue, and date. Takes 30 seconds.', color: TEAL },
+              { num: '02', title: 'Attach Artifacts', desc: 'Upload photos of ticket stubs, setlists, posters, wristbands.', color: GOLD },
+              { num: '03', title: 'Watch It Build', desc: 'Your timeline grows. Your stats update. Your collection comes alive.', color: PURPLE }
             ].map((step, i) => (
               <div key={i} style={{ textAlign: 'center' }}>
-                <div style={{ 
-                  fontFamily: "'Bebas Neue'", 
-                  fontSize: '4rem', 
-                  color: step.color,
-                  lineHeight: 1,
-                  marginBottom: 16,
-                  textShadow: `0 0 20px ${step.color}66`
-                }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: step.color, lineHeight: 1, marginBottom: 16, textShadow: `0 0 20px ${step.color}66` }}>
                   {step.num}
                 </div>
-                <div style={{ 
-                  fontFamily: "'Bebas Neue'", 
-                  fontSize: '1.5rem', 
-                  color: '#fff', 
-                  letterSpacing: 2,
-                  marginBottom: 12
-                }}>
-                  {step.title}
-                </div>
-                <div style={{ 
-                  fontFamily: "'Space Mono'", 
-                  fontSize: 10, 
-                  color: GRAY, 
-                  lineHeight: 1.8,
-                  maxWidth: 240,
-                  margin: '0 auto'
-                }}>
-                  {step.desc}
-                </div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#fff', letterSpacing: 2, marginBottom: 12 }}>{step.title}</div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: GRAY, lineHeight: 1.8, maxWidth: 240, margin: '0 auto' }}>{step.desc}</div>
               </div>
             ))}
           </div>
-
-          {/* CTA */}
           <div style={{ textAlign: 'center', marginTop: 64 }}>
-            <button
-              onClick={() => setMode('signup')}
-              className="cta-primary"
-            >
-              START TRACKING
-            </button>
+            <button onClick={() => setMode('signup')} className="cta-primary">START TRACKING</button>
           </div>
-
         </div>
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* THE SOCIAL HOOK (UNIQUE FEATURE) */}
+      {/* THE SOCIAL HOOK */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <div style={{ 
-        padding: isMobile ? '80px 20px' : '100px 40px', 
-        background: '#000',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        
-        <div style={{ 
-          position: 'absolute', 
-          top: '50%', 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)', 
-          width: 600, 
-          height: 600, 
-          background: `radial-gradient(circle, rgba(153,102,255,0.06) 0%, transparent 70%)`, 
-          pointerEvents: 'none' 
-        }} />
-
+      <div style={{ padding: isMobile ? '80px 20px' : '100px 40px', background: '#000', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 600, height: 600, background: `radial-gradient(circle, rgba(153,102,255,0.06) 0%, transparent 70%)`, pointerEvents: 'none' }} />
         <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <div style={{ 
-              fontFamily: "'Space Mono'", 
-              fontSize: 9, 
-              color: PURPLE, 
-              letterSpacing: 4, 
-              marginBottom: 12 
-            }}>
-              // THE SOCIAL LAYER
-            </div>
-            <h2 style={{ 
-              fontFamily: "'Bebas Neue'", 
-              fontSize: isMobile ? '2.5rem' : '4rem', 
-              color: '#fff', 
-              letterSpacing: 2,
-              marginBottom: 24,
-              lineHeight: 1.1
-            }}>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: PURPLE, letterSpacing: 4, marginBottom: 12 }}>// THE SOCIAL LAYER</div>
+            <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff', letterSpacing: 2, marginBottom: 24, lineHeight: 1.1 }}>
               See Who Else Was There
             </h2>
-            <p style={{ 
-              fontFamily: "'Space Mono'", 
-              fontSize: isMobile ? 11 : 13, 
-              color: GRAY, 
-              lineHeight: 1.8,
-              maxWidth: 600,
-              margin: '0 auto'
-            }}>
+            <p style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 11 : 13, color: GRAY, lineHeight: 1.8, maxWidth: 600, margin: '0 auto' }}>
               When you log a show, you see everyone else who tracked it too. 
               Connect with people who were in the same room, same night, same moment.
               This is <span style={{ color: PURPLE }}>the only app</span> that does this.
             </p>
           </div>
-
-          {/* Visual representation */}
-          <div style={{
-            background: 'linear-gradient(135deg, #0a0008, #08000f)',
-            border: `1px solid ${PURPLE}44`,
-            borderRadius: 12,
-            padding: isMobile ? 32 : 48,
-            marginBottom: 48
-          }}>
-            <div style={{ 
-              fontFamily: "'Bebas Neue'", 
-              fontSize: isMobile ? '1.2rem' : '1.5rem', 
-              color: PURPLE,
-              letterSpacing: 2,
-              marginBottom: 24,
-              textAlign: 'center'
-            }}>
+          <div style={{ background: 'linear-gradient(135deg, #0a0008, #08000f)', border: `1px solid ${PURPLE}44`, borderRadius: 12, padding: isMobile ? 32 : 48, marginBottom: 48 }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.2rem' : '1.5rem', color: PURPLE, letterSpacing: 2, marginBottom: 24, textAlign: 'center' }}>
               YOUR SHOW ORBIT
             </div>
-            
-            <div style={{ 
-              display: 'flex', 
-              gap: 12, 
-              justifyContent: 'center',
-              flexWrap: 'wrap',
-              marginBottom: 20
-            }}>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 20 }}>
               {recentUsers.slice(0, 5).map((u, i) => (
-                <div key={i} style={{
-                  background: `${u.avatar_color || TEAL}22`,
-                  border: `1px solid ${u.avatar_color || TEAL}`,
-                  borderRadius: 8,
-                  padding: '8px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8
-                }}>
-                  <div style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    background: u.avatar_color || TEAL,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: "'Bebas Neue'",
-                    fontSize: '0.9rem',
-                    color: '#000'
-                  }}>
+                <div key={i} style={{ background: `${u.avatar_color || TEAL}22`, border: `1px solid ${u.avatar_color || TEAL}`, borderRadius: 8, padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: u.avatar_color || TEAL, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Bebas Neue'", fontSize: '0.9rem', color: '#000' }}>
                     {u.username[0].toUpperCase()}
                   </div>
-                  <div style={{ 
-                    fontFamily: "'Space Mono'", 
-                    fontSize: 9, 
-                    color: '#fff' 
-                  }}>
-                    {u.username}
-                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#fff' }}>{u.username}</div>
                 </div>
               ))}
             </div>
-
-            <div style={{ 
-              fontFamily: "'Space Mono'", 
-              fontSize: 9, 
-              color: GRAY,
-              textAlign: 'center',
-              lineHeight: 1.8
-            }}>
-              "Who else saw Dave Matthews at MSG in 2019?"<br/>
-              Now you know.
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, textAlign: 'center', lineHeight: 1.8 }}>
+              "Who else saw Dave Matthews at MSG in 2019?"<br/>Now you know.
             </div>
           </div>
-
-          {/* CTA */}
           <div style={{ textAlign: 'center' }}>
-            <button
-              onClick={() => setMode('signup')}
-              className="cta-primary"
-            >
-              JOIN THE NETWORK
-            </button>
+            <button onClick={() => setMode('signup')} className="cta-primary">JOIN THE NETWORK</button>
           </div>
-
         </div>
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* FEATURES GRID */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <div style={{ 
-        padding: isMobile ? '80px 20px' : '100px 40px', 
-        background: '#050508',
-        borderTop: '1px solid #111'
-      }}>
+      <div style={{ padding: isMobile ? '80px 20px' : '100px 40px', background: '#050508', borderTop: '1px solid #111' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-          
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <h2 style={{ 
-              fontFamily: "'Bebas Neue'", 
-              fontSize: isMobile ? '2.5rem' : '3.5rem', 
-              color: '#fff', 
-              letterSpacing: 2,
-              marginBottom: 16
-            }}>
+            <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '3.5rem', color: '#fff', letterSpacing: 2, marginBottom: 16 }}>
               Everything You Need
             </h2>
           </div>
-
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', 
-            gap: isMobile ? 24 : 32 
-          }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? 24 : 32 }}>
             {[
-              {
-                icon: '📅',
-                color: TEAL,
-                title: 'Interactive Timeline',
-                sub: 'Scroll through decades of shows, colored by genre',
-              },
-              {
-                icon: '📊',
-                color: GOLD,
-                title: 'Stats Dashboard',
-                sub: 'Total shows, top artists, states covered, genre breakdown',
-              },
-              {
-                icon: '🎟️',
-                color: PURPLE,
-                title: 'Artifact Vault',
-                sub: 'Upload and store photos of ticket stubs, setlists, posters',
-              },
-              {
-                icon: '🌐',
-                color: '#00cfff',
-                title: 'Public Profiles',
-                sub: 'Share your collection with friends or keep it private',
-              },
-              {
-                icon: '🔍',
-                color: '#ff4466',
-                title: 'Discovery Feed',
-                sub: 'See what shows other people are tracking in real-time',
-              },
-              {
-                icon: '🎨',
-                color: '#ff66cc',
-                title: 'Genre Fingerprint',
-                sub: 'Visual breakdown of your musical DNA',
-              },
+              { icon: '📅', color: TEAL, title: 'Interactive Timeline', sub: 'Scroll through decades of shows, colored by genre' },
+              { icon: '📊', color: GOLD, title: 'Stats Dashboard', sub: 'Total shows, top artists, states covered, genre breakdown' },
+              { icon: '🎟️', color: PURPLE, title: 'Artifact Vault', sub: 'Upload and store photos of ticket stubs, setlists, posters' },
+              { icon: '🌐', color: '#00cfff', title: 'Public Profiles', sub: 'Share your collection with friends or keep it private' },
+              { icon: '🔍', color: '#ff4466', title: 'Discovery Feed', sub: 'See what shows other people are tracking in real-time' },
+              { icon: '🎨', color: '#ff66cc', title: 'Genre Fingerprint', sub: 'Visual breakdown of your musical DNA' },
             ].map((feat, i) => (
               <div
                 key={i}
-                style={{
-                  background: `linear-gradient(135deg, #0a0a0a, #050508)`,
-                  border: `1px solid ${feat.color}33`,
-                  borderRadius: 12,
-                  padding: '32px 24px',
-                  transition: 'all 0.3s ease',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = feat.color;
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = `${feat.color}33`;
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
+                style={{ background: `linear-gradient(135deg, #0a0a0a, #050508)`, border: `1px solid ${feat.color}33`, borderRadius: 12, padding: '32px 24px', transition: 'all 0.3s ease' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = feat.color; e.currentTarget.style.transform = 'translateY(-4px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = `${feat.color}33`; e.currentTarget.style.transform = 'translateY(0)'; }}
               >
                 <div style={{ fontSize: '2rem', marginBottom: 16 }}>{feat.icon}</div>
-                <div style={{ 
-                  fontFamily: "'Bebas Neue'", 
-                  fontSize: '1.4rem', 
-                  color: '#fff', 
-                  letterSpacing: 2, 
-                  marginBottom: 8 
-                }}>
-                  {feat.title}
-                </div>
-                <div style={{ 
-                  fontFamily: "'Space Mono'", 
-                  fontSize: 9, 
-                  color: GRAY, 
-                  lineHeight: 1.8 
-                }}>
-                  {feat.sub}
-                </div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSpacing: 2, marginBottom: 8 }}>{feat.title}</div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, lineHeight: 1.8 }}>{feat.sub}</div>
               </div>
             ))}
           </div>
@@ -1052,39 +547,17 @@ export default function LandingPage({
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* SOCIAL PROOF (USER QUOTE) */}
+      {/* SOCIAL PROOF */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <div style={{ 
-        padding: isMobile ? '80px 20px' : '100px 40px', 
-        background: '#000'
-      }}>
+      <div style={{ padding: isMobile ? '80px 20px' : '100px 40px', background: '#000' }}>
         <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #0a0008, #08000f)',
-            border: `1px solid ${TEAL}44`,
-            borderRadius: 16,
-            padding: isMobile ? '40px 24px' : '60px 48px',
-          }}>
-            <div style={{ 
-              fontFamily: "'Space Mono'", 
-              fontSize: isMobile ? 14 : 16, 
-              color: '#fff',
-              lineHeight: 1.8,
-              marginBottom: 24,
-              fontStyle: 'italic'
-            }}>
+          <div style={{ background: 'linear-gradient(135deg, #0a0008, #08000f)', border: `1px solid ${TEAL}44`, borderRadius: 16, padding: isMobile ? '40px 24px' : '60px 48px' }}>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 14 : 16, color: '#fff', lineHeight: 1.8, marginBottom: 24, fontStyle: 'italic' }}>
               "Gotta say it's a neat system for concert people. It's been fun remembering 
               some of the older stuff. I didn't realize I went to so many back to back DMB 
               shows; and 2 at MSG."
             </div>
-            <div style={{ 
-              fontFamily: "'Bebas Neue'", 
-              fontSize: '1rem', 
-              color: TEAL, 
-              letterSpacing: 2 
-            }}>
-              — EARLY USER
-            </div>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: TEAL, letterSpacing: 2 }}>— EARLY USER</div>
           </div>
         </div>
       </div>
@@ -1092,131 +565,37 @@ export default function LandingPage({
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* FINAL CTA */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <div style={{ 
-        padding: isMobile ? '100px 20px' : '120px 40px', 
-        background: '#000',
-        textAlign: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-        borderTop: '1px solid #111'
-      }}>
-        
-        <div style={{ 
-          position: 'absolute', 
-          top: '50%', 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)', 
-          width: 900, 
-          height: 900, 
-          background: `radial-gradient(circle, rgba(0,229,204,0.07) 0%, rgba(153,102,255,0.04) 35%, transparent 65%)`, 
-          pointerEvents: 'none' 
-        }} />
-
+      <div style={{ padding: isMobile ? '100px 20px' : '120px 40px', background: '#000', textAlign: 'center', position: 'relative', overflow: 'hidden', borderTop: '1px solid #111' }}>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 900, height: 900, background: `radial-gradient(circle, rgba(0,229,204,0.07) 0%, rgba(153,102,255,0.04) 35%, transparent 65%)`, pointerEvents: 'none' }} />
         <div style={{ position: 'relative', zIndex: 1 }}>
-          
-          <div style={{ 
-            fontFamily: "'Bebas Neue'", 
-            fontSize: isMobile ? '3rem' : '6rem', 
-            color: '#fff', 
-            lineHeight: 0.9,
-            letterSpacing: isMobile ? 2 : 6,
-            marginBottom: 32
-          }}>
-            START YOUR<br/>
-            <span style={{ color: TEAL }}>ARCHIVE TODAY</span>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '3rem' : '6rem', color: '#fff', lineHeight: 0.9, letterSpacing: isMobile ? 2 : 6, marginBottom: 32 }}>
+            START YOUR<br/><span style={{ color: TEAL }}>ARCHIVE TODAY</span>
           </div>
-
-          <div style={{ 
-            fontFamily: "'Space Mono'", 
-            fontSize: isMobile ? 11 : 13, 
-            color: GRAY, 
-            letterSpacing: 3,
-            marginBottom: 48,
-            lineHeight: 2
-          }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 11 : 13, color: GRAY, letterSpacing: 3, marginBottom: 48, lineHeight: 2 }}>
             FREE FOREVER • NO CREDIT CARD • NO SHOEBOX REQUIRED
           </div>
-
-          <div style={{ 
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 20,
-            marginBottom: 64
-          }}>
-            
-            {/* Primary buttons row */}
-            <div style={{
-              display: 'flex',
-              gap: 20,
-              flexWrap: 'wrap',
-              justifyContent: 'center'
-            }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, marginBottom: 64 }}>
+            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
               <button
                 onClick={() => setMode('signup')}
-                style={{
-                  background: TEAL,
-                  color: '#000',
-                  border: 'none',
-                  padding: isMobile ? '24px 48px' : '28px 72px',
-                  fontFamily: "'Bebas Neue'",
-                  fontSize: isMobile ? '1.6rem' : '2rem',
-                  letterSpacing: 5,
-                  cursor: 'pointer',
-                  borderRadius: 4,
-                  transition: 'all 0.3s',
-                  boxShadow: `0 0 40px rgba(0,229,204,0.5)`,
-                }}
-                onMouseEnter={e => { 
-                  e.currentTarget.style.transform = 'scale(1.05)'; 
-                  e.currentTarget.style.boxShadow = `0 0 80px rgba(0,229,204,0.8)`; 
-                }}
-                onMouseLeave={e => { 
-                  e.currentTarget.style.transform = 'scale(1)'; 
-                  e.currentTarget.style.boxShadow = `0 0 40px rgba(0,229,204,0.5)`; 
-                }}
+                style={{ background: TEAL, color: '#000', border: 'none', padding: isMobile ? '24px 48px' : '28px 72px', fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.6rem' : '2rem', letterSpacing: 5, cursor: 'pointer', borderRadius: 4, transition: 'all 0.3s', boxShadow: `0 0 40px rgba(0,229,204,0.5)` }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = `0 0 80px rgba(0,229,204,0.8)`; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = `0 0 40px rgba(0,229,204,0.5)`; }}
               >
                 CREATE FREE ACCOUNT
               </button>
               <button
                 onClick={() => setMode('login')}
-                style={{
-                  background: 'transparent',
-                  color: TEAL,
-                  border: `2px solid ${TEAL}`,
-                  padding: isMobile ? '24px 48px' : '28px 72px',
-                  fontFamily: "'Bebas Neue'",
-                  fontSize: isMobile ? '1.6rem' : '2rem',
-                  letterSpacing: 5,
-                  cursor: 'pointer',
-                  borderRadius: 4,
-                  transition: 'all 0.3s',
-                }}
-                onMouseEnter={e => { 
-                  e.currentTarget.style.background = `${TEAL}15`; 
-                }}
-                onMouseLeave={e => { 
-                  e.currentTarget.style.background = 'transparent'; 
-                }}
+                style={{ background: 'transparent', color: TEAL, border: `2px solid ${TEAL}`, padding: isMobile ? '24px 48px' : '28px 72px', fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.6rem' : '2rem', letterSpacing: 5, cursor: 'pointer', borderRadius: 4, transition: 'all 0.3s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = `${TEAL}15`; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
               >
                 LOG IN
               </button>
             </div>
-
-            {/* View example link */}
             <button
               onClick={() => onNavigateToUser('eric')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: GRAY,
-                fontFamily: "'Space Mono'",
-                fontSize: 10,
-                cursor: 'pointer',
-                textDecoration: 'underline',
-                letterSpacing: 1,
-                transition: 'color 0.2s'
-              }}
+              style={{ background: 'none', border: 'none', color: GRAY, fontFamily: "'Space Mono'", fontSize: 10, cursor: 'pointer', textDecoration: 'underline', letterSpacing: 1, transition: 'color 0.2s' }}
               onMouseEnter={e => e.currentTarget.style.color = TEAL}
               onMouseLeave={e => e.currentTarget.style.color = GRAY}
             >
@@ -1224,132 +603,48 @@ export default function LandingPage({
             </button>
           </div>
 
-          {/* Stats strip */}
-          <div style={{ 
-            display: 'flex', 
-            gap: isMobile ? 32 : 80, 
-            justifyContent: 'center', 
-            flexWrap: 'wrap',
-            padding: '40px 0',
-            borderTop: `1px solid #111`,
-            borderBottom: `1px solid #111`
-          }}>
+          {/* Stats strip — global numbers from `shows` table */}
+          <div style={{ display: 'flex', gap: isMobile ? 32 : 80, justifyContent: 'center', flexWrap: 'wrap', padding: '40px 0', borderTop: `1px solid #111`, borderBottom: `1px solid #111` }}>
             {[
-              [concerts.length, 'SHOWS', TEAL],
+              [shows.length, 'SHOWS', TEAL],
               [uniqueArtists, 'ARTISTS', GOLD],
               [uniqueVenues, 'VENUES', PURPLE],
               [uniqueStates, 'STATES', '#ff4466'],
             ].map(([val, label, color]) => (
               <div key={label} style={{ textAlign: 'center' }}>
-                <div style={{ 
-                  fontFamily: "'Bebas Neue'", 
-                  fontSize: isMobile ? '2.5rem' : '4rem', 
-                  color, 
-                  lineHeight: 1,
-                  textShadow: `0 0 20px ${color}88`
-                }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color, lineHeight: 1, textShadow: `0 0 20px ${color}88` }}>
                   {val}
                 </div>
-                <div style={{ 
-                  fontFamily: "'Space Mono'", 
-                  fontSize: 7, 
-                  color: GRAY, 
-                  letterSpacing: 4, 
-                  marginTop: 8 
-                }}>
-                  {label}
-                </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: GRAY, letterSpacing: 4, marginTop: 8 }}>{label}</div>
               </div>
             ))}
           </div>
-
         </div>
       </div>
 
       {/* BOTTOM TICKER */}
-      <div style={{ 
-        position: 'fixed', 
-        bottom: 0, 
-        left: 0, 
-        right: 0, 
-        zIndex: 1000, 
-        background: '#000', 
-        borderTop: `1px solid ${GOLD}22`, 
-        height: 28, 
-        display: 'flex', 
-        alignItems: 'center', 
-        overflow: 'hidden' 
-      }}>
-        <div style={{ 
-          background: '#111', 
-          color: GOLD, 
-          fontFamily: "'Bebas Neue'", 
-          fontSize: 10, 
-          letterSpacing: 2, 
-          padding: '0 12px', 
-          height: '100%', 
-          display: 'flex', 
-          alignItems: 'center', 
-          flexShrink: 0, 
-          borderRight: `1px solid ${GOLD}33` 
-        }}>
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000, background: '#000', borderTop: `1px solid ${GOLD}22`, height: 28, display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+        <div style={{ background: '#111', color: GOLD, fontFamily: "'Bebas Neue'", fontSize: 10, letterSpacing: 2, padding: '0 12px', height: '100%', display: 'flex', alignItems: 'center', flexShrink: 0, borderRight: `1px solid ${GOLD}33` }}>
           SYSTEM
         </div>
         <div style={{ overflow: 'hidden', flex: 1 }}>
-          <div className="ticker-scroll" style={{ 
-            fontFamily: "'Space Mono'", 
-            fontSize: 9, 
-            color: GOLD, 
-            paddingLeft: 20, 
-            letterSpacing: 1, 
-            opacity: 0.6,
-            animationDuration: '60s'
-          }}>
-            {`FREE /// ${concerts.length} SHOWS TRACKED /// ${uniqueStates} STATES COVERED /// NO CREDIT CARD REQUIRED /// `.repeat(3)}
+          <div className="ticker-scroll" style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GOLD, paddingLeft: 20, letterSpacing: 1, opacity: 0.6, animationDuration: '60s' }}>
+            {`FREE /// ${shows.length} SHOWS TRACKED /// ${uniqueStates} STATES COVERED /// NO CREDIT CARD REQUIRED /// `.repeat(3)}
           </div>
         </div>
       </div>
 
       {/* FOOTER */}
-      <div style={{
-        padding: '40px 20px 80px',
-        background: '#000',
-        borderTop: '1px solid #111',
-        textAlign: 'center',
-        position: 'relative',
-        zIndex: 999
-      }}>
-        <div style={{
-          fontFamily: "'Space Mono'",
-          fontSize: 9,
-          color: GRAY,
-          letterSpacing: 2,
-          marginBottom: 12
-        }}>
+      <div style={{ padding: '40px 20px 80px', background: '#000', borderTop: '1px solid #111', textAlign: 'center', position: 'relative', zIndex: 999 }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 2, marginBottom: 12 }}>
           Questions? Ideas? Found a bug?
         </div>
-        <a
-          href="mailto:trackrecordlive@gmail.com"
-          style={{
-            fontFamily: "'Space Mono'",
-            fontSize: 11,
-            color: TEAL,
-            textDecoration: 'none',
-            letterSpacing: 1,
-            transition: 'opacity 0.2s'
-          }}
+        <a href="mailto:trackrecordlive@gmail.com" style={{ fontFamily: "'Space Mono'", fontSize: 11, color: TEAL, textDecoration: 'none', letterSpacing: 1, transition: 'opacity 0.2s' }}
           onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-        >
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
           trackrecordlive@gmail.com
         </a>
-        <div style={{
-          fontFamily: "'Space Mono'",
-          fontSize: 7,
-          color: '#333',
-          letterSpacing: 2,
-          marginTop: 20
-        }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#333', letterSpacing: 2, marginTop: 20 }}>
           © 2026 TRACKRECORD
         </div>
       </div>
@@ -1359,148 +654,41 @@ export default function LandingPage({
       {/* ═══════════════════════════════════════════════════════════════ */}
       {mode && (
         <div 
-          style={{ 
-            position: 'fixed', 
-            inset: 0, 
-            background: 'rgba(0,0,0,0.92)', 
-            zIndex: 10000, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            padding: 20, 
-            backdropFilter: 'blur(12px)' 
-          }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(12px)' }}
           onClick={e => e.target === e.currentTarget && setMode(null)}
         >
-          <div className="fade-in" style={{ 
-            background: '#0a0a0c', 
-            border: `1px solid ${TEAL}`, 
-            borderRadius: 12, 
-            padding: 40, 
-            width: '100%', 
-            maxWidth: 400, 
-            boxShadow: `0 0 60px rgba(0,229,204,0.2)` 
-          }}>
-            <div style={{ 
-              fontFamily: "'Bebas Neue'", 
-              fontSize: '2rem', 
-              color: TEAL, 
-              marginBottom: 6, 
-              letterSpacing: 3 
-            }}>
+          <div className="fade-in" style={{ background: '#0a0a0c', border: `1px solid ${TEAL}`, borderRadius: 12, padding: 40, width: '100%', maxWidth: 400, boxShadow: `0 0 60px rgba(0,229,204,0.2)` }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: TEAL, marginBottom: 6, letterSpacing: 3 }}>
               {mode === 'login' ? 'Welcome Back' : 'Create Your Archive'}
             </div>
-            <div style={{ 
-              fontSize: 9, 
-              color: GRAY, 
-              marginBottom: 28, 
-              letterSpacing: 2 
-            }}>
+            <div style={{ fontSize: 9, color: GRAY, marginBottom: 28, letterSpacing: 2 }}>
               {mode === 'login' ? 'Log in to access your collection' : 'Sign up free - no credit card required'}
             </div>
 
             {message && (
-              <div style={{ 
-                background: message.includes('verify') || message.includes('Check') 
-                  ? 'rgba(0,229,204,0.1)' 
-                  : 'rgba(255,68,68,0.1)', 
-                border: `1px solid ${message.includes('verify') || message.includes('Check') ? TEAL : '#ff4466'}`, 
-                borderRadius: 4, 
-                padding: '10px 14px', 
-                fontSize: 9, 
-                color: message.includes('verify') || message.includes('Check') ? TEAL : '#ff4466', 
-                marginBottom: 20, 
-                letterSpacing: 1, 
-                lineHeight: 1.6 
-              }}>
+              <div style={{ background: message.includes('Welcome') ? 'rgba(0,229,204,0.1)' : 'rgba(255,68,68,0.1)', border: `1px solid ${message.includes('Welcome') ? TEAL : '#ff4466'}`, borderRadius: 4, padding: '10px 14px', fontSize: 9, color: message.includes('Welcome') ? TEAL : '#ff4466', marginBottom: 20, letterSpacing: 1, lineHeight: 1.6 }}>
                 {message}
               </div>
             )}
 
-            <form onSubmit={mode === 'login' ? handleLogin : handleSignup} style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: 12 
-            }}>
+            <form onSubmit={mode === 'login' ? handleLogin : handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {mode === 'signup' && (
-                <input 
-                  className="modal-input" 
-                  placeholder="Username" 
-                  value={username} 
-                  onChange={e => setUsername(e.target.value)} 
-                  required 
-                />
+                <input className="modal-input" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} required />
               )}
-              <input 
-                className="modal-input" 
-                type="email" 
-                placeholder="Email" 
-                value={email} 
-                onChange={e => setEmail(e.target.value)} 
-                required 
-              />
-              <input 
-                className="modal-input" 
-                type="password" 
-                placeholder="Password" 
-                value={password} 
-                onChange={e => setPassword(e.target.value)} 
-                required 
-              />
-
+              <input className="modal-input" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
+              <input className="modal-input" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
               <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                <button 
-                  type="button" 
-                  onClick={() => { setMode(null); setMessage(''); }} 
-                  style={{ 
-                    flex: 1, 
-                    background: 'transparent', 
-                    border: '1px solid #333', 
-                    color: GRAY, 
-                    padding: '12px', 
-                    cursor: 'pointer', 
-                    fontFamily: "'Bebas Neue'", 
-                    fontSize: '1.1rem', 
-                    borderRadius: 4 
-                  }}
-                >
+                <button type="button" onClick={() => { setMode(null); setMessage(''); }} style={{ flex: 1, background: 'transparent', border: '1px solid #333', color: GRAY, padding: '12px', cursor: 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.1rem', borderRadius: 4 }}>
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
-                  disabled={loading} 
-                  style={{ 
-                    flex: 2, 
-                    background: loading ? '#222' : TEAL, 
-                    border: 'none', 
-                    color: '#000', 
-                    padding: '12px', 
-                    cursor: loading ? 'not-allowed' : 'pointer', 
-                    fontFamily: "'Bebas Neue'", 
-                    fontSize: '1.3rem', 
-                    fontWeight: 900, 
-                    borderRadius: 4, 
-                    letterSpacing: 2 
-                  }}
-                >
+                <button type="submit" disabled={loading} style={{ flex: 2, background: loading ? '#222' : TEAL, border: 'none', color: '#000', padding: '12px', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: "'Bebas Neue'", fontSize: '1.3rem', fontWeight: 900, borderRadius: 4, letterSpacing: 2 }}>
                   {loading ? '...' : mode === 'login' ? 'Log In' : 'Sign Up Free'}
                 </button>
               </div>
             </form>
 
             <div style={{ marginTop: 20, textAlign: 'center' }}>
-              <button 
-                onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMessage(''); }} 
-                style={{ 
-                  background: 'none', 
-                  border: 'none', 
-                  color: GRAY, 
-                  fontSize: 9, 
-                  cursor: 'pointer', 
-                  letterSpacing: 1, 
-                  textDecoration: 'underline' 
-                }}
-              >
+              <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMessage(''); }} style={{ background: 'none', border: 'none', color: GRAY, fontSize: 9, cursor: 'pointer', letterSpacing: 1, textDecoration: 'underline' }}>
                 {mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Log in'}
               </button>
             </div>
