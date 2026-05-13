@@ -12740,6 +12740,37 @@ const handleSave = async (id, payload) => {
       await supabase.from('artifacts').insert(artifacts);
     }
     
+    // ── AUTO-CLEANUP UPCOMING ──
+    try {
+      const { data: matchingUpcoming } = await supabase
+        .from('upcoming_shows')
+        .select('id')
+        .eq('date', payload.date)
+        .ilike('artist', `%${primaryArtist}%`);
+
+      if (matchingUpcoming?.length > 0) {
+        for (const upShow of matchingUpcoming) {
+          await supabase
+            .from('upcoming_attendances')
+            .delete()
+            .eq('user_id', session.user.id)
+            .eq('show_id', upShow.id);
+
+          const { data: remaining } = await supabase
+            .from('upcoming_attendances')
+            .select('id')
+            .eq('show_id', upShow.id);
+
+          if (!remaining || remaining.length === 0) {
+            await supabase.from('upcoming_shows').delete().eq('id', upShow.id);
+          }
+        }
+        await fetchUpcoming();
+      }
+    } catch (cleanupErr) {
+      console.warn('Upcoming cleanup failed silently:', cleanupErr.message);
+    }
+
     setEditTarget(null);
     await fetchConcerts();
 
@@ -13183,37 +13214,15 @@ async function handleDelete(id) {
   }
 };
 
-  const handleReconcile = async (upcomingId, payload) => {
+   const handleReconcile = async (upcomingId, payload) => {
   if (viewingUser) return;
-  
-  await handleSave(null, payload); 
-  
-  // Remove YOUR attendance from upcoming
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user?.id) return;
-  
-  await supabase
-    .from('upcoming_attendances')
-    .delete()
-    .eq('user_id', session.user.id)
-    .eq('show_id', upcomingId);
-  
-  // Check if anyone else is still attending
-  const { data: otherAttendees } = await supabase
-    .from('upcoming_attendances')
-    .select('id')
-    .eq('show_id', upcomingId);
-  
-  // If you were the only one, delete the show
-  if (!otherAttendees || otherAttendees.length === 0) {
-    await supabase
-      .from('upcoming_shows')
-      .delete()
-      .eq('id', upcomingId);
+  try {
+    await handleSave(null, payload);
+    setNudgeTarget(null);
+  } catch (err) {
+    console.error('Reconcile failed:', err);
+    alert('ARCHIVE FAILED: ' + err.message);
   }
-  
-  setNudgeTarget(null);
-  fetchUpcoming();
 };
 
   async function handleUpcomingDelete(id) {
