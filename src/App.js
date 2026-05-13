@@ -14230,7 +14230,7 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
   
 {activeTab === 'vault' && <SetlistVaultTab genreMap={artistGenres} viewingUser={viewingUser} currentUserId={currentUserId} />}
   
-{activeTab === 'photos' && <PhotoVaultTab concerts={concerts} artifacts={userArtifacts} shouldBlurPhoto={shouldBlurPhoto} currentUserId={currentUserId} />}
+{activeTab === 'photos' && <PhotoVaultTab concerts={concerts} artifacts={userArtifacts} shouldBlurPhoto={shouldBlurPhoto} currentUserId={session?.user?.id} />}
 
 {activeTab === 'shows' && <CollaborationWebTab />}
 
