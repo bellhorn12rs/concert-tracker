@@ -610,7 +610,7 @@ export default function LandingPage({
           {/* Stats strip — global numbers from `shows` table */}
           <div style={{ display: 'flex', gap: isMobile ? 32 : 80, justifyContent: 'center', flexWrap: 'wrap', padding: '40px 0', borderTop: `1px solid #111`, borderBottom: `1px solid #111` }}>
             {[
-              {[
+            
               [shows.length, 'SHOWS', TEAL],
               [uniqueArtists, 'ARTISTS', GOLD],
               [uniqueVenues, 'VENUES', PURPLE],
