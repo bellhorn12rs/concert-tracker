@@ -3032,16 +3032,6 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
   const [statIdx, setStatIdx] = useState(0);
   if (!sets || !headerStats || !concerts) return null;
 
-  const counts = useMemo(() => {
-    const c = {'90s': 0, '00s': 0, '10s': 0, '20s': 0};
-    sets.forEach(s => {
-      const y = getYear(s.date); if (!y) return;
-      if (y < 2000) c['90s']++; else if (y < 2010) c['00s']++; 
-      else if (y < 2020) c['10s']++; else c['20s']++;
-    });
-    return c;
-  }, [sets]);
-
   const rotatingStats = useMemo(() => [
     { label: 'TOTAL ACTS', val: headerStats.uniqueArtists || 0, color: C.cyan },
     { label: 'UNIQUE VENUES', val: new Set(concerts.map(c => c.venue).filter(Boolean)).size, color: C.red },
@@ -3056,44 +3046,21 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
   }, [rotatingStats.length]);
 
   const currentStat = rotatingStats[statIdx] || rotatingStats[0];
-  const maxVal = Math.max(...Object.values(counts), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between', gap: 10 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <style>{`
         @keyframes woofer-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); filter: brightness(1.5) drop-shadow(0 0 8px ${C.teal}); } }
         .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
-        
         @keyframes beam-swing { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
         .moving-light { animation: beam-swing 3s ease-in-out infinite; transform-origin: top center; }
-        
         @keyframes truss-flash { 0%, 100% { background: #fff; box-shadow: 0 0 10px #fff; } 50% { background: #333; box-shadow: none; } }
         .truss-bulb { animation: truss-flash 1.5s infinite; }
       `}</style>
 
-      {/* 🟢 TOP DECADE BARS */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, flexShrink: 0 }}>
-        {Object.entries(counts).map(([decade, count]) => {
-          const m = { '90s': {label:'ANALOG', col:C.purple}, '00s': {label:'DIGITAL', col:C.cyan}, '10s': {label:'STREAM', col:C.teal}, '20s': {label:'HYPER', col:C.gold} }[decade];
-          return (
-            <div key={decade} style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 10px', borderRadius: 4, border: `1px solid ${hexToRgba(m.col, 0.2)}` }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: m.col, fontWeight: 900 }}>{m.label}</span>
-                <span style={{ fontFamily: "'Bebas Neue'", fontSize: '0.8rem', color: '#fff' }}>{decade}</span>
-              </div>
-              <div style={{ height: 2, background: '#000', borderRadius: 1, overflow: 'hidden', marginTop: 3 }}>
-                <div style={{ height: '100%', width: `${(count/maxVal)*100}%`, background: m.col, boxShadow: `0 0 10px ${m.col}` }} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* 🏟️ THE MAIN STAGE PRODUCTION */}
+      {/* THE MAIN STAGE PRODUCTION */}
       <div style={{ 
-        flex: 1, 
-        borderTop: `1px solid ${C.border}`, 
-        paddingTop: 10, 
+        flex: 1,
         position: 'relative', 
         overflow: 'hidden', 
         background: '#010102', 
@@ -3104,55 +3071,33 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
         
         {/* 1. OVERHEAD TRUSS & BULBS */}
         <div style={{ position: 'absolute', top: 0, width: '100%', height: '20px', background: '#111', borderBottom: '1.5px solid #444', zIndex: 100, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-           {[...Array(12)].map((_, i) => (
-             <div key={i} className="truss-bulb" style={{ width: 3, height: 3, borderRadius: '50%', animationDelay: `${i*0.15}s` }} />
-           ))}
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="truss-bulb" style={{ width: 3, height: 3, borderRadius: '50%', animationDelay: `${i*0.15}s` }} />
+          ))}
         </div>
 
         {/* 2. MULTI-BEAM LIGHTING ARRAY */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 5 }}>
           <svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-             {/* Center Wash */}
-             <polygon points="500,0 200,1000 800,1000" fill="rgba(255,255,255,0.1)" style={{ filter: 'blur(40px)' }} />
-             
-             {/* Dynamic Beams */}
-             {[...Array(6)].map((_, i) => {
-                const isLeft = i < 3;
-                const col = isLeft ? C.purple : C.cyan;
-                const xBase = isLeft ? (150 + i * 100) : (550 + (i-3) * 100);
-                return (
-                  <g key={i} className="moving-light" style={{ animationDelay: `${i*0.4}s` }}>
-                    <polygon 
-                      points={`${xBase},0 ${xBase-180},1000 ${xBase+180},1000`} 
-                      fill={hexToRgba(col, 0.4)} 
-                      style={{ mixBlendMode: 'screen', filter: 'blur(15px)' }} 
-                    />
-                  </g>
-                );
-             })}
+            <polygon points="500,0 200,1000 800,1000" fill="rgba(255,255,255,0.1)" style={{ filter: 'blur(40px)' }} />
+            {[...Array(6)].map((_, i) => {
+              const isLeft = i < 3;
+              const col = isLeft ? C.purple : C.cyan;
+              const xBase = isLeft ? (150 + i * 100) : (550 + (i-3) * 100);
+              return (
+                <g key={i} className="moving-light" style={{ animationDelay: `${i*0.4}s` }}>
+                  <polygon 
+                    points={`${xBase},0 ${xBase-180},1000 ${xBase+180},1000`} 
+                    fill={hexToRgba(col, 0.4)} 
+                    style={{ mixBlendMode: 'screen', filter: 'blur(15px)' }} 
+                  />
+                </g>
+              );
+            })}
           </svg>
         </div>
 
-        {/* 3. IMAG SCREENS (STAT DISPLAYS) */}
-        <div style={{ 
-          position: 'absolute', top: 40, left: '6%', width: '25%', height: '65px', 
-          background: '#000', border: `2px solid ${currentStat.color}`, borderRadius: 4, 
-          zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: `0 0 20px ${hexToRgba(currentStat.color, 0.3)}`
-        }}>
-           <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: currentStat.color, fontWeight: 900, textAlign: 'center' }}>{currentStat.label}</div>
-        </div>
-        
-        <div style={{ 
-          position: 'absolute', top: 40, right: '6%', width: '25%', height: '65px', 
-          background: '#000', border: `2px solid ${currentStat.color}`, borderRadius: 4, 
-          zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: `0 0 20px ${hexToRgba(currentStat.color, 0.3)}`
-        }}>
-           <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.2rem', color: '#fff', textShadow: `0 0 10px ${currentStat.color}` }}>{currentStat.val}</div>
-        </div>
-
-        {/* 4. SPEAKER STACKS (PULSING) */}
+        {/* 3. SPEAKER STACKS */}
         {[ {side: 'left'}, {side: 'right'} ].map(s => (
           <div key={s.side} style={{ 
             position: 'absolute', [s.side]: 10, bottom: 42, width: 34, height: 115, 
@@ -3168,25 +3113,25 @@ function DecadeBlocks({ sets, headerStats, concerts }) {
           </div>
         ))}
 
-        {/* 5. ILLUMINATED STAGE FLOOR */}
+        {/* 4. ILLUMINATED STAGE FLOOR */}
         <div style={{ 
           position: 'absolute', bottom: 32, width: '100%', height: '65px', 
           background: '#121216', borderTop: '2px solid #333', zIndex: 20, 
           clipPath: 'polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%)' 
         }}>
-           <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at center top, ${hexToRgba(currentStat.color, 0.35)}, transparent 80%)` }} />
-           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 20px)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at center top, ${hexToRgba(currentStat.color, 0.35)}, transparent 80%)` }} />
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 20px)' }} />
         </div>
 
-        {/* 6. FOH STATUS BAR (ALIGNED TO BOTTOM) */}
+        {/* 5. FOH STATUS BAR */}
         <div style={{ 
           marginTop: 'auto', width: '100%', height: '32px', background: '#000', 
           zIndex: 60, borderTop: `2px solid ${C.border}`, 
           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
         }}>
-           <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: currentStat.color, letterSpacing: '4px', fontWeight: 900, textShadow: `0 0 8px ${currentStat.color}` }}>
-              {currentStat.label} // RIG STATUS: ACTIVE
-           </div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: currentStat.color, letterSpacing: '4px', fontWeight: 900, textShadow: `0 0 8px ${currentStat.color}` }}>
+            {currentStat.label} // RIG STATUS: ACTIVE
+          </div>
         </div>
       </div>
     </div>
