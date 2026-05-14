@@ -11650,16 +11650,54 @@ function HighlightStage({ concerts, session, posters, userArtifacts, isAdmin, on
 
   useEffect(() => { fetchHighlights(); }, [fetchHighlights]);
 
-  const searchResults = useMemo(() => {
-    if (!searchQuery || searchQuery.length < 2) return [];
-    const q = searchQuery.toLowerCase();
-    return concerts.filter(c => {
-      const artist = (getBandName(c.bands?.[0]) || c.festival_name || c.artist || '').toLowerCase();
-      const fest = (c.festival_name || '').toLowerCase();
-      const date = (c.date || '');
-      return artist.includes(q) || fest.includes(q) || date.includes(q);
-    }).slice(0, 8);
-  }, [searchQuery, concerts]);
+  const [searchResults, setSearchResults] = useState([]);
+const [yearFilter, setYearFilterHL] = useState('');
+const [searching, setSearching] = useState(false);
+
+useEffect(() => {
+  if (!searchQuery || searchQuery.length < 2) {
+    setSearchResults([]);
+    return;
+  }
+  const timeout = setTimeout(async () => {
+    setSearching(true);
+    try {
+      const { data: attendanceData } = await supabase
+        .from('attendances')
+        .select('show_id, shows(*)')
+        .eq('user_id', userId);
+
+      if (!attendanceData) return;
+
+      const q = searchQuery.toLowerCase();
+      const yr = yearFilter.trim();
+
+      const filtered = attendanceData
+        .map(a => a.shows)
+        .filter(s => {
+          if (!s) return false;
+          const artist = (s.artist || s.festival_name || '').toLowerCase();
+          const bands = Array.isArray(s.bands)
+            ? s.bands.map(b => typeof b === 'string' ? b : b?.name || '').join(' ').toLowerCase()
+            : '';
+          const fest = (s.festival_name || '').toLowerCase();
+          const date = (s.date || '');
+          const year = date ? String(new Date(date + 'T12:00:00').getFullYear()) : '';
+
+          const matchesQuery = artist.includes(q) || bands.includes(q) || fest.includes(q) || date.includes(q);
+          const matchesYear = yr ? year === yr : true;
+          return matchesQuery && matchesYear;
+        })
+        .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+        .slice(0, 20);
+
+      setSearchResults(filtered);
+    } finally {
+      setSearching(false);
+    }
+  }, 300);
+  return () => clearTimeout(timeout);
+}, [searchQuery, yearFilter, userId]);
 
   const handleSave = async () => {
     if (!selectedShow || !userId) return;
@@ -11930,16 +11968,25 @@ function HighlightStage({ concerts, session, posters, userArtifacts, isAdmin, on
             {!selectedShow ? (
               <>
                 <input
-                  autoFocus
-                  placeholder="Search artist, festival, or date..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  style={{ width: '100%', background: '#000', border: `1px solid ${C.border}`, color: '#fff', padding: '12px', fontFamily: "'Space Mono'", fontSize: 11, borderRadius: 4, boxSizing: 'border-box', marginBottom: 12, outline: 'none' }}
-                />
+  autoFocus
+  placeholder="Search artist, festival, or date..."
+  value={searchQuery}
+  onChange={e => setSearchQuery(e.target.value)}
+  style={{ width: '100%', background: '#000', border: `1px solid ${C.border}`, color: '#fff', padding: '12px', fontFamily: "'Space Mono'", fontSize: 11, borderRadius: 4, boxSizing: 'border-box', marginBottom: 8, outline: 'none' }}
+/>
+<div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+  <input
+    placeholder="Filter by year (e.g. 2019)"
+    value={yearFilter}
+    onChange={e => setYearFilterHL(e.target.value)}
+    maxLength={4}
+    style={{ width: 180, background: '#000', border: `1px solid ${C.border}`, color: '#fff', padding: '8px 12px', fontFamily: "'Space Mono'", fontSize: 10, borderRadius: 4, outline: 'none' }}
+  />
+  {searching && <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.teal, alignSelf: 'center', letterSpacing: 2 }}>SEARCHING...</div>}
+</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 300, overflowY: 'auto' }}>
                   {searchResults.map((c, i) => {
-                    const artist = getBandName(c.bands?.[0]) || c.festival_name || c.artist || 'Unknown';
-                    return (
+  const artist = c.artist || c.festival_name || (Array.isArray(c.bands) ? (typeof c.bands[0] === 'string' ? c.bands[0] : c.bands[0]?.name) : '') || 'Unknown'; return (
                       <div
                         key={i}
                         onClick={() => setSelectedShow(c)}
