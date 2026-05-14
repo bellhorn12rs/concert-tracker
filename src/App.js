@@ -12001,6 +12001,62 @@ function HighlightStage({ concerts, session, posters, userArtifacts, isAdmin, on
     </div>
   );
 }
+function HighlightDetailView({ highlight, onBack, posters, userArtifacts }) {
+  const show = highlight.shows;
+  if (!show) return null;
+
+  const artist = show.artist || show.festival_name || 'Unknown';
+  const year = show.date ? new Date(show.date + 'T12:00:00').getFullYear() : '';
+  const themeColor = show.is_festival ? C.gold : C.purple;
+  const relatedArtifacts = (userArtifacts || []).filter(a => a.show_id === show.id);
+  const relatedPoster = posters?.find(p =>
+    p.festival_name?.toLowerCase() === show.festival_name?.toLowerCase() &&
+    getYear(p.date) === year
+  );
+
+  return (
+    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <button
+        onClick={onBack}
+        style={{ alignSelf: 'flex-start', background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, padding: '8px 16px', fontFamily: "'Space Mono'", fontSize: 9, cursor: 'pointer', borderRadius: 4, letterSpacing: 2 }}
+      >
+        ← BACK TO STAGE
+      </button>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <Card neon style={{ padding: 28 }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: themeColor, letterSpacing: 3, marginBottom: 10 }}>// HIGHLIGHT</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3.5rem', color: '#fff', lineHeight: 1, marginBottom: 6 }}>{artist.toUpperCase()}</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: themeColor, marginBottom: 20 }}>{year}</div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 4 }}>{show.venue}</div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 24 }}>{show.city}{show.state ? `, ${show.state}` : ''} · {show.date}</div>
+          {highlight.highlight_note && (
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${hexToRgba(themeColor, 0.3)}`, borderRadius: 6, padding: '14px 16px', fontFamily: "'Space Mono'", fontSize: 10, color: '#fff', lineHeight: 1.7, fontStyle: 'italic' }}>
+              "{highlight.highlight_note}"
+            </div>
+          )}
+        </Card>
+
+        <Card neon style={{ padding: 28 }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, letterSpacing: 3, marginBottom: 16 }}>// ARTIFACTS</div>
+          {relatedArtifacts.length === 0 && !relatedPoster ? (
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim }}>NO ARTIFACTS LINKED TO THIS SHOW</div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {relatedPoster && (
+                <img src={relatedPoster.image_url} alt="Poster" style={{ width: '100%', borderRadius: 4, border: `1px solid ${C.border}` }} />
+              )}
+              {relatedArtifacts.slice(0, 4).map((a, i) => (
+                <img key={i} src={a.image_url} alt="Artifact" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 4, border: `1px solid ${C.border}` }} />
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN APP ────────────────────────────────────────────────────
 export default function App() {
   // ── 1. AUTH & SYSTEM STATE ──
