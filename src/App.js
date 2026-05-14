@@ -2507,7 +2507,11 @@ function RandomShow({ concerts, posters = [], onAdd }) {
     return null;
   }, [show, posters]);
 
-  if (!show) return null;
+  if (!show) return (
+  <Card neon style={{ minHeight: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050508' }}>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, letterSpacing: 3 }}>// RECALLING_SIGNAL...</div>
+  </Card>
+);
 
   const bands = show.bands || [show.artist];
   const festLabel = show.festival_name || "FESTIVAL";
@@ -13731,7 +13735,7 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
 
   {/* ROW 3: RANDOM SHOW + RHYTHM + DIAGNOSTICS */}
 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20 }}>
-  <div style={{ height: 300 }}><RandomShow concerts={concerts} posters={posters} onAdd={() => setEditTarget('new')} /></div>
+<RandomShow concerts={concerts} posters={posters} onAdd={() => setEditTarget('new')} />
   <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
     <CardTitle>THE RHYTHM 🔊</CardTitle>
     <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '20px 10px 0' }}>
