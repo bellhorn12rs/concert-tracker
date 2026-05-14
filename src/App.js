@@ -14038,7 +14038,7 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
       onCommit={isAdmin ? (show) => setNudgeTarget(show) : null}
       session={session}
     />
-    <Card neon style={{ padding: 0, overflow: 'hidden' }}>
+    <Card neon style={{ padding: 0, overflow: 'hidden', minHeight: isMobile ? 500 : 'auto' }}>
   <HighlightStage
     concerts={concerts}
     session={session}
@@ -14046,6 +14046,7 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
     userArtifacts={userArtifacts}
     isAdmin={isAdmin}
     onOpenDetail={setHighlightDetail}
+    isMobile={isMobile}
   />
 </Card>
   </div>
