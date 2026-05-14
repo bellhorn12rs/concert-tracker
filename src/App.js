@@ -13591,7 +13591,7 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
   <OnThisDay concerts={concerts} />
   
   {/* ROW 1: MARQUEE + STAGE */}
-  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: 20 }}>
+<div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
     <TheaterMarquee 
       upcoming={upcoming} 
       onAdd={isAdmin ? () => setUpcomingModal('new') : null} 
@@ -13731,7 +13731,7 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
 
   {/* ROW 3: RANDOM SHOW + DNA + WEB + RHYTHM + VAULT */}
   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 1fr 1fr', gap: 20, paddingBottom: 40 }}>
-    <RandomShow concerts={concerts} posters={posters} onAdd={() => setEditTarget('new')} />
+<div style={{ height: 300 }}><RandomShow concerts={concerts} posters={posters} onAdd={() => setEditTarget('new')} /></div>
     <div style={{ height: 300 }}><SonicDNA stats={genreStats} onGenreClick={handleGenreClick} /></div>
     <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
       <div style={{ position: 'absolute', top: 15, fontFamily: "'Space Mono'", fontSize: 9, color: C.teal, letterSpacing: 2, fontWeight: 900 }}>// FULL SPECTRUM</div>
