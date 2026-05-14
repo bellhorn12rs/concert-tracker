@@ -11893,10 +11893,12 @@ useEffect(() => {
                   {/* Label area */}
 <div style={{ flex: 1, padding: '3px 4px', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'rgba(255,255,255,0.02)', gap: 2 }}>
   {slot.shows?.is_festival && (
-    <div style={{ display: 'flex', justifyContent: 'center' }}>
-      <div style={{ fontFamily: "'Space Mono'", fontSize: '0.3rem', color: C.gold, border: `1px solid ${C.gold}`, borderRadius: 2, padding: '1px 4px', letterSpacing: 1, lineHeight: 1.4 }}>FEST</div>
+  <div style={{ display: 'flex', justifyContent: 'center' }}>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: '0.3rem', color: C.gold, border: `1px solid ${C.gold}`, borderRadius: 2, padding: '1px 4px', letterSpacing: 1, lineHeight: 1.4, textAlign: 'center' }}>
+      {(slot.shows.festival_name || 'FESTIVAL').toUpperCase()} {year}
     </div>
-  )}
+  </div>
+)}
   <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.6rem', color: '#fff', lineHeight: 1.1, textAlign: 'center', wordBreak: 'break-word', whiteSpace: 'normal', padding: '0 2px' }}>
     {artist}
   </div>
