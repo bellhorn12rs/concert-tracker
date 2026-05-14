@@ -11628,6 +11628,323 @@ function usePhotoPrivacy() {
 }
 
 
+function HighlightStage({ concerts, session, posters, userArtifacts, isAdmin, onOpenDetail }) {
+  const [highlights, setHighlights] = useState([]);
+  const [addingToSlot, setAddingToSlot] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedShow, setSelectedShow] = useState(null);
+  const [noteText, setNoteText] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const userId = session?.user?.id;
+
+  const fetchHighlights = useCallback(async () => {
+    if (!userId) return;
+    const { data } = await supabase
+      .from('attendances')
+      .select('id, show_id, highlight_note, shows(*)')
+      .eq('user_id', userId)
+      .eq('is_highlight', true);
+    if (data) setHighlights(data);
+  }, [userId]);
+
+  useEffect(() => { fetchHighlights(); }, [fetchHighlights]);
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery || searchQuery.length < 2) return [];
+    const q = searchQuery.toLowerCase();
+    return concerts.filter(c => {
+      const artist = (getBandName(c.bands?.[0]) || c.festival_name || c.artist || '').toLowerCase();
+      const fest = (c.festival_name || '').toLowerCase();
+      const date = (c.date || '');
+      return artist.includes(q) || fest.includes(q) || date.includes(q);
+    }).slice(0, 8);
+  }, [searchQuery, concerts]);
+
+  const handleSave = async () => {
+    if (!selectedShow || !userId) return;
+    setSaving(true);
+    try {
+      const { data: att } = await supabase
+        .from('attendances')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('show_id', selectedShow.id)
+        .single();
+      if (att) {
+        await supabase
+          .from('attendances')
+          .update({ is_highlight: true, highlight_note: noteText })
+          .eq('id', att.id);
+      }
+      await fetchHighlights();
+      setAddingToSlot(null);
+      setSearchQuery('');
+      setSelectedShow(null);
+      setNoteText('');
+    } catch (err) {
+      alert('SAVE FAILED: ' + err.message);
+    }
+    setSaving(false);
+  };
+
+  const handleRemove = async (highlightId) => {
+    await supabase
+      .from('attendances')
+      .update({ is_highlight: false, highlight_note: null })
+      .eq('id', highlightId);
+    await fetchHighlights();
+  };
+
+  const slots = Array(10).fill(null).map((_, i) => highlights[i] || null);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <style>{`
+        @keyframes woofer-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); filter: brightness(1.5) drop-shadow(0 0 8px ${C.teal}); } }
+        .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
+        @keyframes beam-swing { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+        .moving-light { animation: beam-swing 3s ease-in-out infinite; transform-origin: top center; }
+        @keyframes truss-flash { 0%, 100% { background: #fff; box-shadow: 0 0 10px #fff; } 50% { background: #333; box-shadow: none; } }
+        .truss-bulb { animation: truss-flash 1.5s infinite; }
+      `}</style>
+
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#010102', borderRadius: 8, display: 'flex', flexDirection: 'column' }}>
+
+        {/* TRUSS */}
+        <div style={{ position: 'absolute', top: 0, width: '100%', height: '20px', background: '#111', borderBottom: '1.5px solid #444', zIndex: 100, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="truss-bulb" style={{ width: 3, height: 3, borderRadius: '50%', animationDelay: `${i*0.15}s` }} />
+          ))}
+        </div>
+
+        {/* LIGHTING */}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 5 }}>
+          <svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+            <polygon points="500,0 200,1000 800,1000" fill="rgba(255,255,255,0.1)" style={{ filter: 'blur(40px)' }} />
+            {[...Array(6)].map((_, i) => {
+              const isLeft = i < 3;
+              const col = isLeft ? C.purple : C.cyan;
+              const xBase = isLeft ? (150 + i * 100) : (550 + (i-3) * 100);
+              return (
+                <g key={i} className="moving-light" style={{ animationDelay: `${i*0.4}s` }}>
+                  <polygon points={`${xBase},0 ${xBase-180},1000 ${xBase+180},1000`} fill={hexToRgba(col, 0.4)} style={{ mixBlendMode: 'screen', filter: 'blur(15px)' }} />
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+
+        {/* SPEAKERS */}
+        {[{side: 'left'}, {side: 'right'}].map(s => (
+          <div key={s.side} style={{ position: 'absolute', [s.side]: 10, bottom: 42, width: 34, height: 115, background: '#0a0a0c', border: '1.5px solid #222', borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 6, padding: 5, zIndex: 40, boxShadow: '0 10px 30px #000' }}>
+            {[1,2,3,4].map(i => (
+              <div key={i} style={{ flex: 1, background: '#000', borderRadius: '50%', border: '1px solid #1a1a1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="speaker-cone" style={{ width: 14, height: 14, borderRadius: '50%', border: `1.8px solid ${C.teal}`, background: 'radial-gradient(circle, #333, #000)' }} />
+              </div>
+            ))}
+          </div>
+        ))}
+
+        {/* STAGE FLOOR */}
+        <div style={{ position: 'absolute', bottom: 32, width: '100%', height: '65px', background: '#121216', borderTop: '2px solid #333', zIndex: 20, clipPath: 'polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%)' }}>
+          <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at center top, ${hexToRgba(C.teal, 0.35)}, transparent 80%)` }} />
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 20px)' }} />
+        </div>
+
+        {/* FOH BAR */}
+        <div style={{ marginTop: 'auto', width: '100%', height: '32px', background: '#000', zIndex: 60, borderTop: `2px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: C.teal, letterSpacing: '4px', fontWeight: 900, textShadow: `0 0 8px ${C.teal}` }}>
+            HIGHLIGHTS // RIG STATUS: ACTIVE
+          </div>
+        </div>
+
+        {/* HIGHLIGHT CARDS GRID */}
+        <div style={{ position: 'absolute', top: 28, left: 50, right: 50, bottom: 97, zIndex: 30, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gridTemplateRows: '1fr 1fr', gap: 5 }}>
+          {slots.map((slot, i) => (
+            <div
+              key={i}
+              onClick={() => slot ? onOpenDetail(slot) : (isAdmin && setAddingToSlot(i))}
+              style={{
+                background: slot ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.4)',
+                border: slot ? `1px solid ${C.gold}` : `1px dashed rgba(255,255,255,0.12)`,
+                borderRadius: 4,
+                cursor: (slot || isAdmin) ? 'pointer' : 'default',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '4px 3px',
+                transition: 'all 0.2s',
+                overflow: 'hidden',
+                backdropFilter: 'blur(4px)',
+              }}
+              onMouseEnter={e => { if (slot || isAdmin) { e.currentTarget.style.borderColor = C.teal; e.currentTarget.style.background = 'rgba(0,229,204,0.08)'; }}}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = slot ? C.gold : 'rgba(255,255,255,0.12)'; e.currentTarget.style.background = slot ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.4)'; }}
+            >
+              {slot ? (
+                <>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.7rem', color: C.gold, lineHeight: 1, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingLeft: 2, paddingRight: 2 }}>
+                    {(slot.shows?.artist || slot.shows?.festival_name || 'SHOW').toUpperCase().substring(0, 11)}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: '5px', color: C.gray, marginTop: 2 }}>
+                    {slot.shows?.date ? new Date(slot.shows.date + 'T12:00:00').getFullYear() : ''}
+                  </div>
+                  {slot.highlight_note && (
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: '5px', color: C.teal, marginTop: 2, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingLeft: 2, paddingRight: 2 }}>
+                      {slot.highlight_note.substring(0, 14)}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div style={{ fontFamily: "'Space Mono'", fontSize: isAdmin ? '12px' : '8px', color: 'rgba(255,255,255,0.12)', textAlign: 'center' }}>
+                  {isAdmin ? '+' : '·'}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ADD MODAL */}
+      {addingToSlot !== null && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50000, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)' }}>
+          <div style={{ background: '#0a0a0c', border: `1px solid ${C.teal}`, borderRadius: 12, padding: 32, width: '100%', maxWidth: 480 }}>
+            <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: C.teal, letterSpacing: 3, marginBottom: 20 }}>
+              {selectedShow ? 'ADD A NOTE' : 'SELECT A SHOW'}
+            </div>
+
+            {!selectedShow ? (
+              <>
+                <input
+                  autoFocus
+                  placeholder="Search artist, festival, or date..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  style={{ width: '100%', background: '#000', border: `1px solid ${C.border}`, color: '#fff', padding: '12px', fontFamily: "'Space Mono'", fontSize: 11, borderRadius: 4, boxSizing: 'border-box', marginBottom: 12, outline: 'none' }}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 300, overflowY: 'auto' }}>
+                  {searchResults.map((c, i) => {
+                    const artist = getBandName(c.bands?.[0]) || c.festival_name || c.artist || 'Unknown';
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => setSelectedShow(c)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#111', border: `1px solid ${C.border}`, borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = C.teal}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1rem', color: '#fff' }}>{artist.toUpperCase()}</div>
+                          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray }}>{c.venue} · {c.date}</div>
+                        </div>
+                        {c.is_festival && <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold, border: `1px solid ${C.gold}`, padding: '2px 6px', borderRadius: 3 }}>FEST</div>}
+                      </div>
+                    );
+                  })}
+                  {searchQuery.length >= 2 && searchResults.length === 0 && (
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 10, color: C.gray, textAlign: 'center', padding: 20 }}>NO RESULTS FOUND</div>
+                  )}
+                  {searchQuery.length < 2 && (
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim, textAlign: 'center', padding: 20 }}>TYPE TO SEARCH YOUR ARCHIVE</div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ background: '#111', border: `1px solid ${C.gold}`, borderRadius: 6, padding: '12px 16px', marginBottom: 16 }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff' }}>
+                    {(getBandName(selectedShow.bands?.[0]) || selectedShow.festival_name || 'Unknown').toUpperCase()}
+                  </div>
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.gray }}>{selectedShow.venue} · {selectedShow.date}</div>
+                </div>
+                <textarea
+                  autoFocus
+                  placeholder="Why is this show a highlight? (optional, 120 chars)"
+                  value={noteText}
+                  onChange={e => setNoteText(e.target.value)}
+                  maxLength={120}
+                  rows={3}
+                  style={{ width: '100%', background: '#000', border: `1px solid ${C.border}`, color: '#fff', padding: '12px', fontFamily: "'Space Mono'", fontSize: 11, borderRadius: 4, boxSizing: 'border-box', marginBottom: 16, outline: 'none', resize: 'none' }}
+                />
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={() => setSelectedShow(null)} style={{ flex: 1, background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, padding: '12px', fontFamily: "'Space Mono'", fontSize: 10, cursor: 'pointer', borderRadius: 4 }}>BACK</button>
+                  <button onClick={handleSave} disabled={saving} style={{ flex: 2, background: C.teal, border: 'none', color: '#000', padding: '12px', fontFamily: "'Bebas Neue'", fontSize: '1.1rem', cursor: 'pointer', borderRadius: 4, fontWeight: 900 }}>
+                    {saving ? 'SAVING...' : 'LOCK IT IN'}
+                  </button>
+                </div>
+              </>
+            )}
+
+            <button
+              onClick={() => { setAddingToSlot(null); setSearchQuery(''); setSelectedShow(null); setNoteText(''); }}
+              style={{ marginTop: 12, width: '100%', background: 'transparent', border: 'none', color: C.gray, fontFamily: "'Space Mono'", fontSize: 9, cursor: 'pointer', padding: 8 }}
+            >
+              CANCEL
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HighlightDetailView({ highlight, onBack, posters, userArtifacts }) {
+  const show = highlight.shows;
+  if (!show) return null;
+
+  const artist = show.artist || show.festival_name || 'Unknown';
+  const year = show.date ? new Date(show.date + 'T12:00:00').getFullYear() : '';
+  const themeColor = show.is_festival ? C.gold : C.purple;
+  const relatedArtifacts = (userArtifacts || []).filter(a => a.show_id === show.id);
+  const relatedPoster = posters?.find(p =>
+    p.festival_name?.toLowerCase() === show.festival_name?.toLowerCase() &&
+    getYear(p.date) === year
+  );
+
+  return (
+    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <button
+        onClick={onBack}
+        style={{ alignSelf: 'flex-start', background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, padding: '8px 16px', fontFamily: "'Space Mono'", fontSize: 9, cursor: 'pointer', borderRadius: 4, letterSpacing: 2 }}
+      >
+        ← BACK TO STAGE
+      </button>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <Card neon style={{ padding: 28 }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: themeColor, letterSpacing: 3, marginBottom: 10 }}>// HIGHLIGHT</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3.5rem', color: '#fff', lineHeight: 1, marginBottom: 6 }}>{artist.toUpperCase()}</div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: themeColor, marginBottom: 20 }}>{year}</div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 4 }}>{show.venue}</div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 24 }}>{show.city}{show.state ? `, ${show.state}` : ''} · {show.date}</div>
+          {highlight.highlight_note && (
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${hexToRgba(themeColor, 0.3)}`, borderRadius: 6, padding: '14px 16px', fontFamily: "'Space Mono'", fontSize: 10, color: '#fff', lineHeight: 1.7, fontStyle: 'italic' }}>
+              "{highlight.highlight_note}"
+            </div>
+          )}
+        </Card>
+
+        <Card neon style={{ padding: 28 }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, letterSpacing: 3, marginBottom: 16 }}>// ARTIFACTS</div>
+          {relatedArtifacts.length === 0 && !relatedPoster ? (
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim }}>NO ARTIFACTS LINKED TO THIS SHOW</div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {relatedPoster && (
+                <img src={relatedPoster.image_url} alt="Poster" style={{ width: '100%', borderRadius: 4, border: `1px solid ${C.border}` }} />
+              )}
+              {relatedArtifacts.slice(0, 4).map((a, i) => (
+                <img key={i} src={a.image_url} alt="Artifact" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 4, border: `1px solid ${C.border}` }} />
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN APP ────────────────────────────────────────────────────
 export default function App() {
   // ── 1. AUTH & SYSTEM STATE ──
@@ -11659,6 +11976,7 @@ export default function App() {
   const [preferredQualifier, setPreferredQualifier] = useState(null);
   const [colorUpgraded, setColorUpgraded] = useState(false);
   const [currentAvatarColor, setCurrentAvatarColor] = useState(null);
+  const [highlightDetail, setHighlightDetail] = useState(null);
   const [selectedSignals, setSelectedSignals] = useState([]);
 
   const { photoPrivacy, shouldBlurPhoto, currentUserId } = usePhotoPrivacy();
@@ -13533,11 +13851,17 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
     onComplete={() => window.location.reload()}
     onSkip={() => setActiveTab('manage')}
   />
+) : highlightDetail ? (
+  <HighlightDetailView
+    highlight={highlightDetail}
+    onBack={() => setHighlightDetail(null)}
+    posters={posters}
+    userArtifacts={userArtifacts}
+  />
 ) : (
-
-      /* ─── EXISTING USER FLOW: THE FULL MUSEUM ─── */
-      <>
-  <OnThisDay concerts={concerts} />
+  /* ─── EXISTING USER FLOW: THE FULL MUSEUM ─── */
+  <>
+    <OnThisDay concerts={concerts} />
   
   {/* ROW 1: MARQUEE + STAGE */}
 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
@@ -13548,9 +13872,16 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
       onCommit={isAdmin ? (show) => setNudgeTarget(show) : null}
       session={session}
     />
-    <Card neon>
-      <DecadeBlocks sets={allSetsList} headerStats={headerStats} concerts={concerts} />
-    </Card>
+    <Card neon style={{ padding: 0, overflow: 'hidden' }}>
+  <HighlightStage
+    concerts={concerts}
+    session={session}
+    posters={posters}
+    userArtifacts={userArtifacts}
+    isAdmin={isAdmin}
+    onOpenDetail={setHighlightDetail}
+  />
+</Card>
   </div>
 
   {/* VENUE ROW */}
