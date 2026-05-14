@@ -13729,77 +13729,61 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
     </Card>
   </div>
 
-  {/* ROW 3: RANDOM SHOW + DNA + WEB + RHYTHM + VAULT */}
-  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 1fr 1fr', gap: 20, paddingBottom: 40 }}>
-<div style={{ height: 300 }}><RandomShow concerts={concerts} posters={posters} onAdd={() => setEditTarget('new')} /></div>
-    <div style={{ height: 300 }}><SonicDNA stats={genreStats} onGenreClick={handleGenreClick} /></div>
-    <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
-      <div style={{ position: 'absolute', top: 15, fontFamily: "'Space Mono'", fontSize: 9, color: C.teal, letterSpacing: 2, fontWeight: 900 }}>// FULL SPECTRUM</div>
+  {/* ROW 3: RANDOM SHOW + RHYTHM + DIAGNOSTICS */}
+<div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, paddingBottom: 40 }}>
+  <div style={{ height: 300 }}><RandomShow concerts={concerts} posters={posters} onAdd={() => setEditTarget('new')} /></div>
+  <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <CardTitle>THE RHYTHM 🔊</CardTitle>
+    <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '20px 10px 0' }}>
       {(() => {
-        const allValid = genreStats.filter(g => g.count > 0);
-        if (allValid.length < 3) return <div style={{ fontSize: 10, color: C.grayDim }}>AWAITING DATA...</div>;
-        const maxCount = allValid[0].count;
-        const scores = {};
-        allValid.forEach(g => { scores[g.name] = Math.round((g.count / maxCount) * 100); });
-        return <div style={{ transform: 'scale(0.85)', marginTop: 20 }}><SetlistDNA genreScores={scores} /></div>;
-      })()}
-    </Card>
-    <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-      <CardTitle>THE RHYTHM 🔊</CardTitle>
-      <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '20px 10px 0' }}>
-        {(() => {
-          const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-          const counts = [0,0,0,0,0,0,0];
-          concerts.forEach(c => { if(c.date) counts[new Date(c.date + 'T12:00:00').getDay()]++; });
-          const max = Math.max(...counts, 1);
-          return days.map((day, i) => {
-            const heightPct = Math.max((counts[i] / max) * 100, 5);
-            const isWeekend = day === 'FRI' || day === 'SAT';
-            const barColor = isWeekend ? C.gold : C.teal;
-            return (
-              <div key={day} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, width: '12%', height: '100%', justifyContent: 'flex-end' }}>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff' }}>{counts[i] || ''}</div>
-                <div style={{ width: '100%', height: `${heightPct}%`, background: `linear-gradient(to top, ${barColor}22, ${barColor})`, borderRadius: '4px 4px 0 0', boxShadow: `0 -5px 15px ${barColor}66` }} />
-                <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: isWeekend ? '#fff' : C.gray, fontWeight: isWeekend ? 900 : 400 }}>{day[0]}</div>
-              </div>
-            );
-          });
-        })()}
-      </div>
-    </Card>
-    <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', background: '#050508' }}>
-      <CardTitle>DIAGNOSTICS 💻</CardTitle>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 15, fontFamily: "'Space Mono'", fontSize: 11 }}>
-        {(() => {
-          const uniqueBands = new Set();
-          let firstDate = '2099-01-01';
-          let totalMedia = 0;
-          concerts.forEach(c => {
-            (c.bands || []).forEach(b => uniqueBands.add(b));
-            if (c.date && c.date < firstDate) firstDate = c.date;
-            if (c.image_url) totalMedia++;
-            if (c.setlist_image_url) totalMedia++;
-            if (c.personal_photo_url) totalMedia++;
-          });
+        const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        const counts = [0,0,0,0,0,0,0];
+        concerts.forEach(c => { if(c.date) counts[new Date(c.date + 'T12:00:00').getDay()]++; });
+        const max = Math.max(...counts, 1);
+        return days.map((day, i) => {
+          const heightPct = Math.max((counts[i] / max) * 100, 5);
+          const isWeekend = day === 'FRI' || day === 'SAT';
+          const barColor = isWeekend ? C.gold : C.teal;
           return (
-            <>
-              <div><span style={{ color: C.gray }}>SYS.BANDS_LOGGED:</span> <span style={{ color: C.gold, fontWeight: 900, textShadow: `0 0 8px ${C.gold}` }}>{uniqueBands.size}</span></div>
-              <div><span style={{ color: C.gray }}>SYS.TOTAL_EVENTS:</span> <span style={{ color: C.teal, fontWeight: 900, textShadow: `0 0 8px ${C.teal}` }}>{concerts.length}</span></div>
-              <div><span style={{ color: C.gray }}>SYS.MEDIA_VAULT:</span> <span style={{ color: '#9d00ff', fontWeight: 900, textShadow: `0 0 8px #9d00ff` }}>{totalMedia} FILES</span></div>
-              <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px dashed ${C.border}` }}>
-                <span style={{ color: C.gray, fontSize: 9 }}>ARCHIVE_GENESIS:</span><br/>
-                <span style={{ color: '#fff', fontSize: 10 }}>{firstDate !== '2099-01-01' ? fmtDate(firstDate).toUpperCase() : 'UNKNOWN'}</span>
-              </div>
-            </>
+            <div key={day} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, width: '12%', height: '100%', justifyContent: 'flex-end' }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff' }}>{counts[i] || ''}</div>
+              <div style={{ width: '100%', height: `${heightPct}%`, background: `linear-gradient(to top, ${barColor}22, ${barColor})`, borderRadius: '4px 4px 0 0', boxShadow: `0 -5px 15px ${barColor}66` }} />
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: isWeekend ? '#fff' : C.gray, fontWeight: isWeekend ? 900 : 400 }}>{day[0]}</div>
+            </div>
           );
-        })()}
-      </div>
-    </Card>
-  </div>
-</>
-    )}
-  </div>
-)}
+        });
+      })()}
+    </div>
+  </Card>
+  <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', background: '#050508' }}>
+    <CardTitle>DIAGNOSTICS 💻</CardTitle>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 15, fontFamily: "'Space Mono'", fontSize: 11 }}>
+      {(() => {
+        const uniqueBands = new Set();
+        let firstDate = '2099-01-01';
+        let totalMedia = 0;
+        concerts.forEach(c => {
+          (c.bands || []).forEach(b => uniqueBands.add(b));
+          if (c.date && c.date < firstDate) firstDate = c.date;
+          if (c.image_url) totalMedia++;
+          if (c.setlist_image_url) totalMedia++;
+          if (c.personal_photo_url) totalMedia++;
+        });
+        return (
+          <>
+            <div><span style={{ color: C.gray }}>SYS.BANDS_LOGGED:</span> <span style={{ color: C.gold, fontWeight: 900, textShadow: `0 0 8px ${C.gold}` }}>{uniqueBands.size}</span></div>
+            <div><span style={{ color: C.gray }}>SYS.TOTAL_EVENTS:</span> <span style={{ color: C.teal, fontWeight: 900, textShadow: `0 0 8px ${C.teal}` }}>{concerts.length}</span></div>
+            <div><span style={{ color: C.gray }}>SYS.MEDIA_VAULT:</span> <span style={{ color: '#9d00ff', fontWeight: 900, textShadow: `0 0 8px #9d00ff` }}>{totalMedia} FILES</span></div>
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px dashed ${C.border}` }}>
+              <span style={{ color: C.gray, fontSize: 9 }}>ARCHIVE_GENESIS:</span><br/>
+              <span style={{ color: '#fff', fontSize: 10 }}>{firstDate !== '2099-01-01' ? fmtDate(firstDate).toUpperCase() : 'UNKNOWN'}</span>
+            </div>
+          </>
+        );
+      })()}
+    </div>
+  </Card>
+</div>
 
   {/* 2. CHRONICLE & TOUR BUS TABS */}
   {activeTab === 'timeline' && <TimelineTab concerts={concerts} setActiveTab={setActiveTab} genreMap={artistGenres} />}
