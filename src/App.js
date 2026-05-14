@@ -11698,8 +11698,27 @@ function HighlightStage({ concerts, session, posters, userArtifacts, isAdmin, on
 
   const slots = Array(10).fill(null).map((_, i) => highlights[i] || null);
 
+  const GENRE_TAPE_COLORS = {
+    'Rock': '#ff0055',
+    'Indie Rock': '#ff4466',
+    'Electronic': '#00f2ff',
+    'Hip Hop': '#ffcc00',
+    'Pop': '#ff88cc',
+    'Folk': '#00cc88',
+    'Country': '#ffaa00',
+    'Jazz': '#9d00ff',
+    'Metal': '#ff3300',
+    'R&B': '#cc44ff',
+    'Festival': '#ffcc00',
+  };
+
+  const getTapeColor = (show) => {
+    if (show?.is_festival) return GENRE_TAPE_COLORS['Festival'];
+    return GENRE_TAPE_COLORS[show?.genre] || C.purple;
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#010102', borderRadius: 8, overflow: 'hidden' }}>
       <style>{`
         @keyframes woofer-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); filter: brightness(1.5) drop-shadow(0 0 8px ${C.teal}); } }
         .speaker-cone { animation: woofer-pulse 0.4s ease-in-out infinite; }
@@ -11707,102 +11726,196 @@ function HighlightStage({ concerts, session, posters, userArtifacts, isAdmin, on
         .moving-light { animation: beam-swing 3s ease-in-out infinite; transform-origin: top center; }
         @keyframes truss-flash { 0%, 100% { background: #fff; box-shadow: 0 0 10px #fff; } 50% { background: #333; box-shadow: none; } }
         .truss-bulb { animation: truss-flash 1.5s infinite; }
+        @keyframes vhs-flicker { 0%, 95%, 100% { opacity: 1; } 96%, 99% { opacity: 0.85; } }
+        .vhs-card:hover { transform: translateY(-3px) scale(1.04); box-shadow: 0 8px 24px rgba(0,0,0,0.8) !important; }
+        .vhs-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .empty-slot:hover { border-color: rgba(255,255,255,0.3) !important; background: rgba(255,255,255,0.04) !important; }
+        .empty-slot { transition: all 0.2s; }
       `}</style>
 
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#010102', borderRadius: 8, display: 'flex', flexDirection: 'column' }}>
-
-        {/* TRUSS */}
-        <div style={{ position: 'absolute', top: 0, width: '100%', height: '20px', background: '#111', borderBottom: '1.5px solid #444', zIndex: 100, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-          {[...Array(12)].map((_, i) => (
-            <div key={i} className="truss-bulb" style={{ width: 3, height: 3, borderRadius: '50%', animationDelay: `${i*0.15}s` }} />
-          ))}
+      {/* ── HEADER: MYSPACE-STYLE TOP 10 ── */}
+      <div style={{
+        padding: '10px 16px 8px',
+        background: 'linear-gradient(180deg, #1a0a2e 0%, #0d0015 100%)',
+        borderBottom: '2px solid #3d1a6b',
+        flexShrink: 0,
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* scanline effect */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)', pointerEvents: 'none', zIndex: 0 }} />
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span style={{
+                fontFamily: "'Bebas Neue'",
+                fontSize: '1.6rem',
+                color: '#fff',
+                letterSpacing: 4,
+                textShadow: `0 0 20px ${C.purple}, 0 0 40px ${C.purple}`,
+                lineHeight: 1
+              }}>MY TOP 10</span>
+              <span style={{
+                fontFamily: "'Space Mono'",
+                fontSize: 8,
+                color: C.purple,
+                letterSpacing: 2,
+                opacity: 0.8
+              }}>SHOWS</span>
+            </div>
+            <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginTop: 2 }}>
+              {highlights.length}/10 SLOTS FILLED
+            </div>
+          </div>
+          <div style={{
+            fontFamily: "'Bebas Neue'",
+            fontSize: '2.5rem',
+            color: C.purple,
+            opacity: 0.15,
+            letterSpacing: 2,
+            lineHeight: 1,
+            userSelect: 'none'
+          }}>VHS</div>
         </div>
+      </div>
+
+      {/* ── STAGE AREA ── */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
         {/* LIGHTING */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 5 }}>
+        <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }}>
           <svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-            <polygon points="500,0 200,1000 800,1000" fill="rgba(255,255,255,0.1)" style={{ filter: 'blur(40px)' }} />
+            <polygon points="500,0 200,1000 800,1000" fill="rgba(255,255,255,0.06)" style={{ filter: 'blur(40px)' }} />
             {[...Array(6)].map((_, i) => {
               const isLeft = i < 3;
               const col = isLeft ? C.purple : C.cyan;
               const xBase = isLeft ? (150 + i * 100) : (550 + (i-3) * 100);
               return (
                 <g key={i} className="moving-light" style={{ animationDelay: `${i*0.4}s` }}>
-                  <polygon points={`${xBase},0 ${xBase-180},1000 ${xBase+180},1000`} fill={hexToRgba(col, 0.4)} style={{ mixBlendMode: 'screen', filter: 'blur(15px)' }} />
+                  <polygon points={`${xBase},0 ${xBase-180},1000 ${xBase+180},1000`} fill={hexToRgba(col, 0.25)} style={{ mixBlendMode: 'screen', filter: 'blur(15px)' }} />
                 </g>
               );
             })}
           </svg>
         </div>
 
+        {/* TRUSS */}
+        <div style={{ position: 'absolute', top: 0, width: '100%', height: '16px', background: '#111', borderBottom: '1.5px solid #333', zIndex: 10, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+          {[...Array(14)].map((_, i) => (
+            <div key={i} className="truss-bulb" style={{ width: 3, height: 3, borderRadius: '50%', animationDelay: `${i*0.12}s` }} />
+          ))}
+        </div>
+
         {/* SPEAKERS */}
         {[{side: 'left'}, {side: 'right'}].map(s => (
-          <div key={s.side} style={{ position: 'absolute', [s.side]: 10, bottom: 42, width: 34, height: 115, background: '#0a0a0c', border: '1.5px solid #222', borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 6, padding: 5, zIndex: 40, boxShadow: '0 10px 30px #000' }}>
-            {[1,2,3,4].map(i => (
+          <div key={s.side} style={{ position: 'absolute', [s.side]: 6, bottom: 30, width: 28, height: 90, background: '#0a0a0c', border: '1.5px solid #222', borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 5, padding: 4, zIndex: 10, boxShadow: '0 10px 30px #000' }}>
+            {[1,2,3].map(i => (
               <div key={i} style={{ flex: 1, background: '#000', borderRadius: '50%', border: '1px solid #1a1a1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div className="speaker-cone" style={{ width: 14, height: 14, borderRadius: '50%', border: `1.8px solid ${C.teal}`, background: 'radial-gradient(circle, #333, #000)' }} />
+                <div className="speaker-cone" style={{ width: 12, height: 12, borderRadius: '50%', border: `1.5px solid ${C.teal}`, background: 'radial-gradient(circle, #333, #000)' }} />
               </div>
             ))}
           </div>
         ))}
 
-        {/* STAGE FLOOR */}
-        <div style={{ position: 'absolute', bottom: 32, width: '100%', height: '65px', background: '#121216', borderTop: '2px solid #333', zIndex: 20, clipPath: 'polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%)' }}>
-          <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at center top, ${hexToRgba(C.teal, 0.35)}, transparent 80%)` }} />
-          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 20px)' }} />
-        </div>
+        {/* VHS CARD GRID */}
+        <div style={{ position: 'absolute', top: 22, left: 40, right: 40, bottom: 28, zIndex: 5, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gridTemplateRows: '1fr 1fr', gap: 6, padding: '4px 0' }}>
+          {slots.map((slot, i) => {
+            const tapeColor = slot ? getTapeColor(slot.shows) : 'rgba(255,255,255,0.08)';
+            const artist = slot ? (slot.shows?.artist || slot.shows?.festival_name || 'SHOW').toUpperCase() : null;
+            const year = slot?.shows?.date ? new Date(slot.shows.date + 'T12:00:00').getFullYear() : null;
 
-        {/* FOH BAR */}
-        <div style={{ marginTop: 'auto', width: '100%', height: '32px', background: '#000', zIndex: 60, borderTop: `2px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: C.teal, letterSpacing: '4px', fontWeight: 900, textShadow: `0 0 8px ${C.teal}` }}>
-            HIGHLIGHTS // RIG STATUS: ACTIVE
-          </div>
-        </div>
+            if (slot) {
+              return (
+                <div
+                  key={i}
+                  className="vhs-card"
+                  onClick={() => onOpenDetail(slot)}
+                  style={{
+                    background: `linear-gradient(160deg, #1a1a1e 0%, #0d0d10 100%)`,
+                    border: `1px solid ${hexToRgba(tapeColor, 0.6)}`,
+                    borderRadius: 3,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    boxShadow: `0 4px 12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)`,
+                    position: 'relative',
+                  }}
+                >
+                  {/* VHS top strip / label color band */}
+                  <div style={{ height: 5, background: tapeColor, flexShrink: 0, boxShadow: `0 0 8px ${tapeColor}` }} />
 
-        {/* HIGHLIGHT CARDS GRID */}
-        <div style={{ position: 'absolute', top: 28, left: 50, right: 50, bottom: 97, zIndex: 30, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gridTemplateRows: '1fr 1fr', gap: 5 }}>
-          {slots.map((slot, i) => (
-            <div
-              key={i}
-              onClick={() => slot ? onOpenDetail(slot) : (isAdmin && setAddingToSlot(i))}
-              style={{
-                background: slot ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.4)',
-                border: slot ? `1px solid ${C.gold}` : `1px dashed rgba(255,255,255,0.12)`,
-                borderRadius: 4,
-                cursor: (slot || isAdmin) ? 'pointer' : 'default',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '4px 3px',
-                transition: 'all 0.2s',
-                overflow: 'hidden',
-                backdropFilter: 'blur(4px)',
-              }}
-              onMouseEnter={e => { if (slot || isAdmin) { e.currentTarget.style.borderColor = C.teal; e.currentTarget.style.background = 'rgba(0,229,204,0.08)'; }}}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = slot ? C.gold : 'rgba(255,255,255,0.12)'; e.currentTarget.style.background = slot ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.4)'; }}
-            >
-              {slot ? (
-                <>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.7rem', color: C.gold, lineHeight: 1, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingLeft: 2, paddingRight: 2 }}>
-                    {(slot.shows?.artist || slot.shows?.festival_name || 'SHOW').toUpperCase().substring(0, 11)}
+                  {/* VHS window cutout */}
+                  <div style={{ margin: '4px auto 2px', width: '60%', height: 10, background: '#000', borderRadius: 2, border: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, flexShrink: 0 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#1a1a1a', border: '1px solid #444' }} />
+                    <div style={{ flex: 1, height: 2, background: '#111', borderRadius: 1 }} />
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#1a1a1a', border: '1px solid #444' }} />
                   </div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: '5px', color: C.gray, marginTop: 2 }}>
-                    {slot.shows?.date ? new Date(slot.shows.date + 'T12:00:00').getFullYear() : ''}
-                  </div>
-                  {slot.highlight_note && (
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: '5px', color: C.teal, marginTop: 2, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingLeft: 2, paddingRight: 2 }}>
-                      {slot.highlight_note.substring(0, 14)}
+
+                  {/* Label area */}
+                  <div style={{ flex: 1, padding: '2px 4px', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'rgba(255,255,255,0.02)' }}>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '0.62rem', color: '#fff', lineHeight: 1, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {artist?.substring(0, 12)}
                     </div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: '0.38rem', color: tapeColor, textAlign: 'center', marginTop: 1, letterSpacing: 1 }}>
+                      {year}
+                    </div>
+                    {slot.highlight_note && (
+                      <div style={{ fontFamily: "'Space Mono'", fontSize: '0.32rem', color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {slot.highlight_note.substring(0, 16)}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* bottom spine strip */}
+                  <div style={{ height: 3, background: hexToRgba(tapeColor, 0.3), flexShrink: 0 }} />
+
+                  {/* hover remove button */}
+                  {isAdmin && (
+                    <div
+                      onClick={e => { e.stopPropagation(); handleRemove(slot.id); }}
+                      style={{ position: 'absolute', top: 3, right: 3, width: 10, height: 10, background: 'rgba(0,0,0,0.7)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: C.gray, cursor: 'pointer', opacity: 0, transition: 'opacity 0.2s' }}
+                      onMouseEnter={e => { e.currentTarget.style.opacity = 1; e.currentTarget.style.color = '#ff4466'; }}
+                      onMouseLeave={e => e.currentTarget.style.opacity = 0}
+                    >×</div>
                   )}
-                </>
-              ) : (
-                <div style={{ fontFamily: "'Space Mono'", fontSize: isAdmin ? '12px' : '8px', color: 'rgba(255,255,255,0.12)', textAlign: 'center' }}>
-                  {isAdmin ? '+' : '·'}
                 </div>
-              )}
-            </div>
-          ))}
+              );
+            }
+
+            return (
+              <div
+                key={i}
+                className="empty-slot"
+                onClick={() => isAdmin && setAddingToSlot(i)}
+                style={{
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px dashed rgba(255,255,255,0.1)',
+                  borderRadius: 3,
+                  cursor: isAdmin ? 'pointer' : 'default',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 3,
+                }}
+              >
+                {isAdmin && (
+                  <>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: 14, color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>+</div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: '0.35rem', color: 'rgba(255,255,255,0.1)', letterSpacing: 1 }}>ADD</div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* STAGE FLOOR */}
+        <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '28px', background: '#0a0a0e', borderTop: '2px solid #222', zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: '6px', color: 'rgba(157,0,255,0.5)', letterSpacing: '4px', fontWeight: 900 }}>
+            ★ MY TOP 10 ★ TRACK RECORD ★ MY TOP 10 ★ TRACK RECORD ★
+          </div>
         </div>
       </div>
 
@@ -11888,63 +12001,6 @@ function HighlightStage({ concerts, session, posters, userArtifacts, isAdmin, on
     </div>
   );
 }
-
-function HighlightDetailView({ highlight, onBack, posters, userArtifacts }) {
-  const show = highlight.shows;
-  if (!show) return null;
-
-  const artist = show.artist || show.festival_name || 'Unknown';
-  const year = show.date ? new Date(show.date + 'T12:00:00').getFullYear() : '';
-  const themeColor = show.is_festival ? C.gold : C.purple;
-  const relatedArtifacts = (userArtifacts || []).filter(a => a.show_id === show.id);
-  const relatedPoster = posters?.find(p =>
-    p.festival_name?.toLowerCase() === show.festival_name?.toLowerCase() &&
-    getYear(p.date) === year
-  );
-
-  return (
-    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <button
-        onClick={onBack}
-        style={{ alignSelf: 'flex-start', background: 'transparent', border: `1px solid ${C.border}`, color: C.gray, padding: '8px 16px', fontFamily: "'Space Mono'", fontSize: 9, cursor: 'pointer', borderRadius: 4, letterSpacing: 2 }}
-      >
-        ← BACK TO STAGE
-      </button>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        <Card neon style={{ padding: 28 }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: themeColor, letterSpacing: 3, marginBottom: 10 }}>// HIGHLIGHT</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '3.5rem', color: '#fff', lineHeight: 1, marginBottom: 6 }}>{artist.toUpperCase()}</div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: themeColor, marginBottom: 20 }}>{year}</div>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 4 }}>{show.venue}</div>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.gray, marginBottom: 24 }}>{show.city}{show.state ? `, ${show.state}` : ''} · {show.date}</div>
-          {highlight.highlight_note && (
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${hexToRgba(themeColor, 0.3)}`, borderRadius: 6, padding: '14px 16px', fontFamily: "'Space Mono'", fontSize: 10, color: '#fff', lineHeight: 1.7, fontStyle: 'italic' }}>
-              "{highlight.highlight_note}"
-            </div>
-          )}
-        </Card>
-
-        <Card neon style={{ padding: 28 }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, letterSpacing: 3, marginBottom: 16 }}>// ARTIFACTS</div>
-          {relatedArtifacts.length === 0 && !relatedPoster ? (
-            <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: C.grayDim }}>NO ARTIFACTS LINKED TO THIS SHOW</div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {relatedPoster && (
-                <img src={relatedPoster.image_url} alt="Poster" style={{ width: '100%', borderRadius: 4, border: `1px solid ${C.border}` }} />
-              )}
-              {relatedArtifacts.slice(0, 4).map((a, i) => (
-                <img key={i} src={a.image_url} alt="Artifact" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 4, border: `1px solid ${C.border}` }} />
-              ))}
-            </div>
-          )}
-        </Card>
-      </div>
-    </div>
-  );
-}
-
 // ─── MAIN APP ────────────────────────────────────────────────────
 export default function App() {
   // ── 1. AUTH & SYSTEM STATE ──
