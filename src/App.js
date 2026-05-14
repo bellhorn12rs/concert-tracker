@@ -13797,6 +13797,8 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
     </Card>
   </div>
 </>
+    )}
+  </div>
 )}
 
   {/* 2. CHRONICLE & TOUR BUS TABS */}
