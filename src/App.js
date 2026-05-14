@@ -13734,7 +13734,8 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
   </div>
 
   {/* ROW 3: RANDOM SHOW + RHYTHM + DIAGNOSTICS */}
-<RandomShow concerts={concerts} posters={posters} onAdd={() => setEditTarget('new')} />
+<div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20 }}>
+  <RandomShow concerts={concerts} posters={posters} onAdd={() => setEditTarget('new')} />
   <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
     <CardTitle>THE RHYTHM 🔊</CardTitle>
     <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '20px 10px 0' }}>
