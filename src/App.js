@@ -13730,7 +13730,7 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
   </div>
 
   {/* ROW 3: RANDOM SHOW + RHYTHM + DIAGNOSTICS */}
-<div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, paddingBottom: 40 }}>
+<div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20 }}>
   <div style={{ height: 300 }}><RandomShow concerts={concerts} posters={posters} onAdd={() => setEditTarget('new')} /></div>
   <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
     <CardTitle>THE RHYTHM 🔊</CardTitle>
@@ -13782,6 +13782,22 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
         );
       })()}
     </div>
+  </Card>
+</div>
+
+{/* ROW 4: SONIC DNA + FULL SPECTRUM */}
+<div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, paddingBottom: 40 }}>
+  <div style={{ height: 300 }}><SonicDNA stats={genreStats} onGenreClick={handleGenreClick} /></div>
+  <Card neon style={{ height: 300, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+    <div style={{ position: 'absolute', top: 15, fontFamily: "'Space Mono'", fontSize: 9, color: C.teal, letterSpacing: 2, fontWeight: 900 }}>// FULL SPECTRUM</div>
+    {(() => {
+      const allValid = genreStats.filter(g => g.count > 0);
+      if (allValid.length < 3) return <div style={{ fontSize: 10, color: C.grayDim }}>AWAITING DATA...</div>;
+      const maxCount = allValid[0].count;
+      const scores = {};
+      allValid.forEach(g => { scores[g.name] = Math.round((g.count / maxCount) * 100); });
+      return <div style={{ transform: 'scale(0.85)', marginTop: 20 }}><SetlistDNA genreScores={scores} /></div>;
+    })()}
   </Card>
 </div>
 
