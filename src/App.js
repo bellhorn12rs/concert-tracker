@@ -8835,7 +8835,8 @@ const addTRCompanion = async (profile) => {
     p_invitee_user_id: profile.id,
     p_inviter_user_id: session.user.id,
   });
-  setCompanions(prev => [...prev, { invitee_user_id: profile.id, status: 'accepted', profiles: { username: profile.username, avatar_color: profile.avatar_color } }]);
+setCompanions(prev => [...prev, { invitee_user_id: profile.id, status: 'accepted', invitee_username: profile.username, invitee_color: profile.avatar_color }]);
+
   setCompanionSearch('');
   setCompanionResults([]);
   setCompanionAdding(false);
