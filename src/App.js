@@ -5123,7 +5123,7 @@ function GigPoster({ src, artist, date, index = 0 }) {
             inset 0 1px 0 rgba(255,255,255,0.15),
             inset 0 -1px 0 rgba(0,0,0,0.5)
           `,
-          width: '130px',
+          width: '140px',
         }}>
           {/* MATTE */}
           <div style={{
@@ -5139,7 +5139,7 @@ function GigPoster({ src, artist, date, index = 0 }) {
                 display: 'block',
                 width: '100%',
                 height: 'auto',
-                maxHeight: '180px',
+                maxHeight: '160px',
                 objectFit: 'cover',
               }}
             />
@@ -5806,7 +5806,7 @@ useEffect(() => {
         : `linear-gradient(135deg, #0a0a0f 0%, ${hexToRgba(primaryColor, 0.07)} 100%)`,
       borderRadius: '24px', 
       border: `1px solid ${hexToRgba(primaryColor, 0.4)}`,
-      boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px ${hexToRgba(primaryColor, 0.1)}, 0 20px 60px ${hexToRgba(primaryColor, 0.12)}, inset 0 1px 0 ${hexToRgba(primaryColor, 0.15)}`,
+boxShadow: `0 8px 32px rgba(0,0,0,0.7), 0 20px 60px ${hexToRgba(primaryColor, 0.15)}, inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.5)`,
       position: 'relative', 
       overflow: 'hidden', 
       gap: isMobile ? '20px' : '0',
@@ -5817,7 +5817,7 @@ useEffect(() => {
       {/* 🟢 THE GHOST POSTER */}
       {!isMobile && (
         <div style={{
-          position: 'absolute', left: '-2%', top: '-10%', width: '100%', height: '120%',
+          position: 'absolute', left: '8%', top: '-10%', width: '100%', height: '120%',
           fontFamily: "'Bebas Neue'", fontSize: '22rem', color: primaryColor, opacity: 0.18,
           WebkitTextStroke: `1px ${hexToRgba(primaryColor, 0.6)}`,
           textShadow: `0 0 40px ${hexToRgba(primaryColor, 0.3)}`,
@@ -5835,6 +5835,7 @@ useEffect(() => {
         flexShrink: 0, width: isMobile ? '100%' : '320px', position: 'relative', zIndex: 2,
         display: 'flex', flexDirection: 'column', gap: '15px', alignItems: isMobile ? 'center' : 'flex-start'
       }}>
+        <div style={{ transform: isMobile ? 'scale(0.9)' : 'none', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))' }}>
         <div style={{ transform: isMobile ? 'scale(0.9)' : 'none' }}>
           {event.is_festival 
             ? <WristbandCard event={event} genreMap={genreMap} compact={true} onEdit={isAdmin ? onEdit : null} /> 
@@ -5924,37 +5925,31 @@ useEffect(() => {
         maxWidth: isMobile ? '100%' : '45%',
         zIndex: 2, 
         marginLeft: isMobile ? '0' : 'auto',
-        overflow: isMobile ? 'visible' : 'visible'
+        overflow: 'visible'
       }}>
         <div style={{ 
-          display: 'flex', 
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          gap: '12px',
           flexWrap: isMobile ? 'wrap' : 'nowrap',
-          alignItems: 'flex-start', 
-          justifyContent: isMobile ? 'center' : 'flex-start',
+          justifyContent: isMobile ? 'center' : 'flex-end',
           transform: isMobile ? 'scale(0.7)' : 'none',
           transformOrigin: isMobile ? 'center' : 'right',
-          gap: isMobile ? '10px' : '0',
-          width: isMobile ? '100%' : 'auto'
         }}>
-          {finalSetlists.map((url, sIdx) => (
-            <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={finalSetlists.length} />
-          ))}
-          {finalPosters.map((poster, pIdx) => (
-            <GigPoster
-              key={`${event.id}-poster-${pIdx}`}
-              src={poster.url}
-              artist={poster.artist}
-              date={poster.date}
-              index={pIdx}
-            />
-          ))}
-          <div style={{ 
-            marginLeft: isMobile ? '0' : ((finalSetlists.length > 0 || finalPosters.length > 0) ? '-20px' : '0'),
-            display: 'flex',
-            flexWrap: isMobile ? 'wrap' : 'nowrap',
-            gap: isMobile ? '10px' : '0',
-            justifyContent: isMobile ? 'center' : 'flex-start'
-          }}>
+          {/* LEFT STACK: relics + posters */}
+          {(finalSetlists.length > 0 || finalPosters.length > 0) && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+              {finalSetlists.map((url, sIdx) => (
+                <SetlistPaper key={`${event.id}-s-${sIdx}`} src={url} index={sIdx} total={finalSetlists.length} />
+              ))}
+              {finalPosters.map((poster, pIdx) => (
+                <GigPoster key={`${event.id}-poster-${pIdx}`} src={poster.url} artist={poster.artist} date={poster.date} index={pIdx} />
+              ))}
+            </div>
+          )}
+          {/* RIGHT: photos */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
             {finalPhotos.map((url, pIdx) => (
               <PersonalPolaroid 
                 key={`${event.id}-p-${pIdx}`}
