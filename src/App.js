@@ -5801,20 +5801,26 @@ useEffect(() => {
       flexDirection: isMobile ? 'column' : 'row', 
       alignItems: isMobile ? 'stretch' : 'center', 
       padding: isMobile ? '15px' : '40px 30px',
-      background: isClustered ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.02)',
+      background: isClustered 
+        ? `linear-gradient(135deg, rgba(0,0,0,0.6) 0%, ${hexToRgba(primaryColor, 0.05)} 100%)`
+        : `linear-gradient(135deg, #0a0a0f 0%, ${hexToRgba(primaryColor, 0.07)} 100%)`,
       borderRadius: '24px', 
-      border: `1px solid ${isClustered ? hexToRgba(primaryColor, 0.3) : C.border}`,
+      border: `1px solid ${hexToRgba(primaryColor, 0.4)}`,
+      boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px ${hexToRgba(primaryColor, 0.1)}, 0 20px 60px ${hexToRgba(primaryColor, 0.12)}, inset 0 1px 0 ${hexToRgba(primaryColor, 0.15)}`,
       position: 'relative', 
       overflow: 'hidden', 
       gap: isMobile ? '20px' : '0',
-      marginBottom: isMobile ? '10px' : '0'
+      marginBottom: isMobile ? '10px' : '0',
+      transform: 'translateZ(0)',
     }}>
       
       {/* 🟢 THE GHOST POSTER */}
       {!isMobile && (
         <div style={{
           position: 'absolute', left: '-2%', top: '-10%', width: '100%', height: '120%',
-          fontFamily: "'Bebas Neue'", fontSize: '22rem', color: primaryColor, opacity: 0.18, 
+          fontFamily: "'Bebas Neue'", fontSize: '22rem', color: primaryColor, opacity: 0.18,
+          WebkitTextStroke: `1px ${hexToRgba(primaryColor, 0.6)}`,
+          textShadow: `0 0 40px ${hexToRgba(primaryColor, 0.3)}`,
           whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 0, letterSpacing: '-12px', 
           lineHeight: 0.8, display: 'flex', alignItems: 'flex-start',
           WebkitMaskImage: 'linear-gradient(to right, black 20%, transparent 80%)',
