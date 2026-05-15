@@ -3460,8 +3460,9 @@ function ArtifactCluster({ artifacts, show, index, gc, shouldBlurPhoto, currentU
 // ─── HALL OF FAME (DENSE LAYOUT) ─────────────────────────────────────────────
 function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, currentUserId, artifacts = [] }) {
   const [selected, setSelected] = useState(null);
-  const topRef = useRef(null);
-  const cardRef = useRef(null);
+const [isExporting, setIsExporting] = useState(false);
+const topRef = useRef(null);
+const cardRef = useRef(null);
 
   const artists = useMemo(() => {
     const m = {};
@@ -3578,8 +3579,6 @@ const overflowPackages = showPackages
   .filter(pkg => pkg.hasArtifacts)
   .slice(artifactsPerSide * 2); // Everything after balanced sides
 
-
-  const [isExporting, setIsExporting] = useState(false);
 const handleExport = async () => {
   if (!cardRef.current || isExporting) return;
   setIsExporting(true);
