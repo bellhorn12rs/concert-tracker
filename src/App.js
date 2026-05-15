@@ -3579,7 +3579,8 @@ const overflowPackages = showPackages
   .slice(artifactsPerSide * 2); // Everything after balanced sides
 
 const handleExport = async () => {
-  if (!cardRef.current) return;
+  if (!cardRef.current || isExporting) return;
+  setIsExporting(true);
   
   try {
     const card = cardRef.current;
@@ -3605,17 +3606,14 @@ const handleExport = async () => {
     card.style.backdropFilter = 'none';
 
     allEls.forEach(el => {
-      // Remove all blurs
       if (el.style.filter) el.style.filter = 'none';
       if (el.style.backdropFilter) el.style.backdropFilter = 'none';
-      // Make semi-transparent backgrounds opaque
       if (el.style.background?.includes('rgba')) {
         el.style.background = el.style.background.replace(
           /rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/g,
           'rgba($1, $2, $3, 0.95)'
         );
       }
-      // Remove any dimming overlays
       if (el.style.opacity && parseFloat(el.style.opacity) < 0.5) {
         el.style.opacity = '1';
       }
@@ -3629,7 +3627,7 @@ const handleExport = async () => {
         return new Promise(resolve => {
           img.onload = resolve;
           img.onerror = resolve;
-          setTimeout(resolve, 3000); // max wait 3s per image
+          setTimeout(resolve, 3000);
         });
       })
     );
@@ -3670,6 +3668,8 @@ const handleExport = async () => {
   } catch (err) {
     console.error('Export failed:', err);
     alert('Export failed: ' + err.message);
+  } finally {
+    setIsExporting(false);
   }
 };
   return (
