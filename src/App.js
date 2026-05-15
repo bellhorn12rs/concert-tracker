@@ -5768,6 +5768,33 @@ const onSync = async () => {
   // Detect if we are on a curator's page (spectator mode)
   const isSpectator = window.location.hash.includes('#/u/');
 
+  const [rowCompanions, setRowCompanions] = useState([]);
+
+useEffect(() => {
+  if (!event?.id || !currentUserId) return;
+  const fetch = async () => {
+    const { data } = await supabase
+      .from('show_companions')
+      .select('invitee_user_id, inviter_user_id, status, invitee_email')
+      .eq('show_id', event.id)
+      .eq('status', 'accepted');
+    if (!data) return;
+    const enriched = await Promise.all(
+      [...new Map(
+        data
+          .map(c => c.invitee_user_id === currentUserId ? c.inviter_user_id : c.invitee_user_id)
+          .filter(id => id && id !== currentUserId)
+          .map(id => [id, id])
+      ).values()].map(async (uid) => {
+        const { data: p } = await supabase.from('profiles').select('username, avatar_color').eq('id', uid).single();
+        return p ? { username: p.username, color: p.avatar_color } : null;
+      })
+    );
+    setRowCompanions(enriched.filter(Boolean));
+  };
+  fetch();
+}, [event?.id, currentUserId]);
+
   return (
     <div style={{ 
       display: 'flex', 
@@ -5839,6 +5866,20 @@ const onSync = async () => {
           <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.1)' }} />
           <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>{event.venue?.toUpperCase()}</div>
           
+{rowCompanions.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray, letterSpacing: 1 }}>WITH</span>
+              {rowCompanions.map((c, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, background: `${c.color || C.teal}22`, border: `1px solid ${c.color || C.teal}`, borderRadius: 20, padding: '3px 10px' }}>
+                  <div style={{ width: 14, height: 14, borderRadius: '50%', background: c.color || C.teal, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#000', fontFamily: "'Bebas Neue'" }}>
+                    {c.username[0]?.toUpperCase()}
+                  </div>
+                  <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff' }}>{c.username}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* 🟢 THE CLONE BUTTON */}
           {isSpectator && !isAdmin && (
             <button
