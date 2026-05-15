@@ -9450,8 +9450,7 @@ const inviteByEmail = async (email) => {
               </div>
             )}
 
-          </div>
-        )}
+           </div>
       </div>
     </div>
   );
