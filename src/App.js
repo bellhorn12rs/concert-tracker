@@ -9027,6 +9027,8 @@ const inviteByEmail = async (email) => {
 
   setCompanions(enriched);
 };
+    fetchCompanions();
+  }, [concert]);
 
   const gateBtn = (color) => ({
     background: hexToRgba(color, 0.1), border: `1px solid ${color}`, color: '#fff',
