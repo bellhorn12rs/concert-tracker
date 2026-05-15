@@ -3633,8 +3633,28 @@ const handleExport = async () => {
       })
     );
 
-    // ── 4. SETTLE DELAY ───────────────────────────────────────────
-    await new Promise(r => setTimeout(r, 400));
+    // Force all images fully visible
+const allImgs = card.querySelectorAll('img');
+allImgs.forEach(img => {
+  img.style.filter = 'none';
+  img.style.opacity = '1';
+  img.style.webkitFilter = 'none';
+});
+
+// Force all elements — remove any dim overlays
+const allEls2 = card.querySelectorAll('*');
+allEls2.forEach(el => {
+  const computed = window.getComputedStyle(el);
+  if (computed.filter && computed.filter !== 'none') {
+    el.style.filter = 'none';
+  }
+  if (computed.opacity && parseFloat(computed.opacity) < 0.8) {
+    el.style.opacity = '1';
+  }
+});
+
+// ── 4. SETTLE DELAY ───────────────────────────────────────────
+await new Promise(r => setTimeout(r, 400));
 
     // ── 5. CAPTURE ────────────────────────────────────────────────
     const html2canvas = (await import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm')).default;
