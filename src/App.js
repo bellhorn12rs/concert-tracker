@@ -5844,7 +5844,7 @@ useEffect(() => {
       </div>
 
       {/* 🟢 MIDDLE: THE INTERACTIVE LINEUP */}
-      <div style={{ flex: 1, paddingLeft: isMobile ? '0' : '50px', zIndex: 2, textAlign: isMobile ? 'center' : 'left' }}>
+        <div style={{ flex: 1, minWidth: '200px', paddingLeft: isMobile ? '0' : '50px', zIndex: 2, textAlign: isMobile ? 'center' : 'left' }}>
         <div style={{ 
           fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.2rem' : '3.8rem', lineHeight: 0.85,
           letterSpacing: '1px', marginBottom: '15px', color: '#fff',
@@ -5921,7 +5921,7 @@ useEffect(() => {
         alignItems: 'center', 
         justifyContent: isMobile ? 'center' : 'flex-end', 
         width: isMobile ? '100%' : 'auto',
-        minWidth: isMobile ? 'auto' : '400px',
+        maxWidth: isMobile ? '100%' : '45%',
         zIndex: 2, 
         marginLeft: isMobile ? '0' : 'auto',
         overflow: isMobile ? 'visible' : 'visible'
