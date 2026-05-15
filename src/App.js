@@ -3577,6 +3577,8 @@ const rightPackages = showPackages.filter(pkg => !pkg.isLeft && pkg.hasArtifacts
 const overflowPackages = showPackages
   .filter(pkg => pkg.hasArtifacts)
   .slice(artifactsPerSide * 2); // Everything after balanced sides
+  const [isExporting, setIsExporting] = useState(false);
+
 
 const handleExport = async () => {
   if (!cardRef.current || isExporting) return;
@@ -5037,7 +5039,6 @@ function Lightbox({ src, caption, onClose, type }) {
 // ─── 📄 STACKED SETLISTS & ARTIFACTS (TRIMMED EDITION) ────────────────────────
 function SetlistPaper({ src, index = 0, total = 1 }) {
   const [isFull, setIsFull] = React.useState(false);
-  const [isExporting, setIsExporting] = useState(false);
 
   if (!src) return null;
 
