@@ -5037,6 +5037,8 @@ function Lightbox({ src, caption, onClose, type }) {
 // ─── 📄 STACKED SETLISTS & ARTIFACTS (TRIMMED EDITION) ────────────────────────
 function SetlistPaper({ src, index = 0, total = 1 }) {
   const [isFull, setIsFull] = React.useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
   if (!src) return null;
 
   const rotation = (index % 2 === 0 ? -1.5 : 1.5) + (index * 0.5);
