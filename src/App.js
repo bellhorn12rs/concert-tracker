@@ -5835,7 +5835,6 @@ boxShadow: `0 8px 32px rgba(0,0,0,0.7), 0 20px 60px ${hexToRgba(primaryColor, 0.
         flexShrink: 0, width: isMobile ? '100%' : '320px', position: 'relative', zIndex: 2,
         display: 'flex', flexDirection: 'column', gap: '15px', alignItems: isMobile ? 'center' : 'flex-start'
       }}>
-        <div style={{ transform: isMobile ? 'scale(0.9)' : 'none', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))' }}>
         <div style={{ transform: isMobile ? 'scale(0.9)' : 'none' }}>
           {event.is_festival 
             ? <WristbandCard event={event} genreMap={genreMap} compact={true} onEdit={isAdmin ? onEdit : null} /> 
