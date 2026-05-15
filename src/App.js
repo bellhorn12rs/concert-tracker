@@ -3602,23 +3602,37 @@ const handleExport = async () => {
     }));
 
     // ── 2. FORCE CLEAN RENDER STATE ───────────────────────────────
-    card.style.background = `linear-gradient(135deg, #1a1a22 0%, ${hexToRgba(gc, 0.2)} 100%)`;
-    card.style.backgroundImage = 'none';
-    card.style.backdropFilter = 'none';
+card.style.background = `linear-gradient(135deg, #1a1a22 0%, ${hexToRgba(gc, 0.2)} 100%)`;
+card.style.backgroundImage = 'none';
+card.style.backdropFilter = 'none';
+card.style.webkitBackdropFilter = 'none';
 
-    allEls.forEach(el => {
-      if (el.style.filter) el.style.filter = 'none';
-      if (el.style.backdropFilter) el.style.backdropFilter = 'none';
-      if (el.style.background?.includes('rgba')) {
-        el.style.background = el.style.background.replace(
-          /rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/g,
-          'rgba($1, $2, $3, 0.95)'
-        );
-      }
-      if (el.style.opacity && parseFloat(el.style.opacity) < 0.5) {
-        el.style.opacity = '1';
-      }
-    });
+allEls.forEach(el => {
+  // Nuke all blur/backdrop
+  el.style.filter = 'none';
+  el.style.webkitFilter = 'none';
+  el.style.backdropFilter = 'none';
+  el.style.webkitBackdropFilter = 'none';
+  
+  // Fix opacity
+  const computed = window.getComputedStyle(el);
+  if (parseFloat(computed.opacity) < 0.9) el.style.opacity = '1';
+
+  // Replace any rgba background with solid version
+  if (el.style.background?.includes('rgba')) {
+    el.style.background = el.style.background.replace(
+      /rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/g,
+      'rgba($1, $2, $3, 1)'
+    );
+  }
+
+  // Hide pure overlay divs (no content, just visual effects)
+  if (!el.children.length && !el.textContent?.trim() && 
+      (el.style.backdropFilter || computed.backdropFilter !== 'none')) {
+    el.style.display = 'none';
+    el.dataset.hiddenForExport = 'true';
+  }
+});
 
     // ── 3. WAIT FOR IMAGES ────────────────────────────────────────
     const images = card.querySelectorAll('img');
@@ -3679,6 +3693,12 @@ await new Promise(r => setTimeout(r, 400));
       el.style.background = originalElStyles[i].background;
       el.style.opacity = originalElStyles[i].opacity;
     });
+
+    // Restore hidden overlay divs
+card.querySelectorAll('[data-hidden-for-export="true"]').forEach(el => {
+  el.style.display = '';
+  delete el.dataset.hiddenForExport;
+});
 
     // ── 7. DOWNLOAD ───────────────────────────────────────────────
     const link = document.createElement('a');
