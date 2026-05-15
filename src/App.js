@@ -9006,14 +9006,27 @@ const inviteByEmail = async (email) => {
   useEffect(() => {
     if (!concert || concert === 'new') return;
     const fetchCompanions = async () => {
-      const { data } = await supabase
-        .from('show_companions')
-        .select('id, status, invitee_email, invitee_user_id, profiles!invitee_user_id(username, avatar_color)')
-        .eq('show_id', concert.id);
-      if (data) setCompanions(data);
-    };
-    fetchCompanions();
-  }, [concert]);
+  const { data } = await supabase
+    .from('show_companions')
+    .select('id, status, invitee_email, invitee_user_id')
+    .eq('show_id', concert.id);
+  
+  if (!data) return;
+
+  const enriched = await Promise.all(data.map(async (c) => {
+    if (c.invitee_user_id) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username, avatar_color')
+        .eq('id', c.invitee_user_id)
+        .single();
+      return { ...c, invitee_username: profile?.username, invitee_color: profile?.avatar_color };
+    }
+    return c;
+  }));
+
+  setCompanions(enriched);
+};
 
   const gateBtn = (color) => ({
     background: hexToRgba(color, 0.1), border: `1px solid ${color}`, color: '#fff',
@@ -9027,7 +9040,7 @@ const inviteByEmail = async (email) => {
   if (!concert) return null;
 
   return (
-<div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 10000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '60px', backdropFilter: 'blur(15px)' }}>      <div className="fade-in" style={{ background: '#0d1117', border: `2px solid ${C.teal}`, borderRadius: 16, padding: isMobile ? 20 : 40, width: '95%', maxWidth: 750, maxHeight: '95vh', overflowY: 'auto' }}>
+<div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 10000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '60px', backdropFilter: 'blur(15px)' }}>      <div className="fade-in" style={{ background: '#0d1117', border: `2px solid ${C.teal}`, borderRadius: 16, padding: isMobile ? 20 : 40, width: '95%', maxWidth: 750, maxHeight: 'calc(100vh - 80px)', overflowY: 'auto' }}>
 
           <div className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
@@ -9375,8 +9388,8 @@ const inviteByEmail = async (email) => {
                 {companions.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
                     {companions.map((c, i) => {
-                      const name = c.profiles?.username || c.invitee_email || 'Unknown';
-                      const color = c.profiles?.avatar_color || '#555';
+                      const name = c.invitee_username || c.invitee_email || 'Unknown';
+                      const color = c.invitee_color || '#555';
                       const pending = c.status === 'pending';
                       return (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${color}22`, border: `1px solid ${pending ? '#555' : color}`, borderRadius: 20, padding: '5px 12px' }}>
