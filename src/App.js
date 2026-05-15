@@ -8659,6 +8659,11 @@ const [entryStep, setEntryStep] = useState('form');
   // NEW: Track band assignments for relics
   const [relicBandSelections, setRelicBandSelections] = useState({});
   const [showRelicBandPicker, setShowRelicBandPicker] = useState(null);
+  const [companions, setCompanions] = useState([]);
+  const [companionSearch, setCompanionSearch] = useState('');
+  const [companionResults, setCompanionResults] = useState([]);
+  const [companionSearching, setCompanionSearching] = useState(false);
+  const [companionAdding, setCompanionAdding] = useState(false);
 
   const getHomeTurf = () => {
     if (allConcerts.length === 0) return { city: '', state: '' };
@@ -8800,6 +8805,60 @@ const [entryStep, setEntryStep] = useState('form');
       }
     }
   };
+
+const searchCompanions = async (query) => {
+  setCompanionSearch(query);
+  if (!query || query.length < 2) { setCompanionResults([]); return; }
+  if (query.includes('@')) { setCompanionResults([{ type: 'email', value: query }]); return; }
+  setCompanionSearching(true);
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_color')
+    .ilike('username', `%${query}%`)
+    .limit(5);
+  const { data: { session } } = await supabase.auth.getSession();
+  const filtered = (data || []).filter(p =>
+    p.id !== session?.user?.id &&
+    !companions.some(c => c.invitee_user_id === p.id)
+  );
+  setCompanionResults(filtered.map(p => ({ type: 'user', ...p })));
+  setCompanionSearching(false);
+};
+
+const addTRCompanion = async (profile) => {
+  const showId = concert?.id;
+  if (!showId) return;
+  setCompanionAdding(true);
+  const { data: { session } } = await supabase.auth.getSession();
+  await supabase.rpc('tag_companion_attendance', {
+    p_show_id: showId,
+    p_invitee_user_id: profile.id,
+    p_inviter_user_id: session.user.id,
+  });
+  setCompanions(prev => [...prev, { invitee_user_id: profile.id, status: 'accepted', profiles: { username: profile.username, avatar_color: profile.avatar_color } }]);
+  setCompanionSearch('');
+  setCompanionResults([]);
+  setCompanionAdding(false);
+};
+
+const inviteByEmail = async (email) => {
+  const showId = concert?.id;
+  if (!showId) return;
+  setCompanionAdding(true);
+  const { data: { session } } = await supabase.auth.getSession();
+  const { data: companion } = await supabase
+    .from('show_companions')
+    .insert({ show_id: showId, inviter_user_id: session.user.id, invitee_email: email, status: 'pending' })
+    .select()
+    .single();
+  if (companion) {
+    await supabase.functions.invoke('send-companion-invite', { body: { companion_id: companion.id } });
+    setCompanions(prev => [...prev, { invitee_email: email, status: 'pending' }]);
+  }
+  setCompanionSearch('');
+  setCompanionResults([]);
+  setCompanionAdding(false);
+};
 
   // NEW: Enhanced save that writes to BOTH old fields AND artifacts table
   const handleSave = async () => {
@@ -8943,6 +9002,19 @@ const [entryStep, setEntryStep] = useState('form');
     }
   }, [concert]);
 
+  // ADD THIS RIGHT HERE:
+  useEffect(() => {
+    if (!concert || concert === 'new') return;
+    const fetchCompanions = async () => {
+      const { data } = await supabase
+        .from('show_companions')
+        .select('id, status, invitee_email, invitee_user_id, profiles!invitee_user_id(username, avatar_color)')
+        .eq('show_id', concert.id);
+      if (data) setCompanions(data);
+    };
+    fetchCompanions();
+  }, [concert]);
+
   const gateBtn = (color) => ({
     background: hexToRgba(color, 0.1), border: `1px solid ${color}`, color: '#fff',
     padding: '30px', borderRadius: '12px', cursor: 'pointer', fontFamily: "'Bebas Neue'",
@@ -8968,6 +9040,82 @@ const [entryStep, setEntryStep] = useState('form');
 
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: 30 }}>
               
+{/* ATTENDED WITH */}
+{concert !== 'new' && (
+  <div style={{ marginTop: 24, borderTop: '1px solid #1a1a1a', paddingTop: 20 }}>
+    <label style={{ ...labelStyle, marginBottom: 12 }}>// ATTENDED WITH</label>
+
+    {/* Existing companions */}
+    {companions.length > 0 && (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+        {companions.map((c, i) => {
+          const name = c.profiles?.username || c.invitee_email || 'Unknown';
+          const color = c.profiles?.avatar_color || '#555';
+          const pending = c.status === 'pending';
+          return (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${color}22`, border: `1px solid ${pending ? '#555' : color}`, borderRadius: 20, padding: '5px 12px' }}>
+              <div style={{ width: 18, height: 18, borderRadius: '50%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#000', fontFamily: "'Bebas Neue'" }}>
+                {name[0]?.toUpperCase()}
+              </div>
+              <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: pending ? '#666' : '#fff' }}>
+                {name}{pending ? ' · pending' : ''}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    )}
+
+    {/* Search input */}
+    <div style={{ position: 'relative' }}>
+      <input
+        style={{ ...inputStyle, marginBottom: 0, paddingRight: 40 }}
+        placeholder="Search username or enter email to invite..."
+        value={companionSearch}
+        onChange={e => searchCompanions(e.target.value)}
+      />
+      {companionSearching && (
+        <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: C.teal }}>...</span>
+      )}
+    </div>
+
+    {/* Results */}
+    {companionResults.length > 0 && (
+      <div style={{ background: '#000', border: '1px solid #222', borderRadius: 6, marginTop: 4, overflow: 'hidden' }}>
+        {companionResults.map((r, i) => (
+          <div
+            key={i}
+            onClick={() => r.type === 'user' ? addTRCompanion(r) : inviteByEmail(r.value)}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', cursor: 'pointer', borderBottom: i < companionResults.length - 1 ? '1px solid #111' : 'none', transition: 'background 0.15s' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#111'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            {r.type === 'user' ? (
+              <>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: r.avatar_color || C.teal, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#000', fontFamily: "'Bebas Neue'" }}>
+                  {r.username[0]?.toUpperCase()}
+                </div>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: '#fff' }}>{r.username}</span>
+                <span style={{ marginLeft: 'auto', fontFamily: "'Space Mono'", fontSize: 8, color: C.teal }}>+ TAG</span>
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize: 14 }}>✉️</span>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: '#fff' }}>{r.value}</span>
+                <span style={{ marginLeft: 'auto', fontFamily: "'Space Mono'", fontSize: 8, color: C.gold }}>SEND INVITE</span>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    )}
+
+    {companionAdding && (
+      <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, marginTop: 8 }}>SYNCING...</div>
+    )}
+  </div>
+)}
+
               {/* LEFT COLUMN: INTEL */}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 15 }}>
