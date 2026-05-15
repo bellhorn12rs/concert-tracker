@@ -9002,33 +9002,42 @@ const inviteByEmail = async (email) => {
     }
   }, [concert]);
 
-  // ADD THIS RIGHT HERE:
   useEffect(() => {
-    if (!concert || concert === 'new') return;
-    const fetchCompanions = async () => {
-  const { data } = await supabase
-    .from('show_companions')
-    .select('id, status, invitee_email, invitee_user_id')
-    .eq('show_id', concert.id);
-  
-  if (!data) return;
+  if (!concert || concert === 'new') return;
+  const fetchCompanions = async () => {
+    const { data } = await supabase
+      .from('show_companions')
+      .select('id, status, invitee_email, invitee_user_id')
+      .eq('show_id', concert.id);
 
-  const enriched = await Promise.all(data.map(async (c) => {
-    if (c.invitee_user_id) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('username, avatar_color')
-        .eq('id', c.invitee_user_id)
-        .single();
-      return { ...c, invitee_username: profile?.username, invitee_color: profile?.avatar_color };
-    }
-    return c;
-  }));
+    if (!data) return;
 
-  setCompanions(enriched);
-};
-    fetchCompanions();
-  }, [concert]);
+    const { data: { session } } = await supabase.auth.getSession();
+
+    const enriched = await Promise.all(data.map(async (c) => {
+      if (c.invitee_user_id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username, avatar_color')
+          .eq('id', c.invitee_user_id)
+          .single();
+        return { ...c, invitee_username: profile?.username, invitee_color: profile?.avatar_color };
+      }
+      return c;
+    }));
+
+    const unique = enriched.filter((c, idx, self) =>
+      c.invitee_user_id !== session?.user?.id &&
+      idx === self.findIndex(x =>
+        x.invitee_user_id === c.invitee_user_id &&
+        x.invitee_email === c.invitee_email
+      )
+    );
+
+    setCompanions(unique);
+  };
+  fetchCompanions();
+}, [concert]);
 
   const gateBtn = (color) => ({
     background: hexToRgba(color, 0.1), border: `1px solid ${color}`, color: '#fff',
