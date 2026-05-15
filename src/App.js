@@ -5860,9 +5860,9 @@ useEffect(() => {
             </React.Fragment>
           ))}
         </div>
-        
+
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px', flexWrap: 'wrap' }}>
-          style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: primaryColor, fontWeight: 900 }}>{fmtDateShort(event.date)}</div>
+          <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: primaryColor, fontWeight: 900 }}>{fmtDateShort(event.date)}</div>
           <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.1)' }} />
           <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>{event.venue?.toUpperCase()}</div>
         </div>
@@ -5882,21 +5882,6 @@ useEffect(() => {
         )}
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px', flexWrap: 'wrap', marginTop: 10 }}>
-          
-{rowCompanions.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray, letterSpacing: 1 }}>WITH</span>
-              {rowCompanions.map((c, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, background: `${c.color || C.teal}22`, border: `1px solid ${c.color || C.teal}`, borderRadius: 20, padding: '3px 10px' }}>
-                  <div style={{ width: 14, height: 14, borderRadius: '50%', background: c.color || C.teal, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#000', fontFamily: "'Bebas Neue'" }}>
-                    {c.username[0]?.toUpperCase()}
-                  </div>
-                  <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff' }}>{c.username}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* 🟢 THE CLONE BUTTON */}
           {isSpectator && !isAdmin && (
             <button
