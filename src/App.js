@@ -9423,8 +9423,7 @@ const inviteByEmail = async (email) => {
                     </div>
                   )}
                 </div>
-
-                {/* Save/Delete buttons */}
+{/* Save/Delete buttons */}
                 <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <button 
                     onClick={handleSave}
@@ -9443,7 +9442,77 @@ const inviteByEmail = async (email) => {
                   )}
                 </div>
               </div>
-            </div>
+            </div>{/* END GRID */}
+
+            {/* ATTENDED WITH */}
+            {concert !== 'new' && (
+              <div style={{ marginTop: 24, borderTop: '1px solid #1a1a1a', paddingTop: 20 }}>
+                <label style={{ ...labelStyle, marginBottom: 12 }}>// ATTENDED WITH</label>
+                {companions.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                    {companions.map((c, i) => {
+                      const name = c.profiles?.username || c.invitee_email || 'Unknown';
+                      const color = c.profiles?.avatar_color || '#555';
+                      const pending = c.status === 'pending';
+                      return (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${color}22`, border: `1px solid ${pending ? '#555' : color}`, borderRadius: 20, padding: '5px 12px' }}>
+                          <div style={{ width: 18, height: 18, borderRadius: '50%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#000', fontFamily: "'Bebas Neue'" }}>
+                            {name[0]?.toUpperCase()}
+                          </div>
+                          <span style={{ fontFamily: "'Space Mono'", fontSize: 9, color: pending ? '#666' : '#fff' }}>
+                            {name}{pending ? ' · pending' : ''}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <div style={{ position: 'relative' }}>
+                  <input
+                    style={{ ...inputStyle, marginBottom: 0, paddingRight: 40 }}
+                    placeholder="Search username or enter email to invite..."
+                    value={companionSearch}
+                    onChange={e => searchCompanions(e.target.value)}
+                  />
+                  {companionSearching && (
+                    <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: C.teal }}>...</span>
+                  )}
+                </div>
+                {companionResults.length > 0 && (
+                  <div style={{ background: '#000', border: '1px solid #222', borderRadius: 6, marginTop: 4, overflow: 'hidden' }}>
+                    {companionResults.map((r, i) => (
+                      <div
+                        key={i}
+                        onClick={() => r.type === 'user' ? addTRCompanion(r) : inviteByEmail(r.value)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', cursor: 'pointer', borderBottom: i < companionResults.length - 1 ? '1px solid #111' : 'none' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#111'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        {r.type === 'user' ? (
+                          <>
+                            <div style={{ width: 24, height: 24, borderRadius: '50%', background: r.avatar_color || C.teal, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#000', fontFamily: "'Bebas Neue'" }}>
+                              {r.username[0]?.toUpperCase()}
+                            </div>
+                            <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: '#fff' }}>{r.username}</span>
+                            <span style={{ marginLeft: 'auto', fontFamily: "'Space Mono'", fontSize: 8, color: C.teal }}>+ TAG</span>
+                          </>
+                        ) : (
+                          <>
+                            <span style={{ fontSize: 14 }}>✉️</span>
+                            <span style={{ fontFamily: "'Space Mono'", fontSize: 10, color: '#fff' }}>{r.value}</span>
+                            <span style={{ marginLeft: 'auto', fontFamily: "'Space Mono'", fontSize: 8, color: C.gold }}>SEND INVITE</span>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {companionAdding && (
+                  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.teal, marginTop: 8 }}>SYNCING...</div>
+                )}
+              </div>
+            )}
+
           </div>
         )}
       </div>
