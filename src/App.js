@@ -3584,71 +3584,94 @@ const handleExport = async () => {
   try {
     const card = cardRef.current;
     
-    // 🟢 SAVE original styles
-    const originalStyles = {
+    // ── 1. SAVE ALL ORIGINAL STYLES ──────────────────────────────
+    const originalCardStyles = {
       background: card.style.background,
       backgroundImage: card.style.backgroundImage,
-      backdropFilter: card.style.backdropFilter
+      backdropFilter: card.style.backdropFilter,
     };
-    
-    // 🟢 FORCE solid dark background for export
+
+    const allEls = card.querySelectorAll('*');
+    const originalElStyles = Array.from(allEls).map(el => ({
+      filter: el.style.filter,
+      backdropFilter: el.style.backdropFilter,
+      background: el.style.background,
+      opacity: el.style.opacity,
+    }));
+
+    // ── 2. FORCE CLEAN RENDER STATE ───────────────────────────────
     card.style.background = `linear-gradient(135deg, #1a1a22 0%, ${hexToRgba(gc, 0.2)} 100%)`;
     card.style.backgroundImage = 'none';
     card.style.backdropFilter = 'none';
-    
-    // Also fix any nested transparent elements
-    const allDivs = card.querySelectorAll('div');
-    const originalBgs = [];
-    allDivs.forEach((div, i) => {
-      originalBgs[i] = div.style.background;
-      if (div.style.background && div.style.background.includes('rgba')) {
-        // Make semi-transparent backgrounds more opaque
-        div.style.background = div.style.background.replace(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/g, 'rgba($1, $2, $3, 0.95)');
+
+    allEls.forEach(el => {
+      // Remove all blurs
+      if (el.style.filter) el.style.filter = 'none';
+      if (el.style.backdropFilter) el.style.backdropFilter = 'none';
+      // Make semi-transparent backgrounds opaque
+      if (el.style.background?.includes('rgba')) {
+        el.style.background = el.style.background.replace(
+          /rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/g,
+          'rgba($1, $2, $3, 0.95)'
+        );
+      }
+      // Remove any dimming overlays
+      if (el.style.opacity && parseFloat(el.style.opacity) < 0.5) {
+        el.style.opacity = '1';
       }
     });
-    
-    // Wait for images
+
+    // ── 3. WAIT FOR IMAGES ────────────────────────────────────────
     const images = card.querySelectorAll('img');
     await Promise.all(
       Array.from(images).map(img => {
-        if (img.complete) return Promise.resolve();
-        return new Promise((resolve) => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise(resolve => {
           img.onload = resolve;
           img.onerror = resolve;
+          setTimeout(resolve, 3000); // max wait 3s per image
         });
       })
     );
-    
+
+    // ── 4. SETTLE DELAY ───────────────────────────────────────────
+    await new Promise(r => setTimeout(r, 400));
+
+    // ── 5. CAPTURE ────────────────────────────────────────────────
     const html2canvas = (await import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm')).default;
-    
+
     const canvas = await html2canvas(card, {
-      backgroundColor: '#000000',
+      backgroundColor: '#0a0a0f',
       scale: 2,
       logging: false,
       useCORS: true,
-      allowTaint: true
+      allowTaint: true,
+      removeContainer: true,
     });
-    
-    // 🟢 RESTORE everything
-    card.style.background = originalStyles.background;
-    card.style.backgroundImage = originalStyles.backgroundImage;
-    card.style.backdropFilter = originalStyles.backdropFilter;
-    allDivs.forEach((div, i) => {
-      div.style.background = originalBgs[i];
+
+    // ── 6. RESTORE ALL ORIGINAL STYLES ───────────────────────────
+    card.style.background = originalCardStyles.background;
+    card.style.backgroundImage = originalCardStyles.backgroundImage;
+    card.style.backdropFilter = originalCardStyles.backdropFilter;
+
+    allEls.forEach((el, i) => {
+      el.style.filter = originalElStyles[i].filter;
+      el.style.backdropFilter = originalElStyles[i].backdropFilter;
+      el.style.background = originalElStyles[i].background;
+      el.style.opacity = originalElStyles[i].opacity;
     });
-    
+
+    // ── 7. DOWNLOAD ───────────────────────────────────────────────
     const link = document.createElement('a');
     link.download = `${selectedData.artist.replace(/\s+/g, '-')}-archive.png`;
     link.href = canvas.toDataURL('image/png', 1.0);
     link.click();
-    
-    alert(`✅ EXPORTED`);
+
   } catch (err) {
-    console.error(err);
-    alert('Export failed');
+    console.error('Export failed:', err);
+    alert('Export failed: ' + err.message);
   }
 };
-
   return (
     <div 
       ref={cardRef}
