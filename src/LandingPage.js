@@ -28,6 +28,8 @@ export default function LandingPage({
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [inviteToken, setInviteToken] = useState(null);
+  const [inviteShow, setInviteShow] = useState(null);
   const [featuredIdx, setFeaturedIdx] = useState(0);
   const [tickerPaused, setTickerPaused] = useState(false);
   const [recentUsers, setRecentUsers] = useState([]);
@@ -45,6 +47,24 @@ export default function LandingPage({
     };
     fetchShows();
   }, []);
+
+  useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  if (!token) return;
+  setInviteToken(token);
+  setMode('signup');
+  const fetchInviteDetails = async () => {
+    const { data } = await supabase
+      .from('show_companions')
+      .select('show_id, shows(artist, date, venue, city, state)')
+      .eq('invite_token', token)
+      .eq('status', 'pending')
+      .single();
+    if (data?.shows) setInviteShow(data.shows);
+  };
+  fetchInviteDetails();
+}, []);
 
   // ─── ERIC'S DEMO ARTIFACTS (for the rotating hero image + before/after section) ───
   const [ericArtifacts, setEricArtifacts] = useState([]);
@@ -143,39 +163,56 @@ export default function LandingPage({
 
   const featuredImg = artifacts[featuredIdx]?.image_url?.split(',')[0] || null;
 
+const processInviteToken = async (userId, token) => {
+  if (!token || !userId) return;
+  try {
+    await supabase.rpc('claim_companion_invite', {
+      p_token: token,
+      p_user_id: userId,
+    });
+    window.history.replaceState({}, '', '/');
+    setInviteToken(null);
+    setInviteShow(null);
+  } catch (err) {
+    console.error('Failed to claim invite:', err.message);
+  }
+};
+
   // ─── AUTH HANDLERS ───
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage('');
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setMessage('Login failed: ' + error.message);
-      setLoading(false);
-    } else if (data?.session) {
-      onEnterArchive();
-    }
-  };
+  e.preventDefault();
+  setLoading(true);
+  setMessage('');
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    setMessage('Login failed: ' + error.message);
+    setLoading(false);
+  } else if (data?.session) {
+    await processInviteToken(data.session.user.id, inviteToken);
+    onEnterArchive();
+  }
+};
   
   const handleSignup = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage('');
-    const { data, error } = await supabase.auth.signUp({
-      email, password,
-      options: {
-        data: { username },
-        emailRedirectTo: 'https://concert-tracker-eight.vercel.app'
-      }
-    });
-    if (error) {
-      setMessage('Signup failed: ' + error.message);
-    } else {
-      setMessage('Welcome to the Museum! Redirecting you now...');
-      setTimeout(() => { onEnterArchive(); }, 1500);
+  e.preventDefault();
+  setLoading(true);
+  setMessage('');
+  const { data, error } = await supabase.auth.signUp({
+    email, password,
+    options: {
+      data: { username },
+      emailRedirectTo: 'https://concert-tracker-eight.vercel.app'
     }
-    setLoading(false);
-  };
+  });
+  if (error) {
+    setMessage('Signup failed: ' + error.message);
+  } else {
+    await processInviteToken(data.user?.id, inviteToken);
+    setMessage('Welcome to the Museum! Redirecting you now...');
+    setTimeout(() => { onEnterArchive(); }, 1500);
+  }
+  setLoading(false);
+};
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#fff', fontFamily: "'Space Mono', monospace", overflowX: 'hidden', position: 'relative' }}>
@@ -667,15 +704,32 @@ export default function LandingPage({
             <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2rem', color: TEAL, marginBottom: 6, letterSpacing: 3 }}>
               {mode === 'login' ? 'Welcome Back' : 'Create Your Archive'}
             </div>
-            <div style={{ fontSize: 9, color: GRAY, marginBottom: 28, letterSpacing: 2 }}>
-              {mode === 'login' ? 'Log in to access your collection' : 'Sign up free - no credit card required'}
-            </div>
+            <div style={{ fontSize: 9, color: GRAY, marginBottom: inviteShow ? 16 : 28, letterSpacing: 2 }}>
+  {mode === 'login' ? 'Log in to access your collection' : 'Sign up free - no credit card required'}
+</div>
 
-            {message && (
-              <div style={{ background: message.includes('Welcome') ? 'rgba(0,229,204,0.1)' : 'rgba(255,68,68,0.1)', border: `1px solid ${message.includes('Welcome') ? TEAL : '#ff4466'}`, borderRadius: 4, padding: '10px 14px', fontSize: 9, color: message.includes('Welcome') ? TEAL : '#ff4466', marginBottom: 20, letterSpacing: 1, lineHeight: 1.6 }}>
-                {message}
-              </div>
-            )}
+{inviteShow && (
+  <div style={{ background: 'rgba(0,229,204,0.08)', border: '1px solid rgba(0,229,204,0.3)', borderRadius: 8, padding: '12px 16px', marginBottom: 20 }}>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: TEAL, letterSpacing: 1, marginBottom: 4 }}>
+      🎵 YOU WERE TAGGED AT A SHOW
+    </div>
+    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.2rem', color: '#fff', letterSpacing: 1 }}>
+      {inviteShow.artist}
+    </div>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: GRAY }}>
+      {new Date(inviteShow.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} · {inviteShow.venue}
+    </div>
+    <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: TEAL, marginTop: 6 }}>
+      This show will be added to your archive automatically.
+    </div>
+  </div>
+)}
+
+{message && (
+  <div style={{ background: message.includes('Welcome') ? 'rgba(0,229,204,0.1)' : 'rgba(255,68,68,0.1)', border: `1px solid ${message.includes('Welcome') ? TEAL : '#ff4466'}`, borderRadius: 4, padding: '10px 14px', fontSize: 9, color: message.includes('Welcome') ? TEAL : '#ff4466', marginBottom: 20, letterSpacing: 1, lineHeight: 1.6 }}>
+    {message}
+  </div>
+)}
 
             <form onSubmit={mode === 'login' ? handleLogin : handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {mode === 'signup' && (

@@ -11628,7 +11628,7 @@ function usePhotoPrivacy() {
 }
 
 
-function HighlightStage({ concerts, session, posters, userArtifacts, isAdmin, onOpenDetail }) {
+function HighlightStage({ concerts, session, posters, userArtifacts, isAdmin, onOpenDetail, isMobile }) {
   const [highlights, setHighlights] = useState([]);
   const [addingToSlot, setAddingToSlot] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -11856,7 +11856,7 @@ useEffect(() => {
         ))}
 
         {/* VHS CARD GRID */}
-        <div style={{ position: 'absolute', top: 22, left: 40, right: 40, bottom: 28, zIndex: 5, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gridTemplateRows: '1fr 1fr', gap: 6, padding: '4px 0' }}>
+<div style={{ position: 'absolute', top: 22, left: isMobile ? 10 : 40, right: isMobile ? 10 : 40, bottom: 28, zIndex: 5, display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', gridTemplateRows: isMobile ? 'repeat(5, 1fr)' : '1fr 1fr', gap: 6, padding: '4px 0' }}>
           {slots.map((slot, i) => {
             const tapeColor = slot ? getTapeColor(slot.shows) : 'rgba(255,255,255,0.08)';
             const artist = slot ? (slot.shows?.artist || slot.shows?.festival_name || 'SHOW').toUpperCase() : null;
