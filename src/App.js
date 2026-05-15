@@ -5814,7 +5814,7 @@ useEffect(() => {
       {!isMobile && (
         <div style={{
           position: 'absolute', left: '-2%', top: '-10%', width: '100%', height: '120%',
-          fontFamily: "'Bebas Neue'", fontSize: '22rem', color: primaryColor, opacity: 0.05, 
+          fontFamily: "'Bebas Neue'", fontSize: '22rem', color: primaryColor, opacity: 0.18, 
           whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 0, letterSpacing: '-12px', 
           lineHeight: 0.8, display: 'flex', alignItems: 'flex-start',
           WebkitMaskImage: 'linear-gradient(to right, black 20%, transparent 80%)',
@@ -5862,9 +5862,26 @@ useEffect(() => {
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px', flexWrap: 'wrap' }}>
-          <div style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: primaryColor, fontWeight: 900 }}>{fmtDateShort(event.date)}</div>
+          style={{ fontFamily: "'Space Mono'", fontSize: '12px', color: primaryColor, fontWeight: 900 }}>{fmtDateShort(event.date)}</div>
           <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.1)' }} />
           <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>{event.venue?.toUpperCase()}</div>
+        </div>
+
+        {rowCompanions.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray, letterSpacing: 1 }}>WITH</span>
+            {rowCompanions.map((c, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, background: `${c.color || C.teal}22`, border: `1px solid ${c.color || C.teal}`, borderRadius: 20, padding: '3px 10px' }}>
+                <div style={{ width: 14, height: 14, borderRadius: '50%', background: c.color || C.teal, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#000', fontFamily: "'Bebas Neue'" }}>
+                  {c.username[0]?.toUpperCase()}
+                </div>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#fff' }}>{c.username}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: '15px', flexWrap: 'wrap', marginTop: 10 }}>
           
 {rowCompanions.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
@@ -5948,18 +5965,17 @@ useEffect(() => {
             justifyContent: isMobile ? 'center' : 'flex-start'
           }}>
             {finalPhotos.map((url, pIdx) => (
-  <PersonalPolaroid 
-    key={`${event.id}-p-${pIdx}`}
-    src={url} 
-    caption={venueLabel?.split(',')[0].toUpperCase()}
-    date={event.date}
-    venue={event.venue}
-    index={pIdx}
-    shouldBlur={shouldBlurPhoto ? shouldBlurPhoto(url) : false}
-    isPublic={shouldBlurPhoto ? !shouldBlurPhoto(url) : true}
-    isAdmin={currentUserId}
-  />
-))}
+              <PersonalPolaroid 
+                key={`${event.id}-p-${pIdx}`}
+                src={url} 
+                caption={venueLabel?.split(',')[0].toUpperCase()}
+                date={event.date}
+                venue={event.venue}
+                index={pIdx}
+                shouldBlur={shouldBlurPhoto ? shouldBlurPhoto(url) : false}
+                isPublic={shouldBlurPhoto ? !shouldBlurPhoto(url) : true}
+                isAdmin={currentUserId}
+              />
             ))}
           </div>
         </div>
