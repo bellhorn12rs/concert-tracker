@@ -11818,34 +11818,128 @@ function CollaborationWebTab({ onNavigateToUser }) {
 
             <style>{`@keyframes orbitPulse { 0%, 100% { box-shadow: 0 0 30px var(--node-color); } 50% { box-shadow: 0 0 50px var(--node-color); } }`}</style>
 
-            {/* Nodes */}
             {nodes.map(node => {
-              const isYou = node.id === 'you';
-              if (!node.x || !node.y) return null;
-              const isHovered = hoveredNode?.id === node.id;
+  const isYou = node.id === 'you';
+  if (!node.x || !node.y) return null;
+  const isHovered = hoveredNode?.id === node.id;
+  const pad = 32;
+  const total = node.size + pad * 2;
+  const cx = total / 2;
+  const cy = total / 2;
+  const r = node.size / 2;
+  const arcR = r + 10;
 
-              return (
-                <div
-                  key={node.id}
-                  onClick={() => !isYou && setDetailView(collaborators.find(c => c.id === node.id))}
-                  onMouseEnter={() => !isYou && setHoveredNode(node)}
-                  onMouseLeave={() => setHoveredNode(null)}
-                  style={{ position: 'absolute', left: node.x - (node.size / 2), top: node.y - (node.size / 2), width: node.size, height: node.size, borderRadius: '50%', background: node.avatar ? `url(${node.avatar}) center/cover` : node.color, border: `3px solid ${node.color}`, boxShadow: isHovered ? `0 0 60px ${node.color}` : `0 0 35px ${node.color}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: isYou ? 'flex-end' : 'center', fontFamily: "'Space Mono'", color: node.avatar ? '#fff' : '#000', fontWeight: 900, cursor: isYou ? 'default' : 'pointer', zIndex: isYou ? 100 : (isHovered ? 90 : 80), userSelect: 'none', '--node-color': node.color, animation: 'orbitPulse 2s ease-in-out infinite', gap: '4px', textShadow: node.avatar ? '0 2px 4px rgba(0,0,0,0.8)' : 'none', transform: isHovered ? 'scale(1.1)' : 'scale(1)', transition: 'transform 0.15s ease, box-shadow 0.15s ease' }}
-                >
-                  {!isYou && (
-                    <div style={{ fontSize: node.size > 90 ? (isMobile ? 11 : 16) : (isMobile ? 8 : 11) }}>{node.label.toUpperCase()}</div>
-                  )}
-                  <div style={{ position: 'absolute', bottom: '4px', left: '4px', background: 'rgba(0,0,0,0.85)', borderRadius: '12px', padding: node.size > 90 ? '4px 10px' : '3px 7px', fontFamily: "'Bebas Neue'", fontSize: node.size > 90 ? '1.2rem' : (isMobile ? '0.85rem' : '1rem'), color: '#ffcc00', border: '1px solid rgba(0,0,0,0.9)', boxShadow: '0 2px 6px rgba(0,0,0,0.5)' }}>
-  {node.count}
-</div>
-                  {!isYou && node.daysSince !== undefined && (
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? 5 : 6, color: node.avatar ? '#fff' : 'rgba(0,0,0,0.5)', textShadow: node.avatar ? '0 1px 2px rgba(0,0,0,0.8)' : 'none' }}>
-                      {node.daysSince < 30 ? 'RECENT' : node.daysSince < 180 ? 'MONTHS' : 'YEARS'}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+  return (
+    <div
+      key={node.id}
+      onClick={() => !isYou && setDetailView(collaborators.find(c => c.id === node.id))}
+      onMouseEnter={() => !isYou && setHoveredNode(node)}
+      onMouseLeave={() => setHoveredNode(null)}
+      style={{
+        position: 'absolute',
+        left: node.x - cx,
+        top: node.y - cy,
+        width: total,
+        height: total,
+        cursor: isYou ? 'default' : 'pointer',
+        zIndex: isYou ? 100 : (isHovered ? 90 : 80),
+        transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+        transition: 'transform 0.15s ease',
+      }}
+    >
+      {/* The circle */}
+      <div style={{
+        position: 'absolute',
+        left: pad,
+        top: pad,
+        width: node.size,
+        height: node.size,
+        borderRadius: '50%',
+        background: node.avatar ? `url(${node.avatar}) center/cover` : node.color,
+        border: `3px solid ${node.color}`,
+        boxShadow: isHovered ? `0 0 60px ${node.color}` : `0 0 35px ${node.color}`,
+        '--node-color': node.color,
+        animation: 'orbitPulse 2s ease-in-out infinite',
+      }} />
+
+      {/* SVG curved labels + count outside */}
+      <svg
+        width={total}
+        height={total}
+        style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible', pointerEvents: 'none' }}
+      >
+        <defs>
+          {/* Top arc: username curves above circle */}
+          <path
+            id={`arc-top-${node.id}`}
+            d={`M ${cx - arcR},${cy} A ${arcR},${arcR} 0 0,1 ${cx + arcR},${cy}`}
+            fill="none"
+          />
+          {/* Bottom arc: recency curves below circle */}
+          <path
+            id={`arc-bot-${node.id}`}
+            d={`M ${cx - arcR},${cy} A ${arcR},${arcR} 0 0,0 ${cx + arcR},${cy}`}
+            fill="none"
+          />
+        </defs>
+
+        {/* Username — curved above */}
+        <text
+          fontFamily="'Space Mono'"
+          fontSize={isYou ? 11 : Math.min(10, Math.max(7, node.size * 0.12))}
+          fill={node.color}
+          fontWeight="900"
+          letterSpacing="1.5"
+          style={{ filter: `drop-shadow(0 0 4px ${node.color})` }}
+        >
+          <textPath href={`#arc-top-${node.id}`} startOffset="50%" textAnchor="middle">
+            {node.label.toUpperCase()}
+          </textPath>
+        </text>
+
+        {/* Recency — curved below (not for center) */}
+        {!isYou && node.daysSince !== undefined && (
+          <text
+            fontFamily="'Space Mono'"
+            fontSize={Math.max(6, node.size * 0.08)}
+            fill={hexToRgba(node.color, 0.55)}
+            letterSpacing="1"
+          >
+            <textPath href={`#arc-bot-${node.id}`} startOffset="50%" textAnchor="middle">
+              {node.daysSince < 30 ? 'RECENT' : node.daysSince < 180 ? 'MONTHS AGO' : 'YEARS AGO'}
+            </textPath>
+          </text>
+        )}
+
+        {/* Count badge — outside circle, bottom-left */}
+        {!isYou && (
+          <>
+            <rect
+              x={pad - 18}
+              y={cy + r - 2}
+              width={node.size > 90 ? 36 : 28}
+              height={node.size > 90 ? 22 : 18}
+              rx="8"
+              fill="rgba(0,0,0,0.9)"
+              stroke="rgba(0,0,0,0.5)"
+              strokeWidth="1"
+            />
+            <text
+              x={pad - 18 + (node.size > 90 ? 18 : 14)}
+              y={cy + r + (node.size > 90 ? 15 : 12)}
+              textAnchor="middle"
+              fontFamily="'Bebas Neue'"
+              fontSize={node.size > 90 ? 16 : 13}
+              fill="#ffcc00"
+            >
+              {node.count}
+            </text>
+          </>
+        )}
+      </svg>
+    </div>
+  );
+})}
 
             {/* Hover tooltip */}
             {hoveredNode && !hoveredNode.isCenter && (() => {
