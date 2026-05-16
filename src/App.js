@@ -12911,33 +12911,36 @@ export default function App() {
 
   // EFFECT A: The URL Listener (Watches the Address Bar)
   useEffect(() => {
-    const syncView = async () => {
-      const hash = window.location.hash;
-      const match = hash.match(/^#\/u\/(.+)$/);
-      
-      if (match) {
-        const username = match[1];
-        // 1. Find the UUID for the username in the URL
-        const { data } = await supabase.from('profiles').select('id').eq('username', username).single();
-        if (data) {
-          setViewingUser(data.id);
-          setViewingUsername(username);
-          setOnLanding(false);
-        }
-      } else {
-        // 2. No username in URL? Back to your own archive.
+  const syncView = async () => {
+    const hash = window.location.hash;
+    const match = hash.match(/^#\/u\/(.+)$/);
+    
+    if (match) {
+      const username = match[1];
+      // Only run if we don't already have this user loaded
+      if (username === viewingUsername) return;
+      const { data } = await supabase.from('profiles').select('id').eq('username', username).single();
+      if (data) {
+        setViewingUser(data.id);
+        setViewingUsername(username);
+        setConcerts([]);
+        setOnLanding(false);
+      }
+    } else {
+      // Only clear if we were actually viewing someone
+      if (viewingUser) {
         setViewingUser(null);
         setViewingUsername(null);
+        setConcerts([]);
       }
-    };
+    }
+  };
 
-    // Listen for the "Back" button or Link clicks
-    window.addEventListener('hashchange', syncView);
-    syncView(); 
+  window.addEventListener('hashchange', syncView);
+  syncView();
 
-    // Clean up when the app closes
-    return () => window.removeEventListener('hashchange', syncView);
-  }, [session]); // Re-sync if the user logs in/out
+  return () => window.removeEventListener('hashchange', syncView);
+}, [session, viewingUsername, viewingUser]);
 
   // EFFECT B: The Data Refresher (Loads the Shows)
   useEffect(() => {
@@ -13444,11 +13447,25 @@ const getCuratorTitle = (stats, concerts, preferredQualifier) => {
   }, []);
 
 // ── THE TELEPORT BRIDGE ──
- const handleNavigateToUser = (targetUsername) => {
-  window.location.hash = `#/u/${targetUsername}`;
+ const handleNavigateToUser = async (targetUsername) => {
+  // 1. Look up the UUID first
+  const { data } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('username', targetUsername)
+    .single();
+
+  if (!data) return;
+
+  // 2. Set state directly — don't rely on hash listener timing
+  setViewingUser(data.id);
+  setViewingUsername(targetUsername);
   setActiveTab('dashboard');
-  setOnLanding(false); // ← ADD THIS LINE
-  window.dispatchEvent(new HashChangeEvent('hashchange'));
+  setOnLanding(false);
+  setConcerts([]);  // clear immediately so stale data doesn't flash
+
+  // 3. Update URL for bookmarking/sharing but don't rely on it to trigger fetch
+  window.location.hash = `#/u/${targetUsername}`;
 };
 
 const handleSave = async (id, payload) => {
