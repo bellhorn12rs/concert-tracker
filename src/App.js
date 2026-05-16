@@ -5396,6 +5396,42 @@ function ByDayTab({
 }) {
   const isMobile = window.innerWidth < 768;
   const [showJumpMenu, setShowJumpMenu] = useState(false);
+  const [allCompanions, setAllCompanions] = useState({});
+
+useEffect(() => {
+  if (!currentUserId || !dayGroups.length) return;
+  const fetchAllCompanions = async () => {
+    const showIds = dayGroups.map(s => s.id);
+    const { data } = await supabase
+      .from('show_companions')
+      .select('show_id, invitee_user_id, inviter_user_id, status')
+      .in('show_id', showIds)
+      .eq('status', 'accepted');
+    if (!data) return;
+    const profileIds = [...new Set(
+      data.map(c => c.invitee_user_id === currentUserId ? c.inviter_user_id : c.invitee_user_id)
+        .filter(id => id && id !== currentUserId)
+    )];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_color')
+      .in('id', profileIds);
+    const profileMap = {};
+    (profiles || []).forEach(p => { profileMap[p.id] = p; });
+    const grouped = {};
+    data.forEach(c => {
+      const otherId = c.invitee_user_id === currentUserId ? c.inviter_user_id : c.invitee_user_id;
+      if (!otherId || otherId === currentUserId) return;
+      if (!grouped[c.show_id]) grouped[c.show_id] = [];
+      const profile = profileMap[otherId];
+      if (profile && !grouped[c.show_id].some(x => x.id === otherId)) {
+        grouped[c.show_id].push({ id: otherId, username: profile.username, color: profile.avatar_color });
+      }
+    });
+    setAllCompanions(grouped);
+  };
+  fetchAllCompanions();
+}, [currentUserId, dayGroups]);
 
   // ─── 1. CLUSTERING LOGIC ───────────────────────────────────────────────────
   const clusters = useMemo(() => {
@@ -5539,6 +5575,7 @@ function ByDayTab({
   setSelectedSignals={setSelectedSignals}
   shouldBlurPhoto={shouldBlurPhoto}
   currentUserId={currentUserId}
+  companions={allCompanions[cluster.event?.id] || []}
 />
               </div>
             );
@@ -5606,6 +5643,7 @@ function ByDayTab({
   setSelectedSignals={setSelectedSignals}
   shouldBlurPhoto={shouldBlurPhoto}
   currentUserId={currentUserId}
+  companions={allCompanions[cluster.event?.id] || []}
 />
                 ))}
               </div>
@@ -5620,7 +5658,7 @@ function ByDayTab({
 
 // ─── 🖼️ THE SCRAPBOOK ROW COMPONENT (With "I Was There" Trigger) ─────────────
 
-function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null, shouldBlurPhoto, currentUserId }) {  // 🛡️ CRITICAL SAFETY GATES - Must be FIRST
+function ScrapbookRow({ event, idx, isAdmin, onEdit, genreMap, isClustered = false, clusterColor = null, shouldBlurPhoto, currentUserId, companions = [] }) {
   if (!event) {
     console.error('ScrapbookRow: event is null/undefined');
     return null;
@@ -5833,32 +5871,6 @@ const onSync = async () => {
   // Detect if we are on a curator's page (spectator mode)
   const isSpectator = window.location.hash.includes('#/u/');
 
-  const [rowCompanions, setRowCompanions] = useState([]);
-
-useEffect(() => {
-  if (!event?.id || !currentUserId) return;
-  const fetch = async () => {
-    const { data } = await supabase
-      .from('show_companions')
-      .select('invitee_user_id, inviter_user_id, status, invitee_email')
-      .eq('show_id', event.id)
-      .eq('status', 'accepted');
-    if (!data) return;
-    const enriched = await Promise.all(
-      [...new Map(
-        data
-          .map(c => c.invitee_user_id === currentUserId ? c.inviter_user_id : c.invitee_user_id)
-          .filter(id => id && id !== currentUserId)
-          .map(id => [id, id])
-      ).values()].map(async (uid) => {
-        const { data: p } = await supabase.from('profiles').select('username, avatar_color').eq('id', uid).single();
-        return p ? { username: p.username, color: p.avatar_color } : null;
-      })
-    );
-    setRowCompanions(enriched.filter(Boolean));
-  };
-  fetch();
-}, [event?.id, currentUserId]);
 
   return (
     <div style={{ 
@@ -5938,10 +5950,10 @@ boxShadow: `0 8px 32px rgba(0,0,0,0.7), 0 20px 60px ${hexToRgba(primaryColor, 0.
           <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gray }}>{event.venue?.toUpperCase()}</div>
         </div>
 
-        {rowCompanions.length > 0 && (
+        {companions.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
             <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gray, letterSpacing: 1 }}>WITH</span>
-            {rowCompanions.map((c, i) => (
+            {companions.map((c, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, background: `${c.color || C.teal}22`, border: `1px solid ${c.color || C.teal}`, borderRadius: 20, padding: '3px 10px' }}>
                 <div style={{ width: 14, height: 14, borderRadius: '50%', background: c.color || C.teal, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#000', fontFamily: "'Bebas Neue'" }}>
                   {c.username[0]?.toUpperCase()}
