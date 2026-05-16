@@ -1875,7 +1875,7 @@ function FriendsUpcomingMarquee({ session }) {
       ).join('   ★   ');
 
   return (
-    <div style={{ background: '#1a1a1a', borderRadius: 8, overflow: 'hidden', boxShadow: '0 0 0 4px #2a2a2a, 0 0 0 6px #333, 0 8px 32px rgba(0,0,0,0.8)' }}>
+<div style={{ background: '#fdfdfd', borderRadius: 8, overflow: 'hidden', boxShadow: '0 0 0 4px #e0e0e0, 0 0 0 6px #ccc, 0 8px 32px rgba(0,0,0,0.8)' }}>
 
       {/* Top bulb rail — gold */}
       <div style={{ background: '#111', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1886,80 +1886,79 @@ function FriendsUpcomingMarquee({ session }) {
 
       {/* Marquee body — inverted: light text on dark */}
       <div style={{ background: '#111', borderTop: '3px solid #f5f0e8', borderBottom: '3px solid #f5f0e8', padding: '10px 0', overflow: 'hidden' }}>
-  <div style={{ display: 'inline-block', animation: 'marquee 50s linear infinite', whiteSpace: 'nowrap', fontFamily: "'Bebas Neue'", fontSize: 18, fontWeight: 900, letterSpacing: '0.12em', color: '#f5f0e8' }}> {marqueeText} &nbsp;&nbsp;★&nbsp;&nbsp; {marqueeText} &nbsp;&nbsp;★&nbsp;&nbsp;
+  <div style={{ display: 'inline-block', animation: 'marquee 60s linear infinite', whiteSpace: 'nowrap', fontFamily: "'Bebas Neue'", fontSize: 18, fontWeight: 900, letterSpacing: '0.12em', color: '#f5f0e8' }}> {marqueeText} &nbsp;&nbsp;★&nbsp;&nbsp; {marqueeText} &nbsp;&nbsp;★&nbsp;&nbsp;
         </div>
       </div>
 
       {/* Header label */}
       <button style={{
-        width: '100%', background: `linear-gradient(90deg, rgba(255,204,0,0.08) 0%, rgba(255,204,0,0.18) 50%, rgba(255,204,0,0.08) 100%)`,
-        borderBottom: '1px solid #2a2a2a', borderTop: 'none', borderLeft: 'none', borderRight: 'none',
-        padding: '16px', cursor: 'default', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4
-      }}>
-        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: C.gold, letterSpacing: 2 }}>
-          {isEmpty ? 'NO FRIEND SIGNALS DETECTED' : `${friendShows.length} FRIEND SHOW${friendShows.length !== 1 ? 'S' : ''} ON THE HORIZON`}
-        </div>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#666', letterSpacing: 2 }}>
-          [ FRIEND FEED // LIVE UPDATES ]
-        </div>
-      </button>
+  width: '100%', background: `linear-gradient(90deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.08) 100%)`,
+  borderBottom: '1px solid #ccc', borderTop: 'none', borderLeft: 'none', borderRight: 'none',
+  padding: '16px', cursor: 'default', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4
+}}>
+  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#111', letterSpacing: 2 }}>
+    {isEmpty ? 'NO FRIEND SIGNALS DETECTED' : `${friendShows.length} FRIEND SHOW${friendShows.length !== 1 ? 'S' : ''} ON THE HORIZON`}
+  </div>
+  <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#555', letterSpacing: 2 }}>
+    [ FRIEND FEED // LIVE UPDATES ]
+  </div>
+</button>
 
       {/* Show list */}
-      <div style={{ padding: '0 16px 16px' }}>
-        <div style={{ maxHeight: 190, overflowY: 'auto' }}>
-          {friendShows.map(({ show, attendees }, i) => (
-            <div key={show.id || i} style={{
-              display: 'grid', gridTemplateColumns: 'auto 1fr auto',
-              alignItems: 'center', gap: 12, padding: '12px 0',
-              borderBottom: i === friendShows.length - 1 ? 'none' : `1px solid #1a1a1a`
-            }}>
-              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#888', whiteSpace: 'nowrap' }}>
-                {fmtDateShort(show.date)}
-              </div>
-
-              <div>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.15rem', color: C.gold, letterSpacing: '0.06em', lineHeight: 1 }}>
-                  {(show.artist || show.festival_name || 'TBA').toUpperCase()}
-                </div>
-                {show.venue && <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#555', marginTop: 1 }}>{show.venue}</div>}
-
-                {/* Friend avatar chips */}
-                <div style={{ display: 'flex', gap: 4, marginTop: 5, alignItems: 'center', flexWrap: 'wrap' }}>
-                  {attendees.map((att) => (
-                    <div key={att.id} title={att.username} style={{
-                      display: 'flex', alignItems: 'center', gap: 4,
-                      background: `${att.avatar_color || C.teal}22`,
-                      border: `1px solid ${att.avatar_color || C.teal}`,
-                      borderRadius: 20, padding: '2px 8px'
-                    }}>
-                      <div style={{
-                        width: 14, height: 14, borderRadius: '50%',
-                        background: att.avatar_color || C.teal,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontFamily: "'Bebas Neue'", fontSize: 8, color: '#000', fontWeight: 900
-                      }}>
-                        {att.username?.[0]?.toUpperCase()}
-                      </div>
-                      <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#fff' }}>
-                        {att.username}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold, background: 'rgba(255,204,0,0.12)', border: '1px solid rgba(255,204,0,0.3)', padding: '2px 6px', borderRadius: 3, whiteSpace: 'nowrap' }}>
-                {show.status || 'UPCOMING'}
-              </span>
-            </div>
-          ))}
-          {isEmpty && (
-            <div style={{ color: '#333', fontFamily: "'Space Mono'", fontSize: 9, textAlign: 'center', padding: '30px 20px', letterSpacing: '0.1em' }}>
-              FOLLOW FRIENDS FROM THE STATION TAB
-            </div>
-          )}
+      <div style={{ padding: '0 16px 16px', background: '#fdfdfd' }}>
+  <div style={{ maxHeight: 190, overflowY: 'auto' }}>
+    {friendShows.map(({ show, attendees }, i) => (
+      <div key={show.id || i} style={{
+        display: 'grid', gridTemplateColumns: 'auto 1fr auto',
+        alignItems: 'center', gap: 12, padding: '12px 0',
+        borderBottom: i === friendShows.length - 1 ? 'none' : '1px solid #ddd'
+      }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#555', whiteSpace: 'nowrap' }}>
+          {fmtDateShort(show.date)}
         </div>
+
+        <div>
+          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.15rem', color: '#111', letterSpacing: '0.06em', lineHeight: 1 }}>
+            {(show.artist || show.festival_name || 'TBA').toUpperCase()}
+          </div>
+          {show.venue && <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#888', marginTop: 1 }}>{show.venue}</div>}
+
+          <div style={{ display: 'flex', gap: 4, marginTop: 5, alignItems: 'center', flexWrap: 'wrap' }}>
+            {attendees.map((att) => (
+              <div key={att.id} title={att.username} style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                background: `${att.avatar_color || C.teal}22`,
+                border: `1px solid ${att.avatar_color || C.teal}`,
+                borderRadius: 20, padding: '2px 8px'
+              }}>
+                <div style={{
+                  width: 14, height: 14, borderRadius: '50%',
+                  background: att.avatar_color || C.teal,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: "'Bebas Neue'", fontSize: 8, color: '#000', fontWeight: 900
+                }}>
+                  {att.username?.[0]?.toUpperCase()}
+                </div>
+                <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#111' }}>
+                  {att.username}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#111', background: 'rgba(0,0,0,0.08)', border: '1px solid rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: 3, whiteSpace: 'nowrap' }}>
+          {show.status || 'UPCOMING'}
+        </span>
       </div>
+    ))}
+    {isEmpty && (
+      <div style={{ color: '#aaa', fontFamily: "'Space Mono'", fontSize: 9, textAlign: 'center', padding: '30px 20px', letterSpacing: '0.1em' }}>
+        FOLLOW FRIENDS FROM THE STATION TAB
+      </div>
+    )}
+  </div>
+</div>
 
       {/* Bottom bulb rail */}
       <div style={{ background: '#111', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
