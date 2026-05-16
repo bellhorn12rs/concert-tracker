@@ -5836,7 +5836,7 @@ const onSync = async () => {
   const [rowCompanions, setRowCompanions] = useState([]);
 
 useEffect(() => {
-  if (!event?.id || !currentUserId) return;
+  if (!event?.id || !currentUserId || window.innerWidth < 768) return;
   const fetch = async () => {
     const { data } = await supabase
       .from('show_companions')
