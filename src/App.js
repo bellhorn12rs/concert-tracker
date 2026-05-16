@@ -12261,7 +12261,7 @@ function usePhotoPrivacy() {
 }
 
 
-function HighlightStage({ concerts, session, posters, userArtifacts, isAdmin, onOpenDetail, isMobile }) {
+function HighlightStage({ concerts, session, posters, userArtifacts, isAdmin, onOpenDetail, isMobile, viewingUser }) {
   const [highlights, setHighlights] = useState([]);
   const [addingToSlot, setAddingToSlot] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -12269,7 +12269,7 @@ function HighlightStage({ concerts, session, posters, userArtifacts, isAdmin, on
   const [noteText, setNoteText] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const userId = session?.user?.id;
+  const userId = viewingUser || session?.user?.id;
 
   const fetchHighlights = useCallback(async () => {
     if (!userId) return;
@@ -14695,14 +14695,15 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
   <Card neon style={{ padding: 0, overflow: 'hidden', minHeight: isMobile ? 500 : 'auto' }}>
     <HighlightStage
-      concerts={concerts}
-      session={session}
-      posters={posters}
-      userArtifacts={userArtifacts}
-      isAdmin={isAdmin}
-      onOpenDetail={setHighlightDetail}
-      isMobile={isMobile}
-    />
+  concerts={concerts}
+  session={session}
+  posters={posters}
+  userArtifacts={userArtifacts}
+  isAdmin={isAdmin}
+  onOpenDetail={setHighlightDetail}
+  isMobile={isMobile}
+  viewingUser={viewingUser}
+/>
   </Card>
   <Card neon>
     <CardTitle>Sets Per Year by Venue</CardTitle>
