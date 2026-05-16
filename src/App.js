@@ -3485,45 +3485,91 @@ function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, cu
 
   useEffect(() => {
   if (!selectedData || !currentUserId) return;
-  const showIds = selectedData.shows.map(s => s.id);
 
   const fetchHofCompanions = async () => {
-    const BATCH = 8; // stay well under URL length limit
+    const BATCH = 8;
 
-    // Source 1: explicitly tagged companions
-    const companionRows = [];
-    for (let i = 0; i < showIds.length; i += BATCH) {
+    // Step 1: Get all unique dates from this artist's shows
+    const uniqueDates = [...new Set(selectedData.shows.map(s => s.date).filter(Boolean))];
+    if (!uniqueDates.length) return;
+
+    // Step 2: Fetch ALL shows on those dates — catches other users' separate entries
+    const allShowsOnDates = [];
+    for (let i = 0; i < uniqueDates.length; i += BATCH) {
       const { data } = await supabase
-        .from('show_companions')
-        .select('show_id, invitee_user_id, inviter_user_id, invitee_email')
-        .in('show_id', showIds.slice(i, i + BATCH))
-        .eq('status', 'accepted');
-      if (data) companionRows.push(...data);
+        .from('shows')
+        .select('id, date, festival_name, venue, is_festival')
+        .in('date', uniqueDates.slice(i, i + BATCH));
+      if (data) allShowsOnDates.push(...data);
     }
 
-    // Source 2: other users who independently logged the same show
+    // Step 3: For each of our shows, find all equivalent shows on that date
+    // Festival shows match by festival_name (fuzzy), solo shows match by venue
+    const originalToExpanded = {}; // our show_id -> [all matching show_ids]
+    selectedData.shows.forEach(myShow => {
+      const matches = allShowsOnDates.filter(s => {
+        if (s.date !== myShow.date) return false;
+        if (s.id === myShow.id) return true; // always include itself
+        if (myShow.is_festival && s.is_festival) {
+          const a = (s.festival_name || '').toLowerCase().trim();
+          const b = (myShow.festival_name || '').toLowerCase().trim();
+          return a && b && (a === b || a.includes(b) || b.includes(a));
+        } else if (!myShow.is_festival) {
+          const a = (s.venue || '').toLowerCase().trim();
+          const b = (myShow.venue || '').toLowerCase().trim();
+          return a && b && (a === b || a.includes(b) || b.includes(a));
+        }
+        return false;
+      });
+      originalToExpanded[myShow.id] = [...new Set(matches.map(m => m.id))];
+    });
+
+    // Step 4: Build reverse lookup: expanded_id -> [original_ids]
+    const expandedToOriginals = {};
+    Object.entries(originalToExpanded).forEach(([origId, expIds]) => {
+      expIds.forEach(expId => {
+        if (!expandedToOriginals[expId]) expandedToOriginals[expId] = [];
+        if (!expandedToOriginals[expId].includes(origId)) {
+          expandedToOriginals[expId].push(origId);
+        }
+      });
+    });
+
+    const allExpandedIds = Object.keys(expandedToOriginals);
+    if (!allExpandedIds.length) return;
+
+    // Step 5: Query attendances for all expanded show IDs
     const attendanceRows = [];
-    for (let i = 0; i < showIds.length; i += BATCH) {
+    for (let i = 0; i < allExpandedIds.length; i += BATCH) {
       const { data } = await supabase
         .from('attendances')
         .select('show_id, user_id')
-        .in('show_id', showIds.slice(i, i + BATCH))
+        .in('show_id', allExpandedIds.slice(i, i + BATCH))
         .neq('user_id', currentUserId)
         .eq('is_public', true);
       if (data) attendanceRows.push(...data);
     }
 
-    // Collect all other user IDs from both sources
-    const companionUserIds = companionRows
-      .map(c => c.invitee_user_id === currentUserId ? c.inviter_user_id : c.invitee_user_id)
-      .filter(id => id && id !== currentUserId);
+    // Step 6: Query show_companions too
+    const companionRows = [];
+    for (let i = 0; i < allExpandedIds.length; i += BATCH) {
+      const { data } = await supabase
+        .from('show_companions')
+        .select('show_id, invitee_user_id, inviter_user_id, invitee_email')
+        .in('show_id', allExpandedIds.slice(i, i + BATCH))
+        .eq('status', 'accepted');
+      if (data) companionRows.push(...data);
+    }
 
-    const attendanceUserIds = attendanceRows
-      .map(a => a.user_id)
-      .filter(id => id && id !== currentUserId);
+    // Step 7: Fetch profiles for all other users found
+    const allUserIds = [...new Set([
+      ...attendanceRows.map(a => a.user_id),
+      ...companionRows.map(c =>
+        c.invitee_user_id === currentUserId ? c.inviter_user_id : c.invitee_user_id
+      )
+    ].filter(id => id && id !== currentUserId))];
 
-    const allUserIds = [...new Set([...companionUserIds, ...attendanceUserIds])];
-    if (allUserIds.length === 0) return;
+    if (!allUserIds.length) return;
 
     const { data: profiles } = await supabase
       .from('profiles')
@@ -3533,34 +3579,36 @@ function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, cu
     const profileMap = {};
     (profiles || []).forEach(p => { profileMap[p.id] = p; });
 
+    // Step 8: Build grouped keyed by ORIGINAL show_id for timeline display
     const grouped = {};
-
-    const addEntry = (showId, entry) => {
-      if (!entry) return;
-      if (!grouped[showId]) grouped[showId] = [];
-      if (!grouped[showId].some(x => x.username === entry.username)) {
-        grouped[showId].push(entry);
+    const addEntry = (origId, entry) => {
+      if (!entry || !origId) return;
+      if (!grouped[origId]) grouped[origId] = [];
+      if (!grouped[origId].some(x => x.username === entry.username)) {
+        grouped[origId].push(entry);
       }
     };
 
-    // From show_companions
+    attendanceRows.forEach(a => {
+      const profile = profileMap[a.user_id];
+      if (!profile) return;
+      (expandedToOriginals[a.show_id] || []).forEach(origId => {
+        addEntry(origId, { username: profile.username, color: profile.avatar_color });
+      });
+    });
+
     companionRows.forEach(c => {
       const otherId = c.invitee_user_id === currentUserId
         ? c.inviter_user_id
         : c.invitee_user_id;
-      if (otherId && profileMap[otherId]) {
-        addEntry(c.show_id, { username: profileMap[otherId].username, color: profileMap[otherId].avatar_color });
-      } else if (c.invitee_email && c.invitee_user_id !== currentUserId) {
-        addEntry(c.show_id, { username: c.invitee_email.split('@')[0], color: '#555' });
-      }
-    });
-
-    // From attendances (catches anyone who logged the same show independently)
-    attendanceRows.forEach(a => {
-      const profile = profileMap[a.user_id];
-      if (profile) {
-        addEntry(a.show_id, { username: profile.username, color: profile.avatar_color });
-      }
+      const entry = otherId && profileMap[otherId]
+        ? { username: profileMap[otherId].username, color: profileMap[otherId].avatar_color }
+        : c.invitee_email
+          ? { username: c.invitee_email.split('@')[0], color: '#555' }
+          : null;
+      (expandedToOriginals[c.show_id] || []).forEach(origId => {
+        addEntry(origId, entry);
+      });
     });
 
     setHofCompanions(grouped);
