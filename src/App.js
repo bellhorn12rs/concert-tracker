@@ -3573,6 +3573,29 @@ const showArtifacts = artifacts.filter(a => a.show_id === show.id && a.artifact_
 const timelineLength = selectedData.shows.length;
 const artifactsPerSide = Math.min(Math.ceil(timelineLength / 3), 4); // Rough estimate
 
+const [hofCompanions, setHofCompanions] = useState({});
+useEffect(() => {
+  const showIds = selectedData.shows.map(s => s.id);
+  supabase
+    .from('show_companions')
+    .select('show_id, invitee_user_id, inviter_user_id, profiles!invitee_user_id(username, avatar_color)')
+    .in('show_id', showIds)
+    .eq('status', 'accepted')
+    .then(({ data }) => {
+      if (!data) return;
+      const grouped = {};
+      data.forEach(c => {
+        const otherId = c.invitee_user_id === currentUserId ? c.inviter_user_id : c.invitee_user_id;
+        if (!otherId || otherId === currentUserId) return;
+        if (!grouped[c.show_id]) grouped[c.show_id] = [];
+        if (!grouped[c.show_id].some(x => x.username === c.profiles?.username)) {
+          grouped[c.show_id].push({ username: c.profiles?.username, color: c.profiles?.avatar_color });
+        }
+      });
+      setHofCompanions(grouped);
+    });
+}, [selectedData.artist]);
+
 const leftPackages = showPackages.filter(pkg => pkg.isLeft && pkg.hasArtifacts).slice(0, artifactsPerSide);
 const rightPackages = showPackages.filter(pkg => !pkg.isLeft && pkg.hasArtifacts).slice(0, artifactsPerSide);
 const overflowPackages = showPackages
@@ -3877,8 +3900,21 @@ card.querySelectorAll('[data-hidden-for-export="true"]').forEach(el => {
                       {s.venue}
                     </div>
                     <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: C.grayDim, marginTop: 1 }}>
-                      {s.city}, {s.state}
-                    </div>
+  {s.city}, {s.state}
+</div>
+{hofCompanions[s.id]?.length > 0 && (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+    <span style={{ fontFamily: "'Space Mono'", fontSize: 6, color: C.gray, letterSpacing: 1 }}>WITH</span>
+    {hofCompanions[s.id].map((c, i) => (
+      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 3, background: `${c.color || C.teal}22`, border: `1px solid ${c.color || C.teal}`, borderRadius: 20, padding: '2px 8px' }}>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: c.color || C.teal, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 6, color: '#000', fontFamily: "'Bebas Neue'" }}>
+          {c.username?.[0]?.toUpperCase()}
+        </div>
+        <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#fff' }}>{c.username}</span>
+      </div>
+    ))}
+  </div>
+)}
                   </div>
                 )}
               </div>
