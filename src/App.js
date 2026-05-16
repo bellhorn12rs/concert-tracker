@@ -5886,28 +5886,54 @@ const onSync = async () => {
 
 useEffect(() => {
   if (!event?.id || !currentUserId) return;
-  const fetch = async () => {
-  const { data } = await supabase
-    .from('show_companions')
-    .select('invitee_user_id, inviter_user_id, invitee_email, profiles!invitee_user_id(username, avatar_color)')
-    .eq('show_id', event.id)
-    .eq('status', 'accepted');
-  if (!data) return;
-  const companions = data
-    .map(c => {
-      const isInvitee = c.invitee_user_id === currentUserId;
-      if (isInvitee) return null;
-      if (c.invitee_user_id && c.invitee_user_id !== currentUserId) {
-        return { username: c.profiles?.username, color: c.profiles?.avatar_color };
-      }
-      if (c.invitee_email) return { username: c.invitee_email.split('@')[0], color: '#555' };
-      return null;
-    })
-    .filter(Boolean)
-    .filter((c, i, self) => i === self.findIndex(x => x.username === c.username));
-  setRowCompanions(companions);
+  const fetchCompanions = async () => {
+    const { data } = await supabase
+      .from('show_companions')
+      .select('invitee_user_id, inviter_user_id, invitee_email, status')
+      .eq('show_id', event.id)
+      .eq('status', 'accepted');
+
+    if (!data || data.length === 0) return;
+
+    // For each record, the "other person" is whoever isn't the current user
+    const otherUserIds = [...new Set(
+      data
+        .map(c => c.invitee_user_id === currentUserId ? c.inviter_user_id : c.invitee_user_id)
+        .filter(id => id && id !== currentUserId)
+    )];
+
+    if (otherUserIds.length === 0) return;
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_color')
+      .in('id', otherUserIds);
+
+    const profileMap = {};
+    (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
+    const companions = data
+      .map(c => {
+        const otherId = c.invitee_user_id === currentUserId
+          ? c.inviter_user_id
+          : c.invitee_user_id;
+        if (!otherId || otherId === currentUserId) {
+          // email-only invite
+          if (c.invitee_email && c.invitee_user_id !== currentUserId) {
+            return { username: c.invitee_email.split('@')[0], color: '#555' };
+          }
+          return null;
+        }
+        const profile = profileMap[otherId];
+        if (!profile) return null;
+        return { username: profile.username, color: profile.avatar_color };
+      })
+      .filter(Boolean)
+      .filter((c, i, self) => i === self.findIndex(x => x.username === c.username));
+
+    setRowCompanions(companions);
   };
-  fetch();
+  fetchCompanions();
 }, [event?.id, currentUserId]);
 
   return (
