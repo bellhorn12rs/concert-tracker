@@ -3484,27 +3484,59 @@ function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, cu
   const MEDAL = ['🥇', '🥈', '🥉'];
 
   useEffect(() => {
-    if (!selectedData || !currentUserId) return;
-    const showIds = selectedData.shows.map(s => s.id);
-    supabase
+  if (!selectedData || !currentUserId) return;
+  const showIds = selectedData.shows.map(s => s.id);
+
+  const fetchHofCompanions = async () => {
+    const { data } = await supabase
       .from('show_companions')
-      .select('show_id, invitee_user_id, inviter_user_id, profiles!invitee_user_id(username, avatar_color)')
+      .select('show_id, invitee_user_id, inviter_user_id, invitee_email, status')
       .in('show_id', showIds)
-      .eq('status', 'accepted')
-      .then(({ data }) => {
-        if (!data) return;
-        const grouped = {};
-        data.forEach(c => {
-          const otherId = c.invitee_user_id === currentUserId ? c.inviter_user_id : c.invitee_user_id;
-          if (!otherId || otherId === currentUserId) return;
-          if (!grouped[c.show_id]) grouped[c.show_id] = [];
-          if (!grouped[c.show_id].some(x => x.username === c.profiles?.username)) {
-            grouped[c.show_id].push({ username: c.profiles?.username, color: c.profiles?.avatar_color });
-          }
-        });
-        setHofCompanions(grouped);
-      });
-  }, [selectedData?.artist, currentUserId]);
+      .eq('status', 'accepted');
+
+    if (!data || data.length === 0) return;
+
+    // Collect all "other person" IDs across every record
+    const otherUserIds = [...new Set(
+      data
+        .map(c => c.invitee_user_id === currentUserId ? c.inviter_user_id : c.invitee_user_id)
+        .filter(id => id && id !== currentUserId)
+    )];
+
+    const profileMap = {};
+    if (otherUserIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_color')
+        .in('id', otherUserIds);
+      (profiles || []).forEach(p => { profileMap[p.id] = p; });
+    }
+
+    const grouped = {};
+    data.forEach(c => {
+      const otherId = c.invitee_user_id === currentUserId
+        ? c.inviter_user_id
+        : c.invitee_user_id;
+
+      let entry = null;
+      if (otherId && otherId !== currentUserId && profileMap[otherId]) {
+        entry = { username: profileMap[otherId].username, color: profileMap[otherId].avatar_color };
+      } else if (c.invitee_email && c.invitee_user_id !== currentUserId) {
+        entry = { username: c.invitee_email.split('@')[0], color: '#555' };
+      }
+
+      if (!entry) return;
+      if (!grouped[c.show_id]) grouped[c.show_id] = [];
+      if (!grouped[c.show_id].some(x => x.username === entry.username)) {
+        grouped[c.show_id].push(entry);
+      }
+    });
+
+    setHofCompanions(grouped);
+  };
+
+  fetchHofCompanions();
+}, [selectedData?.artist, currentUserId]);
 
   const handleSelect = (artist, isSelected) => { 
     if (isSelected) { setSelected(null); return; } 
