@@ -7036,11 +7036,10 @@ function VenuesTab({ concerts }) {
     </div>
   );
 }
-// ─── THE STATION: REGIONAL TERMINAL BOARD ───
-// ─── THE STATION: REGIONAL TERMINAL BOARD ───
 function CommunityTab({ onEnterMuseum }) {
   const [curators, setCurators] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isMobile = window.innerWidth < 768;
 
   useEffect(() => {
     async function fetchCurators() {
@@ -7063,38 +7062,39 @@ function CommunityTab({ onEnterMuseum }) {
   );
 
   return (
-    <div className="fade-in" style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ borderLeft: `4px solid ${C.purple}`, paddingLeft: '25px', marginBottom: '50px', marginTop: '20px' }}>
-        <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: '4rem', color: '#fff', margin: 0, letterSpacing: '4px' }}>
+    <div className="fade-in" style={{ padding: isMobile ? '12px' : '20px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ borderLeft: `4px solid ${C.purple}`, paddingLeft: '25px', marginBottom: isMobile ? '24px' : '50px', marginTop: '20px' }}>
+        <h2 style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '2.5rem' : '4rem', color: '#fff', margin: 0, letterSpacing: '4px' }}>
           REGIONAL TERMINAL
         </h2>
-        <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.purple, fontWeight: 900, letterSpacing: '3px' }}>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? '9px' : '11px', color: C.purple, fontWeight: 900, letterSpacing: '3px' }}>
           CONNECTED MUSEUMS // SELECT A SIGNAL TO BOARD
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
         {curators.map((u, i) => {
           const userColor = u.avatar_color || C.teal;
           return (
-            <div 
+            <div
               key={u.username}
               onClick={() => onEnterMuseum(u.username)}
               style={{
                 background: '#07070a',
                 border: `1px solid ${hexToRgba(C.purple, 0.15)}`,
-                padding: '25px 35px',
+                padding: isMobile ? '12px 14px' : '25px 35px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                gap: isMobile ? 10 : 0,
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = C.purple;
-                e.currentTarget.style.transform = 'translateX(10px)';
+                e.currentTarget.style.transform = isMobile ? 'none' : 'translateX(10px)';
                 e.currentTarget.style.background = hexToRgba(C.purple, 0.05);
               }}
               onMouseLeave={(e) => {
@@ -7103,40 +7103,44 @@ function CommunityTab({ onEnterMuseum }) {
                 e.currentTarget.style.background = '#07070a';
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '40px', zIndex: 2 }}>
-                <div style={{ color: C.purple, fontFamily: "'Space Mono'", fontSize: '14px', fontWeight: 900, opacity: 0.5 }}>
-                  {String(i + 1).padStart(2, '0')}
+              {/* Index */}
+              <div style={{ color: C.purple, fontFamily: "'Space Mono'", fontSize: isMobile ? '10px' : '14px', fontWeight: 900, opacity: 0.5, flexShrink: 0 }}>
+                {String(i + 1).padStart(2, '0')}
+              </div>
+
+              {/* Name + latest */}
+              <div style={{ flex: 1, minWidth: 0, paddingLeft: isMobile ? 8 : 40 }}>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.2rem' : '2.5rem', color: '#fff', letterSpacing: '2px', lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {u.username?.toUpperCase()}'S ARCHIVE
                 </div>
-                <div>
-                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '2.5rem', color: '#fff', letterSpacing: '2px', lineHeight: 1 }}>
-                    {u.username?.toUpperCase()}'S ARCHIVE
-                  </div>
-                  <div style={{ fontFamily: "'Space Mono'", fontSize: '10px', color: userColor, fontWeight: 900, marginTop: 6, letterSpacing: '1px' }}>
-                    LATEST: {u.last_artist?.toUpperCase() || 'UNKNOWN'} @ {u.last_venue?.toUpperCase() || 'PRIVATE STAGE'}
-                  </div>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? '7px' : '10px', color: userColor, fontWeight: 900, marginTop: isMobile ? 3 : 6, letterSpacing: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {u.last_artist?.toUpperCase() || 'UNKNOWN'} @ {u.last_venue?.toUpperCase() || 'PRIVATE STAGE'}
                 </div>
               </div>
 
-              {/* 📊 REAL HERO STATS */}
-              <div style={{ display: 'flex', gap: 30, textAlign: 'center', zIndex: 2, marginRight: '40px' }}>
-                {[
-                  { label: 'DAYS', val: u.total_shows || 0, color: C.purple },
-                  { label: 'SETS', val: u.total_sets || 0, color: C.teal },
-                  { label: 'VENUES', val: u.total_venues || 0, color: C.red }
-                ].map(stat => (
-                  <div key={stat.label}>
-                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: stat.color, lineHeight: 1 }}>{stat.val}</div>
-                    <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: '#fff', opacity: 0.4, letterSpacing: '2px' }}>{stat.label}</div>
-                  </div>
-                ))}
-              </div>
+              {/* Stats — desktop only */}
+              {!isMobile && (
+                <div style={{ display: 'flex', gap: 30, textAlign: 'center', zIndex: 2, marginRight: '40px', flexShrink: 0 }}>
+                  {[
+                    { label: 'DAYS', val: u.total_shows || 0, color: C.purple },
+                    { label: 'SETS', val: u.total_sets || 0, color: C.teal },
+                    { label: 'VENUES', val: u.total_venues || 0, color: C.red }
+                  ].map(stat => (
+                    <div key={stat.label}>
+                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: stat.color, lineHeight: 1 }}>{stat.val}</div>
+                      <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: '#fff', opacity: 0.4, letterSpacing: '2px' }}>{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-              <div style={{ textAlign: 'right', zIndex: 2 }}>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gold, letterSpacing: '2px', fontWeight: 900 }}>
-                  BOARDING →
+              {/* Boarding */}
+              <div style={{ textAlign: 'right', zIndex: 2, flexShrink: 0 }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? '9px' : '11px', color: C.gold, letterSpacing: '2px', fontWeight: 900 }}>
+                  {isMobile ? '→' : 'BOARDING →'}
                 </div>
               </div>
-              
+
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(rgba(153, 102, 255, 0.02) 50%, transparent 50%)', backgroundSize: '100% 4px', pointerEvents: 'none' }} />
             </div>
           );
