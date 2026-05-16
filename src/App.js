@@ -7076,24 +7076,22 @@ function CommunityTab({ onEnterMuseum }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
         {curators.map((u, i) => {
           const userColor = u.avatar_color || C.teal;
-          const isMobileStation = window.innerWidth < 768;
-return (
-  <div 
-    key={u.username}
-    onClick={() => onEnterMuseum(u.username)}
-    style={{
-      background: '#07070a',
-      border: `1px solid ${hexToRgba(C.purple, 0.15)}`,
-      padding: isMobileStation ? '12px 14px' : '25px 35px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
-      position: 'relative',
-      overflow: 'hidden',
-      gap: 8,
-    }}
+          return (
+            <div 
+              key={u.username}
+              onClick={() => onEnterMuseum(u.username)}
+              style={{
+                background: '#07070a',
+                border: `1px solid ${hexToRgba(C.purple, 0.15)}`,
+                padding: '25px 35px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = C.purple;
                 e.currentTarget.style.transform = 'translateX(10px)';
@@ -7119,28 +7117,26 @@ return (
                 </div>
               </div>
 
-             {/* 📊 REAL HERO STATS */}
-              {!isMobileStation && (
-                <div style={{ display: 'flex', gap: 30, textAlign: 'center', zIndex: 2, marginRight: '40px' }}>
-                  {[
-                    { label: 'DAYS', val: u.total_shows || 0, color: C.purple },
-                    { label: 'SETS', val: u.total_sets || 0, color: C.teal },
-                    { label: 'VENUES', val: u.total_venues || 0, color: C.red }
-                  ].map(stat => (
-                    <div key={stat.label}>
-                      <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: stat.color, lineHeight: 1 }}>{stat.val}</div>
-                      <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: '#fff', opacity: 0.4, letterSpacing: '2px' }}>{stat.label}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div style={{ textAlign: 'right', zIndex: 2 }}>
-                <div style={{ fontFamily: "'Space Mono'", fontSize: isMobileStation ? '9px' : '11px', color: C.gold, letterSpacing: '2px', fontWeight: 900 }}>
-                  {isMobileStation ? '→' : 'BOARDING →'}
-                </div>
+              {/* 📊 REAL HERO STATS */}
+              <div style={{ display: 'flex', gap: 30, textAlign: 'center', zIndex: 2, marginRight: '40px' }}>
+                {[
+                  { label: 'DAYS', val: u.total_shows || 0, color: C.purple },
+                  { label: 'SETS', val: u.total_sets || 0, color: C.teal },
+                  { label: 'VENUES', val: u.total_venues || 0, color: C.red }
+                ].map(stat => (
+                  <div key={stat.label}>
+                    <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.8rem', color: stat.color, lineHeight: 1 }}>{stat.val}</div>
+                    <div style={{ fontFamily: "'Space Mono'", fontSize: '7px', color: '#fff', opacity: 0.4, letterSpacing: '2px' }}>{stat.label}</div>
+                  </div>
+                ))}
               </div>
 
+              <div style={{ textAlign: 'right', zIndex: 2 }}>
+                <div style={{ fontFamily: "'Space Mono'", fontSize: '11px', color: C.gold, letterSpacing: '2px', fontWeight: 900 }}>
+                  BOARDING →
+                </div>
+              </div>
+              
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(rgba(153, 102, 255, 0.02) 50%, transparent 50%)', backgroundSize: '100% 4px', pointerEvents: 'none' }} />
             </div>
           );
@@ -9775,11 +9771,7 @@ const navBtnStyle = (isActive, color) => ({
   padding: '6px 12px',
   borderRadius: '6px',
   fontFamily: "'Space Mono'",
-  fontSize: isMobileStation ? '8px' : '10px',
-whiteSpace: 'nowrap',
-overflow: 'hidden',
-textOverflow: 'ellipsis',
-maxWidth: isMobileStation ? '200px' : 'none',
+  fontSize: '10px',
   fontWeight: 900,
   cursor: 'pointer',
   display: 'flex',
@@ -12274,7 +12266,7 @@ useEffect(() => {
           </div>
           <div style={{
             fontFamily: "'Bebas Neue'",
-            fontSize: isMobileStation ? '1.1rem' : '2.5rem',
+            fontSize: '2.5rem',
             color: C.purple,
             opacity: 0.15,
             letterSpacing: 2,
