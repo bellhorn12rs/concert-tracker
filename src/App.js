@@ -1647,7 +1647,7 @@ function TheaterMarquee({ upcoming, onAdd, onEdit, session }) {
     : 'LOUD & LIVE • ALL AGES • GIG POSTER INBOUND • TONIGHT ONLY • SOLD OUT • NOW STAGING YOUR NEXT MEMORY';
 
   return (
-    <div style={{ background:'#0a0a0a', borderRadius:8, overflow:'hidden', boxShadow:'0 0 0 4px #111, 0 0 0 6px #222, 0 8px 32px rgba(0,0,0,0.8)' }}>
+<div style={{ background:'#080d1a', borderRadius:8, overflow:'hidden', boxShadow:'0 0 0 4px #0d1428, 0 0 0 6px #1a2444, 0 8px 32px rgba(0,0,0,0.8)' }}>
       
       {/* Top bulb rail */}
       <div style={{ background:'#111', padding:'6px 12px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -1658,7 +1658,7 @@ function TheaterMarquee({ upcoming, onAdd, onEdit, session }) {
 
       {/* Marquee body */}
       <div style={{ background:'#fdfdfd', borderTop:'3px solid #111', borderBottom:'3px solid #111', padding:'10px 0', overflow:'hidden', position:'relative' }} className="marquee-flicker">
-        <div className="marquee-text" style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:18, fontWeight:900, letterSpacing:'0.12em', color:'#111', whiteSpace:'nowrap' }}>
+      <div className="marquee-text" style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:18, fontWeight:900, letterSpacing:'0.12em', color:'#111', whiteSpace:'nowrap', animationDuration: '90s' }}>
           {text} &nbsp;&nbsp;&nbsp;★&nbsp;&nbsp;&nbsp; {text} &nbsp;&nbsp;&nbsp;★&nbsp;&nbsp;&nbsp;
         </div>
       </div>
@@ -1719,7 +1719,7 @@ function TheaterMarquee({ upcoming, onAdd, onEdit, session }) {
         ))}
       </div>
 {/* Show list */}
-      <div style={{ padding:'0 16px 16px' }}>
+<div style={{ padding:'0 16px 16px', background: '#080d1a' }}>
         <div style={{ maxHeight:190, overflowY:'auto' }}>
           {upcoming.sort((a,b) => a.date.localeCompare(b.date)).map((show, i) => {
             console.log('Show:', show.artist, 'Attendees:', show.attendees);
@@ -1875,7 +1875,7 @@ function FriendsUpcomingMarquee({ session }) {
       ).join('   ★   ');
 
   return (
-<div style={{ background: '#fdfdfd', borderRadius: 8, overflow: 'hidden', boxShadow: '0 0 0 4px #e0e0e0, 0 0 0 6px #ccc, 0 8px 32px rgba(0,0,0,0.8)' }}>
+<div style={{ background: '#f5f0e0', borderRadius: 8, overflow: 'hidden', boxShadow: '0 0 0 4px #e8e0cc, 0 0 0 6px #d8d0b8, 0 8px 32px rgba(0,0,0,0.8)' }}>
 
       {/* Top bulb rail — gold */}
       <div style={{ background: '#111', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1892,8 +1892,7 @@ function FriendsUpcomingMarquee({ session }) {
 
       {/* Header label */}
       <button style={{
-  width: '100%', background: `linear-gradient(90deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.08) 100%)`,
-  borderBottom: '1px solid #ccc', borderTop: 'none', borderLeft: 'none', borderRight: 'none',
+background: `linear-gradient(90deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.04) 100%)`,  borderBottom: '1px solid #ccc', borderTop: 'none', borderLeft: 'none', borderRight: 'none',
   padding: '16px', cursor: 'default', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4
 }}>
   <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: '#111', letterSpacing: 2 }}>
@@ -1905,7 +1904,7 @@ function FriendsUpcomingMarquee({ session }) {
 </button>
 
       {/* Show list */}
-      <div style={{ padding: '0 16px 16px', background: '#fdfdfd' }}>
+<div style={{ padding: '0 16px 16px', background: '#f5f0e0' }}>
   <div style={{ maxHeight: 190, overflowY: 'auto' }}>
     {friendShows.map(({ show, attendees }, i) => (
       <div key={show.id || i} style={{
@@ -1917,12 +1916,11 @@ function FriendsUpcomingMarquee({ session }) {
           {fmtDateShort(show.date)}
         </div>
 
-        <div>
-          <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.15rem', color: '#111', letterSpacing: '0.06em', lineHeight: 1 }}>
-            {(show.artist || show.festival_name || 'TBA').toUpperCase()}
-          </div>
-          {show.venue && <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#888', marginTop: 1 }}>{show.venue}</div>}
-
+        <div style={{ textAlign: 'center' }}>
+  <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.15rem', color: '#111', letterSpacing: '0.06em', lineHeight: 1 }}>
+    {(show.artist || show.festival_name || 'TBA').toUpperCase()}
+  </div>
+  {show.venue && <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#666', marginTop: 1 }}>{show.venue}</div>}
           <div style={{ display: 'flex', gap: 4, marginTop: 5, alignItems: 'center', flexWrap: 'wrap' }}>
             {attendees.map((att) => (
               <div key={att.id} title={att.username} style={{
