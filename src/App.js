@@ -5848,29 +5848,28 @@ const onSync = async () => {
   const [rowCompanions, setRowCompanions] = useState([]);
 
 useEffect(() => {
-  if (!event?.id || !currentUserId || window.innerWidth < 768) return;
+  if (!event?.id || !currentUserId) return;
   const fetch = async () => {
-    const { data } = await supabase
-      .from('show_companions')
-      .select('invitee_user_id, inviter_user_id, status, invitee_email')
-      .eq('show_id', event.id)
-      .eq('status', 'accepted');
-    if (!data) return;
-    const enriched = await Promise.all(
-      [...new Map(
-        data
-          .map(c => c.invitee_user_id === currentUserId ? c.inviter_user_id : c.invitee_user_id)
-          .filter(id => id && id !== currentUserId)
-          .map(id => [id, id])
-      ).values()].map(async (uid) => {
-        const { data: p } = await supabase.from('profiles').select('username, avatar_color').eq('id', uid).single();
-        return p ? { username: p.username, color: p.avatar_color } : null;
-      })
-    );
-    setRowCompanions(enriched.filter(Boolean));
-  };
-  fetch();
-}, [event?.id, currentUserId]);
+  const { data } = await supabase
+    .from('show_companions')
+    .select('invitee_user_id, inviter_user_id, invitee_email, profiles!invitee_user_id(username, avatar_color)')
+    .eq('show_id', event.id)
+    .eq('status', 'accepted');
+  if (!data) return;
+  const companions = data
+    .map(c => {
+      const isInvitee = c.invitee_user_id === currentUserId;
+      if (isInvitee) return null;
+      if (c.invitee_user_id && c.invitee_user_id !== currentUserId) {
+        return { username: c.profiles?.username, color: c.profiles?.avatar_color };
+      }
+      if (c.invitee_email) return { username: c.invitee_email.split('@')[0], color: '#555' };
+      return null;
+    })
+    .filter(Boolean)
+    .filter((c, i, self) => i === self.findIndex(x => x.username === c.username));
+  setRowCompanions(companions);
+};
 
   return (
     <div style={{ 
