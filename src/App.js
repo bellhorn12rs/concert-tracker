@@ -5396,6 +5396,8 @@ function ByDayTab({
 }) {
   const isMobile = window.innerWidth < 768;
   const [showJumpMenu, setShowJumpMenu] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(20);
+
 
   // ─── 1. CLUSTERING LOGIC ───────────────────────────────────────────────────
   const clusters = useMemo(() => {
@@ -5524,7 +5526,7 @@ function ByDayTab({
 
       {/* 📜 CLUSTER LIST RENDER */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '30px' : '60px' }}>
-        {clusters.map((cluster, ci) => {
+         {clusters.slice(0, visibleCount).map((cluster, ci) => {
           if (cluster.type === 'solo') {
             return (
               <div key={`cluster-${ci}`} id={`cluster-${ci}`}>
@@ -5613,6 +5615,16 @@ function ByDayTab({
           );
         })}
       </div>
+
+      {visibleCount < clusters.length && (
+        <button
+          onClick={() => setVisibleCount(v => v + 20)}
+          style={{ width: '100%', padding: '20px', background: 'transparent', border: `1px solid ${C.teal}`, color: C.teal, fontFamily: "'Space Mono'", fontSize: 10, cursor: 'pointer', borderRadius: 8, marginTop: 20, letterSpacing: 2 }}
+        >
+          LOAD MORE ({clusters.length - visibleCount} REMAINING)
+        </button>
+      )}
+
     </div>
   );
 }
