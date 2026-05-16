@@ -3488,47 +3488,78 @@ function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, cu
   const showIds = selectedData.shows.map(s => s.id);
 
   const fetchHofCompanions = async () => {
-    const { data } = await supabase
-      .from('show_companions')
-      .select('show_id, invitee_user_id, inviter_user_id, invitee_email, status')
-      .in('show_id', showIds)
-      .eq('status', 'accepted');
+    const BATCH = 8; // stay well under URL length limit
 
-    if (!data || data.length === 0) return;
-
-    // Collect all "other person" IDs across every record
-    const otherUserIds = [...new Set(
-      data
-        .map(c => c.invitee_user_id === currentUserId ? c.inviter_user_id : c.invitee_user_id)
-        .filter(id => id && id !== currentUserId)
-    )];
-
-    const profileMap = {};
-    if (otherUserIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, username, avatar_color')
-        .in('id', otherUserIds);
-      (profiles || []).forEach(p => { profileMap[p.id] = p; });
+    // Source 1: explicitly tagged companions
+    const companionRows = [];
+    for (let i = 0; i < showIds.length; i += BATCH) {
+      const { data } = await supabase
+        .from('show_companions')
+        .select('show_id, invitee_user_id, inviter_user_id, invitee_email')
+        .in('show_id', showIds.slice(i, i + BATCH))
+        .eq('status', 'accepted');
+      if (data) companionRows.push(...data);
     }
 
+    // Source 2: other users who independently logged the same show
+    const attendanceRows = [];
+    for (let i = 0; i < showIds.length; i += BATCH) {
+      const { data } = await supabase
+        .from('attendances')
+        .select('show_id, user_id')
+        .in('show_id', showIds.slice(i, i + BATCH))
+        .neq('user_id', currentUserId)
+        .eq('is_public', true);
+      if (data) attendanceRows.push(...data);
+    }
+
+    // Collect all other user IDs from both sources
+    const companionUserIds = companionRows
+      .map(c => c.invitee_user_id === currentUserId ? c.inviter_user_id : c.invitee_user_id)
+      .filter(id => id && id !== currentUserId);
+
+    const attendanceUserIds = attendanceRows
+      .map(a => a.user_id)
+      .filter(id => id && id !== currentUserId);
+
+    const allUserIds = [...new Set([...companionUserIds, ...attendanceUserIds])];
+    if (allUserIds.length === 0) return;
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_color')
+      .in('id', allUserIds);
+
+    const profileMap = {};
+    (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
     const grouped = {};
-    data.forEach(c => {
+
+    const addEntry = (showId, entry) => {
+      if (!entry) return;
+      if (!grouped[showId]) grouped[showId] = [];
+      if (!grouped[showId].some(x => x.username === entry.username)) {
+        grouped[showId].push(entry);
+      }
+    };
+
+    // From show_companions
+    companionRows.forEach(c => {
       const otherId = c.invitee_user_id === currentUserId
         ? c.inviter_user_id
         : c.invitee_user_id;
-
-      let entry = null;
-      if (otherId && otherId !== currentUserId && profileMap[otherId]) {
-        entry = { username: profileMap[otherId].username, color: profileMap[otherId].avatar_color };
+      if (otherId && profileMap[otherId]) {
+        addEntry(c.show_id, { username: profileMap[otherId].username, color: profileMap[otherId].avatar_color });
       } else if (c.invitee_email && c.invitee_user_id !== currentUserId) {
-        entry = { username: c.invitee_email.split('@')[0], color: '#555' };
+        addEntry(c.show_id, { username: c.invitee_email.split('@')[0], color: '#555' });
       }
+    });
 
-      if (!entry) return;
-      if (!grouped[c.show_id]) grouped[c.show_id] = [];
-      if (!grouped[c.show_id].some(x => x.username === entry.username)) {
-        grouped[c.show_id].push(entry);
+    // From attendances (catches anyone who logged the same show independently)
+    attendanceRows.forEach(a => {
+      const profile = profileMap[a.user_id];
+      if (profile) {
+        addEntry(a.show_id, { username: profile.username, color: profile.avatar_color });
       }
     });
 
