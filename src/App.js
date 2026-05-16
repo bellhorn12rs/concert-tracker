@@ -1645,10 +1645,10 @@ function TheaterMarquee({ upcoming, onAdd, onEdit, session }) {
     : 'LOUD & LIVE • ALL AGES • GIG POSTER INBOUND • TONIGHT ONLY • SOLD OUT • NOW STAGING YOUR NEXT MEMORY';
 
   return (
-    <div style={{ background:'#080d1a', borderRadius:8, overflow:'hidden', boxShadow:'0 0 0 4px #0d1428, 0 0 0 6px #1a2444, 0 8px 32px rgba(0,0,0,0.8)' }}>
+    <div style={{ background:'#1a0808', borderRadius:8, overflow:'hidden', boxShadow:'0 0 0 4px #0d1428, 0 0 0 6px #1a2444, 0 8px 32px rgba(0,0,0,0.8)' }}>
       
       {/* Top bulb rail */}
-      <div style={{ background:'#0d1428', padding:'6px 12px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+      <div style={{ background:'#2a1010', padding:'6px 12px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         {Array.from({ length: BULB_COUNT }).map((_, i) => (
           <div key={i} style={{ width:8, height:8, borderRadius:'50%', background:'#ffdd88', boxShadow:'0 0 6px #ffdd88, 0 0 12px #ffaa00', animation:`chasing-bulb 1.5s ease-in-out ${(i * 1.5/BULB_COUNT).toFixed(2)}s infinite` }} />
         ))}
@@ -1697,13 +1697,13 @@ function TheaterMarquee({ upcoming, onAdd, onEdit, session }) {
       </div>
 
       {/* Show list */}
-      <div style={{ padding:'0 16px 16px', background:'#080d1a' }}>
+      <div style={{ padding:'0 16px 16px', background:'#1a0808' }}>
         <div style={{ maxHeight:240, overflowY:'auto' }}>
           {upcoming.sort((a,b) => a.date.localeCompare(b.date)).map((show, i) => {
             const otherAttendees = (show.attendees || []).filter(att => att.user_id !== session?.user?.id);
             const hasCollaborators = otherAttendees.length > 0;
             return (
-              <div key={show.id||i} style={{ display:'flex', flexDirection:'column', padding:'14px 0', borderBottom: i === upcoming.length - 1 ? 'none' : '1px solid #1a2444', gap:6 }}>
+              <div key={show.id||i} style={{ display:'flex', flexDirection:'column', padding:'14px 0', borderBottom: i === upcoming.length - 1 ? 'none' : '1px solid #3a1515', gap:6 }}>
 
                 {/* Row 1: date left | artist@venue center | status+edit right */}
                 <div style={{ display:'grid', gridTemplateColumns:'130px 1fr auto', alignItems:'center', gap:8 }}>
