@@ -1636,7 +1636,6 @@ function CountUpStat({ value, label, sub, color = C.white }) {
   );
 }
 
-// Theater Marquee (RECONFIGURED WITH FULL-WIDTH CALL TO ACTION)
 function TheaterMarquee({ upcoming, onAdd, onEdit, session }) {
   const BULB_COUNT = 28;
   const isEmpty = upcoming.length === 0;
@@ -1704,57 +1703,67 @@ function TheaterMarquee({ upcoming, onAdd, onEdit, session }) {
             const otherAttendees = (show.attendees || []).filter(att => att.user_id !== session?.user?.id);
             const hasCollaborators = otherAttendees.length > 0;
             return (
-              <div key={show.id||i} style={{ display:'flex', flexDirection:'column', padding:'16px 0', borderBottom: i === upcoming.length - 1 ? 'none' : '1px solid #1a2444', gap: 6 }}>
-                
-                {/* Date — big */}
-                <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.4rem', color:'#4a6fa5', letterSpacing:'0.1em', lineHeight:1 }}>
-                  {fmtDateShort(show.date).toUpperCase()}
-                </div>
+              <div key={show.id||i} style={{ display:'flex', flexDirection:'column', padding:'14px 0', borderBottom: i === upcoming.length - 1 ? 'none' : '1px solid #1a2444', gap:6 }}>
 
-                {/* Artist */}
-                <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.5rem', color:C.gold, letterSpacing:'0.06em', lineHeight:1 }}>
-                  {show.artist}
-                </div>
+                {/* Row 1: date left | artist@venue center | status+edit right */}
+                <div style={{ display:'grid', gridTemplateColumns:'130px 1fr auto', alignItems:'center', gap:8 }}>
+                  
+                  {/* DATE */}
+                  <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.2rem', color:'#4a6fa5', letterSpacing:'0.08em', lineHeight:1 }}>
+                    {fmtDateShort(show.date).toUpperCase()}
+                  </div>
 
-                {/* Venue */}
-                <div style={{ fontFamily:"'Space Mono'", fontSize:10, color:'#8899bb', letterSpacing:'0.05em' }}>
-                  {show.venue || 'TBA'}
-                </div>
-
-                {/* Collaborators + status + edit row */}
-                <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginTop:2 }}>
-                  {hasCollaborators && (
-                    <div style={{ display:'flex', gap:4, alignItems:'center' }}>
-                      <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:C.purple }}>WITH:</span>
-                      {otherAttendees.slice(0, 3).map((att) => (
-                        <div key={att.user_id} title={att.profile.username} style={{ width:18, height:18, borderRadius:'50%', background:att.profile.avatar_color, border:`1px solid ${att.profile.avatar_color}`, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Bebas Neue'", fontSize:9, color:'#000', fontWeight:900 }}>
-                          {att.profile.username[0].toUpperCase()}
-                        </div>
-                      ))}
-                      {otherAttendees.length > 3 && (
-                        <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:C.purple }}>+{otherAttendees.length - 3}</span>
-                      )}
+                  {/* ARTIST + VENUE centered */}
+                  <div style={{ textAlign:'center' }}>
+                    <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.4rem', color:C.gold, letterSpacing:'0.06em', lineHeight:1 }}>
+                      {show.artist}
                     </div>
-                  )}
-
-                  <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:C.gold, background:'rgba(255,204,0,0.12)', border:'1px solid rgba(255,204,0,0.3)', padding:'2px 6px', borderRadius:3, whiteSpace:'nowrap' }}>
-                    {show.status || 'TICKETS'}
-                  </span>
-
-                  <div style={{ display:'flex', gap:4, marginLeft:'auto' }}>
-                    {show.date < new Date().toISOString().split('T')[0] && (
-                      <button onClick={() => onCommit(show)} style={{ background:'rgba(0,229,204,0.1)', border:`1px solid ${C.teal}`, color:C.teal, cursor:'pointer', fontSize:9, borderRadius:3, padding:'3px 8px', fontFamily:"'Space Mono'", transition:'all 0.2s', whiteSpace:'nowrap' }}>
-                        ✓ ARCHIVE
-                      </button>
+                    {show.venue && (
+                      <div style={{ fontFamily:"'Space Mono'", fontSize:9, color:'#8899bb', marginTop:2 }}>
+                        {show.venue}
+                      </div>
                     )}
-                    <button onClick={() => onEdit(show)} style={{ background:'none', border:'1px solid #1a2444', color:'#4a6fa5', cursor:'pointer', fontSize:9, borderRadius:3, padding:'3px 8px', fontFamily:"'Space Mono'", transition:'all 0.2s' }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor=C.gold; e.currentTarget.style.color=C.gold; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor='#1a2444'; e.currentTarget.style.color='#4a6fa5'; }}
-                    >
-                      EDIT
-                    </button>
+                  </div>
+
+                  {/* STATUS + EDIT right */}
+                  <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4 }}>
+                    <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:C.gold, background:'rgba(255,204,0,0.12)', border:'1px solid rgba(255,204,0,0.3)', padding:'2px 6px', borderRadius:3, whiteSpace:'nowrap' }}>
+                      {show.status || 'TICKETS'}
+                    </span>
+                    <div style={{ display:'flex', gap:4 }}>
+                      {show.date < new Date().toISOString().split('T')[0] && (
+                        <button onClick={() => onCommit(show)} style={{ background:'rgba(0,229,204,0.1)', border:`1px solid ${C.teal}`, color:C.teal, cursor:'pointer', fontSize:9, borderRadius:3, padding:'3px 8px', fontFamily:"'Space Mono'", whiteSpace:'nowrap' }}>
+                          ✓ ARCHIVE
+                        </button>
+                      )}
+                      <button onClick={() => onEdit(show)}
+                        style={{ background:'none', border:'1px solid #1a2444', color:'#4a6fa5', cursor:'pointer', fontSize:9, borderRadius:3, padding:'3px 8px', fontFamily:"'Space Mono'", transition:'all 0.2s' }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor=C.gold; e.currentTarget.style.color=C.gold; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor='#1a2444'; e.currentTarget.style.color='#4a6fa5'; }}
+                      >
+                        EDIT
+                      </button>
+                    </div>
                   </div>
                 </div>
+
+                {/* Row 2: companion chips centered */}
+                {hasCollaborators && (
+                  <div style={{ display:'flex', gap:4, justifyContent:'center', alignItems:'center', flexWrap:'wrap' }}>
+                    <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:C.purple }}>WITH:</span>
+                    {otherAttendees.slice(0, 3).map((att) => (
+                      <div key={att.user_id} title={att.profile.username} style={{ display:'flex', alignItems:'center', gap:3, background:`${att.profile.avatar_color}22`, border:`1px solid ${att.profile.avatar_color}`, borderRadius:20, padding:'2px 8px' }}>
+                        <div style={{ width:14, height:14, borderRadius:'50%', background:att.profile.avatar_color, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Bebas Neue'", fontSize:8, color:'#000', fontWeight:900 }}>
+                          {att.profile.username[0].toUpperCase()}
+                        </div>
+                        <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:'#fff' }}>{att.profile.username}</span>
+                      </div>
+                    ))}
+                    {otherAttendees.length > 3 && (
+                      <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:C.purple }}>+{otherAttendees.length - 3}</span>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -1768,6 +1777,7 @@ function TheaterMarquee({ upcoming, onAdd, onEdit, session }) {
     </div>
   );
 }
+
 
 function FriendsUpcomingMarquee({ session }) {
   const [friendShows, setFriendShows] = useState([]);
@@ -1835,7 +1845,7 @@ function FriendsUpcomingMarquee({ session }) {
       </div>
 
       {/* Marquee body */}
-      <div style={{ background:'#111', borderTop:'3px solid #e8e0cc', borderBottom:'3px solid #e8e0cc', padding:'10px 0', overflow:'hidden' }}>
+      <div style={{ background:'#0d1428', borderTop:'3px solid #e8e0cc', borderBottom:'3px solid #e8e0cc', padding:'10px 0', overflow:'hidden' }}>
         <div style={{ display:'inline-block', animation:'marquee 120s linear infinite', whiteSpace:'nowrap', fontFamily:"'Bebas Neue'", fontSize:18, fontWeight:900, letterSpacing:'0.12em', color:'#f5f0e8' }}>
           {marqueeText} &nbsp;&nbsp;★&nbsp;&nbsp; {marqueeText} &nbsp;&nbsp;★&nbsp;&nbsp;
         </div>
@@ -1843,7 +1853,7 @@ function FriendsUpcomingMarquee({ session }) {
 
       {/* Header */}
       <div style={{ background:`linear-gradient(90deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.04) 100%)`, borderBottom:'1px solid #d8d0b8', padding:'16px', display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-        <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.5rem', color:'#111', letterSpacing:2, textAlign:'center' }}>
+        <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.5rem', color:'#0d1428', letterSpacing:2, textAlign:'center' }}>
           {isEmpty ? 'NO FRIEND SIGNALS DETECTED' : `${friendShows.length} FRIEND SHOW${friendShows.length !== 1 ? 'S' : ''} ON THE HORIZON`}
         </div>
         <div style={{ fontFamily:"'Space Mono'", fontSize:8, color:'#888', letterSpacing:2, textAlign:'center' }}>
@@ -1855,37 +1865,47 @@ function FriendsUpcomingMarquee({ session }) {
       <div style={{ padding:'0 16px 16px', background:'#f5f0e0' }}>
         <div style={{ maxHeight:240, overflowY:'auto' }}>
           {friendShows.map(({ show, attendees }, i) => (
-            <div key={show.id || i} style={{ display:'flex', flexDirection:'column', padding:'16px 0', borderBottom: i === friendShows.length - 1 ? 'none' : '1px solid #ddd', gap:6 }}>
+            <div key={show.id || i} style={{ display:'flex', flexDirection:'column', padding:'14px 0', borderBottom: i === friendShows.length - 1 ? 'none' : '1px solid #ddd', gap:6 }}>
 
-              {/* Date — big */}
-              <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.4rem', color:'#a08060', letterSpacing:'0.1em', lineHeight:1 }}>
-                {fmtDateShort(show.date).toUpperCase()}
-              </div>
+              {/* Row 1: date left | artist+venue center | status right */}
+              <div style={{ display:'grid', gridTemplateColumns:'130px 1fr auto', alignItems:'center', gap:8 }}>
 
-              {/* Artist */}
-              <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.5rem', color:'#111', letterSpacing:'0.06em', lineHeight:1 }}>
-                {(show.artist || show.festival_name || 'TBA').toUpperCase()}
-              </div>
+                {/* DATE */}
+                <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.2rem', color:'#a08060', letterSpacing:'0.08em', lineHeight:1 }}>
+                  {fmtDateShort(show.date).toUpperCase()}
+                </div>
 
-              {/* Venue */}
-              <div style={{ fontFamily:"'Space Mono'", fontSize:10, color:'#666', letterSpacing:'0.05em' }}>
-                {show.venue || 'TBA'}
-              </div>
-
-              {/* Attendees + status */}
-              <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginTop:2 }}>
-                {attendees.map((att) => (
-                  <div key={att.id} title={att.username} style={{ display:'flex', alignItems:'center', gap:4, background:`${att.avatar_color || C.teal}22`, border:`1px solid ${att.avatar_color || C.teal}`, borderRadius:20, padding:'2px 8px' }}>
-                    <div style={{ width:14, height:14, borderRadius:'50%', background:att.avatar_color || C.teal, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Bebas Neue'", fontSize:8, color:'#000', fontWeight:900 }}>
-                      {att.username?.[0]?.toUpperCase()}
-                    </div>
-                    <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:'#111' }}>{att.username}</span>
+                {/* ARTIST + VENUE centered */}
+                <div style={{ textAlign:'center' }}>
+                  <div style={{ fontFamily:"'Bebas Neue'", fontSize:'1.4rem', color:'#111', letterSpacing:'0.06em', lineHeight:1 }}>
+                    {(show.artist || show.festival_name || 'TBA').toUpperCase()}
                   </div>
-                ))}
-                <span style={{ marginLeft:'auto', fontFamily:"'Space Mono'", fontSize:7, color:'#333', background:'rgba(0,0,0,0.08)', border:'1px solid rgba(0,0,0,0.15)', padding:'2px 6px', borderRadius:3, whiteSpace:'nowrap' }}>
+                  {show.venue && (
+                    <div style={{ fontFamily:"'Space Mono'", fontSize:9, color:'#666', marginTop:2 }}>
+                      {show.venue}
+                    </div>
+                  )}
+                </div>
+
+                {/* STATUS right */}
+                <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:'#333', background:'rgba(0,0,0,0.08)', border:'1px solid rgba(0,0,0,0.15)', padding:'2px 6px', borderRadius:3, whiteSpace:'nowrap' }}>
                   {show.status || 'UPCOMING'}
                 </span>
               </div>
+
+              {/* Row 2: companion chips centered */}
+              {attendees.length > 0 && (
+                <div style={{ display:'flex', gap:4, justifyContent:'center', alignItems:'center', flexWrap:'wrap' }}>
+                  {attendees.map((att) => (
+                    <div key={att.id} title={att.username} style={{ display:'flex', alignItems:'center', gap:4, background:`${att.avatar_color || C.teal}22`, border:`1px solid ${att.avatar_color || C.teal}`, borderRadius:20, padding:'2px 8px' }}>
+                      <div style={{ width:14, height:14, borderRadius:'50%', background:att.avatar_color || C.teal, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Bebas Neue'", fontSize:8, color:'#000', fontWeight:900 }}>
+                        {att.username?.[0]?.toUpperCase()}
+                      </div>
+                      <span style={{ fontFamily:"'Space Mono'", fontSize:7, color:'#111' }}>{att.username}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
           {isEmpty && (
