@@ -3463,6 +3463,30 @@ function HallOfFame({ sets, genreMap, onShare, posters = [], shouldBlurPhoto, cu
 const [isExporting, setIsExporting] = useState(false);
 const topRef = useRef(null);
 const cardRef = useRef(null);
+const [hofCompanions, setHofCompanions] = useState({});
+
+useEffect(() => {
+  if (!selectedData || !currentUserId) return;
+  const showIds = selectedData.shows.map(s => s.id);
+  supabase
+    .from('show_companions')
+    .select('show_id, invitee_user_id, inviter_user_id, profiles!invitee_user_id(username, avatar_color)')
+    .in('show_id', showIds)
+    .eq('status', 'accepted')
+    .then(({ data }) => {
+      if (!data) return;
+      const grouped = {};
+      data.forEach(c => {
+        const otherId = c.invitee_user_id === currentUserId ? c.inviter_user_id : c.invitee_user_id;
+        if (!otherId || otherId === currentUserId) return;
+        if (!grouped[c.show_id]) grouped[c.show_id] = [];
+        if (!grouped[c.show_id].some(x => x.username === c.profiles?.username)) {
+          grouped[c.show_id].push({ username: c.profiles?.username, color: c.profiles?.avatar_color });
+        }
+      });
+      setHofCompanions(grouped);
+    });
+}, [selectedData?.artist, currentUserId]);
 
   const artists = useMemo(() => {
     const m = {};
@@ -3572,29 +3596,6 @@ const showArtifacts = artifacts.filter(a => a.show_id === show.id && a.artifact_
   // 🟢 BALANCED SPLIT - Match timeline height
 const timelineLength = selectedData.shows.length;
 const artifactsPerSide = Math.min(Math.ceil(timelineLength / 3), 4); // Rough estimate
-
-const [hofCompanions, setHofCompanions] = useState({});
-useEffect(() => {
-  const showIds = selectedData.shows.map(s => s.id);
-  supabase
-    .from('show_companions')
-    .select('show_id, invitee_user_id, inviter_user_id, profiles!invitee_user_id(username, avatar_color)')
-    .in('show_id', showIds)
-    .eq('status', 'accepted')
-    .then(({ data }) => {
-      if (!data) return;
-      const grouped = {};
-      data.forEach(c => {
-        const otherId = c.invitee_user_id === currentUserId ? c.inviter_user_id : c.invitee_user_id;
-        if (!otherId || otherId === currentUserId) return;
-        if (!grouped[c.show_id]) grouped[c.show_id] = [];
-        if (!grouped[c.show_id].some(x => x.username === c.profiles?.username)) {
-          grouped[c.show_id].push({ username: c.profiles?.username, color: c.profiles?.avatar_color });
-        }
-      });
-      setHofCompanions(grouped);
-    });
-}, [selectedData.artist]);
 
 const leftPackages = showPackages.filter(pkg => pkg.isLeft && pkg.hasArtifacts).slice(0, artifactsPerSide);
 const rightPackages = showPackages.filter(pkg => !pkg.isLeft && pkg.hasArtifacts).slice(0, artifactsPerSide);
