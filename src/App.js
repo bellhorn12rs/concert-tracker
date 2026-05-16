@@ -1885,9 +1885,8 @@ function FriendsUpcomingMarquee({ session }) {
       </div>
 
       {/* Marquee body — inverted: light text on dark */}
-      <div style={{ background: '#f5f0e8', borderTop: '3px solid #111', borderBottom: '3px solid #111', padding: '10px 0', overflow: 'hidden' }}>
-        <div style={{ display: 'inline-block', animation: 'marquee 50s linear infinite', whiteSpace: 'nowrap', fontFamily: "'Bebas Neue'", fontSize: 18, fontWeight: 900, letterSpacing: '0.12em', color: '#111' }}>
-          {marqueeText} &nbsp;&nbsp;★&nbsp;&nbsp; {marqueeText} &nbsp;&nbsp;★&nbsp;&nbsp;
+      <div style={{ background: '#111', borderTop: '3px solid #f5f0e8', borderBottom: '3px solid #f5f0e8', padding: '10px 0', overflow: 'hidden' }}>
+  <div style={{ display: 'inline-block', animation: 'marquee 50s linear infinite', whiteSpace: 'nowrap', fontFamily: "'Bebas Neue'", fontSize: 18, fontWeight: 900, letterSpacing: '0.12em', color: '#f5f0e8' }}> {marqueeText} &nbsp;&nbsp;★&nbsp;&nbsp; {marqueeText} &nbsp;&nbsp;★&nbsp;&nbsp;
         </div>
       </div>
 
