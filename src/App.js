@@ -1635,6 +1635,8 @@ function CountUpStat({ value, label, sub, color = C.white }) {
     </div>
   );
 }
+
+
 // Theater Marquee (RECONFIGURED WITH FULL-WIDTH CALL TO ACTION)
 function TheaterMarquee({ upcoming, onAdd, onEdit, session }) {
   const BULB_COUNT = 28;
@@ -1810,6 +1812,166 @@ function TheaterMarquee({ upcoming, onAdd, onEdit, session }) {
     </div>
   );
 }
+
+function FriendsUpcomingMarquee({ session }) {
+  const [friendShows, setFriendShows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const BULB_COUNT = 28;
+  const today = new Date().toISOString().split('T')[0];
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    async function fetch() {
+      // 1. Get friend IDs
+      const { data: friendships } = await supabase
+        .from('friendships')
+        .select('friend_id')
+        .eq('user_id', session.user.id);
+
+      if (!friendships?.length) { setLoading(false); return; }
+      const friendIds = friendships.map(f => f.friend_id);
+
+      // 2. Get profiles
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_color')
+        .in('id', friendIds);
+      const profileMap = {};
+      (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
+      // 3. Get their upcoming attendances
+      const { data: attendances } = await supabase
+        .from('upcoming_attendances')
+        .select(`user_id, show_id, show:upcoming_shows(id, date, artist, venue, city, status, festival_name, is_festival, bands)`)
+        .in('user_id', friendIds);
+
+      if (!attendances) { setLoading(false); return; }
+
+      // 4. Group by show, filter past dates
+      const showMap = {};
+      attendances.forEach(a => {
+        if (!a.show || a.show.date < today) return;
+        if (!showMap[a.show_id]) showMap[a.show_id] = { show: a.show, attendees: [] };
+        const p = profileMap[a.user_id];
+        if (p && !showMap[a.show_id].attendees.some(x => x.id === p.id)) {
+          showMap[a.show_id].attendees.push(p);
+        }
+      });
+
+      setFriendShows(
+        Object.values(showMap).sort((a, b) => a.show.date.localeCompare(b.show.date))
+      );
+      setLoading(false);
+    }
+    fetch();
+  }, [session?.user?.id]);
+
+  const isEmpty = friendShows.length === 0;
+
+  const marqueeText = isEmpty
+    ? 'NO FRIEND SIGNALS DETECTED • ADD FRIENDS FROM THE STATION •'
+    : friendShows.map(({ show, attendees }) =>
+        `${(show.artist || show.festival_name || 'TBA').toUpperCase()} • ${fmtDateShort(show.date).toUpperCase()} • ${attendees.map(a => a.username?.toUpperCase()).join(' + ')}`
+      ).join('   ★   ');
+
+  return (
+    <div style={{ background: '#1a1a1a', borderRadius: 8, overflow: 'hidden', boxShadow: '0 0 0 4px #2a2a2a, 0 0 0 6px #333, 0 8px 32px rgba(0,0,0,0.8)' }}>
+
+      {/* Top bulb rail — gold */}
+      <div style={{ background: '#111', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {Array.from({ length: BULB_COUNT }).map((_, i) => (
+          <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: C.gold, boxShadow: `0 0 6px ${C.gold}, 0 0 12px ${C.gold}`, animation: `chasing-bulb 1.5s ease-in-out ${(i * 1.5 / BULB_COUNT).toFixed(2)}s infinite` }} />
+        ))}
+      </div>
+
+      {/* Marquee body — inverted: light text on dark */}
+      <div style={{ background: '#f5f0e8', borderTop: '3px solid #111', borderBottom: '3px solid #111', padding: '10px 0', overflow: 'hidden' }}>
+        <div style={{ display: 'inline-block', animation: 'marquee 50s linear infinite', whiteSpace: 'nowrap', fontFamily: "'Bebas Neue'", fontSize: 18, fontWeight: 900, letterSpacing: '0.12em', color: '#111' }}>
+          {marqueeText} &nbsp;&nbsp;★&nbsp;&nbsp; {marqueeText} &nbsp;&nbsp;★&nbsp;&nbsp;
+        </div>
+      </div>
+
+      {/* Header label */}
+      <button style={{
+        width: '100%', background: `linear-gradient(90deg, rgba(255,204,0,0.08) 0%, rgba(255,204,0,0.18) 50%, rgba(255,204,0,0.08) 100%)`,
+        borderBottom: '1px solid #2a2a2a', borderTop: 'none', borderLeft: 'none', borderRight: 'none',
+        padding: '16px', cursor: 'default', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4
+      }}>
+        <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.5rem', color: C.gold, letterSpacing: 2 }}>
+          {isEmpty ? 'NO FRIEND SIGNALS DETECTED' : `${friendShows.length} FRIEND SHOW${friendShows.length !== 1 ? 'S' : ''} ON THE HORIZON`}
+        </div>
+        <div style={{ fontFamily: "'Space Mono'", fontSize: 8, color: '#666', letterSpacing: 2 }}>
+          [ FRIEND FEED // LIVE UPDATES ]
+        </div>
+      </button>
+
+      {/* Show list */}
+      <div style={{ padding: '0 16px 16px' }}>
+        <div style={{ maxHeight: 190, overflowY: 'auto' }}>
+          {friendShows.map(({ show, attendees }, i) => (
+            <div key={show.id || i} style={{
+              display: 'grid', gridTemplateColumns: 'auto 1fr auto',
+              alignItems: 'center', gap: 12, padding: '12px 0',
+              borderBottom: i === friendShows.length - 1 ? 'none' : `1px solid #1a1a1a`
+            }}>
+              <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: '#888', whiteSpace: 'nowrap' }}>
+                {fmtDateShort(show.date)}
+              </div>
+
+              <div>
+                <div style={{ fontFamily: "'Bebas Neue'", fontSize: '1.15rem', color: C.gold, letterSpacing: '0.06em', lineHeight: 1 }}>
+                  {(show.artist || show.festival_name || 'TBA').toUpperCase()}
+                </div>
+                {show.venue && <div style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#555', marginTop: 1 }}>{show.venue}</div>}
+
+                {/* Friend avatar chips */}
+                <div style={{ display: 'flex', gap: 4, marginTop: 5, alignItems: 'center', flexWrap: 'wrap' }}>
+                  {attendees.map((att) => (
+                    <div key={att.id} title={att.username} style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      background: `${att.avatar_color || C.teal}22`,
+                      border: `1px solid ${att.avatar_color || C.teal}`,
+                      borderRadius: 20, padding: '2px 8px'
+                    }}>
+                      <div style={{
+                        width: 14, height: 14, borderRadius: '50%',
+                        background: att.avatar_color || C.teal,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: "'Bebas Neue'", fontSize: 8, color: '#000', fontWeight: 900
+                      }}>
+                        {att.username?.[0]?.toUpperCase()}
+                      </div>
+                      <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: '#fff' }}>
+                        {att.username}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold, background: 'rgba(255,204,0,0.12)', border: '1px solid rgba(255,204,0,0.3)', padding: '2px 6px', borderRadius: 3, whiteSpace: 'nowrap' }}>
+                {show.status || 'UPCOMING'}
+              </span>
+            </div>
+          ))}
+          {isEmpty && (
+            <div style={{ color: '#333', fontFamily: "'Space Mono'", fontSize: 9, textAlign: 'center', padding: '30px 20px', letterSpacing: '0.1em' }}>
+              FOLLOW FRIENDS FROM THE STATION TAB
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom bulb rail */}
+      <div style={{ background: '#111', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {Array.from({ length: BULB_COUNT }).map((_, i) => (
+          <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: C.gold, boxShadow: `0 0 6px ${C.gold}, 0 0 12px ${C.gold}`, animation: `chasing-bulb 1.5s ease-in-out ${((BULB_COUNT - i) * 1.5 / BULB_COUNT).toFixed(2)}s infinite` }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── NEWS TICKER ──────────────────────────────────────────────────────────────
 function NewsTicker({ concerts, artistCounts, genreStats }) {
   const items = useMemo(() => {
@@ -7036,22 +7198,51 @@ function VenuesTab({ concerts }) {
     </div>
   );
 }
-function CommunityTab({ onEnterMuseum }) {
+function CommunityTab({ onEnterMuseum, session }) {
   const [curators, setCurators] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [myFriends, setMyFriends] = useState(new Set());
+  const [toggling, setToggling] = useState(null);
   const isMobile = window.innerWidth < 768;
 
   useEffect(() => {
     async function fetchCurators() {
       const { data } = await supabase
         .from('profiles')
-        .select('username, avatar_color, last_seen, last_artist, last_venue, total_shows, total_sets, total_venues')
+        .select('username, avatar_color, last_seen, last_artist, last_venue, total_shows, total_sets, total_venues, id')
         .order('last_seen', { ascending: false });
       if (data) setCurators(data);
       setLoading(false);
     }
     fetchCurators();
   }, []);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    async function fetchFriends() {
+      const { data } = await supabase
+        .from('friendships')
+        .select('friend_id')
+        .eq('user_id', session.user.id);
+      if (data) setMyFriends(new Set(data.map(f => f.friend_id)));
+    }
+    fetchFriends();
+  }, [session?.user?.id]);
+
+  const toggleFriend = async (e, friendId) => {
+    e.stopPropagation();
+    if (!session?.user?.id || toggling) return;
+    setToggling(friendId);
+    if (myFriends.has(friendId)) {
+      await supabase.from('friendships').delete()
+        .eq('user_id', session.user.id).eq('friend_id', friendId);
+      setMyFriends(prev => { const n = new Set(prev); n.delete(friendId); return n; });
+    } else {
+      await supabase.from('friendships').insert([{ user_id: session.user.id, friend_id: friendId }]);
+      setMyFriends(prev => new Set([...prev, friendId]));
+    }
+    setToggling(null);
+  };
 
   if (loading) return (
     <div style={{ padding: 100, textAlign: 'center' }}>
@@ -7075,32 +7266,29 @@ function CommunityTab({ onEnterMuseum }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
         {curators.map((u, i) => {
           const userColor = u.avatar_color || C.teal;
+          const isSelf = u.id === session?.user?.id;
+          const isFriend = myFriends.has(u.id);
           return (
             <div
               key={u.username}
               onClick={() => onEnterMuseum(u.username)}
               style={{
-                background: '#07070a',
-                border: `1px solid ${hexToRgba(C.purple, 0.15)}`,
+                background: isFriend ? hexToRgba(C.gold, 0.05) : '#07070a',
+                border: `1px solid ${isFriend ? hexToRgba(C.gold, 0.4) : hexToRgba(C.purple, 0.15)}`,
                 padding: isMobile ? '12px 14px' : '25px 35px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                position: 'relative',
-                overflow: 'hidden',
-                gap: isMobile ? 10 : 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                cursor: 'pointer', transition: 'all 0.2s ease',
+                position: 'relative', overflow: 'hidden', gap: 8,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = C.purple;
+                e.currentTarget.style.borderColor = isFriend ? C.gold : C.purple;
                 e.currentTarget.style.transform = isMobile ? 'none' : 'translateX(10px)';
-                e.currentTarget.style.background = hexToRgba(C.purple, 0.05);
+                e.currentTarget.style.background = isFriend ? hexToRgba(C.gold, 0.08) : hexToRgba(C.purple, 0.05);
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = hexToRgba(C.purple, 0.15);
+                e.currentTarget.style.borderColor = isFriend ? hexToRgba(C.gold, 0.4) : hexToRgba(C.purple, 0.15);
                 e.currentTarget.style.transform = 'translateX(0)';
-                e.currentTarget.style.background = '#07070a';
+                e.currentTarget.style.background = isFriend ? hexToRgba(C.gold, 0.05) : '#07070a';
               }}
             >
               {/* Index */}
@@ -7110,8 +7298,15 @@ function CommunityTab({ onEnterMuseum }) {
 
               {/* Name + latest */}
               <div style={{ flex: 1, minWidth: 0, paddingLeft: isMobile ? 8 : 40 }}>
-                <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.2rem' : '2.5rem', color: '#fff', letterSpacing: '2px', lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {u.username?.toUpperCase()}'S ARCHIVE
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ fontFamily: "'Bebas Neue'", fontSize: isMobile ? '1.2rem' : '2.5rem', color: '#fff', letterSpacing: '2px', lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {u.username?.toUpperCase()}'S ARCHIVE
+                  </div>
+                  {isFriend && (
+                    <span style={{ fontFamily: "'Space Mono'", fontSize: 7, color: C.gold, border: `1px solid ${C.gold}`, padding: '2px 6px', borderRadius: 3, flexShrink: 0 }}>
+                      FRIEND
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontFamily: "'Space Mono'", fontSize: isMobile ? '7px' : '10px', color: userColor, fontWeight: 900, marginTop: isMobile ? 3 : 6, letterSpacing: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {u.last_artist?.toUpperCase() || 'UNKNOWN'} @ {u.last_venue?.toUpperCase() || 'PRIVATE STAGE'}
@@ -7120,7 +7315,7 @@ function CommunityTab({ onEnterMuseum }) {
 
               {/* Stats — desktop only */}
               {!isMobile && (
-                <div style={{ display: 'flex', gap: 30, textAlign: 'center', zIndex: 2, marginRight: '40px', flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: 30, textAlign: 'center', zIndex: 2, marginRight: '20px', flexShrink: 0 }}>
                   {[
                     { label: 'DAYS', val: u.total_shows || 0, color: C.purple },
                     { label: 'SETS', val: u.total_sets || 0, color: C.teal },
@@ -7132,6 +7327,28 @@ function CommunityTab({ onEnterMuseum }) {
                     </div>
                   ))}
                 </div>
+              )}
+
+              {/* Follow button */}
+              {!isSelf && session?.user?.id && (
+                <button
+                  onClick={(e) => toggleFriend(e, u.id)}
+                  disabled={toggling === u.id}
+                  style={{
+                    flexShrink: 0,
+                    background: isFriend ? hexToRgba(C.gold, 0.15) : 'transparent',
+                    border: `1px solid ${isFriend ? C.gold : '#444'}`,
+                    color: isFriend ? C.gold : '#666',
+                    fontFamily: "'Space Mono'", fontSize: isMobile ? 8 : 9,
+                    padding: isMobile ? '5px 8px' : '6px 12px',
+                    borderRadius: 4, cursor: 'pointer',
+                    transition: 'all 0.2s', zIndex: 10, letterSpacing: 1
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = isFriend ? C.red : C.gold; e.currentTarget.style.color = isFriend ? C.red : C.gold; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = isFriend ? C.gold : '#444'; e.currentTarget.style.color = isFriend ? C.gold : '#666'; }}
+                >
+                  {toggling === u.id ? '...' : isFriend ? (isMobile ? '★' : '★ FRIEND') : (isMobile ? '☆' : '+ FOLLOW')}
+                </button>
               )}
 
               {/* Boarding */}
@@ -14492,66 +14709,48 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
   <>
     <OnThisDay concerts={concerts} />
   
-  {/* ROW 1: MARQUEE + STAGE */}
+  {/* ROW 1: MY UPCOMING + FRIENDS UPCOMING */}
 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
-    <TheaterMarquee 
-      upcoming={upcoming} 
-      onAdd={isAdmin ? () => setUpcomingModal('new') : null} 
-      onEdit={isAdmin ? setUpcomingModal : null}
-      onCommit={isAdmin ? (show) => setNudgeTarget(show) : null}
-      session={session}
-    />
-    <Card neon style={{ padding: 0, overflow: 'hidden', minHeight: isMobile ? 500 : 'auto' }}>
-  <HighlightStage
-    concerts={concerts}
+  <TheaterMarquee
+    upcoming={upcoming}
+    onAdd={isAdmin ? () => setUpcomingModal('new') : null}
+    onEdit={isAdmin ? setUpcomingModal : null}
+    onCommit={isAdmin ? (show) => setNudgeTarget(show) : null}
     session={session}
-    posters={posters}
-    userArtifacts={userArtifacts}
-    isAdmin={isAdmin}
-    onOpenDetail={setHighlightDetail}
-    isMobile={isMobile}
   />
-</Card>
-  </div>
+  <FriendsUpcomingMarquee session={session} />
+</div>
 
-  {/* VENUE ROW */}
-  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: 20 }}>
-    <VenueDonutCard concerts={concerts} onNavigateToVenues={() => setActiveTab('venues')} />
-    <Card neon>
-      <CardTitle>Sets Per Year by Venue</CardTitle>
-      <div style={{ height: 220 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={stackedTimelineData}>
-            <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-            <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
-            <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
-            <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10 }} />
-            {venueKeys.map((v, i) => (
-              <Bar key={v} dataKey={v} stackId="a" fill={v === 'other' ? '#334' : ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88'][i % 5]} />
-            ))}
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </Card>
-  </div>
-
-  {/* FEST/DONUT ROW */}
-  <div style={{ 
-    display: 'grid', 
-    gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
-    gap: 20,
-    alignItems: 'stretch',
-    height: isMobile ? 'auto' : '480px', 
-    marginBottom: 20
-  }}>
-    <Card neon>
-      <DonutChart fest={headerStats.festDays} solo={headerStats.totalShows - headerStats.festDays} concerts={concerts} />
-    </Card>
-    <Card neon>
-      <CardTitle>Festival Passports</CardTitle>
-      <TopFestBlocks festBreakdown={festBreakdown} concerts={concerts} />
-    </Card>
-  </div>
+{/* ROW 2: TOP 10 SHOWS + BAR CHART */}
+<div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
+  <Card neon style={{ padding: 0, overflow: 'hidden', minHeight: isMobile ? 500 : 'auto' }}>
+    <HighlightStage
+      concerts={concerts}
+      session={session}
+      posters={posters}
+      userArtifacts={userArtifacts}
+      isAdmin={isAdmin}
+      onOpenDetail={setHighlightDetail}
+      isMobile={isMobile}
+    />
+  </Card>
+  <Card neon>
+    <CardTitle>Sets Per Year by Venue</CardTitle>
+    <div style={{ height: 220 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={stackedTimelineData}>
+          <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+          <XAxis dataKey="year" tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+          <YAxis tick={{ fontSize: 8, fontFamily: "'Space Mono'", fill: C.gray }} />
+          <Tooltip contentStyle={{ background: C.bgCard, border: `1px solid ${C.teal}`, fontSize: 10 }} />
+          {venueKeys.map((v, i) => (
+            <Bar key={v} dataKey={v} stackId="a" fill={v === 'other' ? '#334' : ['#00f2ff', '#9d00ff', '#ffcc00', '#ff4466', '#00cc88'][i % 5]} />
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  </Card>
+</div>
 
   {/* ROW 2: ROTATION, SPOTLIGHT, CITIES */}
   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
@@ -14860,8 +15059,7 @@ style={{ fontFamily: "'Bebas Neue'", fontSize: '1.4rem', color: '#fff', letterSp
     currentUserId={currentUserId}
   />
 )}
-  {activeTab === 'community' && <CommunityTab onEnterMuseum={handleNavigateToUser} />}
-  {activeTab === 'passport' && (
+{activeTab === 'community' && <CommunityTab onEnterMuseum={handleNavigateToUser} session={session} />}  {activeTab === 'passport' && (
     <PassportTab 
       passport={passport} 
       onNavigateToFest={name => { 
