@@ -5906,7 +5906,9 @@ useEffect(() => {
     .filter(Boolean)
     .filter((c, i, self) => i === self.findIndex(x => x.username === c.username));
   setRowCompanions(companions);
-};
+  };
+  fetch();
+}, [event?.id, currentUserId]);
 
   return (
     <div style={{ 
