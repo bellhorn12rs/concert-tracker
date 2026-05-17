@@ -13006,11 +13006,9 @@ export default function App() {
   // EFFECT A: The URL Listener (Watches the Address Bar)
   useEffect(() => {
   const syncView = async () => {
-    const hash = window.location.hash;
-    const hash = window.location.hash;
-    const pathMatch = window.location.pathname.match(/^\/u\/(.+)$/);
-    const hashMatch = hash.match(/^#\/u\/(.+)$/);
-    const match = pathMatch || hashMatch;
+  const pathMatch = window.location.pathname.match(/^\/u\/(.+)$/);
+  const hashMatch = window.location.hash.match(/^#\/u\/(.+)$/);
+  const match = pathMatch || hashMatch;
     
     if (match) {
       const username = match[1];
