@@ -13007,7 +13007,10 @@ export default function App() {
   useEffect(() => {
   const syncView = async () => {
     const hash = window.location.hash;
-    const match = hash.match(/^#\/u\/(.+)$/);
+    const hash = window.location.hash;
+    const pathMatch = window.location.pathname.match(/^\/u\/(.+)$/);
+    const hashMatch = hash.match(/^#\/u\/(.+)$/);
+    const match = pathMatch || hashMatch;
     
     if (match) {
       const username = match[1];
@@ -13031,9 +13034,12 @@ export default function App() {
   };
 
   window.addEventListener('hashchange', syncView);
-  syncView();
-
-  return () => window.removeEventListener('hashchange', syncView);
+window.addEventListener('popstate', syncView);
+syncView();
+return () => {
+  window.removeEventListener('hashchange', syncView);
+  window.removeEventListener('popstate', syncView);
+};
 }, [session, viewingUsername, viewingUser]);
 
   // EFFECT B: The Data Refresher (Loads the Shows)
@@ -13559,7 +13565,7 @@ const getCuratorTitle = (stats, concerts, preferredQualifier) => {
   setConcerts([]);  // clear immediately so stale data doesn't flash
 
   // 3. Update URL for bookmarking/sharing but don't rely on it to trigger fetch
-  window.location.hash = `#/u/${targetUsername}`;
+window.history.pushState({}, '', `/u/${targetUsername}`);
 };
 
 const handleSave = async (id, payload) => {
@@ -14562,7 +14568,7 @@ if ((!session && !viewingUser && !viewingUsername) || onLanding) {
         {viewingUser && (
           <button 
             onClick={() => {
-              window.location.hash = '';
+              window.history.pushState({}, '', '/');
               setViewingUser(null);
               setActiveTab('dashboard');
               window.dispatchEvent(new HashChangeEvent('hashchange'));
