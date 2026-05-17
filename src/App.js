@@ -13009,27 +13009,25 @@ export default function App() {
   const pathMatch = window.location.pathname.match(/^\/u\/(.+)$/);
   const hashMatch = window.location.hash.match(/^#\/u\/(.+)$/);
   const match = pathMatch || hashMatch;
-    
-    if (match) {
-      const username = match[1];
-      // Only run if we don't already have this user loaded
-      if (username === viewingUsername) return;
-      const { data } = await supabase.from('profiles').select('id').eq('username', username).single();
-      if (data) {
-        setViewingUser(data.id);
-        setViewingUsername(username);
-        setConcerts([]);
-        setOnLanding(false);
-      }
-    } else {
-      // Only clear if we were actually viewing someone
-      if (viewingUser) {
-        setViewingUser(null);
-        setViewingUsername(null);
-        setConcerts([]);
-      }
+  
+  if (match) {
+    const username = match[1];
+    if (username === viewingUsername) return;
+    const { data } = await supabase.from('profiles').select('id').eq('username', username).single();
+    if (data) {
+      setViewingUser(data.id);
+      setViewingUsername(username);
+      setConcerts([]);
+      setOnLanding(false); // skip landing page
     }
-  };
+  } else {
+    if (viewingUser) {
+      setViewingUser(null);
+      setViewingUsername(null);
+      setConcerts([]);
+    }
+  }
+};
 
   window.addEventListener('hashchange', syncView);
 window.addEventListener('popstate', syncView);
