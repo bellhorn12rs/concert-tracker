@@ -588,7 +588,7 @@ export default function LandingPage({
         </div>
       </div>
 
-      {/* FOOTER */}
+      {/* FOOTERr */}
       <div style={{ padding: '40px 20px 80px', background: '#000', borderTop: '1px solid #111', textAlign: 'center', position: 'relative', zIndex: 999 }}>
         <div style={{ fontFamily: "'Space Mono'", fontSize: 9, color: GRAY, letterSpacing: 2, marginBottom: 12 }}>Questions? Ideas? Found a bug?</div>
         <a href="mailto:trackrecordlive@gmail.com" style={{ fontFamily: "'Space Mono'", fontSize: 11, color: TEAL, textDecoration: 'none', letterSpacing: 1 }}
